@@ -4,7 +4,12 @@ A web application that classifies games across three skill-based dimensions — 
 
 ## Current Status
 
-**Monorepo skeleton / pre-development.** The repository structure, configuration files, and project documentation have been established. Application scaffolding (Astro frontend and Django backend) has not yet been performed; that work belongs to [SBGC-23](context.md#32-complete-jira-epic-and-task-registry).
+**Application scaffolding complete.** Astro frontend and Django backend have been initialized. Tailwind CSS, Django Ninja, and PostgreSQL are not yet configured.
+
+| Service  | Development URL           |
+| -------- | ------------------------- |
+| Frontend | http://localhost:4321     |
+| Backend  | http://127.0.0.1:8000     |
 
 ## Stack
 
@@ -20,8 +25,8 @@ A web application that classifies games across three skill-based dimensions — 
 ```
 skill-based-games-classification/
 ├── apps/
-│   ├── frontend/   # Astro application (to be initialized in SBGC-23)
-│   └── backend/    # Django application (to be initialized in SBGC-23)
+│   ├── frontend/   # Astro application (initialized)
+│   └── backend/    # Django application (initialized)
 ├── docs/           # Project documentation and architecture decision records
 ├── scripts/        # Simple cross-project helper scripts
 ├── context.md      # Canonical project context — read this first
@@ -29,6 +34,7 @@ skill-based-games-classification/
 ├── README.md       # This file
 ├── .editorconfig   # Editor encoding and indentation settings
 ├── .gitignore      # Files excluded from version control
+├── .nvmrc          # Node.js version pinning
 └── package.json    # npm workspace root
 ```
 
@@ -39,4 +45,20 @@ skill-based-games-classification/
 
 ## Getting Started
 
-Astro and Django initialization are handled by **SBGC-23**. See [context.md](context.md) for the full task registry and implementation order.
+```bash
+# Use the correct Node.js version
+nvm use
+
+# Install workspace dependencies
+npm install
+
+# Start the Astro dev server
+npm run dev:frontend
+
+# Start the Django dev server (separate terminal)
+source apps/backend/.venv/bin/activate
+python apps/backend/manage.py runserver
+deactivate
+```
+
+Tailwind CSS, Django Ninja, and PostgreSQL are not configured yet. See [context.md](context.md) for the full task registry and implementation order.

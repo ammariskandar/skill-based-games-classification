@@ -5,14 +5,14 @@
     "apps/frontend"
   ],
   "scripts": {
-    "dev:frontend": "echo 'dev:frontend — not yet implemented; requires Astro initialization (SBGC-23)'",
-    "dev:backend": "echo 'dev:backend — not yet implemented; requires Django initialization (SBGC-23)'",
-    "build:frontend": "echo 'build:frontend — not yet implemented; requires Astro initialization (SBGC-23)'",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
+    "build:frontend": "npm run build --workspace=apps/frontend",
     "test:frontend": "echo 'test:frontend — not yet implemented'",
     "test:backend": "echo 'test:backend — not yet implemented'",
     "test": "echo 'test — not yet implemented; run test:frontend and test:backend separately'",
     "lint": "echo 'lint — not yet implemented'",
     "format": "echo 'format — not yet implemented'",
-    "migrate": "echo 'migrate — not yet implemented; requires Django initialization (SBGC-23)'"
+    "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate"
   }
 }
