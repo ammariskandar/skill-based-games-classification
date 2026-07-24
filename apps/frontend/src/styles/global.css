@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* --- global baseline --- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-neutral-900 antialiased;
+}
