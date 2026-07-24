@@ -392,6 +392,21 @@ Django/Python must determine recommended games and provide trusted structured re
 
 Load WebLLM only when the feature is requested. Do not burden ordinary pages with model downloads or GPU initialization.
 
+### 7.6 Design reference assets
+
+The Figma Make React/Vite prototype archived at `design-reference/figma-make-dark-ui/` (SBGC-136, archived by SBGC-137) is a **read-only design reference**. Agents MUST:
+
+- inspect the reference export before implementing matching UI;
+- treat every file under `design-reference` as immutable;
+- never modify files inside that directory;
+- never run package installation (`npm install`, `pnpm install`) inside it;
+- never add its dependencies to the production project automatically;
+- never import its React components, styles, or configuration into Astro;
+- never include `design-reference` in production imports, build configuration, or deployment output;
+- translate design intent into Astro components, Tailwind utilities, semantic HTML, and accessible interactions;
+- preserve canonical MPA and SSR decisions when implementing from the reference;
+- report design/architecture conflicts rather than resolving them silently.
+
 ---
 
 ## 8. AstroJS engineering standards

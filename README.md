@@ -34,6 +34,10 @@ See [docs/frontend-architecture.md](docs/frontend-architecture.md) for routing c
 
 Tailwind CSS 4 via the `@tailwindcss/vite` Vite plugin. Utility-first, responsive, and accessible. A shared `BaseLayout` provides the document shell. See [docs/frontend-styling.md](docs/frontend-styling.md).
 
+## Design Reference
+
+A read-only Figma Make React/Vite prototype is archived at [`design-reference/figma-make-dark-ui/`](design-reference/figma-make-dark-ui/) (SBGC-136, archived by SBGC-137). It is **not** production code — do not edit, import, build, or deploy it. Use it only as a visual implementation guide. See [`design-reference/README.md`](design-reference/README.md).
+
 ## Monorepo Directory Layout
 
 ```

@@ -59,4 +59,8 @@ Client-side JavaScript is limited to **bounded Astro islands**. Components that 
 
 ## Vercel Adapter
 
-The `@astrojs/vercel` adapter translates Astro's server output into Vercel serverless functions. `output: "server"` enables on-demand rendering for any route that does not declare `export const prerender = true`.
+The `@astrojs/vercel` adapter translates Astro's server output into Vercel serverless functions. `output: "server"` enables on-demand rendering for any route that does not declare `export const prerender = true`. The Vercel application root is `apps/frontend` — the `design-reference/` directory is outside this root and will not be deployed.
+
+## Design Reference Boundary
+
+Production frontend code (`apps/frontend/src`) must **not** import from `design-reference/`. The Figma Make React/Vite prototype archived there is a read-only design reference. All production UI must be manually reimplemented in Astro + Tailwind CSS.
