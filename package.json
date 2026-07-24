@@ -14,8 +14,16 @@
     "test:frontend": "echo 'test:frontend — not yet implemented'",
     "test:backend": "echo 'test:backend — not yet implemented'",
     "test": "echo 'test — not yet implemented; run test:frontend and test:backend separately'",
-    "lint": "echo 'lint — not yet implemented'",
-    "format": "echo 'format — not yet implemented'",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "npm run lint --workspace=apps/frontend",
+    "lint:backend": "apps/backend/.venv/bin/ruff check apps/backend",
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "npm run format --workspace=apps/frontend",
+    "format:backend": "apps/backend/.venv/bin/ruff format apps/backend",
+    "format:check": "npm run format:check --workspace=apps/frontend && apps/backend/.venv/bin/ruff format --check apps/backend",
+    "check": "npm run check:frontend && npm run check:backend",
+    "check:frontend": "npm run check --workspace=apps/frontend",
+    "check:backend": "apps/backend/.venv/bin/python apps/backend/manage.py check",
     "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate",
     "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt"
   }

@@ -1,0 +1,34 @@
+[tool.ruff]
+# Target Python 3.12
+target-version = "py312"
+
+# Line length matching Black's default
+line-length = 88
+
+# Exclude generated and dependency directories
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    "*.pyc",
+    "migrations",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "DJ",  # flake8-django
+]
+ignore = [
+    "DJ001",  # avoid false positives before models exist
+    "D",      # skip docstring rules for now
+]
+
+[tool.ruff.format]
+# Match Black-style formatting
+quote-style = "double"
+indent-style = "space"
