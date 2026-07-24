@@ -1,0 +1,10 @@
+{
+  "description": "Explore and filter a comprehensive video game database using advanced DNA-based radar charts to discover games matching your unique playstyle preferences.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

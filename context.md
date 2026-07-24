@@ -521,6 +521,29 @@ api/                   # Django Ninja routers and schemas
 users/                 # final-product accounts, if separated
 ```
 
+## Design reference assets
+
+**SBGC-136** created the approved high-fidelity dark-mode mock design. Human references include the Jira-attached PNG and the Figma Make link.
+
+For LLM and developer reference, a read-only archived export lives at:
+
+```text
+design-reference/figma-make-dark-ui/
+```
+
+This export is **generated React/Vite code**. It MUST NOT:
+
+- be edited directly;
+- be imported into Astro production code;
+- be built or deployed by Vercel;
+- have its dependencies installed as project dependencies.
+
+It is useful as implementation reference for layout, spacing, typography intent, component appearance, interaction intent, visual hierarchy, copy, and asset reference.
+
+**Production implementation remains Astro + Tailwind CSS.** Any conflict between the generated prototype and canonical architecture is resolved in favour of this document. Design fidelity is expected, but implementation technology must remain canonical.
+
+SBGC-136 created the design; SBGC-137 archived and protected it.
+
 ---
 
 # 9. Rendering and navigation
@@ -2394,6 +2417,8 @@ The diagrams are retained as visual summaries. The Mermaid diagrams in this file
 
 ## 2026-07-22 — Dual Challenge/Reward framework adopted
 
+- SBGC-136 created the approved high-fidelity dark-mode mock design.
+- SBGC-137 archived the Figma Make React/Vite export as `design-reference/figma-make-dark-ui/` with read-only protections.
 - Reframed the product from one three-part skill classification into two independent three-part profiles.
 - Defined Challenge Micro, Challenge Mystiko, and Challenge Macro.
 - Defined Reward Micro as immediate/local validation and satisfaction.

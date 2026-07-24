@@ -29,3 +29,7 @@ The global stylesheet imports Tailwind via `@import "tailwindcss";` and defines 
 The distinct visual identity for the three skill dimensions (colours, badges, chart conventions) is **deferred to SBGC-32**. Do not add dimension-specific styling before that task.
 
 Current pages use neutral tokens only.
+
+## Figma Make Design Reference
+
+The Figma Make export archived at `design-reference/figma-make-dark-ui/` may inform visual implementation. However, Tailwind tokens and Astro components must be defined independently — do not duplicate the generated React structure automatically. Study the reference for layout, spacing, typography, and interaction intent; implement in canonical Astro + Tailwind CSS.
