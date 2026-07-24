@@ -51,27 +51,21 @@ Do not erase superseded decisions without preserving why they changed.
 
 # 1. Executive summary
 
-This is a lightweight full-stack games database conceptually similar to SteamDB or ProtonDB, but its core differentiator is a dual-profile classification rather than conventional genre tags.
+This is a lightweight full-stack games database conceptually similar to SteamDB or ProtonDB, but its core differentiator is a skill-composition classification rather than conventional genre tags.
 
-Every game is described through two independent profiles:
+Every game is assigned three percentages:
 
-1. **Challenge profile** — what the game asks the player to do well.
-2. **Reward profile** — what makes the player feel satisfied, validated, proud, fulfilled, or meaningfully recognised.
+1. **Micro** — execution and mechanics.
+2. **Mystiko** — hidden information, probability, mind games, reads, prediction, and short-horizon adaptation. This dimension was formerly called **Meso**.
+3. **Macro** — systems understanding, resource management, planning, and long-horizon strategy.
 
-Each profile uses the same three dimensions:
-
-1. **Micro** — immediate, local, moment-to-moment execution or validation.
-2. **Mystiko** — hidden, private, inferred, personally understood, or internally meaningful play.
-3. **Macro** — accumulated, large-scale, long-horizon systems mastery or prestige.
-
-Every valid profile MUST satisfy:
+Every valid classification MUST satisfy:
 
 ```text
-Challenge Micro + Challenge Mystiko + Challenge Macro = 100
-Reward Micro + Reward Mystiko + Reward Macro = 100
+Micro + Mystiko + Macro = 100
 ```
 
-The two profiles are related but MUST remain conceptually and numerically separate. A game may demand one mix of skills while rewarding a different mix of outcomes. The values describe **composition, not difficulty, quality, fun, or overall engagement**.
+The values describe **composition, not difficulty**. A `70/20/10` game is not automatically harder than a `20/30/50` game; it rewards a different mix of skills.
 
 The MVP is owner-curated. Ammar will manually review and classify approximately 200 popular games, primarily from Steam. Steam games use Steam App IDs. Very popular non-Steam games, such as Valorant, can be created manually through Django Admin. DLC, demos, soundtracks, software, tools, and other non-game products are excluded from public listings.
 
@@ -98,21 +92,20 @@ Explicitly unnecessary at current scale: paid CDN, Kubernetes, Redis, Celery, El
 
 ## 2.1 Problem
 
-Genre labels describe broad format but often fail to explain either why games feel similar to play or why they remain satisfying. Two games in the same genre may demand very different capabilities; games from different genres may impose similar challenges but reward players in completely different ways.
+Genre labels describe broad format but often fail to explain why games feel similar or different to play. Two games in the same genre may demand very different capabilities; games from different genres may reward nearly identical balances of mechanics, uncertainty management, opponent reading, and strategic planning.
 
 The product provides a compact framework for questions such as:
 
-- Which games are most Micro-, Mystiko-, or Macro-heavy in the challenges they present?
-- Which games provide mostly immediate local rewards, private/internal rewards, or long-horizon prestige?
-- Which games share a challenge profile despite having different genres?
-- Which games share a reward profile despite playing differently?
-- Which games resemble a user’s favourites in skill requirements, reward structure, or both?
-- Why can a low-challenge or cheated experience still feel rewarding?
+- Which games are most Micro-heavy?
+- Which games reward hidden-information reasoning and mind games?
+- Which games are most Macro-heavy?
+- Which games share a skill profile despite having different genres?
+- Which games resemble a user’s favourites in skill requirements?
 - Where does the owner’s editorial view differ from the community?
 
 ## 2.2 Value proposition
 
-> Describe and compare games through two separate Micro/Mystiko/Macro profiles: the challenges they present and the rewards they provide.
+> Describe and compare games by the composition of skills required to succeed: Micro, Mystiko, and Macro.
 
 ## 2.3 Audience
 
@@ -133,7 +126,7 @@ The MVP MUST:
 - provide a public catalogue of roughly 200 owner-classified games;
 - support Steam records identified by App ID;
 - support selected owner-created records for major non-Steam games;
-- validate and display separate Challenge and Reward Micro/Mystiko/Macro profiles, with each profile totalling 100;
+- validate and display Micro/Mystiko/Macro percentages totalling 100;
 - provide game pages, search, listings, rankings, and skill filters;
 - exclude DLC and non-game records;
 - provide Django Admin workflows for importing, creating, editing, classifying, hiding, and refreshing games;
@@ -149,7 +142,7 @@ The final product MAY add:
 - accounts;
 - one active user submission per game;
 - moderation and audit history;
-- editorial and community Challenge/Reward profiles displayed separately;
+- editorial and community scores displayed separately;
 - trusted contributors;
 - consensus/disagreement indicators;
 - Python-based game recommendations;
@@ -182,36 +175,19 @@ The project is not intended to be:
 
 ---
 
-# 4. Dual-profile classification framework
+# 4. Classification framework
 
-## 4.1 Core model
+## 4.1 Micro
 
-Every game has two conceptually independent classifications:
+Micro represents direct execution and mechanical performance, including aim, timing, reaction speed, movement precision, input accuracy, combos, animation cancels, dexterity, technical control, and moment-to-moment optimisation.
 
-1. **Challenge composition** — the relative composition of what the game asks the player to overcome or perform.
-2. **Reward composition** — the relative composition of what makes the player feel rewarded.
+Micro is not synonymous with “action.” Strategy games may contain substantial Micro; action games may have forgiving execution.
 
-Both profiles use Micro, Mystiko, and Macro, but the meanings are contextual. The same label MUST NOT be assumed to mean exactly the same thing across Challenge and Reward.
+## 4.2 Mystiko
 
-The two triplets MUST be stored, validated, displayed, discussed, and versioned separately.
+Mystiko is the current preferred name for the former **Meso** dimension. The term derives from Greek for “hidden,” which better evokes information that must be inferred rather than directly known.
 
-## 4.2 Challenge profile
-
-The Challenge profile answers:
-
-> At competent or ranked play, what proportion of successful performance depends on Micro execution, Mystiko inference/adaptation, and Macro systems/strategy?
-
-### 4.2.1 Challenge Micro
-
-Challenge Micro represents direct execution and mechanical performance, including aim, timing, reaction speed, movement precision, input accuracy, combos, animation cancels, dexterity, technical control, and moment-to-moment optimisation.
-
-Challenge Micro is not synonymous with “action.” Strategy games may contain substantial Micro; action games may have forgiving execution.
-
-### 4.2.2 Challenge Mystiko
-
-Challenge Mystiko is the current preferred name for the former **Meso** dimension. The term derives from Greek for “hidden,” which better evokes information that must be inferred rather than directly known.
-
-Challenge Mystiko includes:
+Mystiko includes:
 
 - hidden information;
 - probability management;
@@ -224,178 +200,55 @@ Challenge Mystiko includes:
 - uncertainty management;
 - matchup-specific adaptation.
 
-Challenge Mystiko is not simply randomness. Randomness matters only where a player reasons and acts around uncertainty.
+Mystiko is not simply randomness. Randomness matters only where a player reasons and acts around uncertainty.
 
-### 4.2.3 Challenge Macro
+### 4.2.1 Meso-to-Mystiko decision
 
-Challenge Macro represents systems and long-horizon strategy, including resource management, economy, map-wide planning, build orders, composition planning, progression, systemic knowledge, objective prioritisation, strategic positioning, and multi-step planning.
-
-## 4.3 Reward profile
-
-The Reward profile answers:
-
-> What proportion of the game’s felt satisfaction comes from immediate/local validation, private/internal fulfilment, and accumulated/broad prestige?
-
-Reward does not mean only formal prizes. It includes any quantitative or qualitative feedback, recognition, fulfilment, catharsis, expression, pride, validation, or meaningful satisfaction that encourages continued play.
-
-### 4.3.1 Reward Micro
-
-Reward Micro is immediate, short-horizon, and local to the current moment, encounter, match, lobby, race, server, or play session.
-
-Typical sources include:
-
-- winning one match;
-- getting kills, assists, damage, healing, score, or another lobby statistic;
-- being MVP;
-- setting the fastest lap in one race;
-- receiving immediate audiovisual feedback;
-- collecting visible resources such as diamonds;
-- completing a short encounter or objective;
-- receiving praise or recognition from the small circle currently present.
-
-The defining idea is:
-
-> “I did well in this particular moment or local session, and the result or nearby audience validates it.”
-
-Reward Micro may be quantitative or qualitative. Winning one match is Reward Micro even if it contributes to a longer ranked progression.
-
-### 4.3.2 Reward Macro
-
-Reward Macro is accumulated, prestigious, persistent, rare, long-horizon, or visible to a much larger reference group.
-
-Typical sources include:
-
-- reaching a high rank such as Platinum;
-- maintaining a high Elo rating;
-- winning many matches over time;
-- earning a rare skin or item;
-- completing a difficult long-term achievement;
-- holding a speedrun world record;
-- building a renowned collection, base, or public accomplishment;
-- receiving recognition that extends beyond one lobby or session.
-
-The defining idea is:
-
-> “This achievement persists beyond the current match and can be recognised by a wider community.”
-
-Reward Macro may also be quantitative or qualitative. Its distinguishing feature is not merely a larger number; it is accumulated scale, persistence, prestige, rarity, or broader social visibility.
-
-### 4.3.3 Reward Mystiko
-
-Reward Mystiko is private, internally understood, personally meaningful, clever, expressive, elegant, or hidden from the wider audience.
-
-The reward may not produce a kill, score, win, rank, achievement, or visible recognition. Other players may not know that anything important happened. The player nevertheless understands why the action mattered and feels rewarded.
-
-Typical sources include:
-
-- a Rainbow Six Siege Lesion trap quietly redirecting an enemy into a teammate’s kill;
-- choosing a specific Elden Ring weapon and successfully executing the imagined counter;
-- performing a stylish Devil May Cry 5 combo that offers little numerical advantage but feels expressive and technically satisfying;
-- preparing a chess opening response for a particular opponent and seeing the preparation work;
-- manipulating an opponent into the exact mistake the player predicted;
-- discovering an elegant, self-imposed, role-playing, creative, or systemic solution that the game does not formally score.
-
-The defining idea is:
-
-> “Other people may not see or understand why this mattered, but I know what I achieved.”
-
-Reward Mystiko is not restricted to hidden information. It includes private meaning, authorship, ingenuity, expression, style, fulfilment, and unseen causal impact.
-
-## 4.4 Why challenge and reward must be separated
-
-Challenge and reward interact but are not equivalent.
-
-A player may experience:
-
-- high challenge and high reward;
-- high challenge and weak reward;
-- low challenge and high reward;
-- almost no challenge but enough reward to remain entertained.
-
-This distinction explains why cheating can still feel fun. Cheating may remove or reduce the Challenge profile while preserving or amplifying Reward Micro through dominant local outcomes, Reward Macro through accelerated progression or rare possessions, and Reward Mystiko through experimentation, fantasy fulfilment, unusual systemic behaviour, or personally meaningful play.
-
-The product MUST NOT assume that challenge is the sole reason people play games.
-
-## 4.5 Canonical terminology and Meso-to-Mystiko decision
-
-Current canonical UI, documentation, schema, and API terminology is:
+Current canonical UI, documentation, and API terminology is:
 
 ```text
-Challenge: Micro / Mystiko / Macro
-Reward:    Micro / Mystiko / Macro
+Micro / Mystiko / Macro
 ```
 
-Historical references may still say Meso. New schema and code should use `mystiko` unless an explicit compatibility migration requires otherwise.
+Historical references may still say Meso. Schema and code should use `mystiko` unless an explicit compatibility migration requires otherwise.
 
 A post-final-deployment A/B test SHOULD compare Meso and Mystiko for user comprehension. This work has not yet been written as a Jira ticket. It must be added later without inventing an issue key in advance.
 
 The test should measure comprehension, not only clicks:
 
-- correct association with hidden information, probability, reads, and mind games for Challenge Mystiko;
-- correct association with private meaning, unseen impact, ingenuity, and internal fulfilment for Reward Mystiko;
+- correct association with hidden information, probability, reads, and mind games;
 - time to understand the framework;
 - methodology-page comprehension;
 - preference after seeing definitions;
 - whether either label causes systematic misclassification.
 
-## 4.6 Composition, not difficulty or quality
+## 4.3 Macro
 
-Neither profile is a difficulty score, quality score, fun score, addiction score, or measure of how rewarding a game is in absolute terms.
+Macro represents systems and long-horizon strategy, including resource management, economy, map-wide planning, build orders, composition planning, progression, systemic knowledge, objective prioritisation, strategic positioning, and multi-step planning.
 
-A profile describes the **relative composition** of challenge or reward within that game. Potential future dimensions such as challenge intensity, reward intensity, knowledge burden, learning curve, or reward frequency are outside MVP unless separately approved.
+## 4.4 Composition, not difficulty
 
-## 4.7 Methodology baseline
+Percentages MUST NOT be presented as difficulty scores. Potential future dimensions such as skill intensity, knowledge burden, or learning curve are outside MVP unless separately approved.
 
-Every reviewed game requires two separate rating prompts.
+## 4.5 Methodology baseline
 
-Challenge prompt:
+The working rating prompt is:
 
-> At competent or ranked play, what proportion of successful performance depends on execution and mechanics, hidden-information reasoning and short-horizon adaptation, and long-horizon systems knowledge and strategic planning?
+> At competent or ranked play, what proportion of performance depends on execution and mechanics, hidden-information reasoning and short-horizon adaptation, and long-horizon systems knowledge and strategic planning?
 
-Reward prompt:
-
-> Across ordinary and sustained play, what proportion of felt satisfaction comes from immediate/local validation, private or internally understood fulfilment, and accumulated or broadly visible prestige?
-
-Every Challenge and Reward profile MUST:
+Every classification MUST:
 
 - include all three dimensions;
 - keep each value within its valid range;
-- total exactly 100 independently;
-- use a consistent methodology and review horizon;
-- include editorial notes where ambiguity materially affects interpretation;
-- avoid using one profile as a proxy for the other.
+- total exactly 100;
+- use a consistent methodology;
+- include editorial notes where ambiguity materially affects interpretation.
 
-## 4.8 Worked examples
+## 4.6 Editorial and community scores
 
-### Chess
+MVP uses editorial scores only.
 
-Challenge is expected to lean heavily Macro and Mystiko, with lower Micro.
-
-Reward may also lean Macro and Mystiko:
-
-- Reward Micro: winning one individual game, delivering a tactical combination, or capturing a major piece;
-- Reward Macro: Elo progression, tournament results, titles, and sustained performance;
-- Reward Mystiko: preparing a specific opening counter, recognising a deep positional idea, inducing a predicted mistake, or seeing a private plan unfold.
-
-### Competitive shooter
-
-A shooter may have high Challenge Micro, substantial Challenge Mystiko, and some Challenge Macro.
-
-Its Reward profile may differ:
-
-- Reward Micro: kills, MVP, damage, one match win;
-- Reward Macro: rank, public prestige, rare cosmetics, long-term mastery;
-- Reward Mystiko: a trap, rotation, bait, or prediction whose impact only the player fully understands.
-
-### Character-action game
-
-A game may reward an elaborate combo through Reward Mystiko even when the combo barely improves damage or completion time. Its satisfaction comes from expression, style, authorship, and successful execution of a personally meaningful idea.
-
-## 4.9 Editorial and community profiles
-
-MVP uses editorial Challenge and Reward profiles only.
-
-Final product displays editorial and community Challenge/Reward results separately. They MUST NOT be silently blended.
+Final product displays editorial and community results separately. They MUST NOT be silently blended.
 
 Preferred rule:
 
@@ -414,7 +267,7 @@ Included:
 
 - roughly 200 games;
 - Steam and manual sources;
-- editorial Challenge and Reward classification;
+- editorial classification;
 - public game pages;
 - catalogue, search, rankings, filters;
 - score visualisation;
@@ -441,7 +294,7 @@ Adds capabilities without replacing the foundation:
 
 - accounts and permissions;
 - submissions and moderation;
-- community Challenge and Reward aggregates;
+- community aggregate;
 - trusted-user pathway;
 - recommendation logic;
 - local WebLLM explanation;
@@ -455,15 +308,15 @@ The final-product backlog has not yet been created in Jira. Current Jira issues 
 
 ## 6.1 Public visitor
 
-A visitor can browse, search, filter, rank, open a game page, view metadata and artwork, understand both three-part profiles, see dominant Challenge and Reward dimensions, and read methodology/editorial notes.
+A visitor can browse, search, filter, rank, open a game page, view metadata and artwork, understand the three percentages, see a dominant category, and read methodology/editorial notes.
 
 ## 6.2 Owner/admin
 
-The owner can sign in to Django Admin, import Steam App IDs, create manual games, verify content type, enter or change Challenge and Reward profiles, hide/publish records, refresh Steam metadata, and perform data-quality review.
+The owner can sign in to Django Admin, import Steam App IDs, create manual games, verify content type, enter or change scores, hide/publish records, refresh Steam metadata, and perform data-quality review.
 
 ## 6.3 Registered user — final only
 
-A user may submit one active dual-profile classification per game, revise it, provide reasoning, see moderation state, view community results, and identify favourite games.
+A user may submit one active classification per game, revise it, provide reasoning, see moderation state, view community results, and identify favourite games.
 
 ## 6.4 Recommendation user — final only
 
@@ -485,7 +338,6 @@ The user selects favourite games. Django calculates skill-profile similarity and
 10. Add infrastructure only after measured need.
 11. Degrade gracefully when external services fail.
 12. Keep editorial and community viewpoints transparent.
-13. Keep Challenge and Reward profiles separate in data, APIs, visuals, rankings, and methodology.
 
 ---
 
@@ -679,12 +531,12 @@ Browser models may require downloads of hundreds of megabytes or more. WebLLM MU
 
 Accepted intent:
 
-- compare trusted Challenge vectors, Reward vectors, or an explicitly documented combination;
+- compare Micro/Mystiko/Macro vectors;
 - use favourite games as inputs;
 - consider candidates with more than 90% similarity;
 - select candidates in Python.
 
-Whether recommendation similarity uses Challenge only, Reward only, separate filters, or a documented combined measure is **TBD**. The exact similarity formula is also **TBD** and MUST be formally defined, documented, and tested. It must respect the compositional nature of vectors summing to 100. The method for combining multiple favourites is also TBD.
+The exact similarity formula is **TBD** and MUST be formally defined, documented, and tested. It must respect the compositional nature of vectors summing to 100. The method for combining multiple favourites is also TBD.
 
 ---
 
@@ -758,19 +610,12 @@ Rules:
 ## 13.2 `EditorialClassification`
 
 ```text
-game_id                       # one-to-one
-
-challenge_micro
-challenge_mystiko
-challenge_macro
-
-reward_micro
-reward_mystiko
-reward_macro
-
-challenge_notes
-reward_notes
-methodology_version
+game_id                  # one-to-one
+micro
+mystiko
+macro
+notes
+methodology_version      # recommended
 updated_by
 created_at
 updated_at
@@ -778,20 +623,16 @@ updated_at
 
 Rules:
 
-- one editorial classification record per game is acceptable, provided Challenge and Reward remain explicitly separated;
-- each value must be valid;
-- Challenge values total exactly 100;
-- Reward values total exactly 100;
-- neither triplet may be derived from the other;
+- one per game;
+- each value valid;
+- total exactly 100;
 - owner/admin editing only in MVP;
 - changes attributable to an admin where practical;
 - deleting a classification must not delete its game accidentally.
 
-A future implementation MAY split this into separate `ChallengeProfile` and `RewardProfile` entities if that produces clearer constraints, history, or community aggregation. That structural choice must preserve the canonical separation.
-
 ## 13.3 Derived values
 
-May include dominant Challenge dimension, dominant Reward dimension, tied dimensions, separate vector representations, formatted values, and ranking positions. Derivation SHOULD live in one backend service/query layer, not be duplicated in templates.
+May include dominant dimension, tied dominant dimensions, vector representation, formatted values, and ranking position. Derivation SHOULD live in one backend service/query layer, not be duplicated in templates.
 
 ## 13.4 `ClassificationSubmission` — final only
 
@@ -799,14 +640,10 @@ May include dominant Challenge dimension, dominant Reward dimension, tied dimens
 id
 game_id
 user_id
-challenge_micro
-challenge_mystiko
-challenge_macro
-reward_micro
-reward_mystiko
-reward_macro
-challenge_reasoning
-reward_reasoning
+micro
+mystiko
+macro
+reasoning
 status                   # pending, approved, rejected, superseded, withdrawn
 created_at
 updated_at
@@ -819,7 +656,7 @@ Rules:
 
 - one active submission per user/game;
 - revised submissions follow a documented audit policy;
-- Challenge and Reward triplets each total 100;
+- scores total 100;
 - only approved submissions affect the community result;
 - moderation is auditable;
 - anonymous scoring is not accepted in the current final design.
@@ -828,12 +665,9 @@ Rules:
 
 ```text
 game_id
-challenge_micro
-challenge_mystiko
-challenge_macro
-reward_micro
-reward_mystiko
-reward_macro
+micro
+mystiko
+macro
 submission_count
 consensus_score          # optional; formula TBD
 scoring_method_version
@@ -871,8 +705,7 @@ Database constraints SHOULD cover:
 
 - source/external-ID uniqueness;
 - score ranges;
-- Challenge total of 100;
-- Reward total of 100;
+- total of 100;
 - required fields by source;
 - safe foreign-key deletion;
 - indexes for search, listing state, source, content type, and score ordering;
@@ -968,12 +801,9 @@ IGDB or another source is a future option, not an accepted MVP dependency.
 GET /api/v1/games
 GET /api/v1/games/{slug-or-id}
 GET /api/v1/games/search?q=
-GET /api/v1/rankings?profile=challenge&dimension=micro
-GET /api/v1/rankings?profile=challenge&dimension=mystiko
-GET /api/v1/rankings?profile=challenge&dimension=macro
-GET /api/v1/rankings?profile=reward&dimension=micro
-GET /api/v1/rankings?profile=reward&dimension=mystiko
-GET /api/v1/rankings?profile=reward&dimension=macro
+GET /api/v1/rankings?dimension=micro
+GET /api/v1/rankings?dimension=mystiko
+GET /api/v1/rankings?dimension=macro
 GET /api/v1/health
 ```
 
@@ -1007,18 +837,10 @@ Auth and CSRF strategy must be specified before final endpoints are introduced.
   },
   "classification": {
     "editorial": {
-      "challenge": {
-        "micro": 65,
-        "mystiko": 25,
-        "macro": 10,
-        "notes": "..."
-      },
-      "reward": {
-        "micro": 35,
-        "mystiko": 40,
-        "macro": 25,
-        "notes": "..."
-      }
+      "micro": 65,
+      "mystiko": 25,
+      "macro": 10,
+      "notes": "..."
     },
     "community": null
   }
@@ -1046,7 +868,7 @@ Django Admin is the internal CMS/admin/moderation interface.
 
 Game administration should support search by name, source, slug, and App ID; filters by source, content type, listing, and classification status; clear Steam/manual field groups; timestamps; refresh state; and classification links/inlines.
 
-Classification administration should support both three-value profiles, independent total validation, separate notes, dominant Challenge/Reward display, updated-by fields, and one-classification-per-game enforcement.
+Classification administration should support all three values, total validation, notes, dominant-category display, updated-by fields, and one-classification-per-game enforcement.
 
 Useful bulk actions:
 
@@ -1084,8 +906,8 @@ MVP options:
 
 - alphabetical;
 - recently added;
-- highest Micro/Mystiko/Macro within either Challenge or Reward;
-- dominant dimension within a selected profile;
+- highest Micro/Mystiko/Macro;
+- dominant dimension;
 - Steam/manual source;
 - classification availability where useful.
 
@@ -1097,9 +919,7 @@ Must use stable deterministic ordering, explicit tie behaviour, pagination, back
 
 # 20. Visualisation and UX
 
-Reusable components should include clearly labelled Challenge and Reward sections, percentage bars, numeric values, separate dominant-dimension indicators, compact cards, full game-page display, and an optional triangular visual only if it remains understandable.
-
-The interface MUST make it impossible to mistake Challenge percentages for Reward percentages. Side-by-side, stacked, tabbed, or toggle-based presentation is acceptable only after mobile readability and comprehension testing. A single unlabeled six-value visual is not acceptable.
+Reusable components should include labelled percentage bars, numeric values, a dominant-dimension indicator, compact cards, full game-page display, and an optional triangular visual only if it remains understandable.
 
 Accessibility requirements:
 
@@ -1121,7 +941,7 @@ Tailwind CSS should implement a consistent responsive design system without turn
 
 ## 21.1 Inputs and calculation
 
-Potential inputs are one or more favourite games, their trusted published Challenge and Reward vectors, candidate vectors, and listing eligibility. Whether favourites require an account is TBD.
+Potential inputs are one or more favourite games, their trusted published vectors, candidate vectors, and listing eligibility. Whether favourites require an account is TBD.
 
 The algorithm MUST run in Python, use trusted values, apply a documented similarity formula and threshold, exclude invalid content, and return structured reasons. Exact multi-favourite aggregation is TBD.
 
@@ -1134,21 +954,14 @@ Example structured input:
   "recommended_game": "Example",
   "similarity_score": 94.2,
   "user_favourites": ["Game A"],
-  "recommended_profiles": {
-    "challenge": {
-      "micro": 60,
-      "mystiko": 25,
-      "macro": 15
-    },
-    "reward": {
-      "micro": 30,
-      "mystiko": 45,
-      "macro": 25
-    }
+  "recommended_vector": {
+    "micro": 60,
+    "mystiko": 25,
+    "macro": 15
   },
   "comparison_points": [
-    "Similar Challenge Micro requirement",
-    "More Reward Mystiko and less Reward Macro"
+    "Similar Micro requirement",
+    "Slightly more Macro-heavy"
   ]
 }
 ```
@@ -1335,7 +1148,7 @@ SEO/game-page metadata:
 Cover:
 
 - model validation and constraints;
-- independent Challenge and Reward totals/ranges;
+- editorial score total/ranges;
 - source-specific fields;
 - duplicate prevention;
 - content-type exclusions;
@@ -1349,7 +1162,7 @@ Cover:
 Cover:
 
 - layouts and reusable components;
-- Challenge and Reward profile rendering;
+- classification rendering;
 - catalogue/search/rankings;
 - error, empty, and missing-data states;
 - responsive behaviour;
@@ -1366,8 +1179,8 @@ Critical journeys:
 5. view rankings and filters;
 6. owner imports a Steam game;
 7. owner creates a manual game;
-8. owner enters valid Challenge and Reward profiles;
-9. an invalid total in either profile is rejected;
+8. owner enters a valid classification;
+9. invalid totals are rejected;
 10. DLC is absent from public listings.
 
 ## 26.4 Non-functional checks
@@ -1389,7 +1202,7 @@ MVP is releasable when:
 - core admin journeys work;
 - roughly 200 records are populated and reviewed;
 - exclusions are enforced;
-- Challenge and Reward classification data is valid;
+- classification data is valid;
 - frontend/backend/database/Steam integration is verified;
 - release-blocking defects are resolved;
 - recovery and incident checks are documented;
@@ -1496,8 +1309,8 @@ Review for:
 - missing metadata;
 - broken image URLs;
 - incorrect content types;
-- invalid Challenge or Reward totals;
-- inconsistent Challenge/Reward methodology;
+- invalid score totals;
+- inconsistent methodology;
 - hidden records accidentally exposed;
 - non-Steam games lacking required manual fields.
 
@@ -1513,7 +1326,7 @@ Catalogue preparation should:
 - identify App IDs;
 - distinguish separate games from DLC, demos, test servers, and duplicate editions;
 - decide whether remasters/definitive editions deserve separate records;
-- record Challenge and Reward classification status and review notes;
+- record classification status and review notes;
 - include manual records only where popularity and product value justify maintenance.
 
 The classification process should favour consistency over speed. Ambiguous games should receive notes and potentially a second review.
@@ -1630,7 +1443,7 @@ The following registry preserves every issue key/title and defines its intended 
 
 ### `SBGC-32` — Define Micro/Mystiko/Macro visual system (Task)
 
-**Intended scope:** Define labels, separate Challenge and Reward score bars/charts, legends, responsive patterns, profile distinction, and accessible non-colour cues.
+**Intended scope:** Define labels, score bars/charts, legends, responsive patterns, and accessible non-colour cues.
 
 ### `SBGC-33` — Create core route skeletons (Task)
 
@@ -1692,7 +1505,7 @@ The following registry preserves every issue key/title and defines its intended 
 
 ### `SBGC-46` — Implement editorial classification (Task)
 
-**Intended scope:** Implement one editorial classification per game containing separate Challenge and Reward Micro/Mystiko/Macro profiles, notes, updater, and timestamps.
+**Intended scope:** Implement one classification per game with Micro/Mystiko/Macro, notes, updater, and timestamps.
 
 ### `SBGC-47` — Implement database constraints (Task)
 
@@ -1773,15 +1586,15 @@ The following registry preserves every issue key/title and defines its intended 
 
 ### `SBGC-64` — Implement classification validation (Task)
 
-**Intended scope:** Enforce ranges, an exact total of 100 for each profile independently, and one editorial classification per game.
+**Intended scope:** Enforce ranges, exact total of 100, and one editorial classification per game.
 
 ### `SBGC-65` — Implement classification-derived values (Task)
 
-**Intended scope:** Calculate separate dominant/tied Challenge and Reward dimensions and consistent formatted/vector values for APIs and rankings.
+**Intended scope:** Calculate dominant/tied dimensions and consistent formatted/vector values for APIs and rankings.
 
 ### `SBGC-66` — Test classification rules (Task)
 
-**Intended scope:** Test valid/invalid totals for both profiles, ranges, updates, ties, extremes, and games without profiles.
+**Intended scope:** Test valid/invalid totals, ranges, updates, ties, extremes, and games without scores.
 
 
 ## 32.8 `SBGC-8` — Django Admin Configuration
@@ -1872,32 +1685,19 @@ The following registry preserves every issue key/title and defines its intended 
 
 ### `SBGC-85` — Create reusable score components (Task)
 
-**Intended scope:** Create reusable, unmistakably separated Challenge and Reward bars, numbers, labels, optional profile-specific triangles, and dominant indicators.
+**Intended scope:** Create bars, numbers, labels, optional triangle, and dominant indicator.
 
 ### `SBGC-86` — Define accessible visual rules (Task)
 
-**Intended scope:** Ensure profile labels, legends, contrast, keyboard/screen-reader compatibility, no colour-only meaning, and no ambiguity between Challenge and Reward.
+**Intended scope:** Ensure labels, legends, contrast, keyboard/screen-reader compatibility, and no colour-only meaning.
 
 ### `SBGC-87` — Apply visualisations across the product (Task)
 
-**Intended scope:** Use consistent dual-profile components on game pages, cards, search, listings, rankings, and useful admin previews.
+**Intended scope:** Use consistent components on game pages, cards, search, listings, rankings, and useful admin previews.
 
 ### `SBGC-88` — Test score rendering (Task)
 
-**Intended scope:** Test both profiles in normal, tied, extreme, decimal/rounded, partial/missing, and mobile states, including comprehension of profile separation.
-
-
-### Additional Jira work to create under `SBGC-12` — keys not yet assigned
-
-The dual-profile decision was made after the original Jira export. Create new child tasks without reusing or inventing historical keys for:
-
-- define the Challenge-versus-Reward information architecture, labels, explanatory copy, and methodology affordances;
-- design and implement the Reward Micro/Mystiko/Macro visual treatment;
-- design the combined dual-profile game-page component, including mobile stacking/toggling and explicit profile distinction;
-- create worked-example and tooltip content that teaches Reward Micro, Reward Mystiko, and Reward Macro;
-- test whether users can correctly distinguish Challenge from Reward and correctly interpret both uses of Mystiko;
-- update ranking/filter controls so the selected profile is always explicit;
-- update visual regression, accessibility, responsive, and comprehension tests for six displayed values.
+**Intended scope:** Test normal, tied, extreme, decimal/rounded, and missing-score states across breakpoints.
 
 
 ## 32.13 `SBGC-13` — API Integration Between Astro and Django
@@ -2139,9 +1939,6 @@ An epic is complete when its child work achieves the user/business outcome, not 
 |---|---|---|
 | 2026-07 | Build a skill-based games database | Accepted. Core differentiator is skill composition rather than genres. |
 | 2026-07 | Three dimensions sum to 100 | Accepted invariant. Composition, not difficulty. |
-| 2026-07 | Use two independent profiles: Challenge and Reward | Accepted. Challenge describes what the game asks the player to overcome; Reward describes what produces satisfaction, validation, fulfilment, or prestige. |
-| 2026-07 | Apply Micro/Mystiko/Macro separately to each profile | Accepted invariant. Each triplet independently totals 100 and must not be silently blended or inferred from the other. |
-| 2026-07 | Recognise reward independently of challenge | Accepted. Low-challenge and cheated play can remain enjoyable through Micro, Mystiko, or Macro rewards. |
 | 2026-07 | Rename Meso to Mystiko | Current accepted terminology; post-final A/B test remains planned. |
 | 2026-07 | Use AstroJS | Accepted due to owner experience/preference and fit for content-oriented MPA. |
 | 2026-07 | Use MPA/hybrid rendering | Accepted: static fixed pages, SSR dynamic pages, limited islands. |
@@ -2224,12 +2021,6 @@ These items are intentionally unresolved:
 28. Whether MFA/passkeys are implemented through a package or provider capability.
 29. Exact implementation of rate limiting without premature infrastructure.
 30. Meso-versus-Mystiko A/B test design and success threshold.
-31. Exact editorial review horizon for Reward profiles: one session, representative ordinary play, sustained play, or a documented combination.
-32. Whether reward frequency/intensity should ever become a separate axis rather than remaining out of scope.
-33. Whether recommendation similarity should use Challenge, Reward, separate user-selected modes, or a combined weighted measure.
-34. Best UI pattern for presenting two triplets without confusion on mobile.
-35. Whether community users submit both profiles together or may submit Challenge and Reward independently.
-36. Whether Challenge and Reward require separate methodology-version identifiers.
 
 An LLM or developer MUST label assumptions when working on these items and must not present an unrecorded choice as already decided.
 
@@ -2303,14 +2094,9 @@ Given favourite game vectors and eligible candidates, Python selects only games 
 Canonical domain terms:
 
 ```text
-challenge profile
-reward profile
-challenge micro
-challenge mystiko
-challenge macro
-reward micro
-reward mystiko
-reward macro
+micro
+mystiko
+macro
 editorial classification
 community classification
 classification submission
@@ -2323,7 +2109,7 @@ manual game
 
 Avoid using `meso` in new persistent schema or API fields unless required for an explicit migration/experiment. Historical import compatibility should be documented.
 
-Prefer clear names over abbreviations. Do not call the percentages “stats” where that could imply in-game character statistics. Use “Challenge profile,” “Reward profile,” “challenge composition,” “reward composition,” or “classification.” The term “skill profile” should normally refer only to Challenge, not Reward.
+Prefer clear names over abbreviations. Do not call the three percentages “stats” where that could imply in-game character statistics; use “skill profile,” “skill composition,” or “classification.”
 
 `SBGC-49` is titled “Add query and modal helpers.” The intended project concept is **model/query helpers**, not UI modal dialogs, unless the owner explicitly confirms otherwise. Jira should be corrected when convenient.
 
@@ -2337,8 +2123,6 @@ Prefer clear names over abbreviations. Do not call the percentages “stats” w
 
 **Community aggregate:** Final-product summary derived from approved user submissions.
 
-**Challenge profile:** Relative Micro/Mystiko/Macro composition of what the game asks the player to perform, infer, overcome, or strategically manage.
-
 **Composition:** Relative share of the three skill dimensions; not a difficulty score.
 
 **Content type:** Internal classification such as game, DLC, demo, software, or unknown.
@@ -2351,21 +2135,19 @@ Prefer clear names over abbreviations. Do not call the percentages “stats” w
 
 **Hotlinking:** Referencing an externally hosted image URL instead of copying the file.
 
-**Macro:** Context-sensitive label. In Challenge, long-horizon strategy and systems skill. In Reward, accumulated, persistent, prestigious, rare, or broadly visible satisfaction.
+**Macro:** Long-horizon strategy and systems skill.
 
 **Manual game:** Owner-created non-Steam record.
 
 **Meso:** Former name for Mystiko; retained only for historical context and future A/B testing.
 
-**Micro:** Context-sensitive label. In Challenge, direct execution and mechanics. In Reward, immediate, local, short-horizon validation or satisfaction.
+**Micro:** Direct execution and mechanics skill.
 
 **MPA:** Multi-page application; navigation is page/route based rather than a single persistent SPA shell.
 
-**Mystiko:** Context-sensitive label. In Challenge, hidden-information reasoning, probability, mind games, prediction, and adaptation. In Reward, private meaning, unseen impact, ingenuity, expression, elegance, or internally understood fulfilment.
+**Mystiko:** Hidden-information, probability, mind-game, prediction, and adaptation skill.
 
-**Published profile:** The Challenge or Reward profile treated as primary under display rules; normally editorial where present.
-
-**Reward profile:** Relative Micro/Mystiko/Macro composition of what creates satisfaction, validation, fulfilment, expression, prestige, or recognition.
+**Published score:** The score treated as primary under display rules; normally editorial where present.
 
 **SSR:** Server-side rendering on request.
 
@@ -2392,19 +2174,6 @@ The diagrams are retained as visual summaries. The Mermaid diagrams in this file
 
 # 42. Changelog
 
-## 2026-07-22 — Dual Challenge/Reward framework adopted
-
-- Reframed the product from one three-part skill classification into two independent three-part profiles.
-- Defined Challenge Micro, Challenge Mystiko, and Challenge Macro.
-- Defined Reward Micro as immediate/local validation and satisfaction.
-- Defined Reward Macro as accumulated, persistent, prestigious, rare, or broadly visible reward.
-- Defined Reward Mystiko as private meaning, unseen impact, ingenuity, expression, elegance, and internally understood fulfilment.
-- Recorded that Challenge and Reward each total 100 independently.
-- Recorded that the profiles must not be blended, inferred from each other, or presented ambiguously.
-- Added the cheating/low-challenge rationale showing that reward can remain enjoyable when challenge is reduced.
-- Updated models, API examples, admin, search, rankings, visualisation, testing, recommendations, glossary, decisions, and open questions.
-- Added unkeyed Jira work to be created under `SBGC-12` for dual-profile and Reward visualisation.
-
 ## 2026-07-22 — Initial canonical consolidation
 
 - Established `context.md` as source of truth.
@@ -2427,4 +2196,4 @@ The diagrams are retained as visual summaries. The Mermaid diagrams in this file
 
 # 43. One-paragraph handoff summary
 
-Build a low-cost monorepo games database using AstroJS and Tailwind CSS on Vercel, Django and Django Ninja with Django Admin on Render, Neon PostgreSQL, and Steam as the authoritative source for Steam metadata and CDN images. The product classifies every game through two separate profiles: **Challenge**, describing what the game asks the player to do well, and **Reward**, describing what makes play satisfying, validating, expressive, fulfilling, or prestigious. Each profile has independent Micro/Mystiko/Macro percentages totalling 100. Challenge Micro is execution, Challenge Mystiko is hidden-information reasoning and adaptation, and Challenge Macro is systems and long-horizon strategy. Reward Micro is immediate/local validation, Reward Mystiko is private meaning or unseen ingenuity, and Reward Macro is accumulated or broadly visible prestige. The MVP is a fast, accessible MPA with static fixed pages, SSR game/search/ranking pages, roughly 200 owner-classified Steam and selected major non-Steam games, strict dual-profile validation, and universal DLC/non-game exclusion. The mature final product may add authenticated community submissions and separate aggregates, plus a Python recommendation engine whose use of Challenge, Reward, or both remains to be specified, and a lazy optional client-side WebLLM that only writes the explanation. Keep the system simple: no paid CDN, Redis, Celery, Kubernetes, Elasticsearch, custom CMS, SigNoz, or server LLM. Record every deviation here.
+Build a low-cost monorepo games database using AstroJS and Tailwind CSS on Vercel, Django and Django Ninja with Django Admin on Render, Neon PostgreSQL, and Steam as the authoritative source for Steam metadata and CDN images. The MVP is a fast, accessible MPA with static fixed pages, SSR game/search/ranking pages, roughly 200 owner-classified Steam and selected major non-Steam games, strict Micro/Mystiko/Macro totals of 100, and universal DLC/non-game exclusion. The mature final product may add authenticated community submissions and separate aggregates, plus a Python recommendation engine using greater-than-90% skill-profile similarity and a lazy, optional client-side WebLLM that only writes the explanation. Keep the system simple: no paid CDN, Redis, Celery, Kubernetes, Elasticsearch, custom CMS, SigNoz, or server LLM. Record every deviation here.
