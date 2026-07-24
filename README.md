@@ -89,6 +89,17 @@ apps/backend/.venv/bin/python -m pip install <package>
 apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
 ```
 
+### Code Quality
+
+```bash
+npm run lint         # ESLint + Ruff
+npm run format       # Prettier + Ruff (auto-fix)
+npm run format:check # verify formatting without changing files
+npm run check        # astro check + Django system check
+```
+
+See [docs/code-quality.md](docs/code-quality.md) for tool details and editor setup.
+
 **Rules:**
 
 - Commit the root `package-lock.json` and `apps/backend/requirements.txt`.
