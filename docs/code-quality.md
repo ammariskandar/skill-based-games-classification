@@ -35,7 +35,35 @@ Recommended extensions are listed in `apps/frontend/.vscode/extensions.json`. Fo
 
 ### Zed
 
-Ruff is built into Zed — no additional configuration is required. Avoid committing personal Zed settings unless repository-level configuration is needed.
+Zed has **native, extension-free support** for every tool in this project:
+
+| Tool          | Zed Support                               |
+| ------------- | ----------------------------------------- |
+| Prettier      | Built-in — auto-detects `.prettierrc.mjs` |
+| ESLint        | Built-in — auto-detects `eslint.config.js`|
+| Ruff          | Built-in — reads `pyproject.toml`         |
+| TypeScript    | Built-in language server                  |
+| Astro         | Built-in syntax & language support        |
+
+The shared project configurations (`.prettierrc.mjs`, `eslint.config.js`, `pyproject.toml`, `tsconfig.json`) are picked up automatically. No extensions to install, no extra config to write.
+
+To enable format-on-save in your local Zed, add to your personal `~/.config/zed/settings.json`:
+
+```json
+{
+  "languages": {
+    "Python": {
+      "formatter": { "external": { "command": "apps/backend/.venv/bin/ruff", "arguments": ["format", "-"] } },
+      "format_on_save": "on"
+    },
+    "Astro": { "format_on_save": "on" },
+    "TypeScript": { "format_on_save": "on" },
+    "JavaScript": { "format_on_save": "on" }
+  }
+}
+```
+
+Repository-level `.zed/settings.json` is gitignored by default — keep personal settings out of the repo unless a shared configuration is required.
 
 ## Excluded Files
 
