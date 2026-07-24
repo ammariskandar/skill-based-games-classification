@@ -25,6 +25,7 @@
     "check:frontend": "npm run check --workspace=apps/frontend",
     "check:backend": "apps/backend/.venv/bin/python apps/backend/manage.py check",
     "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate",
-    "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt"
+    "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt",
+    "ci": "npm run format:check && npm run lint && npm run check && npm run build:frontend"
   }
 }

@@ -96,6 +96,7 @@ npm run lint         # ESLint + Ruff
 npm run format       # Prettier + Ruff (auto-fix)
 npm run format:check # verify formatting without changing files
 npm run check        # astro check + Django system check
+npm run ci           # full local quality gate (format, lint, check, build)
 ```
 
 See [docs/code-quality.md](docs/code-quality.md) for tool details and editor setup.
@@ -107,3 +108,21 @@ See [docs/code-quality.md](docs/code-quality.md) for tool details and editor set
 - Only add dependencies when required by an approved Jira task.
 
 Tailwind CSS, Django Ninja, and PostgreSQL are not configured yet. See [context.md](context.md) for the full task registry and implementation order.
+
+## Git Workflow
+
+- **`main`** is the stable branch. Create one feature branch per Jira task: `SBGC-<key>-short-description`.
+- Commit messages use the format `SBGC-<key> concise imperative summary`.
+- Pull requests require all CI checks to pass before merging. See the [PR template](.github/pull_request_template.md).
+- Run `npm run ci` locally before pushing — this executes the full quality gate.
+
+See [docs/git-workflow.md](docs/git-workflow.md) for the complete workflow.
+
+## CI
+
+GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs validate:
+
+- **Frontend** — ESLint, astro check, Prettier format check, Astro production build
+- **Backend** — Ruff lint, Ruff format check, Django system check
+
+See `.github/workflows/ci.yml` for the pipeline definition.
