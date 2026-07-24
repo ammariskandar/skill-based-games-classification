@@ -20,6 +20,16 @@ A web application that classifies games across three skill-based dimensions — 
 | Database    | PostgreSQL (Neon)                   |
 | Hosting     | Vercel (frontend), Render (backend) |
 
+## Rendering
+
+Astro MPA with hybrid rendering:
+
+- **SSR/on-demand** by default (`output: "server"` + Vercel adapter)
+- **Prerendered** fixed informational routes (`/`, `/about`, `/methodology`)
+- **Limited client-side islands** — no SPA router, no client framework
+
+See [docs/frontend-architecture.md](docs/frontend-architecture.md) for routing conventions and planned pages.
+
 ## Monorepo Directory Layout
 
 ```
