@@ -30,6 +30,10 @@ Astro MPA with hybrid rendering:
 
 See [docs/frontend-architecture.md](docs/frontend-architecture.md) for routing conventions and planned pages.
 
+## Styling
+
+Tailwind CSS 4 via the `@tailwindcss/vite` Vite plugin. Utility-first, responsive, and accessible. A shared `BaseLayout` provides the document shell. See [docs/frontend-styling.md](docs/frontend-styling.md).
+
 ## Monorepo Directory Layout
 
 ```

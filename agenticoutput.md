@@ -6,3 +6,4 @@
 2026-07-24 15:12:15 +08 — Completed SBGC-27: Defined Git and pull-request conventions, added GitHub Actions checks for Astro and Django, documented the workflow, and verified the CI pipeline.
 2026-07-24 15:29:22 +08 — Completed SBGC-135: Promoted the updated project context, archived the prior version, added repeatable skills-context synchronization, and verified the generated agent guidance.
 2026-07-24 16:00:05 +08 — Completed SBGC-28: Configured Astro server-first rendering with the Vercel adapter, added prerendered informational route skeletons, documented MPA routing conventions, and verified the frontend build.
+2026-07-24 19:01:54 +08 — Completed SBGC-29: Installed Tailwind CSS 4 through the Vite plugin, added global styling and a shared Astro layout, documented styling conventions, and verified responsive frontend rendering.
