@@ -55,10 +55,30 @@ npm install
 # Start the Astro dev server
 npm run dev:frontend
 
+# Create backend virtual environment (first time only)
+npm run install:backend
+
 # Start the Django dev server (separate terminal)
 source apps/backend/.venv/bin/activate
 python apps/backend/manage.py runserver
 deactivate
 ```
+
+### Adding Dependencies
+
+```bash
+# Frontend — add a package to the Astro workspace
+npm install <package> --workspace=apps/frontend
+
+# Backend — install into the virtual environment, then freeze
+apps/backend/.venv/bin/python -m pip install <package>
+apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
+```
+
+**Rules:**
+
+- Commit the root `package-lock.json` and `apps/backend/requirements.txt`.
+- Never commit `.venv/` or `node_modules/`.
+- Only add dependencies when required by an approved Jira task.
 
 Tailwind CSS, Django Ninja, and PostgreSQL are not configured yet. See [context.md](context.md) for the full task registry and implementation order.
