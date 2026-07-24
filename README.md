@@ -52,17 +52,31 @@ nvm use
 # Install workspace dependencies
 npm install
 
-# Start the Astro dev server
-npm run dev:frontend
+# Configure environment variables (first time only)
+cp apps/frontend/.env.example apps/frontend/.env
+cp apps/backend/.env.example apps/backend/.env
 
 # Create backend virtual environment (first time only)
 npm run install:backend
+
+# Start the Astro dev server
+npm run dev:frontend
 
 # Start the Django dev server (separate terminal)
 source apps/backend/.venv/bin/activate
 python apps/backend/manage.py runserver
 deactivate
 ```
+
+### Environment Variables
+
+- Copy `.env.example` to `.env` for each app — **never commit `.env` files**.
+- Frontend and backend use separate `.env` files (`apps/frontend/.env`, `apps/backend/.env`).
+- In the frontend, only variables prefixed `PUBLIC_` are accessible in browser code.
+- Backend secrets (keys, database URLs) belong only in Django's environment.
+- In production, values are set in Vercel (frontend), Render (backend), and Neon (database) settings.
+
+See [docs/environment-variables.md](docs/environment-variables.md) for the full variable reference.
 
 ### Adding Dependencies
 
