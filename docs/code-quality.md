@@ -35,17 +35,15 @@ Recommended extensions are listed in `apps/frontend/.vscode/extensions.json`. Fo
 
 ### Zed
 
-Zed has **native, extension-free support** for every tool in this project:
+Zed provides native JavaScript, TypeScript, Python, formatter, and language-server integration. **Astro language support requires installing the [Astro extension](https://zed.dev/docs/languages/astro).** Project-local Prettier, ESLint, Ruff, TypeScript, and Astro configuration files remain authoritative.
 
-| Tool          | Zed Support                               |
-| ------------- | ----------------------------------------- |
-| Prettier      | Built-in — auto-detects `.prettierrc.mjs` |
-| ESLint        | Built-in — auto-detects `eslint.config.js`|
-| Ruff          | Built-in — reads `pyproject.toml`         |
-| TypeScript    | Built-in language server                  |
-| Astro         | Built-in syntax & language support        |
-
-The shared project configurations (`.prettierrc.mjs`, `eslint.config.js`, `pyproject.toml`, `tsconfig.json`) are picked up automatically. No extensions to install, no extra config to write.
+| Tool          | Zed Support                                        |
+| ------------- | -------------------------------------------------- |
+| Prettier      | Built-in external formatter — detects `.prettierrc.mjs` |
+| ESLint        | Built-in — auto-detects `eslint.config.js`         |
+| Ruff          | Built-in — reads `pyproject.toml`                  |
+| TypeScript    | Built-in language server                           |
+| Astro         | Requires the **Astro extension** (adds tree-sitter grammar + language server) |
 
 To enable format-on-save in your local Zed, add to your personal `~/.config/zed/settings.json`:
 
@@ -53,12 +51,41 @@ To enable format-on-save in your local Zed, add to your personal `~/.config/zed/
 {
   "languages": {
     "Python": {
-      "formatter": { "external": { "command": "apps/backend/.venv/bin/ruff", "arguments": ["format", "-"] } },
+      "formatter": {
+        "external": {
+          "command": "apps/backend/.venv/bin/ruff",
+          "arguments": ["format", "-"]
+        }
+      },
       "format_on_save": "on"
     },
-    "Astro": { "format_on_save": "on" },
-    "TypeScript": { "format_on_save": "on" },
-    "JavaScript": { "format_on_save": "on" }
+    "Astro": {
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
+      "format_on_save": "on"
+    },
+    "TypeScript": {
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
+      "format_on_save": "on"
+    },
+    "JavaScript": {
+      "formatter": {
+        "external": {
+          "command": "prettier",
+          "arguments": ["--stdin-filepath", "{buffer_path}"]
+        }
+      },
+      "format_on_save": "on"
+    }
   }
 }
 ```
