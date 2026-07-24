@@ -64,6 +64,34 @@ When sources conflict:
 
 A coding agent MUST NOT claim that work is complete when implementation differs from `context.md` without recording the deviation.
 
+<!-- BEGIN GENERATED CONTEXT SOURCES -->
+This section is **auto-generated** by `scripts/update-skills-context.py`.
+**Do not edit manually.**  Run `npm run update:skills-context` to refresh.
+
+## Context documents
+
+| Document                                                | Role               | SHA-256 (first 12 hex) |
+| ------------------------------------------------------- | ------------------ | ---------------------- |
+| `context.md`                                            | **Canonical**      | `165b01de1de0`       |
+| `docs/archive/context-pre-reward-framework-2026-07-22.md` | Historical archive | `1a2d680ded5c`       |
+
+## Mandatory reading rules
+
+1. `context.md` is the **authoritative project baseline**.  Every agent
+   MUST read it before implementing, reviewing, or modifying any part of
+   the repository.
+2. The archived context (`docs/archive/context-pre-reward-framework-2026-07-22.md`)
+   is **historical reference only**.  It represents the state of the project
+   before the dual-profile (Challenge / Reward) framework was introduced.
+   Consult it only for historical investigation — it MUST NOT override or
+   contradict the current `context.md`.
+3. The canonical framework now contains **separate Challenge and Reward
+   profiles**, each scored on **Micro**, **Mystiko**, and **Macro**
+   dimensions.  The two profiles are related but remain conceptually and
+   numerically independent.
+
+<!-- END GENERATED CONTEXT SOURCES -->
+
 ---
 
 ## 3. Core project context
