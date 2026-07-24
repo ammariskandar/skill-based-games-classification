@@ -1,6 +1,9 @@
 {
   "name": "skill-based-games-classification",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "workspaces": [
     "apps/frontend"
   ],
@@ -13,6 +16,7 @@
     "test": "echo 'test — not yet implemented; run test:frontend and test:backend separately'",
     "lint": "echo 'lint — not yet implemented'",
     "format": "echo 'format — not yet implemented'",
-    "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate"
+    "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate",
+    "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt"
   }
 }
