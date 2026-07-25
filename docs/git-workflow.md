@@ -57,7 +57,17 @@ SBGC-<key> Human-readable task title
 
 ## CI Pipeline
 
-GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs validate the frontend (Astro) and backend (Django).
+GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs (frontend and backend) enforce the same gates as local `npm run ci`.
+
+Each job includes:
+
+**Frontend:** Prettier format check, ESLint, astro check, frontend test entry point (placeholder), design-reference isolation check, Astro production build.
+
+**Backend:** Ruff lint, Ruff format check, Django system check, backend test entry point (placeholder).
+
+No real application test suites exist yet. The placeholder test entry points exit successfully by design. Green CI means all currently implemented gates passed — it does not mean behavioural coverage is complete. Real tests will replace placeholders under the relevant testing tickets.
+
+Design-reference isolation is enforced both locally (`check:design-reference`) and in GitHub Actions.
 
 See `.github/workflows/ci.yml` for the full definition.
 

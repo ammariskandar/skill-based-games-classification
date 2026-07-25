@@ -106,3 +106,4 @@ Generated and dependency directories are excluded from all tools:
 3. **Manual lint violations must be resolved** before merging — do not suppress rules without a documented reason.
 4. **New rules** should be added conservatively and only when they catch real problems. Avoid subjective style preferences.
 5. Do not use `--no-verify` to bypass checks unless there is an exceptional, documented reason.
+6. **Test coverage:** no real application test suites exist yet. The `test:frontend` and `test:backend` scripts are intentional placeholders that exit successfully. Green CI means all currently implemented gates passed — it does not mean behavioural coverage is complete. Real tests will replace placeholders under the relevant testing tickets.
