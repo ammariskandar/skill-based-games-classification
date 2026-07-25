@@ -1,0 +1,598 @@
+SOFTWARE DEVELOPMENT REVIEW 1
+
+Review metadata
+
+  - Jira task: SBGC-139
+  - Review number: 1
+  - Review filename: review1.txt
+  - Timestamp: 2026-07-25 14:25:32 +08:00
+  - Current branch: SBGC-145-setup-software-development-reviewer
+  - Current commit hash: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024
+  - Review 1 baseline commit: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024
+  - Earliest reviewed commit: 7e192f520fdc80ef1f2e428fc9e6d7627b2d0e09
+  - Reviewed commit range: complete locally available history, inclusive, from 7e192f520fdc80ef1f2e428fc9e6d7627b2d0e09 through e3dccb7497ce0e76d00e5d01ceda7ed3c7332024
+  - Main branch commit: c69141c0682e5e4ba27e14a2c7183e02884505e2
+  - Repository cleanliness: clean before and after review; no tracked or untracked changes reported by Git
+  - Previous review: none; this is the baseline review
+
+Executive verdict
+
+The project has a strong and unusually explicit product and architecture baseline for its early stage. The implemented foundation broadly follows the intended Astro MPA, hybrid-rendering, Tailwind CSS 4, Django, low-cost hosting, and read-only design-reference boundaries. The source is small, direct, readable, and free of speculative enterprise infrastructure. Challenge and Reward terminology is represented separately and consistently in current production-facing copy.
+
+No Critical or High-severity defect was identified in the currently implemented application. The project is not release-ready, but that is predominantly normal incompleteness: Django Ninja, PostgreSQL, domain models, API routes, owner workflows, Steam integration, dynamic public pages, security hardening, and meaningful tests are explicitly scheduled for later Jira work.
+
+Five material weaknesses should be addressed as foundation work continues:
+
+1. The documented backend environment contract contains settings that are ineffective or unused.
+2. The fallback Django secret permits unsafe production startup instead of failing safely.
+3. CI does not yet enforce all locally documented gates and does not execute tests.
+4. The npm lockfile records Tailwind packages under the wrong workspace ownership boundary.
+5. Repository documentation contains stale statements that contradict the implemented Tailwind state.
+
+Development should continue, with the environment-contract and dependency-lock issues corrected before dependent backend and frontend work expands. Security hardening must be completed before any public deployment.
+
+Critical findings
+
+No Critical findings.
+
+High-priority findings
+
+No High-severity findings.
+
+Medium-priority findings
+
+ID: REVIEW-1-01
+Severity: Medium
+Area: Security and privacy
+Type: Security risk
+Finding: Django falls back to a committed insecure secret when DJANGO_SECRET_KEY is absent, including when DEBUG is false.
+Evidence: apps/backend/config/settings.py:30-34 assigns the default value “django-insecure-dev-key-do-not-use-in-production”; DEBUG defaults to False independently. docs/environment-variables.md:33 and 48 describe DJANGO_SECRET_KEY as required and state that production should fail safely when critical secrets are absent.
+Why it matters: A production process with an incomplete environment can start using a known signing secret. This weakens session, message, password-reset, and other Django signing guarantees and contradicts the documented fail-safe policy.
+Current impact: Local scaffolding can run without manual secret setup, but no deployed application was available to establish whether the fallback is currently exposed.
+Future impact: A missed Render environment variable could silently produce an insecure public deployment.
+Recommended action: During the planned backend-security work, separate explicitly local development defaults from production settings and require a non-placeholder secret whenever the application is not in an explicitly identified development mode. Add a deployment-oriented configuration check.
+Suggested Jira scope: Include fail-closed secret validation and production configuration checks in the backend-security task; do not create a separate ticket if SBGC-41 has not begun.
+Confidence: High
+
+ID: REVIEW-1-02
+Severity: Medium
+Area: Architecture
+Type: Confirmed defect
+Finding: The advertised backend environment contract includes CORS_ALLOWED_ORIGINS and ADMIN_URL_PATH, but neither currently controls application behaviour.
+Evidence: apps/backend/config/settings.py:42-46 reads CORS_ALLOWED_ORIGINS and ADMIN_URL_PATH. apps/backend/config/urls.py:21-23 hard-codes “admin/” instead of using ADMIN_URL_PATH. apps/backend/requirements.txt contains no CORS middleware package, and apps/backend/config/settings.py:51-68 registers no CORS application or middleware. apps/backend/.env.example:5 and 8 and docs/environment-variables.md:37 and 40 present these values as supported configuration.
+Why it matters: Operators and future implementers may believe that changing these variables changes cross-origin or admin-routing behaviour when it does not. Configuration that is accepted but ignored is harder to diagnose than configuration that is explicitly deferred.
+Current impact: ADMIN_URL_PATH changes have no effect. CORS_ALLOWED_ORIGINS is an inert custom Django setting. The current application has no public API, so the CORS omission does not yet break a user journey.
+Future impact: Frontend-to-backend integration may fail unexpectedly, or an operator may incorrectly assume that the admin route has been changed or that CORS restrictions are active.
+Recommended action: Make the environment documentation distinguish implemented values from reserved future values. When SBGC-40 and SBGC-41 are implemented, wire ADMIN_URL_PATH into URL configuration and either implement CORS deliberately or document why the server-to-server Astro architecture does not require browser CORS for a given endpoint.
+Suggested Jira scope: Include ADMIN_URL_PATH wiring in SBGC-40 and effective CORS configuration in SBGC-41. Add acceptance checks proving that changed values affect runtime behaviour.
+Confidence: High
+
+ID: REVIEW-1-03
+Severity: Medium
+Area: Testing and CI
+Type: Process weakness
+Finding: GitHub Actions does not execute tests or the design-reference isolation check, despite the repository describing CI as the project quality gate.
+Evidence: .github/workflows/ci.yml:10-63 runs frontend lint, Astro check, frontend format checking, frontend build, Ruff checks, and Django system check. It does not invoke any test script or package.json’s check:design-reference script. package.json defines test, test:frontend, and test:backend only as successful informational echo commands. package.json’s local ci script includes check:design-reference but also omits test execution. context.md:1633 describes SBGC-27 as CI for lint, tests, and builds. docs/git-workflow.md:48 and README.md’s CI description imply comprehensive gating.
+Why it matters: A green workflow currently establishes static quality and buildability, not behavioural correctness. The difference will become increasingly important once domain invariants, API behaviour, classification totals, and security rules are implemented.
+Current impact: There are no application tests to omit, so this is not evidence of current behavioural regressions. The design-reference import safeguard is enforced locally only and can be bypassed if contributors rely solely on GitHub Actions.
+Future impact: Tests may be added without becoming required CI gates. Production imports from the reference tree could merge if they pass ordinary lint and build checks.
+Recommended action: Make CI call explicit frontend and backend test entry points, even while they contain an intentional no-tests-yet status, and turn those entry points into real suites as SBGC-44 and later testing tasks land. Add the design-reference boundary check to GitHub Actions or the shared root gate used there. Keep the absence of tests visible rather than presenting placeholder success as test coverage.
+Suggested Jira scope: Small CI-foundation remediation covering test entry points and design-reference enforcement; coordinate the actual backend testing structure with SBGC-44.
+Confidence: High
+
+Low-priority findings
+
+ID: REVIEW-1-04
+Severity: Low
+Area: Dependencies and tooling
+Type: Technical debt
+Finding: The authoritative npm lockfile records Tailwind as both a root dependency and a frontend development dependency even though the root manifest declares no dependencies.
+Evidence: package.json contains only workspace orchestration and no dependency section. apps/frontend/package.json:19-32 correctly places @tailwindcss/vite and tailwindcss in devDependencies. package-lock.json:6-17 nevertheless records both packages as root dependencies and repeats them under the frontend workspace. docs/dependency-management.md:7 and context.md:512 state that frontend dependencies belong to the frontend workspace. The discrepancy originated in commit 5328d76f0a627f480174546a6e7cf40f71552440.
+Why it matters: Manifest and lockfile ownership should agree so installations, automated updates, and dependency reviews identify the correct package owner.
+Current impact: Frontend tools resolve successfully, and the lockfile still pins exact versions. No application failure was demonstrated.
+Future impact: Dependency updates may preserve duplicate ownership, automated tooling may propose changes against the wrong package, and future maintainers may add more root dependencies accidentally.
+Recommended action: Regenerate the authoritative lockfile from manifests that assign Tailwind solely to the frontend workspace, then verify a clean installation in an empty dependency environment.
+Suggested Jira scope: Small dependency-management remediation; keep separate from feature work unless corrected as part of the next approved dependency change.
+Confidence: High
+
+ID: REVIEW-1-05
+Severity: Low
+Area: Documentation and inheritability
+Type: Documentation inconsistency
+Finding: README documentation contradicts the current Tailwind implementation, and the frontend-local README remains untouched starter text.
+Evidence: README.md:7 says Tailwind CSS is not yet configured, while README.md:29-35, apps/frontend/astro.config.mjs:4 and 10-12, apps/frontend/src/styles/global.css:1, apps/frontend/package.json, and commit 5328d76 show it is configured. README.md:138 repeats that Tailwind is not configured. apps/frontend/README.md:1-43 still describes the Astro minimal starter and instructs users to run commands from the frontend root without explaining the monorepo conventions.
+Why it matters: README files are likely entry points for humans and future LLMs. Contradictory status statements undermine confidence in otherwise strong canonical documentation.
+Current impact: A new contributor can incorrectly conclude that SBGC-29 remains unfinished or follow package-management guidance inconsistent with the root workspace.
+Future impact: Additional stale status statements may accumulate and make it harder to distinguish planned from completed foundation work.
+Recommended action: Update the root status section to reflect completed Astro and Tailwind configuration while retaining Django Ninja and PostgreSQL as pending. Replace or clearly subordinate the generated frontend README to the root monorepo instructions.
+Suggested Jira scope: Documentation consistency cleanup, preferably coupled to the next documentation-focused task rather than a broad implementation ticket.
+Confidence: High
+
+ID: REVIEW-1-06
+Severity: Low
+Area: Git, PR, CI, and delivery process
+Type: Process weakness
+Finding: Review 1 was performed from an unmerged feature branch rather than the stable main branch prescribed by the review workflow.
+Evidence: HEAD is e3dccb7497ce0e76d00e5d01ceda7ed3c7332024 on SBGC-145-setup-software-development-reviewer. Local and origin main point to c69141c0682e5e4ba27e14a2c7183e02884505e2. docs/software-development-reviews.md instructs reviewers to switch to main and ensure recent merges are reflected. Commit e3dccb7 contains the reviewer governance files required to perform this review but has not been merged into the locally available main history.
+Why it matters: A baseline review should normally identify a stable, reproducible repository state. Reviewing an unmerged governance branch makes the baseline dependent on whether that branch is subsequently merged unchanged.
+Current impact: The review necessarily includes SBGC-145 and can still name an exact baseline hash, but it is not a main-branch baseline.
+Future impact: If SBGC-145 is amended, rebased, or not merged, later reviews may have difficulty comparing against the recorded Review 1 state.
+Recommended action: Preserve e3dccb7497ce0e76d00e5d01ceda7ed3c7332024 as the exact Review 1 evidence baseline. Before saving the artefact, confirm that SBGC-145 is merged unchanged or document the final merge commit alongside this baseline. Perform later reviews from updated main unless a clearly stated exception is necessary.
+Suggested Jira scope: No standalone ticket required; treat as a review-governance checklist correction.
+Confidence: High
+
+ID: REVIEW-1-07
+Severity: Low
+Area: Documentation and inheritability
+Type: Maintainability concern
+Finding: Several high-authority documents duplicate large quantities of product and process guidance, increasing the cost of keeping the repository internally consistent.
+Evidence: context.md is approximately 2,400 lines and contains product definitions, architecture, operations, security, testing, workflow, Jira registry, review governance, glossary, and historical change records. skills.md repeats architecture, terminology, security, testing, and design-reference rules. codex.md, docs/software-development-reviews.md, reviews/README.md, and reviews/review-template.txt repeat reviewer identity, read-only restrictions, evidence requirements, structure, and Jira mappings.
+Why it matters: Duplication is currently coherent, but every duplicated rule creates another place where a future change can drift. The stale README status demonstrates that documentation synchronization is already imperfect.
+Current impact: The project remains understandable because context.md has explicit precedence and historical files are clearly labelled.
+Future impact: Future terminology, architecture, or review-process changes may produce contradictory instructions to humans and agents.
+Recommended action: Retain context.md as canonical, but make secondary documents concise operational views that link to canonical sections. Where duplication is intentionally required for agent reliability, identify generated or synchronized blocks and validate them mechanically.
+Suggested Jira scope: Documentation architecture and synchronization review; avoid rewriting canonical product content merely for brevity.
+Confidence: Medium
+
+Architecture assessment
+
+The implemented architecture aligns with the accepted baseline.
+
+apps/frontend/astro.config.mjs uses output: “server” with @astrojs/vercel, establishing SSR/on-demand rendering by default. index.astro, about.astro, and methodology.astro explicitly opt into prerendering. This matches the canonical Astro MPA with hybrid rendering.
+
+There is no SPA router, client framework, or client-side business logic. The current source has no React, Vue, or Svelte production dependencies. The locked React/Vite prototype remains outside apps/frontend and is not part of the root npm workspace.
+
+The intended frontend/backend boundary is well documented: Astro owns rendering and presentation; Django owns domain rules, persistence, API behaviour, Steam integration, and Django Admin. No implementation currently violates that boundary.
+
+The Vercel/Render/Neon architecture is proportionate to the expected traffic and learning objectives. There is no Redis, Celery, Elasticsearch, Kubernetes, microservice decomposition, paid CDN, object-storage layer, or server-hosted LLM. This restraint should be preserved.
+
+The all-dynamic-pages-through-Astro-and-Django request path introduces two potential cold-start points, but context.md explicitly accepts free-tier cold starts and low availability. It is not a defect at the expected scale.
+
+The backend remains Django’s generated project shell rather than the planned games, classifications, and api application structure. This is normal incompleteness because SBGC-37 and subsequent backend tasks have not been implemented.
+
+Product-alignment assessment
+
+Current work supports the intended product rather than an unrelated technical showcase.
+
+Production copy consistently identifies Micro, Mystiko, and Macro and explicitly mentions separate Challenge and Reward profiles. methodology.astro correctly states that the profiles describe composition rather than difficulty or quality.
+
+No implemented feature conflates Challenge and Reward values. No obsolete Meso identifiers were found in current production application code. Historical Meso references are appropriately retained in the archived context and canonical history.
+
+The owner-curated MVP, Steam/manual game distinction, approximately 200-game target, non-game exclusion policy, editorial/community separation, and Django Admin workflows are not implemented yet. These are planned foundations and features, not current defects.
+
+No premature accounts, community voting, moderation, recommendation engine, WebLLM, analytics, or enterprise infrastructure were introduced.
+
+The current informational pages are deliberately skeletal. Their limited content should not be mistaken for finished public product work; route and shell tasks remain in the documented Jira sequence.
+
+Code and framework assessment
+
+The current production source is small and easy to inherit. BaseLayout.astro provides a clear shared document shell. Page components are short, semantic, and contain no unnecessary abstraction or client-side JavaScript.
+
+Tailwind CSS 4 is integrated through @tailwindcss/vite and @import “tailwindcss”, without a legacy @astrojs/tailwind adapter or unnecessary tailwind.config file. This matches the documented Tailwind 4 approach.
+
+Astro configuration uses the intended server output and Vercel adapter. Fixed pages explicitly declare prerendering. TypeScript extends Astro’s strict configuration.
+
+The Django code is mostly generated scaffolding with environment loading and SQLite fallback. It is readable and not over-engineered. Generated explanatory comments are verbose but harmless at this stage.
+
+ADMIN_URL_PATH is currently dead configuration, and CORS_ALLOWED_ORIGINS has no enforcement mechanism, as recorded in REVIEW-1-02.
+
+Frontend ESLint completed successfully. Frontend Prettier checking completed successfully. Ruff lint and Ruff formatting checks completed successfully.
+
+Astro’s type check and production build were not run because they can create generated repository-local output, which would conflict with the strict read-only review boundary. Existing CI history was not accessible to independently confirm previous successful builds.
+
+Data-model assessment
+
+No product domain models, application migrations, query helpers, fixtures, or API schemas exist yet.
+
+This is expected at the present Jira stage. The canonical model preparation in context.md is detailed and materially useful:
+
+  - source-qualified Steam and manual identities;
+  - separate Game identity and classification concepts;
+  - independent Challenge and Reward triplets;
+  - exact per-profile totals of 100;
+  - value-range and uniqueness constraints;
+  - content type and listing state;
+  - separate future editorial and community results;
+  - migration, index, deletion, and source-specific validation expectations.
+
+The planned separation of games and classifications is appropriate. Database enforcement of score ranges, exact totals, unique source identity, and source-required fields should be treated as mandatory rather than left solely to forms or API schemas.
+
+Review 2 should compare actual models and migrations against this baseline and verify PostgreSQL-compatible constraints, not only SQLite behaviour.
+
+Security assessment
+
+No real secrets were found in tracked environment examples or CI configuration. Environment files are ignored while .env.example files remain trackable.
+
+Frontend environment documentation correctly separates PUBLIC_ variables from server-only DJANGO_API_URL and keeps Steam/database credentials out of frontend scope.
+
+The insecure Django secret fallback is the most material current security risk and is recorded in REVIEW-1-01.
+
+DEBUG defaults to false, ALLOWED_HOSTS is restricted to local names by default, CSRF middleware is enabled, clickjacking middleware is enabled, and standard password validators are present. These are reasonable scaffold defaults.
+
+CORS configuration is currently ineffective, as recorded in REVIEW-1-02. No browser-facing API exists yet, so no immediate exploit was demonstrated.
+
+Production HTTPS redirects, secure cookies, HSTS, proxy SSL handling, security headers, request limits, safe logging, admin-route hardening, and rate limiting are absent. These are normal pre-SBGC-35/SBGC-41 incompleteness, but they are blockers for public deployment.
+
+No unnecessary personal-data collection, account system, analytics collection, unsafe HTML rendering, or client-exposed secret was found.
+
+No dependency vulnerability audit or registry advisory lookup was performed. Current vulnerability status is therefore unavailable.
+
+Testing and CI assessment
+
+There are no application tests.
+
+At the current scaffold-only stage, the lack of deep behavioural coverage is understandable. There are no implemented domain rules, API endpoints, Steam services, or dynamic pages to test. It becomes unacceptable as soon as score validation, source identities, content exclusion, API contracts, or admin workflows are introduced.
+
+The test scripts are explicit placeholders. This is preferable to pretending that tests exist, but their successful exit status must not later be confused with test passage.
+
+CI provides useful independent frontend and backend jobs and uses clean npm and pip installation steps. It checks formatting, linting, Astro types, the frontend build, and Django’s system configuration.
+
+CI does not yet invoke tests or the design-reference boundary check, as recorded in REVIEW-1-03.
+
+The local backend environment could not execute Django’s system check because apps/backend/.venv/bin/python had no installed Django module and no pip module, despite a standalone Ruff binary being present. This ignored virtual environment is not repository evidence and may be locally damaged or incomplete. It demonstrates that local backend validation was unavailable, not that the committed installation procedure fails.
+
+Review 2 should compare:
+
+  - number and type of real tests;
+  - whether test commands fail on test failure and run in CI;
+  - coverage of dual-profile totals and ranges;
+  - source identity and non-game exclusion tests;
+  - API schema and error-contract tests;
+  - admin workflow tests;
+  - PostgreSQL-specific constraint validation;
+  - accessibility and responsive checks where UI becomes substantive.
+
+Git, PR, and delivery-history assessment
+
+The locally available history is compact and generally understandable.
+
+Feature commits use Jira-prefixed messages from SBGC-23 onward. Merge commits preserve pull-request numbers and feature-branch names. Tasks SBGC-23 through SBGC-29, SBGC-135, and SBGC-137 have clear, mostly atomic implementation commits followed by merge commits.
+
+The initial commit, 7e192f5, is named “chore: create monorepo structure” rather than using the documented Jira format. agenticoutput.md associates the initial setup with SBGC-22, so traceability is recoverable. This isolated pre-workflow exception does not justify a finding.
+
+SBGC-26 contains three focused follow-up commits correcting editor documentation before merge. This is reasonable refinement within one Jira task.
+
+All nine locally represented merged PRs preserve explicit merge commits. Actual review approvals, CI results, branch-protection settings, PR descriptions, screenshots, and discussion were unavailable from local Git history.
+
+The current SBGC-145 branch is one commit ahead of main and unmerged, as recorded in REVIEW-1-06.
+
+A local stash reference associated with SBGC-27 is visible in the graph. It is not part of the reviewed branch history and does not affect the repository state.
+
+Dependency and tooling assessment
+
+The root npm workspace and frontend package ownership are conceptually clear. JavaScript dependencies are declared in the frontend manifest, and the root lockfile pins resolved versions and integrity hashes.
+
+The npm lockfile incorrectly repeats Tailwind as a root dependency, as recorded in REVIEW-1-04.
+
+The existing node_modules tree contains several packages reported by npm as extraneous. node_modules is ignored and is not committed evidence, so these packages do not establish a reproducibility defect in the repository. A clean npm installation was not performed because installing or altering dependencies is prohibited for this review.
+
+Python requirements are exactly pinned. They include Django, django-environ, Ruff, asgiref, and sqlparse. Django Ninja and a PostgreSQL driver are correctly absent because their Jira tasks have not been implemented.
+
+Ruff is a development tool placed in the production requirements file. At this very small stage, a single fully pinned requirements file is simple and reproducible. Before deployment, separating runtime from development-only dependencies would reduce install size and clarify ownership, but it is not currently material enough for a separate finding.
+
+The Node engine lower bound and .nvmrc are broadly aligned, although .nvmrc only specifies major version 22 while package engines require at least 22.12.0. Current framework dependency engine metadata also requires a suitably recent Node 22 release. This should be monitored during clean-environment verification but did not demonstrate a current failure.
+
+No current package-registry, PyPI, or security-advisory data was accessed, so dependency freshness and vulnerability status beyond the committed versions remain unknown.
+
+Operations and scalability assessment
+
+The planned Vercel/Render/Neon arrangement remains proportionate to approximately 100 or fewer monthly visits. Cold starts and occasional free-tier downtime are explicitly accepted product constraints.
+
+No deployment manifests, production start command, Render configuration, health endpoint, logging configuration, PostgreSQL connection hardening, backup procedure, restore test, migration runbook, or smoke-test workflow exists yet. These are planned later tasks and should remain release blockers, not be prematurely implemented in unrelated foundation work.
+
+SQLite fallback is appropriate for local development. PostgreSQL is still required for deployed persistence.
+
+The architecture remains portable at the conceptual level because providers are described as preferred implementations rather than permanent abstractions. No provider-neutral framework layer has been prematurely created.
+
+Steam failure handling and local metadata caching are documented but unimplemented. Future implementation should avoid live Steam dependency on ordinary public page requests where stored metadata is sufficient.
+
+Documentation and inheritability assessment
+
+context.md is an exceptionally comprehensive product, architecture, operational, and Jira baseline. It distinguishes normative decisions from TBD matters and includes decision history and explicit source precedence.
+
+skills.md gives future implementation agents clear architectural boundaries, validation expectations, and anti-overengineering rules.
+
+The historical pre-Reward context is clearly archived and labelled so it should not override canonical decisions.
+
+README.md provides a useful repository map, setup flow, rendering description, environment overview, and root command reference, but its Tailwind status is stale and the frontend README remains generated starter text, as recorded in REVIEW-1-05.
+
+The reviewer governance introduced by SBGC-145 is clear, although codex.md, docs/software-development-reviews.md, reviews/README.md, and the review template repeat substantial policy, as recorded in REVIEW-1-07.
+
+agenticoutput.md provides a compact chronological record of completed work, but it is a historical agent log and appropriately ranks below canonical context and code.
+
+Exact deployment, migration, API, backup, restore, and operational instructions do not yet exist because those systems are not implemented.
+
+Design implementation assessment
+
+The Figma Make React/Vite export is physically isolated under design-reference/figma-make-dark-ui and excluded from the npm workspace and Vercel application root.
+
+LOCKED.md, design-reference/README.md, AGENTS.md, context.md, skills.md, docs/frontend-architecture.md, and docs/frontend-styling.md consistently describe the export as immutable, reference-only, and prohibited from production imports or deployment.
+
+No production source import from design-reference was found. The local design-reference boundary check passed.
+
+The production UI has not yet attempted substantive fidelity to SBGC-136. It currently provides only neutral route and layout foundations, which is appropriate before the global shell, UI foundations, visual-system, and route-skeleton tasks.
+
+Current HTML uses semantic h1 and paragraph elements, has a language attribute, viewport metadata, description metadata, and responsive spacing. There are no interactive controls to assess for keyboard or focus behaviour.
+
+The locked prototype is generated and relatively large, but it is correctly treated as an archive rather than maintainable production code. Its dependency graph should remain outside normal production audits except when design implementation makes specific reference to it.
+
+Technical debt baseline
+
+This is the first review, so there is no prior-review debt delta.
+
+Existing technical debt:
+
+  - package-lock.json records duplicate/incorrect Tailwind ownership at the root;
+  - root and frontend README status documentation has drifted;
+  - review and product guidance is duplicated across several documents;
+  - development-only Ruff is included in the single backend runtime requirements file;
+  - generated Django and Astro starter documentation remains in parts of the application.
+
+Normal incompleteness, not technical debt:
+
+  - no Django Ninja configuration;
+  - no PostgreSQL driver or deployed database;
+  - no domain applications or models;
+  - no migrations beyond the unmaterialised Django built-ins;
+  - no public API;
+  - no Steam integration;
+  - no owner classification workflow;
+  - no dynamic catalogue, search, ranking, or game pages;
+  - no substantive design implementation;
+  - no automated application tests;
+  - no deployment or operations configuration.
+
+These items have explicit Jira tasks and have not yet been bypassed by accidental alternative implementations.
+
+Previous-review findings: resolved, partially resolved, unresolved, regressed
+
+No previous review exists. Review 1 establishes the baseline.
+
+Review 2 should compare against commit e3dccb7497ce0e76d00e5d01ceda7ed3c7332024 and record:
+
+  - resolution state of REVIEW-1-01 through REVIEW-1-07;
+  - final main-branch commit containing Review 1 and SBGC-145;
+  - growth in production source and dependency count;
+  - real test count and CI test enforcement;
+  - Django application boundaries and API ownership;
+  - PostgreSQL constraints for both Challenge and Reward profiles;
+  - security-setting behaviour under production-like configuration;
+  - lockfile/workspace consistency;
+  - documentation drift;
+  - any production reuse or copying of design-reference code;
+  - new operational commitments or speculative infrastructure.
+
+Development sequencing assessment
+
+The completed order is broadly sensible:
+
+  - repository and application scaffolding;
+  - dependency and environment conventions;
+  - quality tooling and CI;
+  - canonical dual-profile context;
+  - Astro rendering architecture;
+  - Tailwind integration;
+  - locked design reference;
+  - review governance.
+
+This establishes boundaries before domain implementation and reduces architectural drift.
+
+The next sequence should remain dependency-driven:
+
+1. Complete frontend shell and UI foundations without prematurely implementing final-product community or WebLLM features.
+2. Establish Django application boundaries, Django Ninja, PostgreSQL connectivity, Admin conventions, backend security, operations, and testing foundations.
+3. Implement Game and editorial classification models with database constraints before building dependent public pages.
+4. Validate owner workflows with a small seed set before large-scale data population.
+5. Establish a stable API contract before completing dynamic catalogue, game, search, and ranking pages.
+6. Introduce deployment early enough to expose Vercel-to-Render, PostgreSQL, static-admin, host, CSRF, and cold-start assumptions.
+7. Add behavioural tests continuously as domain rules and integrations appear.
+
+The backend environment contract should not remain misleading until SBGC-40/SBGC-41 if intervening tasks begin relying on those values. The lockfile ownership issue should be corrected before the next frontend dependency update.
+
+Recommended remediation order
+
+1. Preserve and, if applicable, merge the exact Review 1 baseline so future comparisons remain reproducible.
+2. Correct npm lockfile workspace ownership and verify a clean deterministic installation.
+3. Resolve README and frontend README contradictions.
+4. Make CI enforce the design-reference boundary and explicit test entry points.
+5. Wire or clearly defer ADMIN_URL_PATH and CORS_ALLOWED_ORIGINS before API/admin integration depends on them.
+6. Make production secret configuration fail closed as part of backend security work.
+7. Continue planned frontend and backend foundations.
+8. Require real tests with each domain, API, admin, Steam, and security behaviour.
+9. Do not deploy publicly until production security, PostgreSQL, operations, migration, backup, logging, and smoke-test requirements are complete.
+
+Suggested Jira tickets
+
+Suggested ticket: Correct npm workspace lockfile ownership
+
+Scope:
+  - remove incorrect root Tailwind dependency metadata from the authoritative lockfile;
+  - retain Tailwind only under apps/frontend;
+  - verify clean npm installation and existing frontend quality gates;
+  - confirm no design-reference package becomes part of the workspace.
+
+Suggested ticket: Align repository status and application README documentation
+
+Scope:
+  - update root status to show Tailwind as configured;
+  - distinguish pending Django Ninja and PostgreSQL work;
+  - replace or subordinate Astro starter README content;
+  - verify commands and workspace ownership against current manifests.
+
+Suggested ticket: Complete CI gate parity
+
+Scope:
+  - run explicit frontend and backend test entry points in GitHub Actions;
+  - add design-reference isolation enforcement;
+  - document clearly what a green workflow proves;
+  - retain separate frontend and backend failure visibility.
+
+Suggested ticket: Validate backend environment settings end to end
+
+Scope:
+  - prove ADMIN_URL_PATH changes routing;
+  - implement or explicitly defer CORS enforcement based on actual browser/server request paths;
+  - fail closed for missing production secrets;
+  - add production-oriented configuration checks;
+  - coordinate with SBGC-40 and SBGC-41 rather than duplicating their intended scope.
+
+Suggested ticket: Rationalise canonical and operational documentation
+
+Scope:
+  - identify which duplicated sections must remain for agent reliability;
+  - link secondary documents to canonical context where repetition is unnecessary;
+  - preserve historical records;
+  - add lightweight consistency checks for generated or synchronized guidance.
+
+No Jira keys have been invented.
+
+Positive findings worth preserving
+
+  - Explicit separation of Challenge and Reward profiles in canonical documentation and production copy.
+  - Consistent use of Micro, Mystiko, and Macro in current implementation.
+  - Clear statement that profiles describe composition, not difficulty, quality, or fun.
+  - Astro MPA with SSR by default and explicit prerendering for fixed routes.
+  - No SPA framework or speculative client-side state architecture.
+  - Tailwind CSS 4 through the current Vite plugin approach.
+  - Django ownership of domain logic and Astro ownership of presentation.
+  - PostgreSQL chosen for deployed durability while retaining local SQLite simplicity.
+  - Django Admin chosen instead of a custom CMS.
+  - Proportionate Vercel/Render/Neon deployment plan.
+  - Explicit rejection of Redis, Celery, Kubernetes, Elasticsearch, microservices, paid CDN, custom CMS, SigNoz, and server-hosted LLM infrastructure.
+  - Strong design-reference isolation and immutable archive policy.
+  - Pinned Python dependencies and a committed npm lockfile.
+  - Small, direct, semantic Astro source with no unnecessary abstraction.
+  - Clear Jira traceability across nearly all feature commits and merge history.
+  - Source-precedence rules that prevent accidental implementation from redefining the product.
+  - Review artefact immutability and read-only reviewer boundaries.
+  - Repository remained clean throughout the audit.
+
+Evidence reviewed
+
+Canonical and governance material:
+
+  - context.md
+  - codex.md
+  - skills.md
+  - README.md
+  - agenticoutput.md
+  - reviews/README.md
+  - reviews/review-template.txt
+  - docs/software-development-reviews.md
+  - docs/archive/context-pre-reward-framework-2026-07-22.md where historical comparison was relevant
+
+Architecture and operational documentation:
+
+  - docs/code-quality.md
+  - docs/dependency-management.md
+  - docs/environment-variables.md
+  - docs/frontend-architecture.md
+  - docs/frontend-styling.md
+  - docs/git-workflow.md
+  - scripts/README.md
+
+Frontend implementation and configuration:
+
+  - apps/frontend/package.json
+  - apps/frontend/astro.config.mjs
+  - apps/frontend/eslint.config.js
+  - apps/frontend/tsconfig.json
+  - apps/frontend/.env.example
+  - apps/frontend/.prettierrc.mjs
+  - apps/frontend/.prettierignore
+  - apps/frontend/AGENTS.md
+  - apps/frontend/CLAUDE.md
+  - apps/frontend/README.md
+  - apps/frontend/src/layouts/BaseLayout.astro
+  - apps/frontend/src/pages/index.astro
+  - apps/frontend/src/pages/about.astro
+  - apps/frontend/src/pages/methodology.astro
+  - apps/frontend/src/styles/global.css
+  - tracked public favicon assets
+
+Backend implementation and configuration:
+
+  - apps/backend/requirements.txt
+  - apps/backend/.env.example
+  - apps/backend/manage.py
+  - apps/backend/config/settings.py
+  - apps/backend/config/urls.py
+  - apps/backend/config/asgi.py
+  - apps/backend/config/wsgi.py
+  - apps/backend/config/__init__.py
+
+Root configuration and delivery:
+
+  - package.json
+  - package-lock.json
+  - pyproject.toml
+  - .nvmrc
+  - .editorconfig
+  - .gitignore
+  - .github/workflows/ci.yml
+  - .github/pull_request_template.md
+
+Design reference:
+
+  - design-reference/README.md
+  - design-reference/figma-make-dark-ui/LOCKED.md
+  - design-reference/figma-make-dark-ui/AGENTS.md
+  - design-reference/figma-make-dark-ui/CLAUDE.md
+  - design-reference/figma-make-dark-ui/package.json
+  - design-reference/figma-make-dark-ui/pnpm-lock.yaml
+  - design-reference/figma-make-dark-ui/index.html
+  - design-reference/figma-make-dark-ui/src/App.tsx
+  - design-reference/figma-make-dark-ui/src/index.css
+  - design-reference/figma-make-dark-ui/src/main.tsx
+  - design-reference/figma-make-dark-ui/vite.config.ts
+  - design-reference/figma-make-dark-ui/tsconfig.json
+  - design metadata and locked image asset presence
+
+History and metadata:
+
+  - complete locally available commit history from 7e192f5 through e3dccb7
+  - merge graph and parent relationships
+  - branch and upstream state
+  - commit subjects, authors, dates, and file statistics
+  - Jira keys referenced in commits and documentation
+  - locally available pull-request merge commits #1 through #9
+  - repository cleanliness before and after review
+  - tracked-file inventory
+  - remote configuration
+
+Read-only validation results:
+
+  - frontend ESLint: passed
+  - frontend Prettier check: passed
+  - backend Ruff lint: passed
+  - backend Ruff formatting check: passed
+  - design-reference production-import check: passed
+  - Django system check: unavailable because the existing ignored virtual environment lacked the Django module
+  - no repository changes resulted from validation
+
+Uncertainties and unavailable evidence
+
+  - Jira issue descriptions, acceptance criteria, workflow states, comments, and attachments were not directly accessible. Only repository-recorded Jira scope was reviewed.
+  - GitHub PR descriptions, review approvals, conversations, screenshots, branch-protection settings, and CI run results were not available locally.
+  - The current SBGC-145 commit was not merged into main at review time.
+  - Deployed Vercel, Render, Neon, DNS, analytics, logging, and monitoring state was unavailable.
+  - No running production or preview application was available.
+  - No PostgreSQL or Steam integration exists to inspect.
+  - No application tests exist.
+  - Django’s local system check could not run because the ignored local virtual environment was incomplete.
+  - Astro type checking and production build were not rerun under the strict no-write review boundary.
+  - A clean dependency installation was not performed because dependency installation is prohibited.
+  - Current npm/PyPI registry state, package freshness, vulnerability advisories, provider pricing, and free-tier terms were not verified.
+  - No externally hosted Figma page or Jira-attached reference image was accessed; the locked repository export was used.
+  - Exact PR scope beyond locally preserved commits and merge messages was unavailable.
+  - No previous review exists for regression comparison.
+
+Final release/continuation recommendation
+
+Continue development, with targeted foundation remediation.
+
+There is no evidence requiring a change of product direction or architectural rewrite. The Astro MPA, Tailwind CSS 4, Django/Django Ninja, PostgreSQL, Django Admin, and low-cost provider strategy remains coherent and proportionate.
+
+The application must not be treated as release-ready. Public deployment should remain blocked until production secret handling, effective hosts/CORS/CSRF behaviour, secure cookies and HTTPS settings, PostgreSQL connectivity, migrations, API and domain validation, logging, health checks, admin deployment, tests, backup/restore expectations, and production smoke checks are implemented and verified.
+
+Before substantial dependent work, correct the misleading backend environment contract, npm lockfile ownership, stale README status, and CI gate gaps. Subject to those contained remediations, development should proceed in the documented Jira order without introducing final-product community, WebLLM, or enterprise infrastructure early.
