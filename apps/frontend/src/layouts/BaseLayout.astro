@@ -1,15 +1,26 @@
 ---
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 import "../styles/global.css";
 
 interface Props {
   title?: string;
   description?: string;
+  canonicalPath?: string;
 }
 
-const title = Astro.props.title ?? "Skill-Based Games Classification";
+const titleTemplate = Astro.props.title
+  ? `${Astro.props.title} | MyGameDNA`
+  : "MyGameDNA";
+
 const description =
   Astro.props.description ??
   "Classifying games through the lens of skill, using Micro, Mystiko, and Macro dimensions within separate Challenge and Reward profiles.";
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
+const canonicalUrl = Astro.props.canonicalPath
+  ? `${siteUrl}${Astro.props.canonicalPath}`
+  : siteUrl;
 ---
 
 <!doctype html>
@@ -17,12 +28,40 @@ const description =
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{titleTemplate}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:title" content={titleTemplate} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={titleTemplate} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
   </head>
-  <body class="min-h-screen">
-    <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+  <body class="min-h-screen bg-bg text-text antialiased">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:bg-blue focus:px-4 focus:py-2 focus:text-bg focus:outline-none"
+    >
+      Skip to content
+    </a>
+
+    <Header />
+
+    <main
+      id="main-content"
+      class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+    >
       <slot />
     </main>
+
+    <Footer />
   </body>
 </html>

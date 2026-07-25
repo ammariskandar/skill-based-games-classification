@@ -1,5 +1,7 @@
 # Frontend Architecture
 
+**Public product name:** MyGameDNA
+
 ## Rendering Model
 
 Astro is configured as a **multi-page application (MPA)**, not a single-page app. There is no client-side router. Each navigation request loads a full HTML page from the server.
@@ -11,39 +13,42 @@ Astro is configured as a **multi-page application (MPA)**, not a single-page app
 
 The Vercel adapter (`@astrojs/vercel`) is the production runtime target. Dynamic routes render on-demand via serverless functions; prerendered pages are served as static assets.
 
+## Application Shell
+
+| Component     | File                                            | Responsibility                                    |
+| ------------- | ----------------------------------------------- | ------------------------------------------------- |
+| `BaseLayout`  | `src/layouts/BaseLayout.astro`                  | HTML shell, global CSS, SEO metadata, skip link, `<Header>`, `<main>`, `<Footer>` |
+| `Header`      | `src/components/Header.astro`                   | Site identity (MyGameDNA), masthead, includes `<Navigation>` |
+| `Navigation`  | `src/components/Navigation.astro`               | Mandatory separate component. Semantic `<nav>`, current-route detection via Astro.url, `aria-current`, visible focus, no SPA routing, no JavaScript |
+| `Footer`      | `src/components/Footer.astro`                   | Site identity, product statement, Methodology/About links, copyright year, non-affiliation notice |
+
+### Responsive Container
+
+Pages render inside a single `<main>` landmark with `max-w-6xl`, centered layout, and responsive padding (`px-4 py-8 sm:px-6 sm:py-12 lg:px-8`). Shared via BaseLayout.
+
+### Active-Link Strategy
+
+`Navigation.astro` reads `Astro.url.pathname` and applies `aria-current="page"` plus a highlighted visual state (`bg-surface-2 text-text`) when the current route matches a link. Active state uses background contrast, not colour alone.
+
+### SEO Metadata
+
+`BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
+
 ## Routing
 
 Routing is **file-based** under `src/pages/`:
 
 ```
 src/pages/
-├── index.astro          →  /
-├── about.astro          →  /about
-├── methodology.astro    →  /methodology
+├── index.astro          →  /              (prerendered)
+├── about.astro          →  /about         (prerendered)
+├── methodology.astro    →  /methodology   (prerendered)
+├── catalogue.astro      →  /catalogue     (prerendered placeholder)
+├── rankings.astro       →  /rankings      (prerendered placeholder)
 ├── games/
-│   └── [slug].astro     →  /games/:slug       (dynamic, not yet created)
-├── catalogue.astro      →  /catalogue          (planned)
-├── search.astro         →  /search             (planned)
-└── rankings/
-    └── [dimension].astro → /rankings/:dimension (planned)
+│   └── [slug].astro     →  /games/:slug   (dynamic, not yet created)
+└── search.astro         →  /search        (planned)
 ```
-
-### Current Routes
-
-| Route           | File                                      | Rendering    |
-| --------------- | ----------------------------------------- | ------------ |
-| `/`             | `src/pages/index.astro`                   | Prerendered  |
-| `/about`        | `src/pages/about.astro`                   | Prerendered  |
-| `/methodology`  | `src/pages/methodology.astro`             | Prerendered  |
-
-### Planned Routes
-
-| Route                  | File                              | Rendering      |
-| ---------------------- | --------------------------------- | -------------- |
-| `/games/:slug`         | `src/pages/games/[slug].astro`    | SSR/on-demand  |
-| `/catalogue`           | `src/pages/catalogue.astro`       | SSR (likely)   |
-| `/search`              | `src/pages/search.astro`          | SSR (likely)   |
-| `/rankings/:dimension` | `src/pages/rankings/[dimension].astro` | SSR (likely) |
 
 Future dynamic routes **must not be prerendered** unless an explicit product decision changes that. Data-driven pages require live API data and must render on-demand.
 
