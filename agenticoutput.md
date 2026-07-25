@@ -12,3 +12,4 @@
 2026-07-25 14:43:57 +08 — Completed SBGC-146: Regenerated the npm lockfile from authoritative workspace manifests, removed incorrect root Tailwind ownership, and verified clean reproducible installation and CI.
 2026-07-25 14:53:17 +08 — Completed SBGC-147: Corrected stale repository status documentation, replaced the frontend starter README with monorepo-specific guidance, and verified all documented commands and CI.
 2026-07-25 15:03:00 +08 — Completed SBGC-148: Aligned GitHub Actions with the local CI gate, added explicit frontend and backend test entry points, enforced design-reference isolation remotely, and documented current coverage limits.
+2026-07-25 20:53:29 +08 — Completed SBGC-30: Built the MyGameDNA Astro application shell with separate header, navigation and footer components, responsive container, accessible landmarks, and default SEO metadata.

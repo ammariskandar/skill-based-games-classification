@@ -30,6 +30,21 @@ The distinct visual identity for the three skill dimensions (colours, badges, ch
 
 Current pages use neutral tokens only.
 
+## Application Shell Styling
+
+The global shell (Header, Navigation, Footer, responsive container) uses a restrained dark theme with semantic tokens defined in `@theme`. The colour palette is inspired by the locked design reference but implemented independently:
+
+| Token          | Role                                      |
+| -------------- | ----------------------------------------- |
+| `--color-bg`   | Page background (`#0d1117`)               |
+| `--color-surface` | Header/footer background (`#161b22`)   |
+| `--color-border` | Separator lines (`#21262d`)            |
+| `--color-text` | Primary body text (`#e6edf3`)             |
+| `--color-muted` | Secondary text (`#8b949e`)              |
+| `--color-blue` | Links, focus rings, interactive accents   |
+
+Active navigation state uses background contrast (`bg-surface-2`) rather than colour alone.
+
 ## Figma Make Design Reference
 
 The Figma Make export archived at `design-reference/figma-make-dark-ui/` may inform visual implementation. However, Tailwind tokens and Astro components must be defined independently — do not duplicate the generated React structure automatically. Study the reference for layout, spacing, typography, and interaction intent; implement in canonical Astro + Tailwind CSS.

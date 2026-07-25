@@ -1,4 +1,4 @@
-# Skill-Based Games Classification
+# MyGameDNA (Skill-Based Games Classification)
 
 A web application that classifies games across three skill-based dimensions — **Micro**, **Mystiko**, and **Macro** — enabling players to discover, compare, and understand games through a structured skill lens rather than genre or difficulty alone.
 
@@ -10,6 +10,8 @@ A web application that classifies games across three skill-based dimensions — 
 - Hybrid MPA rendering (SSR/on-demand by default, prerendered fixed routes)
 - Tailwind CSS 4 via `@tailwindcss/vite`
 - Shared `BaseLayout` component
+- Dark-themed MyGameDNA application shell (Header, Navigation, Footer, responsive container, SEO metadata)
+- Prerendered placeholder routes for `/catalogue` and `/rankings`
 - Django backend skeleton with `django-environ`
 - Environment-variable loading for both apps
 - Code-quality tooling (Prettier, ESLint, astro check, Ruff)

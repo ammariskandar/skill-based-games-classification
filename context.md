@@ -3,7 +3,7 @@
 > **Document role:** Ultimate project source of truth for humans and LLMs  
 > **Project key:** `SBGC`  
 > **Jira project:** Project Skill-based Games Classification  
-> **Public product name:** Not yet decided  
+> **Public product name:** MyGameDNA
 > **Owner / product lead:** Ammar “イズカ” Iskandar  
 > **Canonical baseline date:** 2026-07-22  
 > **Jira snapshot:** Generated 2026-07-22 08:34:02 UTC  
@@ -2183,6 +2183,7 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07 | Use platform environment variables | Accepted; no standalone secret manager required. |
 | 2026-07 | No paid CDN | Accepted. Use Vercel delivery and Steam CDN. |
 | 2026-07 | Use provider DDoS protection plus app controls | Accepted. Django handles validation, spam, brute force, and rate limits. |
+| 2026-07 | Adopt MyGameDNA as the public product name | Accepted. Distinguishes from an unrelated gambling-site domain and establishes a distinct SEO identity. |
 | 2026-07 | Add Google Analytics as non-core analytics | Accepted final architecture; Jira allows late-MVP implementation. |
 | 2026-07 | Add WebLLM only in final product | Accepted. Local prose generation; server chooses recommendation. |
 | 2026-07 | Do not include SigNoz | Accepted due to cost/operational mismatch. |
@@ -2217,8 +2218,8 @@ Adding an excluded technology requires a measured problem, alternatives analysis
 
 These items are intentionally unresolved:
 
-1. Public product name, logo, and domain.
-2. Exact Node package manager and Python dependency tool.
+1. Public product domain.
+2. Exact Node package manager and Python dependency tool replacement.
 3. Exact framework/library versions at implementation time.
 4. Exact local database choice; SQLite is acceptable locally.
 5. Exact minimal Steam metadata fields persisted versus fetched live.
@@ -2444,6 +2445,7 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - SBGC-145 established the read-only software development reviewer (`codex.md`), standardised review scope and output, and documented the review governance process.
 - SBGC-136 created the approved high-fidelity dark-mode mock design.
 - SBGC-137 archived the Figma Make React/Vite export as `design-reference/figma-make-dark-ui/` with read-only protections.
+- SBGC-30 adopted the public product name **MyGameDNA** and built the global Astro application shell with header, navigation, footer, responsive container, accessible landmarks, and default SEO metadata.
 - Reframed the product from one three-part skill classification into two independent three-part profiles.
 - Defined Challenge Micro, Challenge Mystiko, and Challenge Macro.
 - Defined Reward Micro as immediate/local validation and satisfaction.
