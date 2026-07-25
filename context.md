@@ -2413,10 +2413,35 @@ The diagrams are retained as visual summaries. The Mermaid diagrams in this file
 
 ---
 
-# 42. Changelog
+# 42. Software development reviews
+
+The project includes periodic independent software development reviews. SBGC-138 is the audit/review epic containing SBGC-139 through SBGC-144 (six review tasks) plus SBGC-145 (reviewer setup).
+
+The reviewer is Codex running inside VS Code, with instructions defined in `codex.md`. The reviewer specification is agent-agnostic — another capable model could replace Codex without rewriting the review framework.
+
+### Reviewer boundary
+
+The reviewer is **strictly read-only**. It must never edit files, modify code, generate patches, install dependencies, run destructive commands, stage, commit, merge, push, modify Jira, or automatically fix any finding.
+
+### Review scope
+
+Reviews cover product alignment, architecture, code structure, framework correctness, data modelling, security, testing, CI, Git/PR/delivery process, dependencies, operations, documentation inheritability, design implementation, technical debt, and resolution of previous findings. The scope is broad and goes beyond code quality alone.
+
+### Review artefacts
+
+Review outputs are plain-text files saved as `reviews/review1.txt` through `reviews/review6.txt`, mapped to SBGC-139 through SBGC-144. They are immutable historical governance records.
+
+Findings are advisory until accepted by the owner. Remediation requires separate Jira work. Corrections are handled by addendum or later review, not by silently rewriting past files.
+
+---
+
+# 43. Changelog
 
 ## 2026-07-22 — Dual Challenge/Reward framework adopted
 
+- SBGC-138 created the audit/review epic.
+- SBGC-139 through SBGC-144 defined six periodic review tasks.
+- SBGC-145 established the read-only software development reviewer (`codex.md`), standardised review scope and output, and documented the review governance process.
 - SBGC-136 created the approved high-fidelity dark-mode mock design.
 - SBGC-137 archived the Figma Make React/Vite export as `design-reference/figma-make-dark-ui/` with read-only protections.
 - Reframed the product from one three-part skill classification into two independent three-part profiles.
@@ -2450,6 +2475,6 @@ The diagrams are retained as visual summaries. The Mermaid diagrams in this file
 
 ---
 
-# 43. One-paragraph handoff summary
+# 44. One-paragraph handoff summary
 
 Build a low-cost monorepo games database using AstroJS and Tailwind CSS on Vercel, Django and Django Ninja with Django Admin on Render, Neon PostgreSQL, and Steam as the authoritative source for Steam metadata and CDN images. The product classifies every game through two separate profiles: **Challenge**, describing what the game asks the player to do well, and **Reward**, describing what makes play satisfying, validating, expressive, fulfilling, or prestigious. Each profile has independent Micro/Mystiko/Macro percentages totalling 100. Challenge Micro is execution, Challenge Mystiko is hidden-information reasoning and adaptation, and Challenge Macro is systems and long-horizon strategy. Reward Micro is immediate/local validation, Reward Mystiko is private meaning or unseen ingenuity, and Reward Macro is accumulated or broadly visible prestige. The MVP is a fast, accessible MPA with static fixed pages, SSR game/search/ranking pages, roughly 200 owner-classified Steam and selected major non-Steam games, strict dual-profile validation, and universal DLC/non-game exclusion. The mature final product may add authenticated community submissions and separate aggregates, plus a Python recommendation engine whose use of Challenge, Reward, or both remains to be specified, and a lazy optional client-side WebLLM that only writes the explanation. Keep the system simple: no paid CDN, Redis, Celery, Kubernetes, Elasticsearch, custom CMS, SigNoz, or server LLM. Record every deviation here.

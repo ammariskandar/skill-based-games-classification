@@ -38,6 +38,15 @@ Tailwind CSS 4 via the `@tailwindcss/vite` Vite plugin. Utility-first, responsiv
 
 A read-only Figma Make React/Vite prototype is archived at [`design-reference/figma-make-dark-ui/`](design-reference/figma-make-dark-ui/) (SBGC-136, archived by SBGC-137). It is **not** production code — do not edit, import, build, or deploy it. Use it only as a visual implementation guide. See [`design-reference/README.md`](design-reference/README.md).
 
+## Software Development Reviews
+
+A **read-only** senior software development reviewer ([`codex.md`](codex.md)) performs periodic audits covering product alignment, architecture, code quality, security, dependencies, documentation, and maintainability. Review outputs are saved as immutable governance records in [`reviews/`](reviews/).
+
+- **Zed** — implementation-agent workflow (write code, edit files, commit, push)
+- **VS Code + Codex** — read-only reviewer workflow (analyse, report, never modify)
+
+See [`docs/software-development-reviews.md`](docs/software-development-reviews.md) and [`reviews/README.md`](reviews/README.md).
+
 ## Monorepo Directory Layout
 
 ```
