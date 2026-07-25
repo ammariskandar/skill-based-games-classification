@@ -1,0 +1,80 @@
+SOFTWARE DEVELOPMENT REVIEW X
+
+Review metadata
+  - Review number: X
+  - Timestamp: YYYY-MM-DD HH:MM:SS TZ
+  - Current commit hash: <commit>
+  - Reviewed commit range: <range>
+
+Executive verdict
+
+Critical findings
+  (security, data loss, fundamentally wrong architecture, release blocker)
+
+High-priority findings
+  (serious product mismatch, maintainability risk, likely major rework)
+
+Medium-priority findings
+  (material weakness requiring planned remediation)
+
+Low-priority findings
+  (worthwhile improvement, limited immediate impact)
+
+Architecture assessment
+
+Product-alignment assessment
+
+Code and framework assessment
+
+Data-model assessment
+
+Security assessment
+
+Testing and CI assessment
+
+Git, PR, and delivery-history assessment
+
+Dependency and tooling assessment
+
+Operations and scalability assessment
+
+Documentation and inheritability assessment
+
+Design implementation assessment
+
+Technical debt introduced since previous review
+
+Previous-review findings
+  - Resolved:
+  - Partially resolved:
+  - Unresolved:
+  - Regressed:
+
+Recommended remediation order
+
+Suggested Jira tickets
+
+Positive findings worth preserving
+
+Evidence reviewed
+
+Uncertainties and unavailable evidence
+
+Final release/continuation recommendation
+
+---
+
+Finding template (repeat per finding):
+
+ID:          REVIEW-X-NN
+Severity:    Critical | High | Medium | Low | Observation
+Area:        <review area>
+Finding:     <description>
+Evidence:    <paths, commits, PRs, line numbers>
+Why it matters: <impact>
+Current impact: <now>
+Future impact: <if unresolved>
+Recommended action: <specific>
+Suggested Jira scope: <proposed, no fabricated keys>
+Confidence:  High | Medium | Low
+Type:        confirmed defect | architectural risk | technical debt | preference | unknown

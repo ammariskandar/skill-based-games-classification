@@ -7,3 +7,5 @@
 2026-07-24 15:29:22 +08 — Completed SBGC-135: Promoted the updated project context, archived the prior version, added repeatable skills-context synchronization, and verified the generated agent guidance.
 2026-07-24 16:00:05 +08 — Completed SBGC-28: Configured Astro server-first rendering with the Vercel adapter, added prerendered informational route skeletons, documented MPA routing conventions, and verified the frontend build.
 2026-07-24 19:01:54 +08 — Completed SBGC-29: Installed Tailwind CSS 4 through the Vite plugin, added global styling and a shared Astro layout, documented styling conventions, and verified responsive frontend rendering.
+2026-07-24 20:49:41 +08 — Completed SBGC-137: Archived the Figma Make React/Vite prototype as a locked design reference, documented implementation boundaries, updated canonical agent guidance, and added safeguards against production imports or deployment.
+2026-07-25 14:17:57 +08 — Completed SBGC-145: Established a read-only software development reviewer, standardised periodic audit scope and output, documented review governance, and integrated the process into canonical project guidance.

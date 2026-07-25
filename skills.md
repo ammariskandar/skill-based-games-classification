@@ -407,6 +407,22 @@ The Figma Make React/Vite prototype archived at `design-reference/figma-make-dar
 - preserve canonical MPA and SSR decisions when implementing from the reference;
 - report design/architecture conflicts rather than resolving them silently.
 
+### 7.7 Reviewer interaction
+
+The project has a read-only software development reviewer defined in `codex.md`. Implementation agents MUST:
+
+- never impersonate the reviewer;
+- never weaken or modify `codex.md`;
+- never rewrite review findings favourably;
+- save reviewer output verbatim when instructed, as `reviews/reviewX.txt`;
+- preserve historical review files — they are immutable governance records;
+- link remediation work to specific review findings;
+- treat reviewer recommendations as advisory until the owner accepts them;
+- not modify `codex.md` during unrelated implementation work;
+- never claim a review finding is resolved without owner confirmation.
+
+The reviewer is strictly read-only. If the reviewer is asked to perform a write action, it must refuse. Implementation agents remain responsible for all actual code and file changes.
+
 ---
 
 ## 8. AstroJS engineering standards
