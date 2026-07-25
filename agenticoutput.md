@@ -10,3 +10,4 @@
 2026-07-24 20:49:41 +08 — Completed SBGC-137: Archived the Figma Make React/Vite prototype as a locked design reference, documented implementation boundaries, updated canonical agent guidance, and added safeguards against production imports or deployment.
 2026-07-25 14:17:57 +08 — Completed SBGC-145: Established a read-only software development reviewer, standardised periodic audit scope and output, documented review governance, and integrated the process into canonical project guidance.
 2026-07-25 14:43:57 +08 — Completed SBGC-146: Regenerated the npm lockfile from authoritative workspace manifests, removed incorrect root Tailwind ownership, and verified clean reproducible installation and CI.
+2026-07-25 14:53:17 +08 — Completed SBGC-147: Corrected stale repository status documentation, replaced the frontend starter README with monorepo-specific guidance, and verified all documented commands and CI.

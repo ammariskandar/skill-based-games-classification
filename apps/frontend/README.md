@@ -1,43 +1,36 @@
-# Astro Starter Kit: Minimal
+# Frontend (`apps/frontend`)
 
-```sh
-npm create astro@latest -- --template minimal
-```
+This directory is the **Astro frontend workspace** for the Skill-Based Games Classification monorepo. The root [`README.md`](../../README.md) is authoritative.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Monorepo Context
 
-## 🚀 Project Structure
+- All commands run from the **repository root**, not from this directory.
+- This workspace is managed through the root npm workspace and the single root `package-lock.json`. Do not create a second `package-lock.json` here.
+- Do not treat this directory as a standalone project.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Stack
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+- **Astro** — multi-page application framework
+- **Tailwind CSS 4** — styling via `@tailwindcss/vite`
+- **Vercel adapter** (`@astrojs/vercel`) — production serverless runtime
+- **Rendering:** `output: "server"` (SSR/on-demand by default), explicit `export const prerender = true` for fixed informational routes
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Key Paths
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+| Path                    | Purpose                                     |
+| ----------------------- | ------------------------------------------- |
+| `src/pages/`            | File-based routes                           |
+| `src/layouts/`          | Shared page shells (BaseLayout)             |
+| `src/styles/global.css` | Tailwind import and global baseline         |
+| `astro.config.mjs`      | Astro configuration (adapter, Vite, output) |
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Boundary
 
-## 🧞 Commands
+- Do **not** import or build from `design-reference/` — it is a read-only design reference, not application source.
+- Django owns all authoritative data and business logic. The frontend consumes the Django API and renders the result.
 
-All commands are run from the root of the project, from a terminal:
+## Further Reading
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Root README](../../README.md) — project overview, setup, CI, workflow
+- [Frontend Architecture](../../docs/frontend-architecture.md) — MPA routing, hybrid rendering, planned routes
+- [Frontend Styling](../../docs/frontend-styling.md) — Tailwind 4 conventions, visual identity
