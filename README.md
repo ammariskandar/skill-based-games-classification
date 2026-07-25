@@ -4,7 +4,19 @@ A web application that classifies games across three skill-based dimensions — 
 
 ## Current Status
 
-**Application scaffolding complete.** Astro frontend and Django backend have been initialized. Tailwind CSS, Django Ninja, and PostgreSQL are not yet configured.
+**Foundation phase complete.** The following are configured and operational:
+
+- Astro frontend with official Vercel adapter (`output: "server"`)
+- Hybrid MPA rendering (SSR/on-demand by default, prerendered fixed routes)
+- Tailwind CSS 4 via `@tailwindcss/vite`
+- Shared `BaseLayout` component
+- Django backend skeleton with `django-environ`
+- Environment-variable loading for both apps
+- Code-quality tooling (Prettier, ESLint, astro check, Ruff)
+- GitHub Actions CI (frontend + backend jobs)
+- Locked design reference (`design-reference/`)
+
+**Pending:** Django Ninja, PostgreSQL/Neon connectivity, Django domain apps and models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
 
 | Service  | Development URL           |
 | -------- | ------------------------- |
@@ -128,14 +140,6 @@ npm run ci           # full local quality gate (format, lint, check, build)
 ```
 
 See [docs/code-quality.md](docs/code-quality.md) for tool details and editor setup.
-
-**Rules:**
-
-- Commit the root `package-lock.json` and `apps/backend/requirements.txt`.
-- Never commit `.venv/` or `node_modules/`.
-- Only add dependencies when required by an approved Jira task.
-
-Tailwind CSS, Django Ninja, and PostgreSQL are not configured yet. See [context.md](context.md) for the full task registry and implementation order.
 
 ## Git Workflow
 
