@@ -38,3 +38,16 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* ── canonical responsive shell gutter ── */
+@utility shell-gutter {
+  padding-inline: var(--gutter, 1rem);
+
+  @media (width >= 40rem) {
+    --gutter: 1.5rem;
+  }
+
+  @media (width >= 64rem) {
+    --gutter: 2rem;
+  }
+}

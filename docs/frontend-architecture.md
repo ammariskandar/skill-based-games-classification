@@ -24,7 +24,14 @@ The Vercel adapter (`@astrojs/vercel`) is the production runtime target. Dynamic
 
 ### Responsive Container
 
-Pages render inside a single `<main>` landmark with `max-w-6xl`, centered layout, and responsive padding (`px-4 py-8 sm:px-6 sm:py-12 lg:px-8`). Shared via BaseLayout.
+The application shell is **fluid** — it uses available viewport width with centralized responsive gutters. A single `shell-gutter` CSS utility class (defined in `global.css`) ensures Header, `<main>`, and Footer share identical horizontal padding at every breakpoint: 1rem mobile, 1.5rem tablet, 2rem desktop.
+
+There is **no global `max-width`** on the shell. Width constraints apply only to content that has a specific readability or design reason:
+
+- **Fluid shell** — default for application pages, catalogue, rankings, future grids, tables, game-detail layouts, charts, and filters.
+- **Prose measure** — `max-w-2xl` (672px) for long-form reading content (About, Methodology). This is a content-specific choice, not a shell rule.
+
+Pages must not invent arbitrary `max-w-*`, padding, or margin conventions without a content-specific justification. See `docs/human-intervened-decisions.md` for the SBGC-150 Option G decision record.
 
 ### Active-Link Strategy
 
