@@ -45,6 +45,15 @@ The global shell (Header, Navigation, Footer, responsive container) uses a restr
 
 Active navigation state uses background contrast (`bg-surface-2`) rather than colour alone.
 
+## Layout Modes
+
+| Mode             | Description                                           | Used by                              |
+| ---------------- | ----------------------------------------------------- | ------------------------------------ |
+| Fluid shell      | Uses full viewport width with `shell-gutter` padding   | Header, Main, Footer, catalogue, rankings, future grids/charts |
+| Prose measure    | `max-w-2xl` (672px) for readability                    | About, Methodology, long-form content |
+
+Width constraints on pages **require a content-specific justification**. Do not introduce a new global shell maximum without an explicit owner decision (see `docs/human-intervened-decisions.md`).
+
 ## Figma Make Design Reference
 
 The Figma Make export archived at `design-reference/figma-make-dark-ui/` may inform visual implementation. However, Tailwind tokens and Astro components must be defined independently — do not duplicate the generated React structure automatically. Study the reference for layout, spacing, typography, and interaction intent; implement in canonical Astro + Tailwind CSS.

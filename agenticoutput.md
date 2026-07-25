@@ -13,3 +13,4 @@
 2026-07-25 14:53:17 +08 — Completed SBGC-147: Corrected stale repository status documentation, replaced the frontend starter README with monorepo-specific guidance, and verified all documented commands and CI.
 2026-07-25 15:03:00 +08 — Completed SBGC-148: Aligned GitHub Actions with the local CI gate, added explicit frontend and backend test entry points, enforced design-reference isolation remotely, and documented current coverage limits.
 2026-07-25 20:53:29 +08 — Completed SBGC-30: Built the MyGameDNA Astro application shell with separate header, navigation and footer components, responsive container, accessible landmarks, and default SEO metadata.
+2026-07-25 21:46:38 +08 — Completed SBGC-150 Part 2: Implemented Option G with a fluid MyGameDNA shell, centralized responsive gutters, separate prose-width rules, and documented the human layout decision.
