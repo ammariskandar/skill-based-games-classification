@@ -152,9 +152,11 @@ See [docs/git-workflow.md](docs/git-workflow.md) for the complete workflow.
 
 ## CI
 
-GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs validate:
+GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs enforce the same gates as local `npm run ci`:
 
-- **Frontend** — ESLint, astro check, Prettier format check, Astro production build
-- **Backend** — Ruff lint, Ruff format check, Django system check
+- **Frontend** — Prettier format check, ESLint, astro check, test entry point (placeholder), design-reference isolation check, Astro production build
+- **Backend** — Ruff lint, Ruff format check, Django system check, test entry point (placeholder)
+
+No real application test suites exist yet. Green CI means all currently implemented gates passed — it does not mean behavioural coverage is complete.
 
 See `.github/workflows/ci.yml` for the pipeline definition.

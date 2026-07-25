@@ -11,34 +11,40 @@ jobs:
   frontend:
     name: Frontend (Astro)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run lint:frontend
+      - name: Check formatting (Prettier)
+        run: npm run format:check --workspace=apps/frontend
 
-      - run: npm run check:frontend
+      - name: Lint (ESLint)
+        run: npm run lint:frontend
 
-      - run: npm run format:check --workspace=apps/frontend
+      - name: Type-check (astro check)
+        run: npm run check:frontend
 
-      - run: npm run build:frontend
+      - name: Test (frontend — placeholder, no suite yet)
+        run: npm run test:frontend
+
+      - name: Design-reference isolation check
+        run: npm run check:design-reference
+
+      - name: Build (astro build)
+        run: npm run build:frontend
 
   backend:
     name: Backend (Django)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
     env:
       DJANGO_SECRET_KEY: ci-dummy-key-not-for-production
       DJANGO_DEBUG: "true"
@@ -46,18 +52,27 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: apps/backend/requirements.txt
 
-      - run: python -m venv apps/backend/.venv
+      - name: Create virtual environment
+        run: python -m venv apps/backend/.venv
 
-      - run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt
+      - name: Install dependencies
+        run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt
 
-      - run: apps/backend/.venv/bin/ruff check apps/backend
+      - name: Lint (Ruff)
+        run: apps/backend/.venv/bin/ruff check apps/backend
 
-      - run: apps/backend/.venv/bin/ruff format --check apps/backend
+      - name: Check formatting (Ruff)
+        run: apps/backend/.venv/bin/ruff format --check apps/backend
 
-      - run: apps/backend/.venv/bin/python apps/backend/manage.py check
+      - name: System check (Django)
+        run: apps/backend/.venv/bin/python apps/backend/manage.py check
+
+      - name: Test (backend — placeholder, no suite yet)
+        run: npm run test:backend

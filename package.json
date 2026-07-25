@@ -11,9 +11,9 @@
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
     "build:frontend": "npm run build --workspace=apps/frontend",
-    "test:frontend": "echo 'test:frontend — not yet implemented'",
-    "test:backend": "echo 'test:backend — not yet implemented'",
-    "test": "echo 'test — not yet implemented; run test:frontend and test:backend separately'",
+    "test:frontend": "echo 'test:frontend — no application test suite implemented yet; placeholder exits successfully intentionally'",
+    "test:backend": "echo 'test:backend — no application test suite implemented yet; placeholder exits successfully intentionally'",
+    "test": "npm run test:frontend && npm run test:backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "npm run lint --workspace=apps/frontend",
     "lint:backend": "apps/backend/.venv/bin/ruff check apps/backend",
@@ -26,7 +26,7 @@
     "check:backend": "apps/backend/.venv/bin/python apps/backend/manage.py check",
     "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate",
     "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt",
-    "ci": "npm run format:check && npm run lint && npm run check && npm run check:design-reference && npm run build:frontend",
+    "ci": "npm run format:check && npm run lint && npm run check && npm run test && npm run check:design-reference && npm run build:frontend",
     "check:design-reference": "! grep -r --include='*.astro' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.css' -l 'design-reference' apps/frontend/src apps/frontend/astro.config.mjs 2>/dev/null",
     "update:skills-context": "apps/backend/.venv/bin/python scripts/update-skills-context.py"
   }

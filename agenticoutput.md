@@ -11,3 +11,4 @@
 2026-07-25 14:17:57 +08 — Completed SBGC-145: Established a read-only software development reviewer, standardised periodic audit scope and output, documented review governance, and integrated the process into canonical project guidance.
 2026-07-25 14:43:57 +08 — Completed SBGC-146: Regenerated the npm lockfile from authoritative workspace manifests, removed incorrect root Tailwind ownership, and verified clean reproducible installation and CI.
 2026-07-25 14:53:17 +08 — Completed SBGC-147: Corrected stale repository status documentation, replaced the frontend starter README with monorepo-specific guidance, and verified all documented commands and CI.
+2026-07-25 15:03:00 +08 — Completed SBGC-148: Aligned GitHub Actions with the local CI gate, added explicit frontend and backend test entry points, enforced design-reference isolation remotely, and documented current coverage limits.
