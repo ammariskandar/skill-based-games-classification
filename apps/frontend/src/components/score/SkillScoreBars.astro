@@ -9,7 +9,7 @@ const { micro, mystiko, macro } = Astro.props;
 ---
 
 <div
-  id="skill-bars"
+  data-skill-bars
   class="w-full"
   role="img"
   aria-label={`Horizontal bar chart: Micro ${micro}%, Mystiko ${mystiko}%, Macro ${macro}%`}
@@ -22,18 +22,18 @@ const { micro, mystiko, macro } = Astro.props;
 <script>
   import * as Plot from "@observablehq/plot";
 
-  function render() {
-    const container = document.getElementById("skill-bars");
-    if (!container) return;
+  function renderBars(container: HTMLElement) {
+    if (container.hasAttribute("data-skill-bars-initialized")) return;
+    container.setAttribute("data-skill-bars-initialized", "");
 
     const micro = Number(container.dataset.micro ?? 0);
     const mystiko = Number(container.dataset.mystiko ?? 0);
     const macro = Number(container.dataset.macro ?? 0);
 
     const data = [
-      { dimension: "Micro", value: micro, token: "micro" },
-      { dimension: "Mystiko", value: mystiko, token: "mystiko" },
-      { dimension: "Macro", value: macro, token: "macro" },
+      { dimension: "Micro", value: micro, color: "var(--color-micro)" },
+      { dimension: "Mystiko", value: mystiko, color: "var(--color-mystiko)" },
+      { dimension: "Macro", value: macro, color: "var(--color-macro)" },
     ];
 
     const plot = Plot.plot({
@@ -44,7 +44,7 @@ const { micro, mystiko, macro } = Astro.props;
       x: { domain: [0, 100], label: null, grid: true },
       y: { domain: ["Micro", "Mystiko", "Macro"], label: null },
       color: {
-        domain: ["micro", "mystiko", "macro"],
+        domain: ["Micro", "Mystiko", "Macro"],
         range: [
           "var(--color-micro)",
           "var(--color-mystiko)",
@@ -55,7 +55,7 @@ const { micro, mystiko, macro } = Astro.props;
         Plot.barX(data, {
           y: "dimension",
           x: "value",
-          fill: "token",
+          fill: "dimension",
           sort: { y: null },
         }),
         Plot.text(data, {
@@ -79,6 +79,12 @@ const { micro, mystiko, macro } = Astro.props;
     container.replaceChildren(plot);
   }
 
-  document.addEventListener("astro:page-load", render);
-  render();
+  function initAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-skill-bars]")
+      .forEach(renderBars);
+  }
+
+  document.addEventListener("astro:page-load", initAll);
+  initAll();
 </script>

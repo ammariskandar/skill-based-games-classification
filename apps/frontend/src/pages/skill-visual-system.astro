@@ -161,6 +161,52 @@ const malformedError = validateProfile({
     </div>
   </section>
 
+  <!-- Multi-instance verification: two bars side-by-side -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Multi-Instance — Two Bars</h2>
+    <p class="text-sm text-muted">
+      Proves reusable components with <code>data-skill-bars</code> work simultaneously
+      without ID collisions.
+    </p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (Micro-heavy)"
+        {...microHeavy}
+        chart="bars"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (Macro-heavy)"
+        {...macroHeavy}
+        chart="bars"
+      />
+    </div>
+  </section>
+
+  <!-- Multi-instance verification: two radars side-by-side -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Multi-Instance — Two Radars</h2>
+    <p class="text-sm text-muted">
+      Proves reusable components with <code>data-skill-radar</code> work simultaneously
+      without ID collisions.
+    </p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (Mystiko-heavy)"
+        {...mystikoHeavy}
+        chart="radar"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (Micro-heavy)"
+        {...microHeavy}
+        chart="radar"
+      />
+    </div>
+  </section>
+
   <!-- No-chart fallback -->
   <section class="mt-10">
     <h2 class="text-xl font-semibold">Chart-Free Summary</h2>

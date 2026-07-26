@@ -23,7 +23,7 @@ export const DIMENSIONS: Record<DimensionId, DimensionDef> = {
     label: "Micro",
     description:
       "Execution, mechanics, timing, precision, and moment-to-moment control.",
-    token: "blue",
+    token: "micro",
     symbol: "◆",
   },
   mystiko: {
@@ -31,7 +31,7 @@ export const DIMENSIONS: Record<DimensionId, DimensionDef> = {
     label: "Mystiko",
     description:
       "Hidden information, probability, mind games, prediction, and adaptation under uncertainty.",
-    token: "purple",
+    token: "mystiko",
     symbol: "◈",
   },
   macro: {
@@ -39,7 +39,7 @@ export const DIMENSIONS: Record<DimensionId, DimensionDef> = {
     label: "Macro",
     description:
       "Systems knowledge, resource management, planning, and long-horizon strategy.",
-    token: "orange",
+    token: "macro",
     symbol: "⬟",
   },
 };

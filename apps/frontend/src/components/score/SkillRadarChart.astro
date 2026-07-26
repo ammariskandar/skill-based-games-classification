@@ -9,7 +9,7 @@ const { micro, mystiko, macro } = Astro.props;
 ---
 
 <div
-  id="skill-radar"
+  data-skill-radar
   class="mx-auto w-full max-w-sm"
   data-micro={micro}
   data-mystiko={mystiko}
@@ -20,9 +20,9 @@ const { micro, mystiko, macro } = Astro.props;
 <script>
   import * as d3 from "d3";
 
-  function render() {
-    const container = document.getElementById("skill-radar");
-    if (!container) return;
+  function renderRadar(container: HTMLElement) {
+    if (container.hasAttribute("data-skill-radar-initialized")) return;
+    container.setAttribute("data-skill-radar-initialized", "");
 
     const micro = Number(container.dataset.micro ?? 0);
     const mystiko = Number(container.dataset.mystiko ?? 0);
@@ -30,9 +30,9 @@ const { micro, mystiko, macro } = Astro.props;
 
     const levels = 5;
     const axes = [
-      { axis: "Micro", value: micro, token: "micro" },
-      { axis: "Mystiko", value: mystiko, token: "mystiko" },
-      { axis: "Macro", value: macro, token: "macro" },
+      { axis: "Micro", value: micro, colorVar: "--color-micro" },
+      { axis: "Mystiko", value: mystiko, colorVar: "--color-mystiko" },
+      { axis: "Macro", value: macro, colorVar: "--color-macro" },
     ];
 
     const size = Math.min(container.clientWidth || 360, 480);
@@ -41,6 +41,8 @@ const { micro, mystiko, macro } = Astro.props;
     const cy = size / 2;
     const angleSlice = (2 * Math.PI) / axes.length;
 
+    const uid = `radar-${Math.random().toString(36).slice(2, 8)}`;
+
     const svg = d3
       .select(container)
       .append("svg")
@@ -48,8 +50,12 @@ const { micro, mystiko, macro } = Astro.props;
       .attr("width", size)
       .attr("height", size)
       .attr("role", "img")
-      .attr(
-        "aria-label",
+      .attr("aria-labelledby", `${uid}-title`);
+
+    svg
+      .append("title")
+      .attr("id", `${uid}-title`)
+      .text(
         `Radar chart: Micro ${micro}%, Mystiko ${mystiko}%, Macro ${macro}%`,
       );
 
@@ -89,12 +95,13 @@ const { micro, mystiko, macro } = Astro.props;
 
     g.append("polygon")
       .attr("points", dataPoints.map((p) => p.join(",")).join(" "))
-      .attr("fill", "var(--color-blue)")
-      .attr("fill-opacity", 0.25)
-      .attr("stroke", "var(--color-blue)")
+      .attr("fill", "var(--color-micro)")
+      .attr("fill-opacity", 0.15)
+      .attr("stroke", "var(--color-chart-fg)")
       .attr("stroke-width", 2)
       .attr("stroke-linejoin", "round");
 
+    // Value labels — each uses its own dimension colour
     axes.forEach((a, i) => {
       const angle = angleSlice * i - Math.PI / 2;
       const r = (a.value / 100) * radius + 16;
@@ -103,12 +110,14 @@ const { micro, mystiko, macro } = Astro.props;
         .attr("y", r * Math.sin(angle))
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "middle")
-        .attr("fill", "var(--color-chart-fg)")
+        .attr("fill", `var(${a.colorVar})`)
         .attr("font-size", 12)
+        .attr("font-weight", 600)
         .attr("font-family", "var(--font-sans)")
         .text(`${a.value}%`);
     });
 
+    // Axis labels — each uses its own dimension colour
     axes.forEach((a, i) => {
       const angle = angleSlice * i - Math.PI / 2;
       const labelR = radius + 30;
@@ -117,7 +126,7 @@ const { micro, mystiko, macro } = Astro.props;
         .attr("y", labelR * Math.sin(angle))
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "middle")
-        .attr("fill", "var(--color-chart-muted)")
+        .attr("fill", `var(${a.colorVar})`)
         .attr("font-size", 13)
         .attr("font-weight", 600)
         .attr("font-family", "var(--font-sans)")
@@ -125,6 +134,12 @@ const { micro, mystiko, macro } = Astro.props;
     });
   }
 
-  document.addEventListener("astro:page-load", render);
-  render();
+  function initAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-skill-radar]")
+      .forEach(renderRadar);
+  }
+
+  document.addEventListener("astro:page-load", initAll);
+  initAll();
 </script>

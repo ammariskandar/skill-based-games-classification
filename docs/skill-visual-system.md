@@ -14,10 +14,12 @@ Dimensions always appear in this canonical order. Challenge and Reward are separ
 
 ## Non-Colour Identity
 
-Every dimension is identifiable through three channels:
+Each dimension is identifiable through three channels:
 1. **Label** — text name
 2. **Symbol** — Unicode glyph for accessible, non-colour identification
 3. **Colour** — semantic theme token (`--color-micro`, `--color-mystiko`, `--color-macro`)
+
+**Canonical invariant:** Every dimension's label, legend marker, bar, radar axis/value marker, fallback bar, and summary symbol must use the same canonical colour token and non-colour symbol. `--color-blue`, `--color-purple`, or any generic token must not be used as a dimension identity — only `--color-micro`, `--color-mystiko`, and `--color-macro`. Neutral structural tokens (`--color-chart-grid`, `--color-chart-muted`) are acceptable only for chart framework elements (grid lines, backgrounds, structural labels).
 
 No dimension relies on colour alone. Symbols are always visible in legends and summaries.
 
