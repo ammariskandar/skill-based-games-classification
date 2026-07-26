@@ -16,6 +16,13 @@
   --color-orange: #ffa657;
   --color-red: #f85149;
   --color-yellow: #d2991d;
+  --color-chart-grid: #30363d;
+  --color-chart-bg: #161b22;
+  --color-chart-fg: #e6edf3;
+  --color-chart-muted: #8b949e;
+  --color-micro: #58a6ff;
+  --color-mystiko: #bc8cff;
+  --color-macro: #ffa657;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
   --radius-sm: 0.375rem;

@@ -110,9 +110,6 @@ Colour is never the sole status signal — badges also convey meaning through te
 ## Extension Policy
 
 - SBGC-32 owns the Micro/Mystiko/Macro visual identity — do not add skill-specific colours here.
-- No Storybook or third-party component library at the current project scale.
-- Speculative variants (icon-only buttons, size variants, stretched-link cards) must not be added without an approved Jira task.
-- New components should follow the same conventions documented here.
 
 ## Responsive and Direction-Safe Guidance
 

@@ -1,0 +1,49 @@
+---
+import { DIMENSION_LIST } from "../../lib/skill-dimensions";
+
+interface Props {
+  micro: number;
+  mystiko: number;
+  macro: number;
+}
+---
+
+<div
+  class="w-full"
+  role="img"
+  aria-label={`Micro ${Astro.props.micro}%, Mystiko ${Astro.props.mystiko}%, Macro ${Astro.props.macro}%`}
+>
+  <div class="space-y-2">
+    {
+      DIMENSION_LIST.map((d) => {
+        const val =
+          d.id === "micro"
+            ? Astro.props.micro
+            : d.id === "mystiko"
+              ? Astro.props.mystiko
+              : Astro.props.macro;
+        return (
+          <div class="flex items-center gap-2">
+            <span
+              class={`w-14 shrink-0 text-right text-xs tabular-nums text-muted`}
+            >
+              {val}%
+            </span>
+            <div class="h-4 flex-1 rounded-sm bg-surface-2">
+              <div
+                class={`h-full rounded-sm bg-${d.token}`}
+                style={`width: ${Math.max(0, Math.min(100, val))}%`}
+              />
+            </div>
+            <span class="inline-flex w-16 shrink-0 items-center gap-1 text-xs text-text">
+              <span aria-hidden="true" class={`text-${d.token}`}>
+                {d.symbol}
+              </span>
+              {d.label}
+            </span>
+          </div>
+        );
+      })
+    }
+  </div>
+</div>

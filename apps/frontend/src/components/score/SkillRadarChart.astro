@@ -1,0 +1,130 @@
+---
+interface Props {
+  micro: number;
+  mystiko: number;
+  macro: number;
+}
+
+const { micro, mystiko, macro } = Astro.props;
+---
+
+<div
+  id="skill-radar"
+  class="mx-auto w-full max-w-sm"
+  data-micro={micro}
+  data-mystiko={mystiko}
+  data-macro={macro}
+>
+</div>
+
+<script>
+  import * as d3 from "d3";
+
+  function render() {
+    const container = document.getElementById("skill-radar");
+    if (!container) return;
+
+    const micro = Number(container.dataset.micro ?? 0);
+    const mystiko = Number(container.dataset.mystiko ?? 0);
+    const macro = Number(container.dataset.macro ?? 0);
+
+    const levels = 5;
+    const axes = [
+      { axis: "Micro", value: micro, token: "micro" },
+      { axis: "Mystiko", value: mystiko, token: "mystiko" },
+      { axis: "Macro", value: macro, token: "macro" },
+    ];
+
+    const size = Math.min(container.clientWidth || 360, 480);
+    const radius = size / 2 - 40;
+    const cx = size / 2;
+    const cy = size / 2;
+    const angleSlice = (2 * Math.PI) / axes.length;
+
+    const svg = d3
+      .select(container)
+      .append("svg")
+      .attr("viewBox", `0 0 ${size} ${size}`)
+      .attr("width", size)
+      .attr("height", size)
+      .attr("role", "img")
+      .attr(
+        "aria-label",
+        `Radar chart: Micro ${micro}%, Mystiko ${mystiko}%, Macro ${macro}%`,
+      );
+
+    const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+
+    for (let level = 1; level <= levels; level++) {
+      const r = (radius / levels) * level;
+      const pts = axes
+        .map((_, i) => {
+          const a = angleSlice * i - Math.PI / 2;
+          return `${r * Math.cos(a)},${r * Math.sin(a)}`;
+        })
+        .join(" ");
+      g.append("polygon")
+        .attr("points", pts)
+        .attr("fill", "none")
+        .attr("stroke", "var(--color-chart-grid)")
+        .attr("stroke-width", 0.5);
+    }
+
+    axes.forEach((_, i) => {
+      const angle = angleSlice * i - Math.PI / 2;
+      g.append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", radius * Math.cos(angle))
+        .attr("y2", radius * Math.sin(angle))
+        .attr("stroke", "var(--color-chart-grid)")
+        .attr("stroke-width", 1);
+    });
+
+    const dataPoints = axes.map((a, i) => {
+      const angle = angleSlice * i - Math.PI / 2;
+      const r = (a.value / 100) * radius;
+      return [r * Math.cos(angle), r * Math.sin(angle)];
+    });
+
+    g.append("polygon")
+      .attr("points", dataPoints.map((p) => p.join(",")).join(" "))
+      .attr("fill", "var(--color-blue)")
+      .attr("fill-opacity", 0.25)
+      .attr("stroke", "var(--color-blue)")
+      .attr("stroke-width", 2)
+      .attr("stroke-linejoin", "round");
+
+    axes.forEach((a, i) => {
+      const angle = angleSlice * i - Math.PI / 2;
+      const r = (a.value / 100) * radius + 16;
+      g.append("text")
+        .attr("x", r * Math.cos(angle))
+        .attr("y", r * Math.sin(angle))
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", "var(--color-chart-fg)")
+        .attr("font-size", 12)
+        .attr("font-family", "var(--font-sans)")
+        .text(`${a.value}%`);
+    });
+
+    axes.forEach((a, i) => {
+      const angle = angleSlice * i - Math.PI / 2;
+      const labelR = radius + 30;
+      g.append("text")
+        .attr("x", labelR * Math.cos(angle))
+        .attr("y", labelR * Math.sin(angle))
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", "var(--color-chart-muted)")
+        .attr("font-size", 13)
+        .attr("font-weight", 600)
+        .attr("font-family", "var(--font-sans)")
+        .text(a.axis);
+    });
+  }
+
+  document.addEventListener("astro:page-load", render);
+  render();
+</script>

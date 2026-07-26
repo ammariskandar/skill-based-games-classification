@@ -2184,6 +2184,7 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07 | No paid CDN | Accepted. Use Vercel delivery and Steam CDN. |
 | 2026-07 | Use provider DDoS protection plus app controls | Accepted. Django handles validation, spam, brute force, and rate limits. |
 | 2026-07 | Adopt MyGameDNA as the public product name | Accepted. Distinguishes from an unrelated gambling-site domain and establishes a distinct SEO identity. |
+| 2026-07 | Use Observable Plot for bar charts and D3 for radar/spider charts | Accepted. No React, Recharts, Chart.js, or Vega. Bar-versus-radar product selection belongs to Ammar Iskandar. |
 | 2026-07 | Add Google Analytics as non-core analytics | Accepted final architecture; Jira allows late-MVP implementation. |
 | 2026-07 | Add WebLLM only in final product | Accepted. Local prose generation; server chooses recommendation. |
 | 2026-07 | Do not include SigNoz | Accepted due to cost/operational mismatch. |
@@ -2446,6 +2447,7 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - SBGC-136 created the approved high-fidelity dark-mode mock design.
 - SBGC-137 archived the Figma Make React/Vite export as `design-reference/figma-make-dark-ui/` with read-only protections.
 - SBGC-30 adopted the public product name **MyGameDNA** and built the global Astro application shell with header, navigation, footer, responsive container, accessible landmarks, and default SEO metadata.
+- SBGC-32 defined the Micro/Mystiko/Macro visual system with canonical dimension tokens, legends, score summaries, Observable Plot bars, D3 radar charts, and established that the bar-versus-radar product decision belongs to the owner.
 - Reframed the product from one three-part skill classification into two independent three-part profiles.
 - Defined Challenge Micro, Challenge Mystiko, and Challenge Macro.
 - Defined Reward Micro as immediate/local validation and satisfaction.
