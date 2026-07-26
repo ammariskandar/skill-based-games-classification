@@ -7,6 +7,7 @@ interface Props {
   title?: string;
   description?: string;
   canonicalPath?: string;
+  robots?: string;
 }
 
 const titleTemplate = Astro.props.title
@@ -31,7 +32,7 @@ const canonicalUrl = Astro.props.canonicalPath
     <title>{titleTemplate}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={Astro.props.robots ?? "index, follow"} />
 
     <meta property="og:title" content={titleTemplate} />
     <meta property="og:description" content={description} />

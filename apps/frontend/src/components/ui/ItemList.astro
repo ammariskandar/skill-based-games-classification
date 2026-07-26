@@ -1,0 +1,18 @@
+---
+interface Props {
+  type?: "ul" | "ol";
+  class?: string;
+}
+
+const Tag = Astro.props.type === "ol" ? "ol" : "ul";
+---
+
+<Tag
+  class:list={[
+    Astro.props.type === "ol" ? "list-decimal" : "list-disc",
+    "space-y-2 pl-5 text-sm text-text",
+    Astro.props.class ?? "",
+  ]}
+>
+  <slot />
+</Tag>

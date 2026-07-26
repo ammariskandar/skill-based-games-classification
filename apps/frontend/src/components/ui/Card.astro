@@ -1,0 +1,14 @@
+---
+interface Props {
+  class?: string;
+}
+---
+
+<div
+  class:list={[
+    "rounded-lg border border-border bg-surface p-6",
+    Astro.props.class ?? "",
+  ]}
+>
+  <slot />
+</div>

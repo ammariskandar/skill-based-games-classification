@@ -12,6 +12,7 @@ A web application that classifies games across three skill-based dimensions — 
 - Shared `BaseLayout` component
 - Dark-themed MyGameDNA application shell (Header, Navigation, Footer, responsive container, SEO metadata)
 - Prerendered placeholder routes for `/catalogue` and `/rankings`
+- Reusable UI foundations (Button, FormField, Card, Badge, DataTable, ItemList, EmptyState, LoadingState, ErrorState) — see [`docs/ui-foundations.md`](docs/ui-foundations.md)
 - Django backend skeleton with `django-environ`
 - Environment-variable loading for both apps
 - Code-quality tooling (Prettier, ESLint, astro check, Ruff)

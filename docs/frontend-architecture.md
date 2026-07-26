@@ -37,6 +37,10 @@ Pages must not invent arbitrary `max-w-*`, padding, or margin conventions withou
 
 `Navigation.astro` reads `Astro.url.pathname` and applies `aria-current="page"` plus a highlighted visual state (`bg-surface-2 text-text`) when the current route matches a link. Active state uses background contrast, not colour alone.
 
+### UI Foundations
+
+Reusable Astro components are in `src/components/ui/`. See [`docs/ui-foundations.md`](ui-foundations.md) for the component inventory, supported variants, and design conventions.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.

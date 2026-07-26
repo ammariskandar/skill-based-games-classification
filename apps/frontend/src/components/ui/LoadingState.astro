@@ -1,0 +1,27 @@
+---
+interface Props {
+  text?: string;
+}
+---
+
+<div
+  role="status"
+  aria-live="polite"
+  class="flex items-center justify-center gap-3 py-16"
+>
+  <div
+    aria-hidden="true"
+    class="motion-safe:animate-pulse motion-reduce:hidden flex gap-1"
+  >
+    <div class="h-2.5 w-2.5 rounded-full bg-surface-3"></div>
+    <div
+      class="h-2.5 w-2.5 rounded-full bg-surface-3 motion-safe:[animation-delay:150ms]"
+    >
+    </div>
+    <div
+      class="h-2.5 w-2.5 rounded-full bg-surface-3 motion-safe:[animation-delay:300ms]"
+    >
+    </div>
+  </div>
+  <span class="text-sm text-muted">{Astro.props.text ?? "Loading…"}</span>
+</div>

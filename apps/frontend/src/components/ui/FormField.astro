@@ -1,0 +1,49 @@
+---
+/*
+  ID contract: FormField generates help/error element IDs using the pattern
+  `help-{for}` and `error-{for}`. Callers must pass the matching
+  `describedBy` to the slotted input control to wire aria-describedby.
+*/
+interface Props {
+  label: string;
+  for?: string;
+  required?: boolean;
+  helpText?: string;
+  error?: string;
+}
+---
+
+<div>
+  <label for={Astro.props.for} class="block text-sm font-medium text-text">
+    {Astro.props.label}
+    {
+      Astro.props.required && (
+        <span aria-hidden="true" class="text-red">
+          {" "}
+          *
+        </span>
+      )
+    }
+  </label>
+  {
+    Astro.props.helpText && (
+      <p id={"help-" + (Astro.props.for ?? "")} class="mt-1 text-xs text-muted">
+        {Astro.props.helpText}
+      </p>
+    )
+  }
+  <div class="mt-1.5">
+    <slot />
+  </div>
+  {
+    Astro.props.error && (
+      <p
+        id={"error-" + (Astro.props.for ?? "")}
+        class="mt-1 text-xs text-red"
+        role="alert"
+      >
+        {Astro.props.error}
+      </p>
+    )
+  }
+</div>
