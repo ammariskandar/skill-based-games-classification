@@ -13,7 +13,11 @@ interface Props {
     {Astro.props.title ?? "Something went wrong"}
   </h2>
   <p class="mt-2 max-w-md text-sm text-muted">{Astro.props.message}</p>
-  <div class="mt-6">
-    <slot />
-  </div>
+  {
+    Astro.slots.has("default") && (
+      <div class="mt-6">
+        <slot />
+      </div>
+    )
+  }
 </div>

@@ -1,4 +1,9 @@
 ---
+/*
+  ID contract: FormField generates help/error element IDs using the pattern
+  `help-{for}` and `error-{for}`. Callers must pass the matching
+  `describedBy` to the slotted input control to wire aria-describedby.
+*/
 interface Props {
   label: string;
   for?: string;

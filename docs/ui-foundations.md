@@ -94,7 +94,7 @@ Colour is never the sole status signal — badges also convey meaning through te
 ## Accessibility
 
 - Buttons: visible `focus-visible` outline, `disabled` native attribute, `aria-busy` when loading, reduced-motion-safe transitions.
-- Forms: programmatically associated labels, `aria-invalid` on invalid controls, `aria-describedby` linked to help/error text, errors are text (not colour-only).
+- Forms: programmatically associated labels, `aria-invalid` on invalid controls, `aria-describedby` linked to help/error text (FormField generates IDs `help-{for}` and `error-{for}` — callers must pass matching `describedBy` to the slotted input), errors are text (not colour-only).
 - Tables: `scope="col"` on header cells, `caption` for context, contained horizontal scroll on overflow.
 - Loading: `role="status"`, `aria-live="polite"`, decorative skeleton hidden from AT, reduced-motion-safe animation.
 - Errors: `role="alert"` only when immediate announcement is needed, no raw stack traces.

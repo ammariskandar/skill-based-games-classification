@@ -52,7 +52,12 @@ export const prerender = true;
         required
         helpText="Choose a unique username."
       >
-        <TextInput id="demo-user" name="username" placeholder="e.g. player1" />
+        <TextInput
+          id="demo-user"
+          name="username"
+          placeholder="e.g. player1"
+          describedBy="help-demo-user"
+        />
       </FormField>
       <FormField label="Email" for="demo-email">
         <TextInput
@@ -67,7 +72,13 @@ export const prerender = true;
         for="demo-pass"
         error="Must be at least 8 characters."
       >
-        <TextInput id="demo-pass" name="password" type="password" invalid />
+        <TextInput
+          id="demo-pass"
+          name="password"
+          type="password"
+          invalid
+          describedBy="error-demo-pass"
+        />
       </FormField>
       <FormField label="Role" for="demo-role">
         <SelectInput id="demo-role" name="role">
@@ -81,6 +92,7 @@ export const prerender = true;
           id="demo-bio"
           name="bio"
           placeholder="Tell us about yourself…"
+          describedBy="help-demo-bio"
         />
       </FormField>
       <FormField label="Disabled" for="demo-dis">
