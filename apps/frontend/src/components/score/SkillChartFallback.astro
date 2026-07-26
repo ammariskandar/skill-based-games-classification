@@ -1,5 +1,9 @@
 ---
-import { DIMENSION_LIST } from "../../lib/skill-dimensions";
+import {
+  DIMENSION_LIST,
+  DIMENSION_BG_CLASSES,
+  DIMENSION_TEXT_CLASSES,
+} from "../../lib/skill-dimensions";
 
 interface Props {
   micro: number;
@@ -31,12 +35,15 @@ interface Props {
             </span>
             <div class="h-4 flex-1 rounded-sm bg-surface-2">
               <div
-                class={`h-full rounded-sm bg-${d.token}`}
+                class={`h-full rounded-sm ${DIMENSION_BG_CLASSES[d.id]}`}
                 style={`width: ${Math.max(0, Math.min(100, val))}%`}
               />
             </div>
             <span class="inline-flex w-16 shrink-0 items-center gap-1 text-xs text-text">
-              <span aria-hidden="true" class={`text-${d.token}`}>
+              <span
+                aria-hidden="true"
+                class={`${DIMENSION_TEXT_CLASSES[d.id]}`}
+              >
                 {d.symbol}
               </span>
               {d.label}

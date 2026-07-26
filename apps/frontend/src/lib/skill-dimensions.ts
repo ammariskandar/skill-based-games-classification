@@ -48,6 +48,20 @@ export const DIMENSION_LIST: DimensionDef[] = DIMENSION_IDS.map(
   (id) => DIMENSIONS[id],
 );
 
+/** Static literal class names — required by Tailwind 4 source scanning.
+ * Interpolated `text-${id}` strings are not statically detectable. */
+export const DIMENSION_TEXT_CLASSES: Record<DimensionId, string> = {
+  micro: "text-(--color-micro)",
+  mystiko: "text-(--color-mystiko)",
+  macro: "text-(--color-macro)",
+} as const;
+
+export const DIMENSION_BG_CLASSES: Record<DimensionId, string> = {
+  micro: "bg-(--color-micro)",
+  mystiko: "bg-(--color-mystiko)",
+  macro: "bg-(--color-macro)",
+} as const;
+
 /* ── typed presentation data ── */
 
 export interface SkillProfile {

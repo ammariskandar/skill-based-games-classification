@@ -1,5 +1,8 @@
 ---
-import { DIMENSION_LIST } from "../../lib/skill-dimensions";
+import {
+  DIMENSION_LIST,
+  DIMENSION_TEXT_CLASSES,
+} from "../../lib/skill-dimensions";
 
 interface Props {
   type: "challenge" | "reward";
@@ -28,7 +31,10 @@ const dims = DIMENSION_LIST;
         return (
           <>
             <dt class="inline-flex items-center gap-1 text-muted">
-              <span aria-hidden="true" class={`text-xs text-${d.token}`}>
+              <span
+                aria-hidden="true"
+                class={`text-xs ${DIMENSION_TEXT_CLASSES[d.id]}`}
+              >
                 {d.symbol}
               </span>
               {d.label}

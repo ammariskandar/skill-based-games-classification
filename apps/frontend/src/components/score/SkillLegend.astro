@@ -1,5 +1,9 @@
 ---
-import { DIMENSION_LIST, type DimensionDef } from "../../lib/skill-dimensions";
+import {
+  DIMENSION_LIST,
+  DIMENSION_TEXT_CLASSES,
+  type DimensionDef,
+} from "../../lib/skill-dimensions";
 
 interface Props {
   compact?: boolean;
@@ -24,7 +28,7 @@ const dimensions: DimensionDef[] = DIMENSION_LIST;
             Astro.props.compact
               ? "text-xs leading-none"
               : "text-sm leading-none",
-            `text-${d.token}`,
+            DIMENSION_TEXT_CLASSES[d.id],
           ]}
         >
           {d.symbol}
