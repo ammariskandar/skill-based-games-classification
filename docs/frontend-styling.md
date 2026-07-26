@@ -54,6 +54,10 @@ Active navigation state uses background contrast (`bg-surface-2`) rather than co
 
 Width constraints on pages **require a content-specific justification**. Do not introduce a new global shell maximum without an explicit owner decision (see `docs/human-intervened-decisions.md`).
 
+## UI Foundation Components
+
+Reusable Astro components live in `src/components/ui/`. See `docs/ui-foundations.md` for inventory, variant maps, accessibility contracts, and extension policies.
+
 ## Figma Make Design Reference
 
 The Figma Make export archived at `design-reference/figma-make-dark-ui/` may inform visual implementation. However, Tailwind tokens and Astro components must be defined independently — do not duplicate the generated React structure automatically. Study the reference for layout, spacing, typography, and interaction intent; implement in canonical Astro + Tailwind CSS.

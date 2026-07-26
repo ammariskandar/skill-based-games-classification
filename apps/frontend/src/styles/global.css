@@ -4,6 +4,7 @@
   --color-bg: #0d1117;
   --color-surface: #161b22;
   --color-surface-2: #1c2128;
+  --color-surface-3: #252b33;
   --color-border: #21262d;
   --color-border-2: #30363d;
   --color-text: #e6edf3;
@@ -13,8 +14,12 @@
   --color-green: #3fb950;
   --color-purple: #bc8cff;
   --color-orange: #ffa657;
+  --color-red: #f85149;
+  --color-yellow: #d2991d;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
 }
 
 @font-face {

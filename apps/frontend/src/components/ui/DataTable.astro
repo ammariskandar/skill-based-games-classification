@@ -1,0 +1,25 @@
+---
+interface Props {
+  caption?: string;
+}
+
+const id = "table-" + Math.random().toString(36).slice(2, 8);
+---
+
+<div class="-mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8" tabindex="0">
+  <div class="inline-block min-w-full px-4 align-middle sm:px-6 lg:px-8">
+    <table
+      class="min-w-full divide-y divide-border text-sm"
+      aria-labelledby={Astro.props.caption ? id : undefined}
+    >
+      {
+        Astro.props.caption && (
+          <caption id={id} class="sr-only">
+            {Astro.props.caption}
+          </caption>
+        )
+      }
+      <slot />
+    </table>
+  </div>
+</div>
