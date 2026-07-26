@@ -1,0 +1,81 @@
+---
+import SkillScoreSummary from "./SkillScoreSummary.astro";
+import SkillScoreBars from "./SkillScoreBars.astro";
+import SkillRadarChart from "./SkillRadarChart.astro";
+import SkillChartFallback from "./SkillChartFallback.astro";
+import SkillLegend from "./SkillLegend.astro";
+
+interface Props {
+  type: "challenge" | "reward";
+  micro: number;
+  mystiko: number;
+  macro: number;
+  title?: string;
+  description?: string;
+  /** Temporary showcase default — NOT a permanent product decision */
+  chart?: "bars" | "radar" | "none";
+}
+
+const chart = Astro.props.chart ?? "none";
+---
+
+<div class="space-y-4">
+  <div>
+    <h3 class="text-lg font-semibold text-text">
+      {
+        Astro.props.title ??
+          `${Astro.props.type} Profile`.replace(/^./, (c) => c.toUpperCase())
+      }
+    </h3>
+    {
+      Astro.props.description && (
+        <p class="mt-1 text-sm text-muted">{Astro.props.description}</p>
+      )
+    }
+  </div>
+
+  <SkillScoreSummary
+    type={Astro.props.type}
+    micro={Astro.props.micro}
+    mystiko={Astro.props.mystiko}
+    macro={Astro.props.macro}
+  />
+
+  <noscript>
+    <SkillChartFallback
+      micro={Astro.props.micro}
+      mystiko={Astro.props.mystiko}
+      macro={Astro.props.macro}
+    />
+  </noscript>
+
+  {
+    chart === "bars" && (
+      <SkillScoreBars
+        micro={Astro.props.micro}
+        mystiko={Astro.props.mystiko}
+        macro={Astro.props.macro}
+      />
+    )
+  }
+  {
+    chart === "radar" && (
+      <SkillRadarChart
+        micro={Astro.props.micro}
+        mystiko={Astro.props.mystiko}
+        macro={Astro.props.macro}
+      />
+    )
+  }
+  {
+    chart === "none" && (
+      <SkillChartFallback
+        micro={Astro.props.micro}
+        mystiko={Astro.props.mystiko}
+        macro={Astro.props.macro}
+      />
+    )
+  }
+
+  <SkillLegend compact />
+</div>

@@ -1,0 +1,90 @@
+---
+interface Props {
+  micro: number;
+  mystiko: number;
+  macro: number;
+}
+
+const { micro, mystiko, macro } = Astro.props;
+---
+
+<div
+  data-skill-bars
+  class="w-full"
+  role="img"
+  aria-label={`Horizontal bar chart: Micro ${micro}%, Mystiko ${mystiko}%, Macro ${macro}%`}
+  data-micro={micro}
+  data-mystiko={mystiko}
+  data-macro={macro}
+>
+</div>
+
+<script>
+  import * as Plot from "@observablehq/plot";
+
+  function renderBars(container: HTMLElement) {
+    if (container.hasAttribute("data-skill-bars-initialized")) return;
+    container.setAttribute("data-skill-bars-initialized", "");
+
+    const micro = Number(container.dataset.micro ?? 0);
+    const mystiko = Number(container.dataset.mystiko ?? 0);
+    const macro = Number(container.dataset.macro ?? 0);
+
+    const data = [
+      { dimension: "Micro", value: micro, color: "var(--color-micro)" },
+      { dimension: "Mystiko", value: mystiko, color: "var(--color-mystiko)" },
+      { dimension: "Macro", value: macro, color: "var(--color-macro)" },
+    ];
+
+    const plot = Plot.plot({
+      width: container.clientWidth || 400,
+      height: 120,
+      marginLeft: 0,
+      marginRight: 0,
+      x: { domain: [0, 100], label: null, grid: true },
+      y: { domain: ["Micro", "Mystiko", "Macro"], label: null },
+      color: {
+        domain: ["Micro", "Mystiko", "Macro"],
+        range: [
+          "var(--color-micro)",
+          "var(--color-mystiko)",
+          "var(--color-macro)",
+        ],
+      },
+      marks: [
+        Plot.barX(data, {
+          y: "dimension",
+          x: "value",
+          fill: "dimension",
+          sort: { y: null },
+        }),
+        Plot.text(data, {
+          y: "dimension",
+          x: "value",
+          text: (d) => `${d.value}%`,
+          textAnchor: "start",
+          dx: 6,
+          fill: "var(--color-chart-fg)",
+          fontSize: 13,
+        }),
+      ],
+      style: {
+        background: "transparent",
+        color: "var(--color-chart-fg)",
+        fontSize: "13px",
+        fontFamily: "var(--font-sans)",
+      },
+    });
+
+    container.replaceChildren(plot);
+  }
+
+  function initAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-skill-bars]")
+      .forEach(renderBars);
+  }
+
+  document.addEventListener("astro:page-load", initAll);
+  initAll();
+</script>

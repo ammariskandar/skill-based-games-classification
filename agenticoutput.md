@@ -15,3 +15,4 @@
 2026-07-25 20:53:29 +08 — Completed SBGC-30: Built the MyGameDNA Astro application shell with separate header, navigation and footer components, responsive container, accessible landmarks, and default SEO metadata.
 2026-07-25 21:46:38 +08 — Completed SBGC-150 Part 2: Implemented Option G with a fluid MyGameDNA shell, centralized responsive gutters, separate prose-width rules, and documented the human layout decision.
 2026-07-26 11:24:57 +08 — Completed SBGC-31: Created reusable Astro and Tailwind UI foundations for buttons, forms, cards, badges, tables, lists, and system states with accessible Django-compatible markup.
+2026-07-26 12:25:20 +08 — Completed SBGC-32: Defined the accessible Micro/Mystiko/Macro visual system with shared labels, legends, responsive score summaries, Observable Plot bars, D3 radar charts, and documented product-owner chart-selection authority.

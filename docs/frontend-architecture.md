@@ -41,6 +41,10 @@ Pages must not invent arbitrary `max-w-*`, padding, or margin conventions withou
 
 Reusable Astro components are in `src/components/ui/`. See [`docs/ui-foundations.md`](ui-foundations.md) for the component inventory, supported variants, and design conventions.
 
+### Skill Visual System
+
+Micro/Mystiko/Macro visualisation uses Observable Plot (bars) and D3 (radar). Canonical dimension order, labels, symbols, and colour tokens are defined in `src/lib/skill-dimensions.ts`. See [`docs/skill-visual-system.md`](skill-visual-system.md). Django owns authoritative scores; Astro owns presentation only. The bar-versus-radar product decision belongs to Ammar Iskandar.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.

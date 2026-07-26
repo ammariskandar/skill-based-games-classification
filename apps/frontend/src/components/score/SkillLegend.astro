@@ -1,0 +1,43 @@
+---
+import {
+  DIMENSION_LIST,
+  DIMENSION_TEXT_CLASSES,
+  type DimensionDef,
+} from "../../lib/skill-dimensions";
+
+interface Props {
+  compact?: boolean;
+}
+
+const dimensions: DimensionDef[] = DIMENSION_LIST;
+---
+
+<ul
+  class:list={[
+    "flex flex-wrap gap-x-4 gap-y-1",
+    Astro.props.compact ? "text-xs" : "text-sm",
+  ]}
+  aria-label="Skill dimensions"
+>
+  {
+    dimensions.map((d) => (
+      <li class="inline-flex items-center gap-1.5">
+        <span
+          aria-hidden="true"
+          class:list={[
+            Astro.props.compact
+              ? "text-xs leading-none"
+              : "text-sm leading-none",
+            DIMENSION_TEXT_CLASSES[d.id],
+          ]}
+        >
+          {d.symbol}
+        </span>
+        <span class="text-text font-medium">{d.label}</span>
+        {!Astro.props.compact && (
+          <span class="text-muted">{d.description}</span>
+        )}
+      </li>
+    ))
+  }
+</ul>

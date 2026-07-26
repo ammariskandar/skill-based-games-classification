@@ -57,3 +57,19 @@ This file records explicit human product/architecture decisions that override or
 - Final responsive design system.
 
 **Future review trigger:** Revisit only when real catalogue, ranking, or game-detail layouts show a measured need for additional layout modes or different gutter scales.
+
+---
+
+## SBGC-32 — Bar Chart vs Radar Chart Authority
+
+**Date:** 2026-07-26
+
+**Ticket:** SBGC-32
+
+**Decision:** Both Observable Plot bars and D3 radar charts are implemented as evaluation candidates. No final product default has been selected.
+
+**Authority:** Ammar Iskandar makes the final decision on when to use bars versus radar. Agents may recommend based on context analysis and trade-offs, but no agent recommendation becomes canonical without explicit owner approval.
+
+**Contexts may vary:** Different pages or features may ultimately use different chart forms. Catalogue rows may favour bars for compact precision; game-detail pages may favour radar for shape-based storytelling. Both foundations are ready for either path.
+
+**Non-negotiable rule:** Exact-value text representation (labels, percentages, totals) remains mandatory regardless of chart type. No tooltip-only design is acceptable.

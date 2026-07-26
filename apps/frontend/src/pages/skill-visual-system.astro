@@ -1,0 +1,229 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SkillProfilePanel from "../components/score/SkillProfilePanel.astro";
+import SkillLegend from "../components/score/SkillLegend.astro";
+import ErrorState from "../components/ui/ErrorState.astro";
+import { validateProfile } from "../lib/skill-dimensions";
+
+export const prerender = true;
+
+const balanced = { micro: 34, mystiko: 33, macro: 33 };
+const microHeavy = { micro: 65, mystiko: 20, macro: 15 };
+const mystikoHeavy = { micro: 15, mystiko: 70, macro: 15 };
+const macroHeavy = { micro: 15, mystiko: 15, macro: 70 };
+const zeros = { micro: 100, mystiko: 0, macro: 0 };
+
+const malformedError = validateProfile({
+  type: "challenge",
+  micro: 40,
+  mystiko: 40,
+  macro: 40,
+});
+---
+
+<BaseLayout
+  title="Skill Visual System"
+  description="Internal showcase for the MyGameDNA Micro/Mystiko/Macro visual system."
+  robots="noindex, nofollow"
+>
+  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+    Skill Visual System
+  </h1>
+  <p class="mt-2 text-muted">
+    Internal showcase. Bar and radar charts are candidates for evaluation — no
+    final product default has been selected.
+  </p>
+
+  <!-- Legend -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Legend</h2>
+    <div class="mt-3"><SkillLegend /></div>
+  </section>
+
+  <!-- Bars: balanced profiles -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Bars</h2>
+    <p class="text-sm text-muted">
+      Observable Plot horizontal bars. Precision-first layout.
+    </p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (balanced)"
+        {...balanced}
+        chart="bars"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (balanced)"
+        {...balanced}
+        chart="bars"
+      />
+    </div>
+  </section>
+
+  <!-- Radar: balanced profiles -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Radar</h2>
+    <p class="text-sm text-muted">D3 radar/spider chart. Shape-first layout.</p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (balanced)"
+        {...balanced}
+        chart="radar"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (balanced)"
+        {...balanced}
+        chart="radar"
+      />
+    </div>
+  </section>
+
+  <!-- Shape variations -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Shape Variations</h2>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <div class="space-y-4">
+        <SkillProfilePanel
+          type="challenge"
+          title="Challenge (Micro-heavy)"
+          {...microHeavy}
+          chart="radar"
+        />
+        <SkillProfilePanel
+          type="challenge"
+          title="Challenge (Mystiko-heavy)"
+          {...mystikoHeavy}
+          chart="radar"
+        />
+        <SkillProfilePanel
+          type="challenge"
+          title="Challenge (Macro-heavy)"
+          {...macroHeavy}
+          chart="radar"
+        />
+      </div>
+      <div class="space-y-4">
+        <SkillProfilePanel
+          type="reward"
+          title="Reward (Micro-heavy)"
+          {...microHeavy}
+          chart="bars"
+        />
+        <SkillProfilePanel
+          type="reward"
+          title="Reward (Mystiko-heavy)"
+          {...mystikoHeavy}
+          chart="bars"
+        />
+        <SkillProfilePanel
+          type="reward"
+          title="Reward (Macro-heavy)"
+          {...macroHeavy}
+          chart="bars"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Edge case: zero value -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Edge Case — All Micro</h2>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (100% Micro)"
+        {...zeros}
+        chart="bars"
+      />
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (100% Micro)"
+        {...zeros}
+        chart="radar"
+      />
+    </div>
+  </section>
+
+  <!-- Malformed data -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Malformed Data</h2>
+    <div class="mt-4">
+      <ErrorState
+        title="Invalid Profile"
+        message={malformedError
+          .map((e) => `${e.field}: ${e.message}`)
+          .join("; ")}
+      />
+    </div>
+  </section>
+
+  <!-- Multi-instance verification: two bars side-by-side -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Multi-Instance — Two Bars</h2>
+    <p class="text-sm text-muted">
+      Proves reusable components with <code>data-skill-bars</code> work simultaneously
+      without ID collisions.
+    </p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (Micro-heavy)"
+        {...microHeavy}
+        chart="bars"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (Macro-heavy)"
+        {...macroHeavy}
+        chart="bars"
+      />
+    </div>
+  </section>
+
+  <!-- Multi-instance verification: two radars side-by-side -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Multi-Instance — Two Radars</h2>
+    <p class="text-sm text-muted">
+      Proves reusable components with <code>data-skill-radar</code> work simultaneously
+      without ID collisions.
+    </p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge (Mystiko-heavy)"
+        {...mystikoHeavy}
+        chart="radar"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward (Micro-heavy)"
+        {...microHeavy}
+        chart="radar"
+      />
+    </div>
+  </section>
+
+  <!-- No-chart fallback -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Chart-Free Summary</h2>
+    <p class="text-sm text-muted">Accessible text summary — always present.</p>
+    <div class="mt-4 grid gap-6 lg:grid-cols-2">
+      <SkillProfilePanel
+        type="challenge"
+        title="Challenge"
+        {...balanced}
+        chart="none"
+      />
+      <SkillProfilePanel
+        type="reward"
+        title="Reward"
+        {...balanced}
+        chart="none"
+      />
+    </div>
+  </section>
+</BaseLayout>
