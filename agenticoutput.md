@@ -17,3 +17,4 @@
 2026-07-26 11:24:57 +08 — Completed SBGC-31: Created reusable Astro and Tailwind UI foundations for buttons, forms, cards, badges, tables, lists, and system states with accessible Django-compatible markup.
 2026-07-26 12:25:20 +08 — Completed SBGC-32: Defined the accessible Micro/Mystiko/Macro visual system with shared labels, legends, responsive score summaries, Observable Plot bars, D3 radar charts, and documented product-owner chart-selection authority.
 2026-07-27 10:59:31 +08 — Completed SBGC-33: Created the core Astro route skeletons for public, account, dynamic game, search, rankings, not-found, and error experiences with documented rendering boundaries.
+2026-07-27 19:10:14 +08 — Completed SBGC-34: Created the server-side Astro API client layer with typed results, environment-based Django endpoint configuration, timeout handling, normalized errors, and reusable JSON request utilities.
