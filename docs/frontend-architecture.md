@@ -77,8 +77,8 @@ Future dynamic routes **must not be prerendered** unless an explicit product dec
 - `/search` reads `?q=` from `Astro.url.searchParams`. A semantic GET form updates the URL. No backend search is executed.
 - `/profile` is SSR and will require authentication in a future phase.
 - `/login` is prerendered as an informational placeholder — no credential form, no auth package.
-- `/error` is a prerendered generic fallback page. No exception, stack, or provider details are exposed.
-- Custom 404 uses `404.astro` and is handled by the Vercel serverless runtime.
+- `/error` is a prerendered visual fallback / demo route only. It does not automatically catch Astro SSR exceptions, does not handle Django/API failures, and does not implement HTTP 500 behaviour. Actual framework-level exception handling, API failure states, and production-safe error handling remain pending future integration/security work.
+- Custom 404 uses `404.astro` and is the actual custom not-found route, handled by the Vercel serverless runtime.
 - Route skeletons contain honest placeholder content — no fake records, counts, rankings, or operational claims.
 
 ## Client-Side JavaScript

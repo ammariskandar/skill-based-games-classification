@@ -12,7 +12,9 @@ const q = Astro.url.searchParams.get("q") ?? "";
   <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Search</h1>
 
   <form method="get" action="/search" class="mt-6 flex max-w-lg gap-2">
+    <label for="search-q" class="sr-only">Search games</label>
     <input
+      id="search-q"
       type="search"
       name="q"
       value={q}
@@ -37,7 +39,7 @@ const q = Astro.url.searchParams.get("q") ?? "";
           <h2 class="mt-2 text-xl font-semibold text-text">
             Search results not yet available
           </h2>
-          <p class="mt-2 max-w-lg text-sm text-muted">
+          <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
             You searched for <strong class="text-text">{q}</strong>. Search
             functionality will be available once the Django API and game
             catalogue are connected. Results will be filterable by skill
@@ -58,7 +60,7 @@ const q = Astro.url.searchParams.get("q") ?? "";
           <h2 class="mt-2 text-xl font-semibold text-text">
             Search is not yet available
           </h2>
-          <p class="mt-2 max-w-lg text-sm text-muted">
+          <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
             Enter a game name above to search. Search functionality will be
             available once the Django API and game catalogue are connected.
           </p>

@@ -19,7 +19,9 @@ interface Props {
   <h2 class="mt-2 text-xl font-semibold text-text">{Astro.props.title}</h2>
   {
     Astro.props.description && (
-      <p class="mt-2 max-w-lg text-sm text-muted">{Astro.props.description}</p>
+      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+        {Astro.props.description}
+      </p>
     )
   }
   {
