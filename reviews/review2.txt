@@ -1,0 +1,1482 @@
+SOFTWARE DEVELOPMENT REVIEW 2
+
+Review metadata
+
+Jira task: SBGC-140
+Review number: 2
+Review filename: review2.txt
+Previous report: reviews/review1.txt
+Review 1 baseline commit: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024
+Repository: /home/ammaris/projects/skill-based-games-classification
+Review timestamp: 2026-07-27T20:35:53+08:00
+Review mode: Read-only
+Working-tree state: Clean
+Checked-out branch: SBGC-34-create-frontend-api-layer
+Checked-out HEAD: 8b8e1bb034dea1ff29c077dc986431eb36ca4611
+Checked-out tree: 7e4c0bf99fc7182ea3c1c71e93755c9bf1aeaf3d
+Local main: 7a84fe93bbc3507528707b217ce699067dd27930
+Cached origin/main: 7a84fe93bbc3507528707b217ce699067dd27930
+Verified remote main: a17a4e3bf28fc21a21261757dc798de7ebb71bef
+Verified remote main tree: 7e4c0bf99fc7182ea3c1c71e93755c9bf1aeaf3d
+Exact review range: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024..a17a4e3bf28fc21a21261757dc798de7ebb71bef
+Local source-equivalent range: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024..8b8e1bb034dea1ff29c077dc986431eb36ca4611
+
+Preparation result:
+
+The repository was not literally checked out on updated main. It was on the merged SBGC-34 feature branch, while local main and cached origin/main were one merge behind. Updating refs or switching branches would have changed repository state and was prohibited by the absolute read-only rule.
+
+The public GitHub commit and PR evidence established that remote main was a17a4e3bf28fc21a21261757dc798de7ebb71bef, the merge commit for PR #20, with parents 7a84fe93bbc3507528707b217ce699067dd27930 and 8b8e1bb034dea1ff29c077dc986431eb36ca4611. Its tree exactly matches the checked-out tree. The review therefore has no source-content gap: the inspected files are byte-for-byte the merged-main source state, although the local branch/ref condition does not comply with the preparation procedure. See the [remote merge commit](https://api.github.com/repos/ammariskandar/skill-based-games-classification/commits/a17a4e3bf28fc21a21261757dc798de7ebb71bef) and [PR #20](https://github.com/ammariskandar/skill-based-games-classification/pull/20).
+
+The final working-tree check remained clean. No files were created, edited, moved, renamed, deleted, staged, committed, or generated.
+
+Executive verdict
+
+Overall recommendation: Continue after targeted remediation.
+
+The accepted architecture remains intact. There is one server-side Astro-to-Django client, no browser-to-Django client, no second fetch wrapper, no SPA router, no React/Vite production architecture, no state-management library, no frontend copy of Django ranking or classification logic, no speculative backend domain schema, no real API route consumption, and no modification or import of the locked design reference.
+
+No Critical or High finding was established.
+
+This review records:
+
+- 9 Medium findings.
+- 9 Low findings.
+- 0 Critical findings.
+- 0 High findings.
+- 3 Review 1 findings resolved.
+- 1 Review 1 finding partially resolved.
+- 3 Review 1 findings unresolved.
+- 0 Review 1 findings classified as accepted/deferred, regressed, or superseded.
+
+The main material concern is that SBGC-34 is structurally well-placed but not behaviourally ready for the first real endpoint integration. Timeout and caller cancellation stop at response headers rather than body completion; ignored bodies are not disposed of; URL and redirect boundaries are incomplete; 204 responses create a known false type assertion; error categories and documentation diverge; and no behavioural tests exercise any of these properties.
+
+Independent frontend and Django foundation work can continue. The first real Astro-to-Django endpoint integration should wait for targeted API-client remediation and transport tests. Public deployment is not ready.
+
+Delta since Review 1
+
+Git delta
+
+The exact remote-main range contains 26 commits after the Review 1 baseline:
+
+- 11 merge commits, including the remote PR #20 merge.
+- 15 non-merge implementation or correction commits.
+- 59 changed files.
+- 4,643 insertions.
+- 707 deletions.
+- No whitespace errors reported by git diff --check.
+- No changes under design-reference relative to the Review 1 baseline.
+
+Merged Jira/PR work evidenced in Git:
+
+- PR #10 — SBGC-145, software-development reviewer setup.
+  Merge: d404c9a8acd302a2c1012b24e3b0a692457dcbbb
+  Feature tip: e3dccb7497ce0e76d00e5d01ceda7ed3c7332024
+  The merge tree is identical to the Review 1 baseline tree.
+
+- PR #11 — SBGC-146, npm workspace lockfile ownership.
+  Merge: 1780b41267f59583a80cb5b451fef22ba570e5a2
+  Feature commit: 7e9b4e8cd41b7e61d8288552ce115f36fb9ca21b
+
+- PR #12 — SBGC-139, save Review 1 artefact.
+  Merge: 9e6f91a32898d39ecc239097795bc4176cf7d868
+  Feature commit: 01f87cb3bcb2b92a1f96e7c7cc8c095957a96f78
+
+- PR #13 — SBGC-147, README alignment.
+  Merge: 9bed1adcd245d1f4380f184c5f318f70ebd27736
+  Feature commit: ee61fdddece35b2694ab720fabda19d9253e98e8
+
+- PR #14 — SBGC-148, CI gate parity.
+  Merge: 5b4a155a221f2fde7be1bd55a0e58a4281c4534f
+  Feature commit: fa677f50118790b1c4152bce030762812e6b22aa
+
+- PR #15 — SBGC-30, global application shell.
+  Merge: a0867d2ec1e9603295ffb8d05d09c2fe184c5bbe
+  Feature commit: 2d9a797ed960b678cc8372ab9b3f1007d225c326
+
+- PR #16 — SBGC-150, fluid shell and controlled gutters.
+  Merge: 0f14ec1893abe132a810e1a6fb3bb86060e04b5b
+  Feature commit: 553ab033064c667c6c75543c1b800e8fe2383071
+
+- PR #17 — SBGC-31, reusable UI foundations.
+  Merge: d25393fd3aa0964ebdca427d89bdb93137aaf99d
+  Feature commits: 153dfc649b341c8853fdae448b6649e8c162f791 and correction cc69efea942e9e1a6e336c7002fe280d99a29f4b
+
+- PR #18 — SBGC-32, skill visual system.
+  Merge: e14f18f3e100dcb90d70741ed5a31e4d3a54bd4e
+  Feature commits: 9707b39eafab6eddcb05b92ee68794ecdca87a7a, b6f49949043edd8392b5d2842e60d6b8ce3bb564, and cc8cc4c03cdcf463f221c73fd91cac7206a64e29
+
+- PR #19 — SBGC-33, route skeletons.
+  Merge: 7a84fe93bbc3507528707b217ce699067dd27930
+  Feature commits: 78b249e48c22d2cbc0d8a0c892af913e2695f282 and correction c0b611b60a9470da29ea5510608470ce6add2d24
+
+- PR #20 — SBGC-34, frontend API layer.
+  Remote merge: a17a4e3bf28fc21a21261757dc798de7ebb71bef
+  Feature commits: a8b957420c89b088eb5d7b2d8318b2cb5fae1278 and correction 8b8e1bb034dea1ff29c077dc986431eb36ca4611
+
+Source growth since Review 1
+
+- Tracked frontend source files: 5 to 42.
+- Tracked backend Python files: 6 to 6.
+- Direct frontend runtime dependencies: 2 to 4.
+- Direct frontend development dependencies: 10 to 11.
+- Root direct dependencies: 0 to 0.
+- npm lock package entries: 552 to 614.
+- Tracked test files: 0 to 0.
+- Real frontend test suites: 0 to 0.
+- Real backend test suites: 0 to 0.
+- CI test entry points: 0 to 2, both explicitly documented placeholders.
+- Production fetch wrappers: 0 to 1.
+- Routes importing the API client: 0.
+- Direct production fetch calls outside the shared client: 0.
+- Design-reference CI isolation: absent to present.
+- Design-reference source changes: 0.
+
+Review 1 finding resolution matrix
+
+REVIEW-1-01 — Unresolved
+
+The insecure Django secret fallback remains at apps/backend/config/settings.py:30-34. DJANGO_SECRET_KEY may still be absent while DEBUG is false, leaving the committed development value active. No code or configuration in the delta resolves the fail-closed requirement.
+
+REVIEW-1-02 — Unresolved
+
+CORS_ALLOWED_ORIGINS and ADMIN_URL_PATH remain read at apps/backend/config/settings.py:42-46, but neither affects behaviour. No CORS application or middleware is installed, and apps/backend/config/urls.py:21-23 still hardcodes "admin/". The server-to-server architecture means CORS may legitimately be unnecessary for the normal request path, but advertising an inert variable remains misleading.
+
+REVIEW-1-03 — Resolved
+
+Commit fa677f50118790b1c4152bce030762812e6b22aa, merged in PR #14, added explicit frontend and backend test entry points and CI enforcement of design-reference isolation. package.json:14-16,29 and .github/workflows/ci.yml:36-40,77-78 now align. Documentation honestly states that the test commands remain placeholders.
+
+REVIEW-1-04 — Resolved
+
+Commit 7e9b4e8cd41b7e61d8288552ce115f36fb9ca21b, merged in PR #11, corrected workspace ownership. The root manifest and root lock package now have no direct dependencies, while Tailwind remains owned by apps/frontend.
+
+REVIEW-1-05 — Resolved
+
+Commit ee61fdddece35b2694ab720fabda19d9253e98e8, merged in PR #13, corrected the specific stale Tailwind status and frontend starter README defects. New documentation drift exists, but it is not the same defect and does not negate resolution of the original finding.
+
+REVIEW-1-06 — Partially resolved
+
+SBGC-145 was merged unchanged through PR #10, and Review 1 was preserved through PR #12. The historical Review 1 evidence baseline is therefore reproducible. However, Review 2 was again initiated from a feature branch rather than checked-out updated main. Tree equivalence with remote main prevents a content gap, but the procedural requirement remains incompletely institutionalised.
+
+REVIEW-1-07 — Unresolved
+
+The duplicated documentation architecture remains. The predicted synchronization risk has now materialised in route rendering descriptions, styling status, local CI summaries, API-client guarantees, visual-system validation claims, and overlapping Jira scopes. context.md still provides usable precedence, so the project remains inheritable, but rationalisation or synchronization controls have not been implemented.
+
+Critical findings
+
+None.
+
+No active data exposure, credential compromise, destructive corruption, or fundamentally unsafe architectural direction was established.
+
+High-priority findings
+
+None.
+
+No current serious public security failure, implemented business-rule corruption, major architectural divergence, or defect likely to require extensive redesign was established.
+
+Medium-priority findings
+
+ID: REVIEW-2-01
+Severity: Medium
+Area: Django security configuration
+Type: Security configuration defect
+Status relative to Review 1: Unresolved continuation of REVIEW-1-01
+Finding: Django still falls back to a committed insecure secret independently of DEBUG or deployment mode.
+Evidence: apps/backend/config/settings.py:30-34 assigns "django-insecure-dev-key-do-not-use-in-production" whenever DJANGO_SECRET_KEY is absent. apps/backend/.env.example:1 is blank, and docs/environment-variables.md:33,44-48 states that the value is required and production must fail safely. No production-mode validation exists. This code is unchanged from Review 1.
+Why it matters: Django uses SECRET_KEY for cryptographic signing and security-sensitive framework operations. A known shared fallback converts missing deployment configuration from a detectable startup failure into an apparently functioning but insecure deployment.
+Current impact: No public Django deployment or application session flow was evidenced. The risk is configuration-triggered rather than an active exposed compromise.
+Future impact: A Render deployment with a missing or blank secret could use a predictable value for signed data, sessions, password-reset tokens, or other future framework features.
+Recommended action: Permit a development fallback only under an explicit local-development mode, and make missing or blank production secrets fail during startup. Exercise both development and production-like settings in automated tests and Django deployment checks.
+Suggested Jira scope: Carry into SBGC-41, SBGC-104, and SBGC-105; do not defer beyond the first public Django environment.
+Confidence: High
+
+ID: REVIEW-2-02
+Severity: Medium
+Area: Django environment contract
+Type: Configuration illusion
+Status relative to Review 1: Unresolved continuation of REVIEW-1-02
+Finding: CORS_ALLOWED_ORIGINS and ADMIN_URL_PATH continue to be presented as operative settings while the application ignores them.
+Evidence: apps/backend/config/settings.py:42-46 reads both variables. apps/backend/config/urls.py:21-23 hardcodes "admin/". INSTALLED_APPS and MIDDLEWARE at settings.py:51-68 contain no CORS integration. apps/backend/.env.example:5,8 and docs/environment-variables.md:37,40 advertise both variables. No commit in the review range connects either value to behaviour.
+Why it matters: Configuration that parses successfully but has no effect is more dangerous than an explicit absence because operators and implementation agents may believe a security or routing control is active.
+Current impact: The admin route remains /admin/ regardless of ADMIN_URL_PATH. CORS_ALLOWED_ORIGINS grants and denies nothing. No browser-facing Django API currently exists, so no active cross-origin exposure was demonstrated.
+Future impact: Deployment or API work may rely on controls that are not enforced. Installing permissive CORS merely to satisfy the variable would also conflict with the preferred Browser→Astro→Django path unless a genuine browser-to-Django use case is approved.
+Recommended action: Wire ADMIN_URL_PATH when Django Admin is configured. For CORS, first decide whether any approved direct browser-to-Django request exists; remove or explicitly defer the variable if not, and install/configure enforcement only when architecture requires it. Add configuration-behaviour tests.
+Suggested Jira scope: ADMIN_URL_PATH under SBGC-40/SBGC-106; trusted-origin and CORS rationalisation under SBGC-41, SBGC-91, or SBGC-105.
+Confidence: High
+
+ID: REVIEW-2-03
+Severity: Medium
+Area: Frontend API transport
+Type: Illusion of timeout, cancellation, and cleanup
+Status relative to Review 1: New in Review 2
+Finding: The SBGC-34 timeout and caller-cancellation lifecycle ends when response headers arrive, not when the response operation and body handling finish; ignored response bodies are also neither consumed nor cancelled.
+Evidence: apps/frontend/src/lib/server/api/client.ts:88-110 starts the timer and caller abort listener. fetch resolves at client.ts:119-124. cleanup() is called immediately at line 147. Body handling occurs afterward at lines 149-192, including await response.text() at line 173. Non-2xx responses return at lines 149-155 and non-JSON responses return at lines 162-169 without consuming or cancelling response.body. docs/frontend-api-layer.md:64-69 describes an eight-second request timeout and clean timeout/caller-abort distinction without qualifying that protection as headers-only. Fetch resolves after status and headers, before body completion; aborting can affect later body reads, as defined by the [Fetch Standard](https://fetch.spec.whatwg.org/) and described in [MDN’s Fetch guidance](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch). Node’s Undici guidance recommends consuming or cancelling every response body because garbage collection is not a deterministic connection-release mechanism: [Undici garbage-collection guidance](https://github.com/nodejs/undici#garbage-collection).
+Why it matters: An upstream can send headers and then stall, leaving an Astro SSR invocation pending beyond timeoutMs. Caller cancellation after header receipt is ignored. Body-read failures can be reported as parse failures. Repeated Django or gateway error responses can hold network resources during the very failure periods in which connection reuse matters most.
+Current impact: No Astro route imports this client, so no user-facing request currently reaches the affected branches.
+Future impact: The first dynamic route could exceed Vercel execution limits, continue upstream work after the inbound request is cancelled, misclassify failures, or amplify an upstream degradation through poor connection reuse.
+Recommended action: Treat fetch plus body consumption or explicit body cancellation as one operation. Retain timeout and caller cancellation until every result path has consumed or cancelled the body, and place cleanup in a final operation-lifetime path. Preserve the source of cancellation. Test slow headers, slow bodies, pre-abort, abort during body consumption, timeout during body consumption, body-stream failure, and cleanup on every return branch.
+Suggested Jira scope: SBGC-34 corrective follow-up, reconciled with SBGC-90 and SBGC-92 before the first endpoint integration.
+Confidence: High
+
+ID: REVIEW-2-04
+Severity: Medium
+Area: Frontend API URL and redirect boundary
+Type: Security and transport-boundary precursor
+Status relative to Review 1: New in Review 2
+Finding: Relative-path enforcement constrains only the initial caller string; base-URL validation, query composition, path-prefix containment, and redirect behaviour remain incomplete.
+Evidence: client.ts:28-37 checks only whether DJANGO_API_URL is truthy and removes trailing slashes. It does not validate scheme, credentials, host, query, fragment, whitespace, or production HTTPS. resolveUrl at lines 43-61 concatenates strings. Dot-segment normalization can escape a configured base-path prefix. The scheme-regex branch at lines 54-60 is unreachable because line 47 first rejects every string not beginning with "/". getJSON at lines 197-207 always appends "?"; a path already containing a query or fragment is composed incorrectly. fetch at lines 119-124 does not set redirect, so the Fetch default is follow. No check of response.redirected, response.url, final origin, or final method exists. Django CommonMiddleware is active at apps/backend/config/settings.py:63, and Django’s default APPEND_SLASH behaviour can redirect unmatched paths; Django warns that redirecting requests can lose POST data in its [APPEND_SLASH documentation](https://docs.djangoproject.com/en/6.0/ref/settings/#append-slash). The [Fetch redirect algorithm](https://fetch.spec.whatwg.org/#http-redirect-fetch) permits 301/302 POST and 303 non-GET redirects to change the method to GET.
+Why it matters: A typo in an API trailing slash may be silently masked. A future POST can receive a successful final GET response even though the mutation did not occur. A trusted Django or proxy endpoint that redirects to another origin can cause the Astro server to leave its intended backend origin. That is a latent open-redirect/SSRF composition risk, not an active arbitrary-host SSRF in the present application.
+Current impact: No route invokes getJSON or postJSON. The initial caller checks do reject absolute and protocol-relative path arguments, so no current arbitrary absolute URL input was found.
+Future impact: Incorrect search queries, requests outside an intended API path prefix, misleading configuration errors, false mutation success, and erosion of the server-to-server origin boundary.
+Recommended action: Parse and validate DJANGO_API_URL as an explicit HTTP(S) URL contract; disallow credentials, query, and fragment; define production HTTPS requirements; construct request URLs using URL semantics; merge or prohibit pre-existing path queries; assert final origin and any base-path prefix; and adopt an explicit redirect rejection policy unless a specific endpoint contract requires otherwise. Test all slash, query, fragment, dot-segment, and 301/302/303/307/308 cases.
+Suggested Jira scope: One URL/redirect hardening scope under the SBGC-34/SBGC-90 transport work, with environment validation coordinated through SBGC-91.
+Confidence: High
+
+ID: REVIEW-2-05
+Severity: Medium
+Area: Frontend API result and error contract
+Type: Illusion of normalized error handling
+Status relative to Review 1: New in Review 2
+Finding: Known runtime states and materially different failure classes are hidden behind unsafe casts, contradictory status fields, or misleading error categories.
+Evidence: apps/frontend/src/lib/server/api/types.ts:5-9 requires data: T for every ApiSuccess<T>, but client.ts:157-160 returns undefined as unknown as T for every 204. JSON.stringify(body) occurs inside the broad fetch try at client.ts:119-124, so cyclic values and BigInt serialization failures become NETWORK_ERROR at lines 139-144. Invalid configured URLs can also become NETWORK_ERROR rather than CONFIG_ERROR. response.text() and JSON.parse() share one catch at lines 171-189, causing stream failures and syntax failures to receive the same parse-oriented message. ApiFailure.status exists at types.ts:12-16, while ApiError.status exists separately at lines 32-40; the client populates only the outer status. docs/frontend-api-layer.md:52-56 says ApiError.status is present when available. UNKNOWN_ERROR is declared and documented but never emitted. Raw caught Error objects are stored in cause at client.ts:141-143 and 186-188 even though types.ts:35-40 and docs/frontend-api-layer.md:54-56 promise safe diagnostic context without stack traces. Header merging at client.ts:112-115 is case-sensitive before Fetch normalisation, allowing duplicate content-type or accept names with different casing. Response media-type matching at lines 162-163 is case-sensitive substring matching.
+Why it matters: The discriminated union appears stronger than the runtime contract. A caller can narrow ok === true and dereference data after a 204 even though no data exists. Operators and callers cannot reliably distinguish caller serialization, configuration, network, response-stream, and JSON-syntax failures. Duplicate status locations have already diverged. Future retry, alerting, and UI decisions can therefore be based on the wrong category.
+Current impact: There is no route consumer. Direct use would already exhibit these semantics.
+Future impact: Runtime exceptions on bodyless endpoints, false success, caller-specific workarounds, misleading observability, and accidental exposure of internal diagnostic objects.
+Recommended action: Model no-content success explicitly; never cast known undefined to arbitrary T. Select one authoritative status location. Serialize before entering the network catch. Separate request construction, network, body-read, and parse failures where actionable. Remove unreachable categories or add a genuine final normalization boundary. Treat cause as sensitive internal diagnostics rather than display-safe data. Use Headers for case-normalized header policy and parse media types deliberately. Retain the documented statement that TypeScript generics are not runtime schema validation.
+Suggested Jira scope: Error/result-contract consolidation under an SBGC-34 corrective follow-up and SBGC-92; coordinate future structured backend errors with SBGC-89 and SBGC-100.
+Confidence: High
+
+ID: REVIEW-2-06
+Severity: Medium
+Area: Testing and CI
+Type: Missing behavioural coverage
+Status relative to Review 1: New coverage requirement after REVIEW-1-03 was resolved
+Finding: The first failure-sensitive network abstraction has no behavioural tests, while green CI runs only an intentionally successful frontend placeholder.
+Evidence: There are zero tracked test files. package.json:14 defines test:frontend as an informational echo. .github/workflows/ci.yml:36-37 invokes that placeholder. apps/frontend/package.json has no test script or runner. The untested client surface includes configuration, path rejection, URL joining, query composition, redirects, request serialization, header merging, content types, empty bodies, 204, malformed JSON, body-read failure, non-2xx responses, timeout, cancellation, resource cleanup, and absence of retries. GitHub CI succeeded for feature HEAD 8b8e1bb and for merged main a17a4e3, but those runs establish formatting, lint, Astro checking, placeholder execution, isolation, build, Ruff, and Django system-check success—not transport behaviour. The merged-main CI run was [GitHub Actions run 30264208531](https://github.com/ammariskandar/skill-based-games-classification/actions/runs/30264208531).
+Why it matters: Static checking cannot expose network lifecycle, Fetch redirect, body-stream, or cancellation defects. The shared client is intended to become a dependency of every dynamic route.
+Current impact: Defects remain unreachable through current pages and can coexist with green CI.
+Future impact: The first endpoint will test the client, route, backend, and deployment boundary simultaneously, making failures harder to localise and shared semantics harder to change safely.
+Recommended action: Add focused transport tests before route integration. Cover missing and malformed configuration; accepted and rejected paths; base/path/query joining; header casing; serializable and unserializable bodies; every response class; redirects; slow headers and bodies; pre-aborted and in-flight signals; timer/listener cleanup; body disposal; and no retries. Replace the frontend placeholder in local and hosted CI when the suite exists. A browser runner is unnecessary for this server transport.
+Suggested Jira scope: A bounded prerequisite under SBGC-93 or a dedicated SBGC-34/SBGC-90 test follow-up. Do not defer it exclusively to broad page-level SBGC-121 work.
+Confidence: High
+
+ID: REVIEW-2-07
+Severity: Medium
+Area: Product model and visual-system semantics
+Type: Context collapse precursor
+Status relative to Review 1: New in Review 2
+Finding: The visual-system definition has one description per Micro/Mystiko/Macro label even though the canonical architecture requires different meanings for Challenge and Reward.
+Evidence: context.md:189-196 states that the profiles are conceptually independent and that the same label must not be assumed to mean exactly the same thing. Challenge definitions appear at context.md:204-231; Reward Micro, Macro, and Mystiko are separately defined at lines 241-302. apps/frontend/src/lib/skill-dimensions.ts:10-45 defines one DimensionDef.description per label. Those descriptions describe Challenge execution, hidden-information reasoning, and systems strategy. SkillLegend.astro:8-12 has no profile-type prop and renders the same description at lines 23-39. docs/skill-visual-system.md:3,7-13 presents those descriptions as canonical across both profiles. Current Reward panels use compact legends, so they do not presently render the incorrect long descriptions beside Reward scores.
+Why it matters: Shared labels and colours are valid; shared meanings are not. A single semantic dictionary creates a small but direct path for Challenge terminology to colonise Reward UI, documentation, tooltips, accessibility text, or future API adapters.
+Current impact: Internal full-legend output teaches only the Challenge meaning without identifying it as Challenge. Current public routes contain no real score panels.
+Future impact: Users may interpret Reward Micro as mechanical execution, Reward Mystiko as hidden-information reasoning, and Reward Macro as strategy, fundamentally misrepresenting the product’s central dual-profile model.
+Recommended action: Preserve common IDs, order, symbols, and colour tokens, but make explanatory copy profile-aware. Require explicit Challenge or Reward context whenever descriptions or teaching content are rendered. Add representative tests or review fixtures for all six meanings. Do not move authoritative score validation or classification logic into Astro.
+Suggested Jira scope: Corrective SBGC-32 follow-up, coordinated with SBGC-85, SBGC-86, and the unassigned dual-profile information-architecture work explicitly listed under context.md:1913-1923.
+Confidence: High
+
+ID: REVIEW-2-08
+Severity: Medium
+Area: Frontend defensive rendering
+Type: Validation illusion
+Status relative to Review 1: New in Review 2
+Finding: validateProfile is documented as preventing malformed rendering, but score components do not invoke it or otherwise enforce its result.
+Evidence: apps/frontend/src/lib/skill-dimensions.ts:84-134 implements validateProfile and isValidProfile. SkillProfilePanel.astro:8-17 accepts direct numeric props and renders them through summary, bar, radar, and fallback components at lines 37-80 without validation. The only call is the deliberately malformed showcase example at apps/frontend/src/pages/skill-visual-system.astro:16-21, which separately displays an ErrorState. docs/skill-visual-system.md:51-58 states that presentation validation enforces the profile contract and that malformed input is never silently rendered.
+Why it matters: TypeScript checks only trusted compile-time callers. Future JSON becomes untrusted at runtime, and SBGC-34 explicitly performs unchecked JSON assertions. An invalid total, NaN, decimal, missing field, or out-of-range value can reach a score component unless every future route remembers an undocumented adapter step.
+Current impact: Current showcase inputs are valid except the intentionally rejected sample. No backend response reaches these components.
+Future impact: Malformed upstream data can produce misleading percentages, malformed SVG or chart geometry, and authoritative-looking product output even when Django or an integration contract fails.
+Recommended action: Establish one mandatory defensive rendering boundary that validates or rejects external profile data before score components render. Keep Django authoritative; frontend validation should produce a safe error state, not independently correct or reinterpret domain data. Align documentation with the actual enforcement mechanism and test invalid, partial, non-finite, decimal, and non-100 inputs.
+Suggested Jira scope: SBGC-88, SBGC-101, or a bounded visual-system correctness follow-up before score components consume API data.
+Confidence: High
+
+ID: REVIEW-2-09
+Severity: Medium
+Area: Accessibility and visual design
+Type: Current WCAG contrast failure
+Status relative to Review 1: New in Review 2
+Finding: The dim text token is used for meaningful normal-sized text and placeholders at contrast ratios substantially below WCAG’s 4.5:1 requirement.
+Evidence: apps/frontend/src/styles/global.css:4-12 defines #484f58 as --color-dim, against #0d1117 background and #161b22/#1c2128 surfaces. Calculated ratios are approximately 2.28:1 on background, 2.09:1 on surface, and 1.95:1 on surface-2. Current uses include catalogue.astro:26-28, rankings.astro:24-26, Footer.astro:21-24, search.astro:22, TextInput.astro:32, and TextArea.astro:29. These are normal text or input hints, not disabled controls or purely decorative marks. WCAG 2.2 Success Criterion 1.4.3 requires at least 4.5:1 for normal text: [WCAG 2.2 Contrast Minimum](https://www.w3.org/TR/WCAG22/#contrast-minimum).
+Why it matters: Low-vision users and users viewing the application in poor display or lighting conditions cannot reliably read content that the UI intentionally exposes.
+Current impact: The footer copyright, route explanatory text, and search/input placeholders are affected now.
+Future impact: Reuse of text-dim will propagate the failure across forms, tables, filtering controls, and dense catalogue views.
+Recommended action: Reserve dim for non-text decoration or replace it with a token that meets the relevant contrast threshold on every supported background. Audit normal, hover, disabled, placeholder, error, and chart-label states in automated and manual accessibility checks.
+Suggested Jira scope: SBGC-35 and SBGC-86 accessibility work, with a small immediate token correction before broad frontend reuse.
+Confidence: High
+
+Low-priority findings
+
+ID: REVIEW-2-10
+Severity: Low
+Area: Frontend server boundary
+Type: Architectural drift precursor
+Status relative to Review 1: New in Review 2
+Finding: Server-only API-client intent is documented but not mechanically enforced at the environment or import boundary.
+Evidence: client.ts:10-12 relies on a comment. Files reside under src/lib/server/api, but that arbitrary directory name is not itself a browser-import prohibition. apps/frontend/eslint.config.js has no restricted-import rule. client.ts:29 reads import.meta.env.DJANGO_API_URL rather than a typed server-only environment module. No current route, client script, or hydrated component imports the client, and the variable lacks PUBLIC_, so no active browser bundle leakage was found. Astro provides typed server environment access through [astro:env/server](https://docs.astro.build/en/reference/modules/astro-env/).
+Why it matters: A later refactor can accidentally import runtime client exports from browser code and create a second transport path or confusing undefined configuration without violating the documented directory convention at review time.
+Current impact: None. Current imports and environment naming preserve the server-only architecture.
+Future impact: Browser-to-Django drift, duplicate transport code, or pressure to rename the API base PUBLIC_ merely to make an accidental client import compile.
+Recommended action: Use Astro’s server environment facility and/or an import restriction that fails checks when runtime API modules enter client code. Keep type-only exports separable when browser components legitimately need result-shape types.
+Suggested Jira scope: Small hardening under SBGC-35 or SBGC-91.
+Confidence: High
+
+ID: REVIEW-2-11
+Severity: Low
+Area: UI foundations and route skeletons
+Type: Orphaned code and component-contract drift
+Status relative to Review 1: New in Review 2
+Finding: An unused placeholder abstraction coexists with repeated inline placeholder markup, while several UI component props do not match their rendered behaviour.
+Evidence: apps/frontend/src/components/PagePlaceholder.astro was added in commit 78b249e but has no import or reference anywhere in current source. Catalogue, rankings, search, game, profile, and login routes implement variations of the same bordered placeholder block inline. SelectInput.astro:2-10 declares value but never applies it. TextArea.astro:2-13 declares value but renders only its slot at line 33. FormField.astro:7-13 makes for optional even though docs/ui-foundations.md:94-108 promises programmatically associated labels and value-compatible controls. Button.astro:32-40 always renders the slot after its generated loading text; the showcase’s <Button loading>Loading</Button> at ui-foundations.astro:40 produces duplicated “Loading…Loading” content.
+Why it matters: Unused abstractions and misleading component APIs encourage callers to assume behaviour that does not exist, then add page-specific workarounds. This is the early form of duplicate workflow rather than a large current maintenance burden.
+Current impact: The loading showcase renders duplicated text. No live Django form depends on the unused value props.
+Future impact: Server-rendered form values may disappear, labels may become unassociated, and placeholder styling may continue diverging across routes.
+Recommended action: Decide whether PagePlaceholder is the canonical route primitive or remove it; do not retain both strategies. Make component props correspond to emitted HTML, require association identifiers where the documented contract requires them, and define whether loading replaces or supplements slotted button content.
+Suggested Jira scope: Focused SBGC-31/SBGC-33 corrective follow-up before real forms and backend-dependent failure states expand.
+Confidence: High
+
+ID: REVIEW-2-12
+Severity: Low
+Area: Product alignment and internal showcases
+Type: Placeholder-honesty weakness
+Status relative to Review 1: New in Review 2
+Finding: A production-deployable internal showcase contains real game names and score-like values that conflict with the canonical 0–100 dual-profile model.
+Evidence: apps/frontend/src/pages/ui-foundations.astro:16 marks the route prerendered and lines 19-27 mark it noindex and internal. Lines 146-183 present Apex Legends, Civilization VI, and Elden Ring with columns named Micro, Mystiko, and Macro and decimal values such as 9.1, 2.8, and 4.2. These neither identify Challenge versus Reward nor total 100. The route is unlinked and noindex, but noindex is not access control and the prerendered page would still be deployed.
+Why it matters: Internal examples frequently become copied implementation seeds. These values resemble an obsolete 0–10 score model and can reintroduce the exact product ambiguity that context.md eliminated.
+Current impact: Only a directly accessed internal showcase is affected; public catalogue and rankings routes honestly state that backend data is unavailable.
+Future impact: Demo data may be copied into tests, fixtures, tables, or stakeholder screenshots and interpreted as a supported schema.
+Recommended action: Either exclude development showcases from production output or use obviously fictional, explicitly typed examples that obey the current profile contract. Keep internal routes clearly distinct from public product pages.
+Suggested Jira scope: SBGC-31/SBGC-35 showcase-governance follow-up.
+Confidence: High
+
+ID: REVIEW-2-13
+Severity: Low
+Area: SEO metadata and frontend configuration
+Type: Deployment fail-open behaviour
+Status relative to Review 1: New in Review 2
+Finding: Missing or malformed PUBLIC_SITE_URL silently produces unreliable canonical and Open Graph URLs.
+Evidence: apps/frontend/src/layouts/BaseLayout.astro:21 falls back to http://localhost:4321. Lines 22-24 concatenate siteUrl and canonicalPath as strings without URL validation or slash normalization. docs/environment-variables.md:17-21 calls PUBLIC_SITE_URL required. Routes without canonicalPath—including 404, error, and the two internal showcases—receive the site root as canonical, although those routes are noindex.
+Why it matters: A required deployment value that fails open can let an apparently successful build publish localhost canonical metadata, harming index consolidation and link previews.
+Current impact: Local development behaves as intended. No production deployment was available for inspection.
+Future impact: Search engines and link unfurlers may receive invalid, duplicated, or localhost URLs after a configuration mistake.
+Recommended action: Parse and validate the site URL through typed environment configuration, fail production builds or startup when it is missing or malformed, and build canonical URLs with URL semantics. Define intentional canonical behaviour for not-found and internal routes.
+Suggested Jira scope: SBGC-30/SBGC-35 or SBGC-91 deployment-configuration hardening.
+Confidence: High
+
+ID: REVIEW-2-14
+Severity: Low
+Area: Runtime and toolchain contract
+Type: Dependency compatibility defect
+Status relative to Review 1: Review 1 observation now confirmed by locked metadata
+Finding: The declared Node range admits versions unsupported by the locked lint stack, and backend onboarding does not state Django’s supported Python floor.
+Evidence: package.json:4-6, apps/frontend/package.json:5-7, and package-lock.json:11-12,37-39 declare Node >=22.12.0. Locked ESLint 10.8.0 requires ^20.19.0, ^22.13.0, or >=24 at package-lock.json:4788-4790. Locked eslint-plugin-astro 3.0.1 requires ^22.22.3, ^24.16.0, or >=26.3.0 at lines 4819-4821. The declared range therefore includes unsupported Node 22.12.x and EOL odd-numbered Node releases such as 23 and 25. .nvmrc and CI select major 22, which normally resolves a compatible current patch. Python CI uses 3.12 and Ruff targets py312, but package.json:28 and onboarding documentation invoke whichever python3 is installed. Django 6.0 supports Python 3.12–3.14 according to the [official Django compatibility documentation](https://docs.djangoproject.com/en/6.0/faq/install/#what-python-version-can-i-use-with-django). Node release status is published at [Node.js releases](https://nodejs.org/en/about/previous-releases).
+Why it matters: Runtime declarations are compatibility contracts. A clean environment can satisfy the repository’s stated range but fail to start locked tooling or install Django.
+Current impact: Current CI’s recent Node 22 and Python 3.12 paths are compatible. No standard CI failure was demonstrated.
+Future impact: Local onboarding and deployment can fail non-deterministically depending on patch or odd-numbered Node selection and the host’s python3 version.
+Recommended action: Select and document an actually supported LTS range, such as a sufficiently recent Node 22 patch with an upper major bound, and align engines, .nvmrc, CI, and deployment configuration. State and verify Python 3.12+ for Django setup.
+Suggested Jira scope: SBGC-24/SBGC-26 toolchain-contract maintenance.
+Confidence: High
+
+ID: REVIEW-2-15
+Severity: Low
+Area: GitHub Actions security
+Type: CI supply-chain hardening
+Status relative to Review 1: New in Review 2
+Finding: The workflow relies on implicit token permissions and mutable major-version action tags.
+Evidence: .github/workflows/ci.yml contains no workflow- or job-level permissions declaration. It uses actions/checkout@v6 at lines 15 and 53, actions/setup-node@v6 at line 18, and actions/setup-python@v6 at line 56. GitHub states that full commit SHAs are the only immutable action references and recommends minimum GITHUB_TOKEN permissions in its [secure-use guidance](https://docs.github.com/en/actions/reference/security/secure-use). Effective repository and organisation defaults were unavailable.
+Why it matters: Explicit least privilege makes the workflow independent of mutable repository defaults. Immutable revisions reduce exposure to tag movement or upstream action compromise.
+Current impact: No compromise was demonstrated. The workflow uses GitHub-maintained actions, pull_request rather than pull_request_target, and no deployment secrets.
+Future impact: Implicit permissions and mutable references become more consequential when deployment, artifact publication, releases, or production credentials are added.
+Recommended action: Declare the minimum current permission, normally contents: read. Pin action revisions to reviewed full SHAs with readable version comments, or document a deliberate trust/update policy. Evaluate the current version-7 action lines separately; version 6 was not shown to be unsupported.
+Suggested Jira scope: SBGC-108 or a bounded CI-hardening ticket before deployment workflows.
+Confidence: High for repository configuration; Medium for effective token exposure because external repository settings were unavailable.
+
+ID: REVIEW-2-16
+Severity: Low
+Area: Git, PR, and review governance
+Type: Process-policy non-enforcement
+Status relative to Review 1: New evidence related to partially resolved REVIEW-1-06
+Finding: Repository history and GitHub evidence do not show the approval and branch-cleanup practices required by the documented workflow.
+Evidence: docs/git-workflow.md:46-55 requires at least one review approval and deletion of merged feature branches. The public GitHub reviews endpoint reported zero recorded reviews for PRs #10 through #20. Relevant merged feature branches remained present remotely, including SBGC-34-create-frontend-api-layer. PR #20 was merged and its feature and main CI runs passed, so this is not a green-CI bypass. Review 2 was also initiated from the feature branch rather than updated local main.
+Why it matters: Written policy that is not enforced creates false assurance and makes review independence, stale-branch avoidance, and merge readiness dependent on memory.
+Current impact: No defective merge was proven. Git history remains linear-by-merge and traceable.
+Future impact: As code becomes security- and data-sensitive, self-merge without enforceable review can allow subtle defects to pass even when static CI is green.
+Recommended action: Reconcile the policy with actual team capacity. If one approval is mandatory, enforce it through branch protection and verify review records. If solo operation is currently accepted, document the exception and require a distinct evidence-based review gate. Delete merged branches consistently.
+Suggested Jira scope: SBGC-27 governance follow-up or repository-settings task.
+Confidence: High for public GitHub review and branch evidence; Medium regarding any private or off-platform human review.
+
+ID: REVIEW-2-17
+Severity: Low
+Area: Documentation and inheritability
+Type: Synchronization drift
+Status relative to Review 1: Unresolved systemic theme from REVIEW-1-07; the exact REVIEW-1-05 defects remain resolved
+Finding: Several operational and architectural documents now contradict implemented behaviour.
+Evidence: README.md:14 calls /catalogue and /rankings prerendered, while neither route exports prerender and docs/frontend-architecture.md:63-65 correctly classifies them as SSR/on-demand. docs/frontend-styling.md:27-31 still says dimension visual identity is deferred to SBGC-32 and current pages use neutral tokens, after SBGC-32 was merged. README.md:144 and docs/git-workflow.md:82 omit test and design-reference phases from their short local-CI summaries, although package.json:29 and the later CI sections include them. docs/frontend-api-layer.md overstates timeout lifetime, ApiError.status population, cause safety, and error-category reachability. docs/skill-visual-system.md:51-58 overstates validation enforcement.
+Why it matters: Agents and maintainers can select a plausible but wrong instruction depending on which document they read. This is the context-collapse mechanism anticipated by REVIEW-1-07.
+Current impact: Source and the most detailed architecture documents remain sufficient to reconstruct reality, but the reader must compare them manually.
+Future impact: Incorrect rendering directives, skipped quality gates, unsafe error assumptions, and duplicated implementation decisions.
+Recommended action: Keep context.md and accepted architecture documents normative; reduce secondary summaries to generated or checked projections where possible. Correct claims when code changes and add lightweight documentation-consistency checks for route modes, scripts, and generated inventories.
+Suggested Jira scope: Documentation architecture and synchronization follow-up; do not rewrite canonical product content solely for brevity.
+Confidence: High
+
+ID: REVIEW-2-18
+Severity: Low
+Area: Development sequencing and Jira scope
+Type: Duplicate-workflow precursor
+Status relative to Review 1: New in Review 2 and related to REVIEW-1-07
+Finding: The canonical Jira registry assigns effectively the same frontend API-client responsibility to both SBGC-34 and SBGC-90 without recording how the latter changes after SBGC-34 completion.
+Evidence: context.md:1662-1664 defines SBGC-34 as a server-side Django client with response types, environment URL, timeouts, errors, and reusable fetch utilities. context.md:1932-1934 defines SBGC-90 as typed Astro SSR requests, timeouts, response parsing, and error mapping. agenticoutput.md records SBGC-34 as completed. No live Jira status or supersession evidence was available.
+Why it matters: A later agent following SBGC-90 literally could create a second API client, duplicate error types, or replace the existing transport rather than harden and integrate it.
+Current impact: Only one API client exists. No duplicate implementation has yet occurred.
+Future impact: This is an explicit planning-level precursor to multiple clients and competing transport conventions.
+Recommended action: Before SBGC-90 begins, record whether it is superseded, narrowed to remediation/integration, or remains a later maturity phase. Preserve one shared transport and assign SBGC-89, SBGC-92, and SBGC-93 their distinct contract, failure-handling, and integration-test responsibilities.
+Suggested Jira scope: Jira-plan rationalisation for SBGC-34 versus SBGC-90; assign or amend scope through the normal product-owner process without inventing a new key.
+Confidence: High for the textual overlap; Medium for current Jira disposition because Jira was unavailable.
+
+Architectural drift and context-collapse assessment
+
+The implemented architecture remains aligned with context.md.
+
+The preferred request path remains Browser→Astro→Django. The only production fetch invocation is inside apps/frontend/src/lib/server/api/client.ts. No route imports it. There is no direct browser-to-Django call, Axios/Ky alternative, route-local wrapper, second URL builder, state-management library, client framework, SPA router, or frontend API endpoint paradigm.
+
+Astro remains an MPA with output: "server". Fixed informational routes opt into prerendering; catalogue, rankings, search, profile, 404, and dynamic game routes remain on-demand. README.md’s prerender description is documentation drift, not implemented rendering drift.
+
+No React, Vite application shell, copied context provider, SPA navigation, or generated design-reference component appears under apps/frontend/src. The Vercel project root and npm workspace continue to exclude design-reference. The Review 1 baseline-to-current diff contains no design-reference change.
+
+Astro does not implement Django’s validation, ranking, moderation, recommendation, exclusion, ownership, or classification rules. Presentation-level score validation is appropriate in principle but is not currently connected to rendering. No speculative route performs business decisions.
+
+Challenge and Reward remain separate in route copy and score data. The material precursor is narrower: one shared description dictionary silently assumes Challenge meanings for both profiles. No new production Meso identifier exists. Meso remains confined to canonical history and the archived compatibility context.
+
+MVP and final-product boundaries remain mostly explicit. Login and profile placeholders identify themselves as Final Product and contain no credentials, authentication package, account state, or private-data request. The internal UI showcase is the one place where account/admin-like examples and obsolete score-like sample values could be copied out of context.
+
+Workspace ownership remains coherent. The production npm workspace contains only apps/frontend. The Figma Make React/Vite export remains locked, outside that workspace, and unmodified.
+
+The primary context-collapse precursors are therefore:
+
+- undocumented or unenforced server-only import intent;
+- overlapping SBGC-34/SBGC-90 client scopes;
+- one semantic dictionary for two profile meanings;
+- repeated route placeholders beside an unused placeholder component;
+- duplicated documents whose claims are already diverging.
+
+No completed architectural paradigm switch was found.
+
+Phantom-schema and API-contract assessment
+
+SBGC-34 remained generic transport plumbing.
+
+No API-domain types named Game, User, Profile, Search, Ranking, Challenge, Reward, Classification, Pagination, or Django error envelope were added under src/lib/server/api. No example JSON from context.md was promoted into an implemented backend contract. No frontend field names, casing, identity assumptions, ranking fields, ownership fields, or Steam-only domain record were invented.
+
+docs/frontend-api-layer.md:71-77 explicitly states that TypeScript generics do not validate JSON at runtime and that endpoint-specific types should wait for real Django contracts. That restraint is correct and should be preserved.
+
+The generic contract nevertheless contains phantom guarantees:
+
+- ApiSuccess<T> promises data: T even when the runtime knowingly returns undefined for 204.
+- JSON.parse(text) as T provides compile-time shape without runtime verification.
+- ApiError.status is documented but not populated.
+- UNKNOWN_ERROR is declared but unreachable.
+- cause is described as safe and stack-free even though raw Error objects are retained.
+- several distinct failures are collapsed into NETWORK_ERROR or INVALID_RESPONSE.
+
+The separate SkillProfile presentation type is not a Django API schema. Its numeric shape is consistent with the canonical dual triplets, but its shared descriptions are not semantically complete and its validator is not enforced.
+
+There is no implemented Django Ninja error envelope against which frontend status or error shapes can be validated. SBGC-89 and SBGC-100 should establish that contract before route-specific public error mapping.
+
+Orphaned code and duplicate-workflow assessment
+
+Confirmed orphan:
+
+- apps/frontend/src/components/PagePlaceholder.astro has no imports or references. It was introduced with SBGC-33 while route pages implemented their placeholders inline from the beginning.
+
+Confirmed duplicate or inconsistent component workflows:
+
+- Placeholder markup is repeated across catalogue, rankings, search, game, login, and profile routes.
+- SelectInput and TextArea expose value props without rendering their values.
+- FormField allows a missing for despite its documented label-association contract.
+- Button-generated loading text and slotted content can be duplicated.
+- astro check runs twice in the aggregate frontend gate because build itself performs astro check and the root/CI gate invokes check separately. This is harmless redundancy until CI duration matters.
+
+Intentionally pending, not orphaned:
+
+- The four API-layer files are unused by routes, but documentation deliberately defers integration until a real backend contract exists.
+- Login and profile routes are explicitly final-product placeholders.
+- ErrorState, the /error demonstration route, API transport failures, and future framework-level error handling serve distinct layers and should not be collapsed merely because each concerns errors.
+- Bar and radar visualisations both remain intentionally implemented for owner evaluation; neither is currently orphaned.
+- The route skeletons are intentionally waiting for backend data and should not be criticised for that incompleteness.
+
+No abandoned navigation branch, alternate layout, old/new fetch client pair, duplicate metadata system, or copied design-reference styling pipeline was found.
+
+Error-handling and failure-mode assessment
+
+Observed SBGC-34 result behaviour:
+
+- Missing DJANGO_API_URL:
+  CONFIG_ERROR.
+
+- Empty path:
+  CONFIG_ERROR.
+
+- Path without leading slash:
+  CONFIG_ERROR; the message reflects the rejected path.
+
+- Protocol-relative path:
+  CONFIG_ERROR.
+
+- Absolute URL:
+  Rejected by the leading-slash rule; the dedicated scheme test is unreachable.
+
+- Malformed or unsupported base URL:
+  Generally reaches Fetch and becomes NETWORK_ERROR rather than CONFIG_ERROR.
+
+- Existing query plus getJSON params:
+  A second "?" is appended and composition is incorrect.
+
+- Fragment plus getJSON params:
+  Appended parameters can become part of the fragment and never reach Django.
+
+- Redirect:
+  Followed transparently. Final origin and method are not validated.
+
+- Caller signal already aborted:
+  ABORTED.
+
+- Caller abort before headers:
+  Normally ABORTED.
+
+- Timeout before headers:
+  Normally TIMEOUT.
+
+- Caller abort or timeout after headers:
+  No longer active because cleanup already removed the listener and timer.
+
+- JSON serialization failure:
+  NETWORK_ERROR.
+
+- Fetch/network rejection:
+  NETWORK_ERROR with raw cause retained.
+
+- Non-2xx response:
+  HTTP_ERROR with outer status only; response body ignored and not cancelled.
+
+- 204 response:
+  ok: true with runtime undefined cast to arbitrary T.
+
+- Successful non-JSON response:
+  INVALID_RESPONSE; body ignored and not cancelled.
+
+- Successful JSON content type with empty body:
+  INVALID_RESPONSE.
+
+- Body stream failure:
+  INVALID_RESPONSE with “Failed to parse response as JSON”.
+
+- Malformed JSON:
+  INVALID_RESPONSE with raw parse Error as cause.
+
+- Valid JSON:
+  ApiSuccess<T> after an unchecked compile-time assertion.
+
+Positive error-handling properties:
+
+- No catch-and-log-only block exists.
+- The client returns failures rather than silently returning undefined.
+- Non-2xx responses do not become success solely because Fetch resolved.
+- Raw backend bodies and HTML are not exposed.
+- Correction commit 8b8e1bb removed the initial 200-character backend-body preview.
+- Caller abort listeners are removed for the pre-header operation and pre-aborted signals are handled.
+- No automatic retry exists.
+- Public routes do not currently display transport messages.
+- Route placeholders do not pretend that backend requests succeeded.
+
+Mandatory future mutation controls:
+
+- Resolve redirect semantics before using postJSON for mutations.
+- Define authentication, session, CSRF, and credential propagation deliberately.
+- Never forward the full inbound Astro header set.
+- Permit only specifically required outbound headers.
+- Keep cookies, authorization, internal URLs, and diagnostic causes server-side.
+- Preserve Django validation details through a reviewed structured envelope rather than raw backend output.
+- Keep automatic write retries disabled unless method and idempotency semantics are explicitly defined.
+- Apply runtime response validation at endpoint boundaries where malformed data could produce authoritative product output.
+- Define request/response size limits.
+- Test false-success paths, including redirects and bodyless results.
+- Add correlation-safe logging without secrets, bodies, or stack traces in public output.
+
+Security and silent business-logic assessment
+
+No tracked real credential, token, Steam key, database URL, or production secret was found.
+
+DJANGO_API_URL is not PUBLIC_. No current source passes it into client-side scripts. PUBLIC_SITE_URL and the reserved analytics ID are the only public frontend variables. The absence of a mechanical import boundary is a precursor, not evidence of active leakage.
+
+Initial API path arguments reject arbitrary absolute and protocol-relative URLs. The base and redirect weaknesses are latent server-side boundary issues; there is no current untrusted route input feeding them and no active SSRF finding.
+
+The client does not forward cookies, Authorization, request headers, or backend error bodies automatically. Future caller-supplied headers remain unrestricted and therefore require policy before authentication work.
+
+No frontend code duplicates classification, ranking, moderation, recommendation, source-identity, content-exclusion, or score-authority rules. validateProfile is defensive presentation validation, not authoritative business logic.
+
+No protected API resource exists. No object ownership check exists because no object-access path exists. It would be incorrect to report active IDOR.
+
+No premature account, private profile, contribution, or community-data request exists. Login/profile pages are honest placeholders without forms or session assumptions.
+
+No denormalised backend model, Steam-only identity model, editorial/community blending, or concrete inefficient ranking algorithm exists because domain models and APIs have not yet been implemented.
+
+Django’s secret fallback remains the principal current security configuration weakness. The absent production HTTPS, secure cookies, HSTS, proxy SSL, request limits, rate limits, admin hardening, dependency scanning, and safe production logging are planned pre-deployment work, not evidence that those controls were unsuccessfully implemented.
+
+Outdated-knowledge and framework-currency assessment
+
+Astro
+
+Astro 7.1.3 is locked and belongs to the current Astro 7 line. output: "server", route-level prerender, strict TypeScript configuration, and the Vercel adapter remain supported. See the [Astro 7.1 release](https://astro.build/blog/astro-710/), [configuration reference](https://docs.astro.build/en/reference/configuration-reference/), and [on-demand rendering guide](https://docs.astro.build/en/guides/on-demand-rendering/).
+
+No legacy Astro client framework, SPA router, obsolete Tailwind integration, or unnecessary Fetch polyfill exists.
+
+@astrojs/vercel
+
+The locked @astrojs/vercel 11.0.3 configuration in apps/frontend/astro.config.mjs follows the current documented adapter pattern: [Astro Vercel integration](https://docs.astro.build/en/guides/integrations-guide/vercel/).
+
+Tailwind CSS 4
+
+Tailwind and @tailwindcss/vite are locked to 4.3.3. The project uses the current Vite plugin and @import "tailwindcss" pattern. No @astrojs/tailwind integration or legacy tailwind.config file exists. See [Tailwind with Vite](https://tailwindcss.com/docs/installation/using-vite) and the [Tailwind CSS 4.3 release](https://tailwindcss.com/blog/tailwindcss-v4-3).
+
+TypeScript
+
+TypeScript 6.0.3 remains appropriate. Although TypeScript 7 exists, the official TypeScript 7 announcement explains that tools requiring compiler APIs and embedded-language integrations still need compatibility work: [TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/). Moving merely because a newer major exists would be inappropriate for Astro and its lint ecosystem.
+
+Node Fetch and Abort APIs
+
+The client correctly uses native fetch, AbortController, AbortSignal, DOMException, and URLSearchParams. No polyfill is needed for the supported Node family. AbortSignal.timeout() and AbortSignal.any() could reduce code, but they are not inherently more correct and are unnecessary if the explicit implementation is repaired and tested.
+
+Django
+
+Django 6.0.7 is the current stable patch recorded by the official [Django download page](https://www.djangoproject.com/download/). CI’s Python 3.12 is supported. The issue is the local runtime contract, not framework obsolescence.
+
+GitHub Actions
+
+Version-7 releases exist for the GitHub-maintained setup actions, while the workflow uses version 6. No evidence established that version 6 is unsupported or broken. Currency upgrades should be evaluated through a bounded CI maintenance change, not demanded solely because a larger major exists. Immutable SHA pinning and explicit permissions are the material controls.
+
+ESLint
+
+The repository uses current flat configuration and ESLint 10.8.0 without broad suppressions. No legacy .eslintrc workflow or compile-silencing ignore was added. See the [ESLint 10 release](https://eslint.org/blog/2026/02/eslint-v10.0.0-released/) and [configuration documentation](https://eslint.org/docs/latest/use/configure/configuration-files).
+
+Ruff
+
+Ruff 0.16.0 is current and configured with explicit rule families. The DJ001 ignore is documented as temporary before models exist. The unused D ignore is harmless because D is not selected. Reassess model-specific ignores when models are introduced. See the [Ruff releases](https://github.com/astral-sh/ruff/releases) and [Ruff configuration reference](https://docs.astral.sh/ruff/configuration/).
+
+Astro Actions
+
+Astro Actions were evaluated using the [official Actions guide](https://docs.astro.build/en/guides/actions/). They would create Astro-owned server functions, input validation, public endpoints, and an Astro-specific error/RPC contract. They should not be introduced for the accepted Django Ninja architecture. Doing so for game, search, ranking, profile, or classification operations would duplicate Django’s authoritative API and create a competing paradigm. Reconsider Actions only for a genuinely Astro-owned concern that does not duplicate Django or the shared REST boundary.
+
+Frontend API-layer deep assessment
+
+Module boundary: Partial
+
+The client is sensibly isolated under src/lib/server/api and uses a non-PUBLIC environment value. The boundary is documentary rather than mechanical.
+
+Exports: Pass
+
+index.ts provides one public transport surface. No route-local reimplementation or second wrapper exists.
+
+Generic transport scope: Pass
+
+No speculative domain types, field names, or backend error envelope were introduced.
+
+Discriminated-union ergonomics: Partial
+
+result.ok is ergonomic, but the 204 cast and duplicate status locations weaken the guarantee.
+
+Runtime validation: Explicitly absent
+
+The documentation correctly acknowledges that TypeScript is not runtime validation. Endpoint-specific adapters must address this when contracts exist.
+
+Relative-path enforcement: Partial
+
+Empty, non-leading-slash, and protocol-relative values are rejected. Base validation, dot-segment containment, existing queries, fragments, and redirects are incomplete.
+
+Absolute caller URL rejection: Pass for initial input
+
+Absolute strings are rejected, although the dedicated scheme branch is unreachable. Final redirected origin is not constrained.
+
+Base/path joining: Partial
+
+Ordinary base trailing slashes and ordinary request leading slashes compose correctly. URL semantics and base-path containment are not enforced.
+
+Query strings: Fail for path-plus-params composition
+
+URLSearchParams correctly encodes keys and values supplied only through params. Existing query strings and fragments are mishandled.
+
+Trailing slashes: Partial
+
+The client preserves route trailing slashes but follows redirects, which can conceal a contract mismatch.
+
+Headers: Partial
+
+JSON Accept and Content-Type defaults are useful. Case-insensitive collision handling and an allowlist are absent.
+
+JSON request bodies: Partial
+
+Ordinary bodies are encoded. Serialization failures are mislabeled as network failures.
+
+Bodyless requests: Pass for GET
+
+GET sends no body and does not force Content-Type.
+
+204 and empty responses: Fail
+
+204 creates a known unsafe T assertion. Empty JSON responses become INVALID_RESPONSE, which is otherwise reasonable.
+
+Content types: Partial
+
+Common lowercase application/json with charset works. Matching is case-sensitive and structured +json policy is undefined.
+
+Malformed JSON: Partial
+
+It becomes INVALID_RESPONSE without raw backend output, but is conflated with body-stream failures.
+
+HTML error pages: Pass for public-body protection
+
+They are not exposed or parsed on non-2xx. Their bodies are not disposed of.
+
+Non-2xx status: Partial
+
+It returns HTTP_ERROR and outer status. It does not preserve a structured safe Django error or release the body.
+
+Redirects: Fail
+
+They are followed without final-origin or method validation.
+
+Timeout: Fail for the full operation
+
+The timer protects header receipt only.
+
+Caller cancellation: Fail after headers
+
+Pre-abort and pre-header cancellation work. Cancellation after headers is detached.
+
+Resource cleanup: Partial
+
+Timer/listener cleanup works around fetch resolution/rejection. Response-body lifecycle cleanup does not.
+
+Missing configuration: Partial
+
+Missing values produce CONFIG_ERROR. Malformed values are not validated and may become NETWORK_ERROR.
+
+Hardcoded production fallback: Pass
+
+DJANGO_API_URL has no hardcoded production URL.
+
+Automatic retries: Pass
+
+None exist.
+
+Future testability: Partial
+
+Fetch is globally mockable and helpers are generic, but private construction functions and timer behaviour require a deliberate test harness. No abstraction should be added solely for mocking unless tests demonstrate the need.
+
+Behavioural tests: Fail
+
+No suite exists.
+
+Route integration: Correctly absent
+
+No route consumes the unstable transport or invents a Django contract.
+
+Architecture assessment
+
+The codebase continues to implement the accepted monorepo and request topology:
+
+- Astro and Tailwind own public rendering and presentation.
+- Django remains designated for data, business rules, validation, Steam integration, security, Admin, and persistence.
+- Neon remains the planned PostgreSQL provider.
+- Steam remains the authoritative metadata source for Steam titles.
+- Vercel and Render remain proportionate deployment targets.
+- The application remains an MPA, not an SPA.
+
+The global shell is shared through BaseLayout, Header, Navigation, and Footer. Navigation uses ordinary links and aria-current rather than a client router. Header navigation wraps rather than introducing a mobile JavaScript subsystem before one is justified.
+
+Route rendering is coherent in source:
+
+- Home, About, Methodology, Login, Error, and internal showcases are prerendered.
+- Catalogue, Rankings, Search, Profile, 404, and games/[slug] remain SSR/on-demand.
+
+No route currently bypasses the API client. No route consumes backend data prematurely.
+
+The architecture still contains two accepted cold-start points for dynamic requests—Vercel/Astro and Render/Django. context.md explicitly accepts low traffic and free-tier compromises. No evidence supports adding Redis, Celery, Elasticsearch, Kubernetes, microservices, a paid CDN, or a server LLM.
+
+Product-alignment assessment
+
+Public product copy consistently uses Micro, Mystiko, and Macro. Catalogue, ranking, and game placeholders explicitly mention separate Challenge and Reward profiles. rankings.astro:19-26 correctly describes six independent ranking dimensions and states that each profile totals 100.
+
+No new production Meso terminology was found.
+
+No Challenge and Reward numeric data is conflated. The visual-system semantic description weakness is a precursor, not an implemented merged score.
+
+No public route invents game records, counts, rankings, search results, profile data, or backend success. Search reflects the escaped query while clearly saying results are unavailable. The dynamic slug route identifies the requested slug and honestly defers metadata.
+
+Login and profile pages explicitly identify account functionality as Final Product. No account package, credential form, session state, favourites store, community score, moderation system, recommendation engine, analytics implementation, or WebLLM was introduced.
+
+The owner-curated approximately 200-game MVP, Steam/manual source distinction, DLC/non-game exclusion, editorial workflow, and Django Admin management remain unimplemented. They are sequenced work, not current defects.
+
+The internal UI showcase’s 0–10-like values are the only material placeholder-honesty problem.
+
+Code and framework assessment
+
+The frontend source is generally small, readable, and idiomatic Astro.
+
+Positive properties include:
+
+- semantic layouts and native controls;
+- zero client framework;
+- limited component scripts only where chart rendering needs them;
+- static Tailwind class maps for source detection;
+- no broad ESLint suppressions;
+- no unsafe HTML injection;
+- accessible skip navigation;
+- visible focus styles;
+- no colour-only score identity;
+- chart text summaries and fallback markup;
+- multi-instance chart corrections before merge;
+- no global mutable state;
+- no opaque metaprogramming or speculative service layers.
+
+Contained weaknesses include:
+
+- unused PagePlaceholder;
+- repeated route placeholder markup;
+- misleading form component props;
+- duplicate loading text;
+- one profile-agnostic description map;
+- disconnected validation;
+- repeated astro check in CI/build;
+- global smooth scrolling without a reduced-motion override;
+- a dim token inappropriate for normal text;
+- direct Google Fonts asset dependencies whose privacy, availability, and performance implications should be reviewed before deployment.
+
+The chart dependencies are justified by current source. Observable Plot is used by SkillScoreBars, and D3 is used by SkillRadarChart. Neither is currently orphaned.
+
+Data-model assessment
+
+No Django product application, model, migration, Ninja schema, endpoint, repository/query helper, fixture, or seed command exists.
+
+That remains normal sequencing. It means there is no implemented backend contract to validate for:
+
+- Game identity;
+- Steam/manual source discrimination;
+- App ID rules;
+- slugs;
+- listing state;
+- content type;
+- Challenge/Reward storage;
+- exact totals;
+- uniqueness;
+- editorial ownership;
+- community separation;
+- ranking queries;
+- object-level authorization.
+
+The canonical model remains strong and should govern implementation:
+
+- separate Game identity and editorial classification;
+- separate Challenge and Reward triplets;
+- each triplet independently totals exactly 100;
+- contextual meanings for all six dimensions;
+- Steam/manual source-qualified identity;
+- minimal stored Steam metadata;
+- owner-curated MVP;
+- editorial and future community values kept distinct;
+- PostgreSQL-compatible constraints rather than form-only enforcement.
+
+The frontend SkillProfile type is a presentation structure, not an implemented Django contract. It should not become the source of truth.
+
+Testing and CI assessment
+
+Review 1 CI parity work is correctly merged.
+
+Frontend CI performs:
+
+- npm ci;
+- Prettier check;
+- ESLint;
+- Astro check;
+- frontend placeholder test;
+- design-reference isolation;
+- production build.
+
+Backend CI performs:
+
+- isolated virtual-environment creation;
+- exact requirement installation;
+- Ruff lint;
+- Ruff format check;
+- Django system check;
+- backend placeholder test.
+
+The main-merge CI run for a17a4e3 succeeded in both jobs. Feature-branch CI for 8b8e1bb also succeeded.
+
+The test placeholders are honestly named. README.md:160-165 and docs/git-workflow.md:60-70 explicitly state that green CI is not behavioural coverage. No check was weakened, removed, ignored, or converted into a false test to merge SBGC-34.
+
+There are still zero behavioural tests. This changed from normal scaffold incompleteness in Review 1 to a material integration prerequisite because a network/cancellation abstraction now exists.
+
+The API client should receive tests before its first consumer. Backend testing can remain sequenced with SBGC-44 and domain/API work.
+
+No local build, Astro check, formatter, linter, Django check, or test command was run during this review because those commands can create repository-local caches or generated artefacts. Their execution evidence comes from GitHub CI, not an unreported local mutation.
+
+Git, PR, and AI-development-process assessment
+
+Commit traceability is strong. Every non-merge commit in the review range has a Jira-prefixed subject. Merge commits retain PR numbers and feature branch names.
+
+PR scopes were mostly bounded:
+
+- Review 1 remediations were isolated across SBGC-146, SBGC-147, and SBGC-148.
+- Shell, fluid layout, UI foundations, visual system, routes, and API client were separated.
+- No domain or backend work leaked into SBGC-34.
+- No design-reference code was imported to accelerate frontend work.
+
+Five correction commits occurred across PRs #17–#20:
+
+- one for SBGC-31;
+- two for SBGC-32;
+- one for SBGC-33;
+- one for SBGC-34.
+
+These corrections improved accessibility, multi-instance safety, Tailwind class detection, route alignment, path validation, raw-body protection, and abort-listener cleanup before merge. This is healthier than merging known defects, but the frequency indicates that first-pass acceptance checks should be made more systematic.
+
+SBGC-34’s agent summary is broadly accurate but overstates “fixed AbortSignal lifecycle cleanup.” It fixed pre-header listener/timer cleanup but not the full response-body lifecycle. The phrase “verified all frontend CI gates” is supported by GitHub CI; it must not be interpreted as behavioural verification.
+
+No evidence was found of:
+
+- checks disabled to obtain green CI;
+- ts-ignore, eslint-disable, noqa, or broad exclusion additions;
+- swallowed errors merely for compilation;
+- stale-base implementation;
+- source changes after the final successful merge run;
+- automatic fix commits outside task scope;
+- a second API client;
+- prompt-derived speculative abstraction.
+
+The documented one-approval policy and branch deletion policy were not evidenced in practice. Branch protection, required reviewers, and effective repository settings were unavailable.
+
+Dependency and tooling assessment
+
+JavaScript ownership is coherent:
+
+- Root direct dependencies: 0.
+- Frontend runtime dependencies: Astro, @astrojs/vercel, Observable Plot, and D3.
+- Frontend development dependencies own Tailwind, checking, formatting, TypeScript, and ESLint.
+- The root lockfile correctly records workspace ownership.
+- The design-reference pnpm manifest and lock remain outside production npm workspaces.
+
+Python requirements are exact pins:
+
+- Django 6.0.7.
+- django-environ 0.14.0.
+- Ruff 0.16.0.
+- exact asgiref and sqlparse versions.
+
+Ruff remains in the single backend requirements file. At the present scaffold size, this is simple and reproducible. Split production and development dependencies before deployment if production install size and attack-surface ownership become material.
+
+No dependency vulnerability or registry advisory audit was run. SBGC-108 explicitly owns future dependency and vulnerability controls. Their absence is accepted pre-deployment incompleteness, not evidence of safe dependency status.
+
+The Node/Python runtime contract requires correction as recorded in REVIEW-2-14.
+
+Operations and proportionate-scalability assessment
+
+The Vercel/Render/Neon architecture remains proportionate to approximately 100 or fewer visits per month.
+
+No speculative scalability system was introduced:
+
+- no Redis;
+- no Celery;
+- no queue;
+- no Elasticsearch;
+- no Kubernetes;
+- no service mesh;
+- no microservice split;
+- no object-storage layer;
+- no paid CDN;
+- no server-hosted LLM.
+
+The shared client’s eight-second default is a sensible starting policy, but its current implementation does not cover response-body duration. This matters particularly for finite Vercel function execution windows and Render cold starts.
+
+No production deployment, Render start command, health endpoint, logging integration, PostgreSQL connectivity, backup/restore procedure, migration runbook, synthetic check, or smoke-test workflow exists. Those remain explicit later tasks and public-deployment prerequisites.
+
+SQLite fallback remains acceptable for local work. PostgreSQL is still required for deployed persistence and constraint verification.
+
+Direct Google Fonts assets introduce a runtime dependency on fonts.gstatic.com. System fallbacks prevent total rendering failure, but privacy, content-security-policy, caching, poor-network, and offline behaviour should be decided before public deployment.
+
+Documentation and inheritability assessment
+
+context.md remains the effective source of truth and contains clear precedence, normative language, architecture, dual-profile definitions, operational constraints, Jira registry, and historical decisions.
+
+The current source can still be inherited by an experienced engineer because:
+
+- accepted architecture is explicit;
+- route modes are documented;
+- placeholder status is usually honest;
+- environment ownership is documented;
+- API limitations are partly acknowledged;
+- design-reference governance is explicit;
+- Review 1 is preserved;
+- agenticoutput provides a chronological but subordinate activity log.
+
+The main inheritability weakness is duplication. Several documents restate the same rules at different levels of detail, and the copies now disagree. REVIEW-2-17 identifies the concrete drift.
+
+The SBGC-34 versus SBGC-90 overlap is particularly important because it can create duplicate code rather than merely stale prose.
+
+Design and accessibility assessment
+
+Positive findings:
+
+- BaseLayout supplies lang, viewport, description, canonical, Open Graph, and Twitter metadata.
+- The application has a visible-on-focus skip link.
+- Header, navigation, main, and footer landmarks are semantic.
+- Navigation uses aria-current.
+- Form controls are native HTML.
+- Focus indicators are visible.
+- Loading and error components use suitable live-region or alert semantics.
+- Tables expose captions and scoped headers.
+- Score summaries keep numeric values in text.
+- Score identity uses labels and non-colour symbols in addition to colour.
+- Charts have fallback representations and multi-instance-safe selectors.
+- Motion-reduction utilities exist on transitions and chart work.
+- The shell uses fluid logical gutters rather than copying a fixed React container.
+- No design-reference code was imported.
+
+Material concerns:
+
+- --color-dim fails normal-text contrast.
+- The full SkillLegend describes only Challenge meanings.
+- Score rendering does not enforce validateProfile.
+- FormField’s association contract is optional at type level.
+- Button loading content can duplicate.
+- smooth scroll at global.css:50-52 lacks a prefers-reduced-motion override.
+- No browser, keyboard, screen-reader, 200% zoom, high-contrast, or mobile visual verification was available during this read-only review.
+- No mobile menu was merged. The wrapping navigation is acceptable as a scaffold, but actual narrow-viewport behaviour must be evaluated before release.
+- PUBLIC_SITE_URL can fail open to localhost metadata.
+
+Technical-debt delta
+
+Closed since Review 1:
+
+- Incorrect root Tailwind lockfile ownership.
+- Specific stale Tailwind/root/frontend README defects.
+- Missing CI invocation of test entry points and design-reference isolation.
+
+Carried forward:
+
+- Insecure Django secret fallback.
+- Inert backend configuration variables.
+- Duplicated documentation architecture.
+- Single requirements file containing Ruff.
+- Runtime-version ambiguity.
+
+New material debt:
+
+- API transport lifecycle ending at headers.
+- Ignored response bodies.
+- Redirect and final-origin ambiguity.
+- Weak URL/configuration validation.
+- 204 unsafe generic cast.
+- Divergent status/error fields.
+- Misclassified serialization, body-read, and configuration failures.
+- No API-client behavioural tests.
+- Challenge-only descriptions in a dual-profile visual dictionary.
+- Unenforced profile rendering validation.
+- Failing dim-text contrast.
+- Documentary rather than mechanical server boundary.
+- Orphaned PagePlaceholder and repeated placeholder workflows.
+- Misleading UI component props.
+- Internal obsolete score-like showcase data.
+- Frontend canonical URL fail-open behaviour.
+- Implicit CI permissions and mutable action tags.
+- Review-approval and branch-cleanup policy not evidenced.
+- SBGC-34/SBGC-90 overlap.
+
+Normal incompleteness, not debt:
+
+- No Django Ninja configuration.
+- No PostgreSQL connection.
+- No product Django apps or models.
+- No product migrations.
+- No stable shared API contract.
+- No Steam integration.
+- No owner classification workflow.
+- No real catalogue/search/ranking/game data.
+- No authentication or community system.
+- No recommendation engine.
+- No public deployment or operational runbook.
+- No application test suite outside the now-material API transport requirement.
+
+Development-sequencing assessment
+
+The completed sequence remains broadly rational:
+
+- architecture and repository foundation;
+- dependency and environment conventions;
+- quality tooling and CI;
+- rendering and styling foundations;
+- locked design reference;
+- review governance;
+- global shell;
+- reusable UI primitives;
+- dual-profile visual components;
+- route skeletons;
+- generic API transport.
+
+Recommended sequence from this point:
+
+1. Repair and test the generic transport before any route imports it.
+2. Correct profile-aware descriptions, rendering validation, and contrast before score components receive backend data.
+3. Continue Django foundation work in parallel: application boundaries, Django Ninja, PostgreSQL, Admin, security, operations, and backend test conventions.
+4. Reconcile SBGC-34 with SBGC-90 so the latter cannot create a second client.
+5. Define the shared Django Ninja contract under SBGC-89/SBGC-100.
+6. Implement Game and editorial classification models with database constraints before route integration.
+7. Validate owner/Admin workflows with a small seed set.
+8. Integrate one read-only endpoint through the repaired client and exercise failure paths.
+9. Expand catalogue, game, search, and rankings only after that vertical slice is stable.
+10. Introduce deployment early enough to test Vercel→Render, PostgreSQL, host, slash, timeout, cold-start, and logging assumptions.
+11. Keep public deployment gated on security, operations, migration, backup, smoke-test, accessibility, and dependency-control work.
+
+Independent frontend content/layout and Django foundation work do not need to stop. Work that depends on the current API transport should pause until REVIEW-2-03 through REVIEW-2-06 are addressed.
+
+Recommended remediation order
+
+1. Resolve REVIEW-2-03, REVIEW-2-04, and REVIEW-2-05 as one coherent transport-contract correction.
+2. Add the behavioural transport suite in REVIEW-2-06 and make it a real CI test entry point.
+3. Reconcile SBGC-34 and SBGC-90 scope before another API-client implementation begins.
+4. Correct profile-aware dimension descriptions and connect defensive rendering validation.
+5. Correct the dim-text contrast token and run targeted accessibility checks.
+6. Make server-only API imports and environment access mechanically enforceable.
+7. Resolve the orphaned placeholder and inaccurate UI component contracts.
+8. Make canonical site URL configuration fail safely before deployment.
+9. Carry the Django secret and inert-configuration findings into backend foundation work.
+10. Correct runtime-version declarations and Python prerequisites.
+11. Add explicit CI permissions and an action revision policy before deployment automation.
+12. Align documentation with route modes, current styling, actual API guarantees, and the complete local CI gate.
+13. Reconcile review-approval and branch-cleanup policy with actual repository enforcement.
+14. Keep normal backend/model/API sequencing unchanged.
+15. Do not deploy publicly until the planned production-security and operations work is complete.
+
+Suggested Jira tickets
+
+Suggested scope: SBGC-34 transport correctness follow-up
+
+- Keep the existing shared client.
+- Extend timeout and cancellation through body completion.
+- Consume or cancel every response body.
+- Validate base configuration.
+- define an explicit redirect policy.
+- Correct query and path-prefix handling.
+- Correct 204 typing.
+- Consolidate status and error taxonomy.
+- Normalize headers and media types.
+- Preserve no-retry behaviour.
+
+Existing Jira relationship: Reconcile with SBGC-90 and SBGC-92 rather than implementing another client.
+
+Suggested scope: Frontend transport behavioural tests
+
+- Introduce the minimum approved server-side test runner.
+- Cover configuration, paths, queries, redirects, headers, bodies, statuses, malformed responses, timing, cancellation, cleanup, and no retries.
+- Replace test:frontend’s placeholder in local and hosted CI.
+- Keep full cross-application endpoint tests under SBGC-93.
+
+Existing Jira relationship: SBGC-93, with a pre-integration transport subset; do not defer solely to SBGC-121.
+
+Suggested scope: Dual-profile visual semantics correction
+
+- Preserve common labels, colours, symbols, and order.
+- Define distinct Challenge and Reward explanatory copy.
+- Require profile context when descriptions are rendered.
+- Add worked examples for all six meanings.
+- Test comprehension and accessible labels.
+
+Existing Jira relationship: SBGC-32, SBGC-85, SBGC-86, and the unassigned work listed under context.md:1913-1923.
+
+Suggested scope: Score-rendering defensive validation
+
+- Establish one mandatory adapter before external data reaches score components.
+- Render safe error states for malformed data.
+- Do not repair or reinterpret authoritative values in the frontend.
+- Test missing, decimal, non-finite, out-of-range, and non-100 profiles.
+
+Existing Jira relationship: SBGC-88, SBGC-101, and SBGC-103.
+
+Suggested scope: Accessibility token correction
+
+- Replace or constrain --color-dim.
+- Test every text/background combination.
+- Include placeholders, footer content, route notes, disabled states, charts, and high contrast.
+- Add reduced-motion handling for smooth scrolling.
+
+Existing Jira relationship: SBGC-35 and SBGC-86.
+
+Suggested scope: UI foundation contract cleanup
+
+- Decide the fate of PagePlaceholder.
+- Remove duplicate placeholder strategies.
+- Align SelectInput and TextArea value behaviour with their props.
+- Require FormField association identifiers where applicable.
+- Define loading button slot semantics.
+- Keep Django compatibility explicit.
+
+Existing Jira relationship: Corrective follow-up to SBGC-31/SBGC-33.
+
+Suggested scope: Frontend environment and canonical metadata hardening
+
+- Use typed server/public environment declarations.
+- Fail production configuration safely.
+- Parse site and Django URLs.
+- Define canonical behaviour for internal, error, and not-found routes.
+- Enforce server-only API imports.
+
+Existing Jira relationship: SBGC-35 and SBGC-91.
+
+Suggested scope: Backend environment-contract correction
+
+- Fail closed for missing production SECRET_KEY.
+- Wire ADMIN_URL_PATH.
+- Decide whether CORS is architecturally required.
+- Test environment values against observable behaviour.
+
+Existing Jira relationship: SBGC-40, SBGC-41, SBGC-104, SBGC-105, and SBGC-106.
+
+Suggested scope: Runtime and CI hardening
+
+- Align the Node engine, .nvmrc, CI, and deployment runtime.
+- State and verify Python 3.12+.
+- Add contents: read permissions.
+- Adopt an immutable action-revision policy.
+- Add dependency scanning/update controls.
+
+Existing Jira relationship: SBGC-24, SBGC-27, and SBGC-108.
+
+Suggested scope: Documentation and Jira-plan rationalisation
+
+- Correct current route rendering descriptions.
+- Correct styling status.
+- Correct local-CI summaries.
+- Align API and visual-system guarantees with code.
+- Clarify SBGC-34 versus SBGC-90.
+- Reduce duplicated normative content or synchronize it mechanically.
+
+Existing Jira relationship: No new key should be invented by this review; assign through the product-owner/Jira process.
+
+Positive findings worth preserving
+
+- The checked-out source tree exactly matches merged remote main.
+- The working tree is clean.
+- Review 1 is preserved as an immutable repository artefact.
+- Review 1 lockfile, README, and CI findings were fixed through isolated PRs.
+- CI was strengthened rather than weakened.
+- Test placeholders are explicitly identified as placeholders.
+- Feature commits remain Jira-prefixed.
+- PR merge commits preserve branch and PR traceability.
+- SBGC-34 remained generic transport plumbing.
+- There is one shared client and one production fetch location.
+- No route bypasses the shared client.
+- No route consumes an unstable backend contract.
+- No domain response schema was invented.
+- Documentation explicitly acknowledges that TypeScript is not runtime validation.
+- DJANGO_API_URL remains server-scoped and has no production fallback.
+- Absolute and protocol-relative initial path arguments are rejected.
+- No raw backend body or HTML is exposed.
+- The SBGC-34 correction removed its original raw response preview.
+- No automatic retries exist.
+- No mutation route exists.
+- No frontend business-rule implementation exists.
+- No browser-to-Django transport exists.
+- No SPA, React, Vite, or state-management architecture entered production.
+- Astro MPA/SSR/prerender behaviour remains coherent in source.
+- Dynamic routes remain honest placeholders.
+- Login/profile placeholders clearly identify final-product scope.
+- Challenge and Reward numeric profiles remain separate.
+- No new Meso production terminology exists.
+- The design reference remains unmodified, unimported, and outside the production workspace.
+- Tailwind 4 ownership and integration are current.
+- Observable Plot and D3 are both used.
+- The shell has semantic landmarks, skip navigation, responsive gutters, and visible focus states.
+- Charts retain text and non-colour identification.
+- No speculative infrastructure was introduced.
+- Django remains authoritative.
+- The low-cost architecture remains proportionate to expected traffic.
+
+Metrics and evidence for Review 3
+
+Review 3 should record at minimum:
+
+- Resolution state of REVIEW-1-01, REVIEW-1-02, REVIEW-1-06, and REVIEW-1-07.
+- Resolution state of REVIEW-2-01 through REVIEW-2-18.
+- Exact main commit and tree used.
+- Whether the reviewer starts from updated main.
+- Number of API clients and direct fetch locations.
+- Number of routes importing the shared client.
+- Number of real frontend and backend test files.
+- Number of behavioural API transport cases.
+- Whether timeout covers response bodies.
+- Whether all ignored bodies are consumed or cancelled.
+- Redirect policy and final-origin tests.
+- 204/no-content type behaviour.
+- Number of error status locations and reachable error codes.
+- Runtime validation at endpoint and score-rendering boundaries.
+- Whether profile descriptions cover six contextual meanings.
+- Contrast ratios for every text token/background pairing.
+- Whether PagePlaceholder remains unused.
+- Whether SelectInput/TextArea/FormField/Button contracts are corrected.
+- Whether PUBLIC_SITE_URL and DJANGO_API_URL are typed and validated.
+- Node and Python runtime ranges actually exercised by CI.
+- Explicit GitHub Actions permissions.
+- Immutable versus mutable action references.
+- GitHub approval count for each new PR.
+- Whether merged branches are deleted.
+- Whether SBGC-34 and SBGC-90 scopes are reconciled.
+- Documentation consistency for route rendering, styling status, CI, API behaviour, and visual validation.
+- Django app/model/migration count.
+- Database constraints for both profile totals and ranges.
+- Shared API-contract version and error envelope.
+- Public deployment, security, operations, logging, migration, backup, and smoke-test readiness.
+- Any new design-reference imports or workspace leakage.
+- Dependency audit date and unresolved advisories.
+- Correction-commit frequency and whether acceptance criteria catch defects before review.
+
+Current quantitative baseline for comparison:
+
+- Remote main: a17a4e3bf28fc21a21261757dc798de7ebb71bef.
+- Frontend source files: 42.
+- Backend Python files: 6.
+- Real test files: 0.
+- API clients: 1.
+- Direct production fetch calls: 1.
+- API route consumers: 0.
+- Frontend runtime dependencies: 4.
+- Frontend development dependencies: 11.
+- npm lock package entries: 614.
+- Root dependencies: 0.
+- Medium findings: 9.
+- Low findings: 9.
+- Critical/High findings: 0.
+- Review-range files changed: 59.
+- Review-range insertions/deletions: +4,643/-707.
+- Review-range commits: 26, including remote merge #20.
+- Recorded GitHub reviews for PRs #10–#20: 0.
+- Design-reference changes since Review 1: 0.
+
+Evidence reviewed
+
+Repository and governance:
+
+- context.md
+- codex.md
+- skills.md
+- README.md
+- agenticoutput.md
+- reviews/review1.txt
+- reviews/README.md
+- reviews/review-template.txt
+- docs/software-development-reviews.md
+- all current relevant non-archive docs
+- relevant historical archive material for Meso/Mystiko compatibility only
+- design-reference/README.md
+- relevant design-reference governance and source where needed to verify isolation and translation boundaries
+
+Frontend:
+
+- every tracked file under apps/frontend/src
+- Astro configuration
+- TypeScript configuration
+- ESLint configuration
+- frontend README
+- frontend environment example
+- frontend manifest
+- package-lock ownership and dependency metadata
+- route rendering declarations
+- layout, navigation, UI, score, placeholder, and API modules
+
+Backend:
+
+- every tracked Python source/configuration file under apps/backend
+- Django settings and URL configuration
+- backend environment example
+- backend requirements
+- absence of domain models, APIs, tests, and migrations beyond scaffold state
+
+Repository tooling:
+
+- root package.json
+- package-lock.json
+- pyproject.toml
+- .nvmrc
+- .github/workflows/ci.yml
+- pull-request template
+- Git workflow documentation
+- design-reference isolation script
+- tracked test-file search
+- dependency import/use search
+- error suppression and ignore search
+
+Git and remote evidence:
+
+- baseline-to-HEAD log and diffs
+- merge parents and trees
+- file and line statistics
+- whitespace check
+- design-reference delta
+- branch and working-tree state
+- public GitHub commit, PR, review, branch, check-run, and workflow-run evidence
+- PRs #10 through #20
+- merged-main CI run 30264208531
+
+Official primary/current documentation:
+
+- Astro configuration, rendering, environment, testing, Actions, and Vercel integration documentation
+- Tailwind CSS 4 Vite and release documentation
+- TypeScript 7 compatibility announcement
+- Node release and native API documentation
+- Fetch Standard
+- Undici response-body guidance
+- Django 6 settings, Python compatibility, release, and APPEND_SLASH documentation
+- GitHub Actions security guidance and official action release repositories
+- ESLint 10 and flat-config documentation
+- Ruff releases and configuration
+- WCAG 2.2 contrast requirements
+
+Uncertainties and unavailable evidence
+
+- The local checkout was not updated main. Source equivalence was established through the remote merge tree, but local branch/ref compliance was not established.
+- A final sandboxed git ls-remote attempt could not resolve GitHub. Remote-main identity and tree came from earlier read-only public GitHub evidence.
+- Live Jira issue status, acceptance criteria, comments, links, and scope amendments were unavailable.
+- No Jira changes were made.
+- GitHub repository settings, branch protection, required-review configuration, required checks, effective GITHUB_TOKEN defaults, and organisation policies were unavailable.
+- Public GitHub review endpoints cannot disprove private or off-platform review discussions.
+- No deployed Vercel, Render, Neon, or public application environment was available.
+- No production logs, error telemetry, request traces, cold-start measurements, or runtime configuration were available.
+- No Django Ninja endpoint or OpenAPI contract exists.
+- No database schema or migrations exist to inspect for domain constraints.
+- No application test suite exists.
+- No local build, check, lint, format, install, migration, or test command was run because of the absolute read-only constraint and risk of generated repository-local artefacts.
+- Existing ignored node_modules, virtual-environment, cache, database, dist, .astro, or .vercel state was not treated as authoritative repository evidence.
+- No npm, PyPI, operating-system, or registry vulnerability audit was executed.
+- No browser screenshot, responsive-viewport, screen-reader, keyboard-only, high-contrast, colour-vision, or 200% zoom test was executed.
+- Contrast calculations were static calculations from committed colour tokens.
+- No performance bundle analysis was run.
+- No content-security-policy or external-font network trace was available.
+- No real protected resource exists, so object-level authorization could not be tested.
+- No stable backend response shape exists, so endpoint-specific phantom-schema analysis was necessarily limited to generic frontend contracts.
+- Framework currency was externally verifiable through official sources at the review date; future reviewers must revalidate it rather than treating this report as permanent version guidance.
+
+Final continuation recommendation
+
+Readiness for continued frontend work: Ready, with constraints.
+
+Continue shell, content, component cleanup, accessibility, and non-backend-dependent work. Correct dual-profile descriptions, defensive score rendering, and dim-text contrast before real classification data expands across the UI.
+
+Readiness for Django/backend foundation: Ready.
+
+Proceed with Django application boundaries, Django Ninja, PostgreSQL, Admin, security, operations, and testing foundations. Carry REVIEW-2-01 and REVIEW-2-02 into that work rather than allowing them to survive to deployment.
+
+Readiness for first real Astro-to-Django endpoint integration: Not ready.
+
+Remediate REVIEW-2-03 through REVIEW-2-06, reconcile SBGC-34 with SBGC-90, and establish the shared contract before making a route depend on this client. REVIEW-2-08 and REVIEW-2-10 should also be resolved before API classification data is rendered or client imports spread.
+
+Readiness for public deployment: Not ready.
+
+The backend, database, API, security hardening, runtime validation, real tests, accessibility verification, deployment configuration, logging, health checks, migration procedure, backup/restore controls, dependency scanning, and smoke tests remain incomplete. The insecure Django secret fallback is independently deployment-blocking.
+
+Overall recommendation: Continue after targeted remediation.
+
+The project should not change architectural direction. Independent frontend and Django foundation work should continue, while endpoint-dependent work pauses at the transport boundary until the targeted API-client, testing, semantic, and accessibility remediations are complete.
