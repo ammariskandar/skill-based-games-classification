@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Log In"
+  description="Sign in to your MyGameDNA account to save favourites and contribute classifications."
+  canonicalPath="/login"
+  robots="noindex, follow"
+>
+  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Log In</h1>
+
+  <div class="mt-8">
+    <div class="rounded-lg border border-border bg-surface p-8 text-center">
+      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+        Final Product
+      </p>
+      <h2 class="mt-2 text-xl font-semibold text-text">
+        Accounts are not yet available
+      </h2>
+      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+        User accounts, authentication, and personal profiles will be introduced
+        in a future phase. You can browse all public pages, catalogue, and
+        rankings without signing in.
+      </p>
+      <a
+        href="/catalogue"
+        class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+      >
+        Browse Catalogue →
+      </a>
+    </div>
+  </div>
+</BaseLayout>

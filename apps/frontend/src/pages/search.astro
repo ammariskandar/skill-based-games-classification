@@ -1,0 +1,71 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const q = Astro.url.searchParams.get("q") ?? "";
+---
+
+<BaseLayout
+  title="Search"
+  description="Search the MyGameDNA game catalogue by name, skill dimensions, or platform."
+  canonicalPath="/search"
+>
+  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Search</h1>
+
+  <form method="get" action="/search" class="mt-6 flex max-w-lg gap-2">
+    <label for="search-q" class="sr-only">Search games</label>
+    <input
+      id="search-q"
+      type="search"
+      name="q"
+      value={q}
+      placeholder="Search games…"
+      class="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue"
+    />
+    <button
+      type="submit"
+      class="rounded-md bg-blue px-4 py-2 text-sm font-medium text-bg hover:bg-blue/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+    >
+      Search
+    </button>
+  </form>
+
+  <div class="mt-8">
+    {
+      q ? (
+        <div class="rounded-lg border border-border bg-surface p-8 text-center">
+          <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+            Awaiting Backend
+          </p>
+          <h2 class="mt-2 text-xl font-semibold text-text">
+            Search results not yet available
+          </h2>
+          <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+            You searched for <strong class="text-text">{q}</strong>. Search
+            functionality will be available once the Django API and game
+            catalogue are connected. Results will be filterable by skill
+            dimensions.
+          </p>
+          <a
+            href="/catalogue"
+            class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+          >
+            Browse full Catalogue →
+          </a>
+        </div>
+      ) : (
+        <div class="rounded-lg border border-border bg-surface p-8 text-center">
+          <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+            Awaiting Backend
+          </p>
+          <h2 class="mt-2 text-xl font-semibold text-text">
+            Search is not yet available
+          </h2>
+          <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+            Enter a game name above to search. Search functionality will be
+            available once the Django API and game catalogue are connected.
+          </p>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

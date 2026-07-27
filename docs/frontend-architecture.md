@@ -58,14 +58,28 @@ src/pages/
 ├── index.astro          →  /              (prerendered)
 ├── about.astro          →  /about         (prerendered)
 ├── methodology.astro    →  /methodology   (prerendered)
-├── catalogue.astro      →  /catalogue     (prerendered placeholder)
-├── rankings.astro       →  /rankings      (prerendered placeholder)
-├── games/
-│   └── [slug].astro     →  /games/:slug   (dynamic, not yet created)
-└── search.astro         →  /search        (planned)
+├── login.astro          →  /login         (prerendered — future account placeholder)
+├── error.astro          →  /error         (prerendered — generic fallback)
+├── catalogue.astro      →  /catalogue     (SSR/on-demand)
+├── rankings.astro       →  /rankings      (SSR/on-demand)
+├── search.astro         →  /search        (SSR/on-demand — reads ?q= param)
+├── profile.astro        →  /profile       (SSR/on-demand — future auth required)
+├── 404.astro            →  custom not-found (SSR — Vercel serverless)
+└── games/
+    └── [slug].astro     →  /games/:slug   (SSR/on-demand — dynamic route)
 ```
 
 Future dynamic routes **must not be prerendered** unless an explicit product decision changes that. Data-driven pages require live API data and must render on-demand.
+
+### Dynamic-route rules
+
+- `/games/[slug]` uses `Astro.params.slug` as display text only — no backend query, no `getStaticPaths`. Django will supply all game data later.
+- `/search` reads `?q=` from `Astro.url.searchParams`. A semantic GET form updates the URL. No backend search is executed.
+- `/profile` is SSR and will require authentication in a future phase.
+- `/login` is prerendered as an informational placeholder — no credential form, no auth package.
+- `/error` is a prerendered visual fallback / demo route only. It does not automatically catch Astro SSR exceptions, does not handle Django/API failures, and does not implement HTTP 500 behaviour. Actual framework-level exception handling, API failure states, and production-safe error handling remain pending future integration/security work.
+- Custom 404 uses `404.astro` and is the actual custom not-found route, handled by the Vercel serverless runtime.
+- Route skeletons contain honest placeholder content — no fake records, counts, rankings, or operational claims.
 
 ## Client-Side JavaScript
 

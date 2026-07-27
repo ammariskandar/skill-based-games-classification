@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Profile"
+  description="Your MyGameDNA profile, favourites, and classification contributions."
+  canonicalPath="/profile"
+  robots="noindex, follow"
+>
+  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Profile</h1>
+
+  <div class="mt-8">
+    <div class="rounded-lg border border-border bg-surface p-8 text-center">
+      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+        Final Product
+      </p>
+      <h2 class="mt-2 text-xl font-semibold text-text">
+        Profiles require authentication
+      </h2>
+      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+        User profiles, favourites, and community classification contributions
+        will be available once accounts and authentication are implemented in a
+        future phase.
+      </p>
+      <div class="mt-4 flex justify-center gap-3">
+        <a
+          href="/login"
+          class="inline-block text-sm font-medium text-blue hover:underline"
+        >
+          Log In →
+        </a>
+        <a
+          href="/catalogue"
+          class="inline-block text-sm font-medium text-blue hover:underline"
+        >
+          Browse Catalogue →
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

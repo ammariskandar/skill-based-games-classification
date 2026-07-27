@@ -1,7 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-
-export const prerender = true;
 ---
 
 <BaseLayout
@@ -10,9 +8,25 @@ export const prerender = true;
   canonicalPath="/catalogue"
 >
   <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Catalogue</h1>
-  <p class="mt-4 max-w-2xl text-lg text-muted">
-    The game catalogue is under development. Games will be listed here,
-    searchable and filterable by skill dimensions once the backend data layer is
-    connected.
-  </p>
+
+  <div class="mt-8 space-y-6">
+    <div class="rounded-lg border border-border bg-surface p-8 text-center">
+      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+        Awaiting Backend
+      </p>
+      <h2 class="mt-2 text-xl font-semibold text-text">
+        Game catalogue coming soon
+      </h2>
+      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+        The full game catalogue will be available once the Django API and
+        database are connected. Games will be listed with their Challenge and
+        Reward profiles, searchable and filterable by Micro, Mystiko, and Macro
+        dimensions.
+      </p>
+      <p class="mt-3 text-xs text-dim">
+        Future features: search, filters, sorting, pagination, and skill-based
+        rankings.
+      </p>
+    </div>
+  </div>
 </BaseLayout>

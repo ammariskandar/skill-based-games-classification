@@ -1,0 +1,37 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  status?: string;
+  linkHref?: string;
+  linkLabel?: string;
+}
+---
+
+<div class="rounded-lg border border-border bg-surface p-8 text-center">
+  {
+    Astro.props.status && (
+      <p class="text-xs font-semibold uppercase tracking-wider text-muted">
+        {Astro.props.status}
+      </p>
+    )
+  }
+  <h2 class="mt-2 text-xl font-semibold text-text">{Astro.props.title}</h2>
+  {
+    Astro.props.description && (
+      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
+        {Astro.props.description}
+      </p>
+    )
+  }
+  {
+    Astro.props.linkHref && Astro.props.linkLabel && (
+      <a
+        href={Astro.props.linkHref}
+        class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+      >
+        {Astro.props.linkLabel} →
+      </a>
+    )
+  }
+</div>
