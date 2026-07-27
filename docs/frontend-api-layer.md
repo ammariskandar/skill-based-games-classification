@@ -53,7 +53,7 @@ Each `ApiError` has:
 - `code` — machine-readable, stable
 - `message` — human-readable, safe (no secrets, stack traces, raw HTML)
 - `status?` — HTTP status when available
-- `cause?` — diagnostic context (logging only, never displayed)
+- `cause?` — diagnostic context (logging only, **never displayed to users**). Present only for internal exceptions (network errors, JSON parse failures). It **never** contains raw backend response bodies, HTML, debug output, or stack traces.
 
 ## Configuration
 

@@ -38,14 +38,21 @@ function getBaseUrl(): string {
 
 // ═══ path validation ═══
 
+/** Accept only relative API paths.  Reject absolute URLs, protocol-relative
+ * URLs, scheme-prefixed URLs, empty strings, and paths without a leading slash. */
 function resolveUrl(path: string): string {
-  if (!path.startsWith("/")) {
-    throw apiError(
-      "CONFIG_ERROR",
-      `API path must be relative (start with /): ${path}`,
-    );
+  if (!path || path.length === 0) {
+    throw apiError("CONFIG_ERROR", "API path must not be empty");
   }
-  if (/^https?:/i.test(path)) {
+  if (path[0] !== "/") {
+    throw apiError("CONFIG_ERROR", `API path must start with /: ${path}`);
+  }
+  // Protocol-relative: starts with //
+  if (path.startsWith("//")) {
+    throw apiError("CONFIG_ERROR", "Protocol-relative URLs are not allowed");
+  }
+  // Absolute: any scheme followed by ://
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(path)) {
     throw apiError(
       "CONFIG_ERROR",
       "Absolute URLs are not allowed for API paths",
@@ -73,15 +80,33 @@ async function request<T>(
     return { ok: false, error: apiError("CONFIG_ERROR", String(err)) };
   }
 
+  // Return immediately if the caller's signal is already aborted.
+  if (opts.signal?.aborted) {
+    return { ok: false, error: apiError("ABORTED", "Request was cancelled") };
+  }
+
   const timeoutMs = opts.timeoutMs ?? API_DEFAULT_TIMEOUT;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let callerAborted = false;
 
-  // Merge external signal with timeout
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  function onCallerAbort() {
+    callerAborted = true;
+    controller.abort();
+  }
+
   if (opts.signal) {
-    opts.signal.addEventListener("abort", () => controller.abort(), {
-      once: true,
-    });
+    opts.signal.addEventListener("abort", onCallerAbort, { once: true });
+  }
+
+  function cleanup() {
+    clearTimeout(timer);
+    if (opts.signal) {
+      opts.signal.removeEventListener("abort", onCallerAbort);
+    }
   }
 
   const headers: Record<string, string> = { ...JSON_HEADERS, ...opts.headers };
@@ -98,9 +123,9 @@ async function request<T>(
       signal: controller.signal,
     });
   } catch (err: unknown) {
-    clearTimeout(timer);
+    cleanup();
     if (err instanceof DOMException && err.name === "AbortError") {
-      if (opts.signal?.aborted) {
+      if (callerAborted) {
         return {
           ok: false,
           error: apiError("ABORTED", "Request was cancelled"),
@@ -117,20 +142,15 @@ async function request<T>(
         cause: err,
       }),
     };
-  } finally {
-    clearTimeout(timer);
   }
 
+  cleanup();
+
   if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    const preview = text.slice(0, 200);
     return {
       ok: false,
       status: response.status,
-      error: apiError("HTTP_ERROR", `Server returned ${response.status}`, {
-        status: response.status,
-        cause: preview || undefined,
-      }),
+      error: apiError("HTTP_ERROR", `Server returned ${response.status}`),
     };
   }
 

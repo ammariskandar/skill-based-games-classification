@@ -56,7 +56,4 @@ export interface GetOptions extends RequestOptions {
   params?: Record<string, string>;
 }
 
-export interface PostOptions extends RequestOptions {
-  /** JSON-serializable body. */
-  body?: unknown;
-}
+export type PostOptions = RequestOptions;
