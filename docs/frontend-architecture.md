@@ -91,6 +91,10 @@ Client-side JavaScript is limited to **bounded Astro islands**. Components that 
 - **Astro** owns routing, page rendering, presentation, asset delivery, server-side API consumption, and SEO metadata.
 - The frontend never holds business logic; it consumes the Django API and renders the result.
 
+## API Layer
+
+Astro server routes consume Django through a shared server-side API client at `src/lib/server/api/`. The API layer owns base URL (`DJANGO_API_URL`), timeout (8s default), transport, and normalized error handling (`ApiResult<T>` with discriminated ok/failure). Ordinary browser code does not call Django directly by default. Domain endpoints and response types remain separate future work. See [`docs/frontend-api-layer.md`](frontend-api-layer.md).
+
 ## Vercel Adapter
 
 The `@astrojs/vercel` adapter translates Astro's server output into Vercel serverless functions. `output: "server"` enables on-demand rendering for any route that does not declare `export const prerender = true`. The Vercel application root is `apps/frontend` — the `design-reference/` directory is outside this root and will not be deployed.
