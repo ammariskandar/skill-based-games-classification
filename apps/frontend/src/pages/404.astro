@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Page Not Found"
+  description="The page you are looking for does not exist."
+  robots="noindex, follow"
+>
+  <div class="text-center py-12">
+    <p class="text-6xl font-bold text-muted">404</p>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+      Page Not Found
+    </h1>
+    <p class="mt-4 max-w-md text-lg text-muted">
+      The page you are looking for does not exist or has been moved.
+    </p>
+    <div class="mt-6 flex justify-center gap-4">
+      <a href="/" class="text-sm font-medium text-blue hover:underline">
+        Go Home →
+      </a>
+      <a
+        href="/catalogue"
+        class="text-sm font-medium text-blue hover:underline"
+      >
+        Browse Catalogue →
+      </a>
+    </div>
+  </div>
+</BaseLayout>

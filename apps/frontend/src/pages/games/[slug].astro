@@ -1,0 +1,39 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const slug = Astro.params.slug ?? "unknown";
+const display = slug.replace(/-/g, " ");
+---
+
+<BaseLayout
+  title={`${display} — Game`}
+  description={`Game detail page for ${display}. Skill classifications will be available once the backend is connected.`}
+  canonicalPath={`/games/${slug}`}
+>
+  <h1 class="text-3xl font-bold tracking-tight capitalize sm:text-4xl">
+    {display}
+  </h1>
+
+  <div class="mt-8">
+    <div class="rounded-lg border border-border bg-surface p-8 text-center">
+      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+        Awaiting Backend
+      </p>
+      <h2 class="mt-2 text-xl font-semibold text-text">
+        Game details coming soon
+      </h2>
+      <p class="mt-2 max-w-lg text-sm text-muted">
+        Metadata, Challenge and Reward profiles, and editorial classifications
+        for this game will be loaded from the Django API once the data layer is
+        connected. Each profile will show independent Micro, Mystiko, and Macro
+        percentages totalling 100.
+      </p>
+      <a
+        href="/catalogue"
+        class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+      >
+        Back to Catalogue →
+      </a>
+    </div>
+  </div>
+</BaseLayout>
