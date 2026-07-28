@@ -129,4 +129,4 @@ No Astro route currently imports the API layer. When routes do integrate:
 
 ## Behavioural Tests
 
-Transport hardening is complete in this ticket (SBGC-160). Behavioural proof via a dedicated transport test suite is deferred to SBGC-161.
+Transport hardening is complete (SBGC-160). Behavioural proof is provided by the Vitest transport test suite (SBGC-161) in `src/lib/server/api/__tests__/`. Tests use Vitest in Node environment with mocked `globalThis.fetch` — no real network requests are made. Covered behaviours: configuration validation, URL and path handling, redirect rejection, request serialization, headers, successful responses, 204 No Content, non-success HTTP statuses, media type handling, malformed JSON, timeout, caller cancellation, and no-retry guarantees. Run with `npm run test:frontend`.

@@ -11,7 +11,7 @@
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
     "build:frontend": "npm run build --workspace=apps/frontend",
-    "test:frontend": "echo 'test:frontend — no application test suite implemented yet; placeholder exits successfully intentionally'",
+    "test:frontend": "npm run test --workspace=apps/frontend",
     "test:backend": "echo 'test:backend — no application test suite implemented yet; placeholder exits successfully intentionally'",
     "test": "npm run test:frontend && npm run test:backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
