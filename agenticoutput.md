@@ -19,3 +19,4 @@
 2026-07-27 10:59:31 +08 — Completed SBGC-33: Created the core Astro route skeletons for public, account, dynamic game, search, rankings, not-found, and error experiences with documented rendering boundaries.
 2026-07-27 19:10:14 +08 — Completed SBGC-34: Created the server-side Astro API client layer with typed results, environment-based Django endpoint configuration, timeout handling, normalized errors, and reusable JSON request utilities.
 2026-07-27 19:52:55 +08 — Corrected SBGC-34: Removed duplicate POST body ownership, strengthened API path validation, fixed AbortSignal lifecycle cleanup, prevented raw backend response exposure, and verified all frontend CI gates.
+2026-07-28 10:53:57 +08 — Completed SBGC-160: Hardened the shared frontend API transport across configuration, URL and redirect boundaries, timeout and cancellation lifecycle, response-body cleanup, no-content handling, normalized errors, headers, media types, and server-only environment access.
