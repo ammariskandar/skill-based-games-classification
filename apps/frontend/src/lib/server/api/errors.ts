@@ -4,12 +4,18 @@ import type { ApiError, ErrorCode } from "./types";
 export function apiError(
   code: ErrorCode,
   message: string,
-  extra?: { status?: number; cause?: unknown },
+  extra?: { cause?: unknown },
 ): ApiError {
   return {
     code,
     message,
-    status: extra?.status,
     cause: extra?.cause,
   };
+}
+
+/** The caller's body argument cannot be serialised to JSON. */
+export function bodySerializationError(cause: unknown): ApiError {
+  return apiError("REQUEST_SERIALIZATION", "Failed to serialize request body", {
+    cause,
+  });
 }

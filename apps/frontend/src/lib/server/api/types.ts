@@ -1,11 +1,17 @@
-/** Generic typed API result type.  Distinguishes success from failure so
- * callers never have to check HTTP status manually. */
+/** Generic typed API result types.  Callers narrow on `result.ok` and
+ * `"data" in result` to distinguish success-with-data from no-content. */
 
 /** A successful API response with typed data. */
 export interface ApiSuccess<T> {
   ok: true;
   data: T;
   status: number;
+}
+
+/** A successful API response with no content (204). */
+export interface ApiNoContent {
+  ok: true;
+  status: 204;
 }
 
 /** A failed API response with a normalized error. */
@@ -15,16 +21,18 @@ export interface ApiFailure {
   status?: number;
 }
 
-/** Discriminated union — callers narrow on `result.ok`. */
-export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
+/** Discriminated union.  204 responses are `ApiNoContent`. */
+export type ApiResult<T> = ApiSuccess<T> | ApiNoContent | ApiFailure;
 
-// ── error types ──
+// ── error taxonomy ──
 
 export type ErrorCode =
   | "CONFIG_ERROR"
+  | "REQUEST_SERIALIZATION"
   | "TIMEOUT"
   | "ABORTED"
   | "NETWORK_ERROR"
+  | "REDIRECT"
   | "HTTP_ERROR"
   | "INVALID_RESPONSE"
   | "UNKNOWN_ERROR";
@@ -32,18 +40,18 @@ export type ErrorCode =
 export interface ApiError {
   /** Stable machine-readable code for programmatic handling. */
   code: ErrorCode;
-  /** Safe human-readable message — never exposes secrets or stack traces. */
+  /** Safe human-readable message — never exposes secrets, stack traces, or backend HTML. */
   message: string;
-  /** HTTP status when the server responded. */
-  status?: number;
-  /** Optional diagnostic context (safe for logging, never for display). */
+  /** Optional diagnostic context (logging only, never displayed to users).
+   *  Never contains raw backend response bodies, HTML, debug output, or credentials. */
   cause?: unknown;
 }
 
 // ── request options ──
 
 export interface RequestOptions {
-  /** Per-request timeout in ms. Defaults to API_DEFAULT_TIMEOUT. */
+  /** Per-request timeout in ms. Defaults to API_DEFAULT_TIMEOUT.
+   *  Must be a positive finite integer. */
   timeoutMs?: number;
   /** AbortSignal for caller-controlled cancellation. */
   signal?: AbortSignal;
