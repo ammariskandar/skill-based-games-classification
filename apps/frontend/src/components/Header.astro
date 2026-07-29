@@ -44,10 +44,9 @@ import Navigation from "./Navigation.astro";
                 <line x1="2" y1="15" x2="18" y2="15"></line>
               </svg>
             </summary>
-            <!-- Panel: absolutely positioned below header -->
             <div
               id="nav-panel"
-              class="absolute left-0 right-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
+              class="absolute left-0 right-0 top-full z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
             >
               <div class="shell-gutter py-3">
                 <Navigation class="flex-col items-start gap-1" />
@@ -102,53 +101,34 @@ import Navigation from "./Navigation.astro";
     const panel = document.getElementById("nav-panel");
     const links = panel ? panel.querySelectorAll("a") : [];
 
-    /** Compact/desktop boundary — must match the Tailwind `lg` breakpoint (64rem). */
     const MQL = window.matchMedia("(min-width: 64rem)");
 
-    function open() {
-      if (!details || !summary) return;
-      details.setAttribute("open", "");
-      summary.setAttribute("aria-expanded", "true");
-    }
-
-    function close() {
-      if (!details || !summary) return;
-      details.removeAttribute("open");
-      summary.setAttribute("aria-expanded", "false");
-    }
-
-    summary.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (details.hasAttribute("open")) {
-        close();
-      } else {
-        open();
-      }
+    // Sync aria-expanded after every native toggle (click, Enter, Space, no-JS)
+    details.addEventListener("toggle", () => {
+      summary.setAttribute(
+        "aria-expanded",
+        details.hasAttribute("open") ? "true" : "false",
+      );
     });
 
+    // Escape closes and returns focus (not native in all browsers)
     summary.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        if (details.hasAttribute("open")) {
-          close();
-        } else {
-          open();
-        }
-      }
       if (e.key === "Escape" && details.hasAttribute("open")) {
-        close();
+        details.removeAttribute("open");
         summary.focus();
       }
     });
 
+    // Close panel when a nav link is activated
     for (const link of links) {
       link.addEventListener("click", () => {
-        close();
+        details.removeAttribute("open");
       });
     }
 
+    // Reset stale open state when crossing into desktop layout
     MQL.addEventListener("change", (e) => {
-      if (e.matches) close();
+      if (e.matches) details.removeAttribute("open");
     });
   })();
 </script>

@@ -67,7 +67,7 @@ The header uses two mutually exclusive navigation presentations controlled by CS
 
 The `lg` (64 rem / 1024 px) breakpoint was chosen by content fit rather than device convention. The disclosure panel respects `prefers-reduced-motion` through existing `motion-reduce:` utility conventions.
 
-Foldable progressive enhancement lives in `global.css` under a `@media (horizontal-viewport-segments: 2)` block. It forces the compact shell on hinged displays and is pure CSS — no JavaScript Viewport Segments API is used. Unsupported browsers ignore the media feature and fall back to the viewport-width breakpoint.
+Foldable progressive enhancement lives in `global.css` under a `@media (horizontal-viewport-segments: 2)` block. It forces the compact shell on hinged displays and is pure CSS. Unsupported browsers ignore the media feature and fall back to the viewport-width breakpoint. Exact hinge-aware placement within a single segment is deferred because the viewport-segment environment variables are experimental and no real segmented-device verification was available.
 
 ## Figma Make Design Reference
 

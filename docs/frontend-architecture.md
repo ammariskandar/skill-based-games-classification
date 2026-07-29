@@ -36,13 +36,13 @@ The breakpoint was chosen by content fit: the desktop brand plus five navigation
 **Compact disclosure:** The menu trigger is a `<details>/<summary>` element with progressive JavaScript enhancement:
 
 - **No-JS fallback:** Native `<details>` open/close behaviour. Summary click toggles visibility of the navigation panel.
-- **JS enhancement:** Intercepts click/keyboard to synchronize `aria-expanded`, handle Escape key (closes panel and returns focus to trigger), closes panel when a navigation link is activated, and resets stale open state when the viewport crosses into desktop layout via `matchMedia`.
+- **JS enhancement:** Listens to the native `toggle` event to synchronize `aria-expanded`. Adds Escape key handling (closes panel and returns focus to trigger), closes panel when a navigation link is activated, and resets stale open state when the viewport crosses into desktop layout via `matchMedia`. Native click, Enter, and Space activation are not reimplemented — they are handled by the `<details>` element.
 
 **Keyboard behaviour:** Tab reaches the trigger; Enter/Space toggles; Tab reaches disclosed links; Shift+Tab behaves normally; Escape closes and returns focus to the trigger. No focus trap, no arrow-key menu semantics. The disclosure is not a modal.
 
 **Search:** The compact header includes a `/search` link with a magnifying-glass icon and accessible label. This is an ordinary Astro MPA link — no overlay, input, autocomplete, or functional search execution. Global search remains non-functional pending Django search endpoints.
 
-**Foldable progressive enhancement:** When the viewport is split by a physical hinge (`horizontal-viewport-segments: 2`), the compact navigation is forced regardless of total viewport width. This prevents important controls from sitting across the hinge. Browsers that do not support the media feature fall back to the regular viewport-width breakpoint. Hinge-safe centring with `env(viewport-segment-*)` is deferred until real-device testing is possible. No real segmented-device verification has been performed.
+**Foldable progressive enhancement:** When the viewport is split by a physical hinge, the compact navigation is forced regardless of total viewport width so that controls do not span the hinge. Browsers that do not support the media feature fall back to the regular viewport-width breakpoint. Exact hinge-aware placement is deferred because the viewport-segment CSS environment variables are experimental and no real segmented-device verification was available at implementation time. No real segmented-device test has been performed.
 
 ### Responsive Container
 
