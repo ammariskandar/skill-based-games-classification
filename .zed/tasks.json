@@ -1,0 +1,184 @@
+[
+  {
+    "label": "task: execute full suite",
+    "command": "npm run test:frontend && npm run test:backend && npm run check:frontend && npm run check:backend && npm run lint && npm run format:check && npm run build:frontend && npm run ci && git diff --check && printf '\\n--- DIFF STAT ---\\n' && git diff --stat && printf '\\n--- REPOSITORY STATUS ---\\n' && git status --short --branch",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all",
+    "shell": {
+      "with_arguments": {
+        "program": "/bin/bash",
+        "args": ["--login"]
+      }
+    }
+  },
+  {
+    "label": "task: dev frontend",
+    "command": "npm run dev:frontend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: stop frontend",
+    "command": "npx astro dev stop --cwd apps/frontend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "save": "none"
+  },
+  {
+    "label": "task: dev backend",
+    "command": "npm run dev:backend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: test frontend",
+    "command": "npm run test:frontend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: test backend",
+    "command": "npm run test:backend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: check full CI",
+    "command": "npm run ci",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: check frontend",
+    "command": "npm run check:frontend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: check backend",
+    "command": "npm run check:backend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: lint all",
+    "command": "npm run lint",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: format check only",
+    "command": "npm run format:check",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: format apply all",
+    "command": "npm run format:frontend && npm run format:backend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: build frontend",
+    "command": "npm run build:frontend",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "task: git status",
+    "command": "git status --short --branch",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "none"
+  },
+  {
+    "label": "task: git review changes",
+    "command": "git status --short --branch && printf '\\n--- DIFF STAT ---\\n' && git diff --stat && printf '\\n--- DIFF CHECK ---\\n' && git diff --check",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all",
+    "shell": {
+      "with_arguments": {
+        "program": "/bin/bash",
+        "args": ["--login"]
+      }
+    }
+  },
+  {
+    "label": "task: verify before PR",
+    "command": "npm run ci && git diff --check && printf '\\n--- REPOSITORY STATUS ---\\n' && git status --short --branch",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all",
+    "shell": {
+      "with_arguments": {
+        "program": "/bin/bash",
+        "args": ["--login"]
+      }
+    }
+  },
+  {
+    "label": "task: verify clean install and CI",
+    "command": "npm ci && npm run ci && git diff --check && printf '\\n--- REPOSITORY STATUS ---\\n' && git status --short --branch",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all",
+    "shell": {
+      "with_arguments": {
+        "program": "/bin/bash",
+        "args": ["--login"]
+      }
+    }
+  }
+]
