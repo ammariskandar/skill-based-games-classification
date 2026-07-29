@@ -231,27 +231,47 @@ describe("API transport", () => {
       expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
     });
 
-    it("accepts dot-segments (URL constructor normalises /../admin → /admin)", async () => {
-      const fetchMock = stubFetch(jsonResponse({ ok: true }));
+    it("rejects dot-segment traversal /../admin", async () => {
       const { getJSON } = await importClient();
       const r = await getJSON("/../admin");
-      // URL constructor resolves to http://127.0.0.1:8000/admin — same origin
-      expect(r.ok).toBe(true);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
     });
 
-    it("accepts normalised traversal /api/../../admin", async () => {
-      stubFetch(jsonResponse({ ok: true }));
+    it("rejects traversal /api/../../admin", async () => {
       const { getJSON } = await importClient();
       const r = await getJSON("/api/../../admin");
-      expect(r.ok).toBe(true);
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
     });
 
-    it("accepts encoded dot-segments /%2e%2e/admin", async () => {
-      stubFetch(jsonResponse({ ok: true }));
+    it("rejects encoded traversal /%2e%2e/admin", async () => {
       const { getJSON } = await importClient();
       const r = await getJSON("/%2e%2e/admin");
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
+    });
+
+    it("rejects traversal /api/%2e%2e/admin", async () => {
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/%2e%2e/admin");
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
+    });
+
+    it("rejects uppercase encoded traversal /%2E%2E/admin", async () => {
+      const { getJSON } = await importClient();
+      const r = await getJSON("/%2E%2E/admin");
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
+    });
+
+    it("accepts legitimate dots in path /api/games/v1.2", async () => {
+      const fetchMock = stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/games/v1.2");
       expect(r.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it("appends query parameters", async () => {
@@ -1061,6 +1081,55 @@ describe("API transport", () => {
       const res = await r.getJSON("/api/test");
       const f = res as ApiFailure;
       expect(f.error.message).not.toContain("<html>");
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  IMPORT SAFETY
+  // ──────────────────────────────────────────────────
+
+  describe("import safety", () => {
+    it("module imports without DJANGO_API_URL set", async () => {
+      setEnv("");
+      const mod = await importClient();
+      expect(mod.getJSON).toBeDefined();
+      expect(mod.postJSON).toBeDefined();
+    });
+
+    it("request returns CONFIG_ERROR when DJANGO_API_URL is missing", async () => {
+      setEnv("");
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  CLEANUP — listener removal and timer clearing
+  // ──────────────────────────────────────────────────
+
+  describe("cleanup — listener removal", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("removes caller abort listener after successful response", async () => {
+      const controller = new AbortController();
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { signal: controller.signal });
+      expect(r.ok).toBe(true);
+      expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it("removes caller abort listener after HTTP failure", async () => {
+      const controller = new AbortController();
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+      stubFetch(textResponse("error", 500));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { signal: controller.signal });
+      expect(r.ok).toBe(false);
+      expect(removeSpy).toHaveBeenCalled();
     });
   });
 });
