@@ -15,6 +15,7 @@ A web application that classifies games across three skill-based dimensions — 
 - Reusable UI foundations (Button, FormField, Card, Badge, DataTable, ItemList, EmptyState, LoadingState, ErrorState) — see [`docs/ui-foundations.md`](docs/ui-foundations.md)
 - Micro/Mystiko/Macro visual system (legends, score summaries, Observable Plot bars, D3 radar) — see [`docs/skill-visual-system.md`](docs/skill-visual-system.md)
 - Frontend API layer (server-side Django client, typed results, normalized errors) — see [`docs/frontend-api-layer.md`](docs/frontend-api-layer.md)
+- Security headers and analytics placeholder (vercel.json, opt-in GA, environment variable classification) — see [`docs/frontend-security.md`](docs/frontend-security.md)
 - Django backend skeleton with `django-environ`
 - Environment-variable loading for both apps
 - Code-quality tooling (Prettier, ESLint, astro check, Ruff)
