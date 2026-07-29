@@ -1,25 +1,25 @@
 ---
+import { NAV_DESTINATIONS } from "../lib/nav-destinations";
+
 const { pathname } = Astro.url;
 
 interface Props {
   pathname?: string;
+  class?: string;
 }
 
 const current = Astro.props.pathname ?? pathname;
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/catalogue", label: "Catalogue" },
-  { href: "/rankings", label: "Rankings" },
-  { href: "/methodology", label: "Methodology" },
-  { href: "/about", label: "About" },
-];
 ---
 
 <nav aria-label="Main navigation">
-  <ul class="flex flex-wrap items-center gap-1 text-sm font-medium sm:gap-2">
+  <ul
+    class:list={[
+      "flex flex-wrap items-center gap-1 text-sm font-medium sm:gap-2",
+      Astro.props.class ?? "",
+    ]}
+  >
     {
-      links.map((link) => (
+      NAV_DESTINATIONS.map((link) => (
         <li>
           <a
             href={link.href}

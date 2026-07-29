@@ -22,6 +22,28 @@ The Vercel adapter (`@astrojs/vercel`) is the production runtime target. Dynamic
 | `Navigation`  | `src/components/Navigation.astro`               | Mandatory separate component. Semantic `<nav>`, current-route detection via Astro.url, `aria-current`, visible focus, no SPA routing, no JavaScript |
 | `Footer`      | `src/components/Footer.astro`                   | Site identity, product statement, Methodology/About links, copyright year, non-affiliation notice |
 
+### Navigation
+
+Navigation destinations are centralized in `src/lib/nav-destinations.ts`. Both the desktop horizontal nav and the compact disclosure panel consume the same five-link source (Home, Catalogue, Rankings, Methodology, About). This prevents drift between two independently maintained link lists.
+
+**Responsive strategy:** The header selects between two mutually exclusive navigation presentations based on available layout space, not device detection:
+
+- **Desktop (≥1024 px / `lg`):** Single-row header with brand on the left and horizontal navigation links on the right. No hamburger trigger.
+- **Compact (<1024 px):** Three-column header bar — menu trigger (left), centred "MyGameDNA" brand (centre), Search link (right). Navigation links are disclosed in a panel below the header.
+
+The breakpoint was chosen by content fit: the desktop brand plus five navigation links need roughly 700 px. At the next-lower Tailwind breakpoint (`md` / 768 px) the content area is approximately 720 px, which is too tight. At `lg` (1024 px) the content area is approximately 960 px, giving comfortable room.
+
+**Compact disclosure:** The menu trigger is a `<details>/<summary>` element with progressive JavaScript enhancement:
+
+- **No-JS fallback:** Native `<details>` open/close behaviour. Summary click toggles visibility of the navigation panel.
+- **JS enhancement:** Listens to the native `toggle` event to synchronize `aria-expanded`. Adds Escape key handling (closes panel and returns focus to trigger), closes panel when a navigation link is activated, and resets stale open state when the viewport crosses into desktop layout via `matchMedia`. Native click, Enter, and Space activation are not reimplemented — they are handled by the `<details>` element.
+
+**Keyboard behaviour:** Tab reaches the trigger; Enter/Space toggles; Tab reaches disclosed links; Shift+Tab behaves normally; Escape closes and returns focus to the trigger. No focus trap, no arrow-key menu semantics. The disclosure is not a modal.
+
+**Search:** The compact header includes a `/search` link with a magnifying-glass icon and accessible label. This is an ordinary Astro MPA link — no overlay, input, autocomplete, or functional search execution. Global search remains non-functional pending Django search endpoints.
+
+**Foldable progressive enhancement:** When the viewport is split by a physical hinge, the compact navigation is forced regardless of total viewport width so that controls do not span the hinge. Browsers that do not support the media feature fall back to the regular viewport-width breakpoint. Exact hinge-aware placement is deferred because the viewport-segment CSS environment variables are experimental and no real segmented-device verification was available at implementation time. No real segmented-device test has been performed.
+
 ### Responsive Container
 
 The application shell is **fluid** — it uses available viewport width with centralized responsive gutters. A single `shell-gutter` CSS utility class (defined in `global.css`) ensures Header, `<main>`, and Footer share identical horizontal padding at every breakpoint: 1rem mobile, 1.5rem tablet, 2rem desktop.
