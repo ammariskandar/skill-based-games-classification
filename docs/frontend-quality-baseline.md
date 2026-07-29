@@ -15,6 +15,9 @@ Accessibility and performance checks recorded during SBGC-35. This is a snapshot
 | No horizontal overflow at narrow widths | Verified |
 | `prefers-reduced-motion` respected (animations, transitions) | Applied via `motion-reduce:` utilities |
 | Colour contrast — `--color-dim` (`#484f58`) on `--color-bg` (`#0d1117`) | **Known failure — SBGC-164** |
+| Mobile navigation — compact header bar visible at narrow widths | **Not verified** — no browser artifact recorded |
+| Mobile navigation — disclosure opens/closes with keyboard | **Not verified** — no browser artifact recorded |
+| Foldable viewport-segment media query present | CSS only — no real segmented-device test performed |
 
 This is not a WCAG audit. SBGC-164 tracks the known `--color-dim` contrast failure. Do not close SBGC-164 here.
 

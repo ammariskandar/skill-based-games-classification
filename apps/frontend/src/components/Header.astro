@@ -2,14 +2,153 @@
 import Navigation from "./Navigation.astro";
 ---
 
-<header class="border-b border-border bg-surface/80 backdrop-blur-sm">
-  <div class="shell-gutter flex items-center justify-between gap-4 py-3">
-    <a
-      href="/"
-      class="shrink-0 text-lg font-bold tracking-tight text-text hover:text-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue rounded"
+<header class="relative border-b border-border bg-surface/80 backdrop-blur-sm">
+  <div class="shell-gutter">
+    <!-- ── Desktop row (lg and above) ── -->
+    <div
+      class="desktop-nav-row hidden lg:flex items-center justify-between gap-4 py-3"
     >
-      MyGameDNA
-    </a>
-    <Navigation />
+      <a
+        href="/"
+        class="shrink-0 text-lg font-bold tracking-tight text-text hover:text-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue rounded"
+      >
+        MyGameDNA
+      </a>
+      <Navigation />
+    </div>
+
+    <!-- ── Compact bar (below lg) ── -->
+    <div class="compact-nav-bar flex lg:hidden items-center py-3">
+      <div class="grid grid-cols-[1fr_auto_1fr] items-center w-full">
+        <!-- Left: menu trigger -->
+        <div class="flex justify-start">
+          <details id="nav-disclosure">
+            <summary
+              class="list-none cursor-pointer p-2 -ml-2 rounded hover:bg-surface-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              aria-expanded="false"
+              aria-controls="nav-panel"
+            >
+              <span class="sr-only">Navigation menu</span>
+              <svg
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <line x1="2" y1="5" x2="18" y2="5"></line>
+                <line x1="2" y1="10" x2="18" y2="10"></line>
+                <line x1="2" y1="15" x2="18" y2="15"></line>
+              </svg>
+            </summary>
+            <!-- Panel: absolutely positioned below header -->
+            <div
+              id="nav-panel"
+              class="absolute left-0 right-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
+            >
+              <div class="shell-gutter py-3">
+                <Navigation class="flex-col items-start gap-1" />
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Center: brand -->
+        <a
+          href="/"
+          class="shrink-0 text-lg font-bold tracking-tight text-text hover:text-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue rounded"
+        >
+          MyGameDNA
+        </a>
+
+        <!-- Right: search link -->
+        <div class="flex justify-end">
+          <a
+            href="/search"
+            aria-label="Search"
+            class="p-2 -mr-2 rounded hover:bg-surface-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          >
+            <svg
+              aria-hidden="true"
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="9" cy="9" r="5"></circle>
+              <line x1="14" y1="14" x2="18" y2="18"></line>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
+
+<script>
+  (() => {
+    const details = document.getElementById("nav-disclosure");
+    if (!details) return;
+
+    const summary = details.querySelector("summary");
+    if (!summary) return;
+
+    const panel = document.getElementById("nav-panel");
+    const links = panel ? panel.querySelectorAll("a") : [];
+
+    /** Compact/desktop boundary — must match the Tailwind `lg` breakpoint (64rem). */
+    const MQL = window.matchMedia("(min-width: 64rem)");
+
+    function open() {
+      if (!details || !summary) return;
+      details.setAttribute("open", "");
+      summary.setAttribute("aria-expanded", "true");
+    }
+
+    function close() {
+      if (!details || !summary) return;
+      details.removeAttribute("open");
+      summary.setAttribute("aria-expanded", "false");
+    }
+
+    summary.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (details.hasAttribute("open")) {
+        close();
+      } else {
+        open();
+      }
+    });
+
+    summary.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (details.hasAttribute("open")) {
+          close();
+        } else {
+          open();
+        }
+      }
+      if (e.key === "Escape" && details.hasAttribute("open")) {
+        close();
+        summary.focus();
+      }
+    });
+
+    for (const link of links) {
+      link.addEventListener("click", () => {
+        close();
+      });
+    }
+
+    MQL.addEventListener("change", (e) => {
+      if (e.matches) close();
+    });
+  })();
+</script>

@@ -51,6 +51,20 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Progressive foldable / segmented viewport support ──
+   Browsers that do not understand the horizontal-viewport-segments media
+   feature fall back to the regular viewport-width `lg` breakpoint.
+   Hinge-safe centering with env(viewport-segment-*) is deferred until
+   real-device testing is possible. */
+@media (horizontal-viewport-segments: 2) {
+  header .desktop-nav-row {
+    display: none !important;
+  }
+  header .compact-nav-bar {
+    display: flex !important;
+  }
+}
+
 /* ── canonical responsive shell gutter ── */
 @utility shell-gutter {
   padding-inline: var(--gutter, 1rem);

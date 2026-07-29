@@ -58,6 +58,17 @@ Width constraints on pages **require a content-specific justification**. Do not 
 
 Reusable Astro components live in `src/components/ui/`. See `docs/ui-foundations.md` for inventory, variant maps, accessibility contracts, and extension policies.
 
+## Responsive Navigation
+
+The header uses two mutually exclusive navigation presentations controlled by CSS breakpoints:
+
+- **Desktop (`lg:` and above):** Single-row flex layout — brand left, horizontal `<Navigation>` right.
+- **Compact (below `lg:`):** Three-column CSS grid (`grid-cols-[1fr_auto_1fr]`) so unequal left/right controls do not displace the centred brand. The disclosure panel is absolutely positioned relative to the `<header>` to span the full header width.
+
+The `lg` (64 rem / 1024 px) breakpoint was chosen by content fit rather than device convention. The disclosure panel respects `prefers-reduced-motion` through existing `motion-reduce:` utility conventions.
+
+Foldable progressive enhancement lives in `global.css` under a `@media (horizontal-viewport-segments: 2)` block. It forces the compact shell on hinged displays and is pure CSS — no JavaScript Viewport Segments API is used. Unsupported browsers ignore the media feature and fall back to the viewport-width breakpoint.
+
 ## Figma Make Design Reference
 
 The Figma Make export archived at `design-reference/figma-make-dark-ui/` may inform visual implementation. However, Tailwind tokens and Astro components must be defined independently — do not duplicate the generated React structure automatically. Study the reference for layout, spacing, typography, and interaction intent; implement in canonical Astro + Tailwind CSS.
