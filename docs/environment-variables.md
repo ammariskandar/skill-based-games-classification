@@ -46,3 +46,18 @@ cp apps/backend/.env.example apps/backend/.env
 - `DATABASE_URL` is optional until PostgreSQL is configured.
 - `STEAM_API_KEY` remains empty until the Steam integration task requires it.
 - In production, all critical secrets must be set; the application should fail safely if they are absent.
+
+## Variable Classification
+
+| Category | Variables | Visibility |
+|----------|-----------|------------|
+| **Public frontend** (client-visible) | `PUBLIC_SITE_URL`, `PUBLIC_GOOGLE_ANALYTICS_ID` | Inspectable by users. Measurement IDs are public identifiers. |
+| **Private Astro server** (server-only) | `DJANGO_API_URL` | Never exposed to browser bundles. Read only in Astro frontmatter/server endpoints. |
+| **Backend-only** (Django) | `DJANGO_SECRET_KEY`, `DATABASE_URL`, `STEAM_API_KEY`, etc. | Never appear in the frontend `@theme` or Astro `PUBLIC_` schema. |
+
+**Rules:**
+
+- `PUBLIC_` values are inspectable by users — never put secrets here.
+- Measurement IDs (`G-XXXXXXXXXX`) are public — they do not need to be treated as secrets.
+- Backend credentials must never use `PUBLIC_`.
+- Do not create variables like `PUBLIC_DJANGO_API_URL` or `PUBLIC_DATABASE_URL`.
