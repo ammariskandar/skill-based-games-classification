@@ -142,7 +142,15 @@ function resolveUrl(base: string, path: string): string {
   // before URL normalization can erase them.
   const segments = path.split("/");
   for (const seg of segments) {
-    const decoded = decodeURIComponent(seg);
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(seg);
+    } catch {
+      throw apiError(
+        "CONFIG_ERROR",
+        "API path contains invalid percent encoding",
+      );
+    }
     if (decoded === "." || decoded === "..") {
       throw apiError(
         "CONFIG_ERROR",

@@ -274,6 +274,18 @@ describe("API transport", () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("rejects malformed percent encoding /%ZZ as CONFIG_ERROR", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/games/%ZZ");
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.error.code).toBe("CONFIG_ERROR");
+      expect(f.error.message).toContain("percent encoding");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("appends query parameters", async () => {
       const fetchMock = stubFetch(jsonResponse({ ok: true }));
       const { getJSON } = await importClient();
