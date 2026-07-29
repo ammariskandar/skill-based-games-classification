@@ -138,6 +138,27 @@ function resolveUrl(base: string, path: string): string {
     throw apiError("CONFIG_ERROR", "API paths must not contain fragments");
   }
 
+  // Reject traversal segments (., .., and percent-encoded equivalents)
+  // before URL normalization can erase them.
+  const segments = path.split("/");
+  for (const seg of segments) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(seg);
+    } catch {
+      throw apiError(
+        "CONFIG_ERROR",
+        "API path contains invalid percent encoding",
+      );
+    }
+    if (decoded === "." || decoded === "..") {
+      throw apiError(
+        "CONFIG_ERROR",
+        "API path must not contain traversal segments",
+      );
+    }
+  }
+
   const resolved = new URL(path, base);
   if (!resolved.href.startsWith(base)) {
     throw apiError(
