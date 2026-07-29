@@ -231,13 +231,27 @@ describe("API transport", () => {
       expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
     });
 
-    it("accepts dot-segments (URL constructor normalises)", async () => {
+    it("accepts dot-segments (URL constructor normalises /../admin → /admin)", async () => {
       const fetchMock = stubFetch(jsonResponse({ ok: true }));
       const { getJSON } = await importClient();
-      const r = await getJSON("/../etc/passwd");
-      // URL constructor normalises /../etc/passwd to /etc/passwd
+      const r = await getJSON("/../admin");
+      // URL constructor resolves to http://127.0.0.1:8000/admin — same origin
       expect(r.ok).toBe(true);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("accepts normalised traversal /api/../../admin", async () => {
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/../../admin");
+      expect(r.ok).toBe(true);
+    });
+
+    it("accepts encoded dot-segments /%2e%2e/admin", async () => {
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/%2e%2e/admin");
+      expect(r.ok).toBe(true);
     });
 
     it("appends query parameters", async () => {
@@ -686,6 +700,367 @@ describe("API transport", () => {
       const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect(init.method).toBe("POST");
       expect(init.body).toBe('{"name":"test"}');
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  BODY LIFECYCLE — timeout/cancel after headers
+  // ──────────────────────────────────────────────────
+
+  describe("body lifecycle — timeout during body read", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("times out while response body is pending", async () => {
+      const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+        const signal = init?.signal as AbortSignal | undefined;
+        return Promise.resolve(
+          new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(new TextEncoder().encode('{"ok":'));
+                if (signal) {
+                  signal.addEventListener(
+                    "abort",
+                    () => {
+                      try {
+                        controller.error(
+                          new DOMException("Aborted", "AbortError"),
+                        );
+                      } catch {
+                        /* stream may already be errored or closed */
+                      }
+                    },
+                    { once: true },
+                  );
+                }
+              },
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { timeoutMs: 1 });
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("TIMEOUT");
+    });
+  });
+
+  describe("body lifecycle — caller abort during body read", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("aborts while response body is pending", async () => {
+      const controller = new AbortController();
+      const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
+        const signal = init?.signal as AbortSignal | undefined;
+        return Promise.resolve(
+          new Response(
+            new ReadableStream({
+              start(ctrl) {
+                ctrl.enqueue(new TextEncoder().encode('{"ok":'));
+                if (signal) {
+                  signal.addEventListener(
+                    "abort",
+                    () => {
+                      try {
+                        ctrl.error(new DOMException("Aborted", "AbortError"));
+                      } catch {
+                        /* stream may already be errored or closed */
+                      }
+                    },
+                    { once: true },
+                  );
+                }
+              },
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const promise = getJSON("/api/test", {
+        signal: controller.signal,
+        timeoutMs: 1000,
+      });
+      controller.abort();
+      const r = await promise;
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("ABORTED");
+    });
+  });
+
+  describe("body lifecycle — stream read failure", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("returns INVALID_RESPONSE when body stream fails", async () => {
+      const fetchMock = vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.error(new Error("Stream broken"));
+              },
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { timeoutMs: 1000 });
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("INVALID_RESPONSE");
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  BODY DISPOSAL
+  // ──────────────────────────────────────────────────
+
+  describe("body disposal", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("consumes redirect response body", async () => {
+      let bodyRead = false;
+      const response = new Response("should be consumed", { status: 301 });
+      const origText = response.text.bind(response);
+      response.text = () => {
+        bodyRead = true;
+        return origText();
+      };
+      stubFetch(response);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("REDIRECT");
+      expect(bodyRead).toBe(true);
+    });
+
+    for (const status of [400, 500]) {
+      it(`consumes non-2xx (${status}) response body`, async () => {
+        let bodyRead = false;
+        const response = textResponse("error page", status);
+        const origText = response.text.bind(response);
+        response.text = () => {
+          bodyRead = true;
+          return origText();
+        };
+        stubFetch(response);
+        const { getJSON } = await importClient();
+        const r = await getJSON("/api/test");
+        expect(r.ok).toBe(false);
+        expect(bodyRead).toBe(true);
+      });
+    }
+
+    it("consumes invalid-media-type response body", async () => {
+      let bodyRead = false;
+      const response = textResponse("<html>", 200);
+      const origText = response.text.bind(response);
+      response.text = () => {
+        bodyRead = true;
+        return origText();
+      };
+      stubFetch(response);
+      const { getJSON } = await importClient();
+      await getJSON("/api/test");
+      expect(bodyRead).toBe(true);
+    });
+
+    it("consumes malformed-JSON response body", async () => {
+      let bodyRead = false;
+      const response = new Response("not json", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+      const origText = response.text.bind(response);
+      response.text = () => {
+        bodyRead = true;
+        return origText();
+      };
+      stubFetch(response);
+      const { getJSON } = await importClient();
+      await getJSON("/api/test");
+      expect(bodyRead).toBe(true);
+    });
+
+    it("consumes 204 response body", async () => {
+      let bodyRead = false;
+      const response = emptyResponse(204);
+      const origText = response.text.bind(response);
+      response.text = () => {
+        bodyRead = true;
+        return origText();
+      };
+      stubFetch(response);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect(r.ok).toBe(true);
+      expect(bodyRead).toBe(true);
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  CLEANUP
+  // ──────────────────────────────────────────────────
+
+  describe("cleanup", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("caller signal aborted after request settles does not alter result", async () => {
+      const controller = new AbortController();
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { signal: controller.signal });
+      expect(r.ok).toBe(true);
+      controller.abort();
+      expect(r.ok).toBe(true);
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  HEADER CASE NORMALIZATION
+  // ──────────────────────────────────────────────────
+
+  describe("header case normalization", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("merges mixed-case Accept header", async () => {
+      const fetchMock = stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      await getJSON("/api/test", { headers: { accept: "text/plain" } });
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
+      const h = new Headers(init.headers as HeadersInit);
+      expect(h.get("Accept")).toBe("text/plain");
+      expect(h.get("accept")).toBe("text/plain");
+    });
+
+    it("merges mixed-case Content-Type header", async () => {
+      const fetchMock = stubFetch(jsonResponse({ ok: true }));
+      const { postJSON } = await importClient();
+      await postJSON(
+        "/api/submit",
+        { x: 1 },
+        {
+          headers: { "content-type": "application/json" },
+        },
+      );
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
+      const h = new Headers(init.headers as HeadersInit);
+      expect(h.get("Content-Type")).toBe("application/json");
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  ERROR TAXONOMY — full coverage
+  // ──────────────────────────────────────────────────
+
+  describe("error taxonomy coverage", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("CONFIG_ERROR — missing env", async () => {
+      setEnv("");
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect((r as ApiFailure).error.code).toBe("CONFIG_ERROR");
+    });
+
+    it("REQUEST_SERIALIZATION — cyclic body", async () => {
+      const { postJSON } = await importClient();
+      const obj: Record<string, unknown> = {};
+      obj.self = obj;
+      const r = await postJSON("/api/submit", obj);
+      expect((r as ApiFailure).error.code).toBe("REQUEST_SERIALIZATION");
+    });
+
+    it("TIMEOUT — never resolves", async () => {
+      const fetchMock = vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((_, reject) => {
+            init?.signal?.addEventListener(
+              "abort",
+              () => reject(new DOMException("Aborted", "AbortError")),
+              { once: true },
+            );
+          }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { timeoutMs: 1 });
+      expect((r as ApiFailure).error.code).toBe("TIMEOUT");
+    });
+
+    it("ABORTED — caller cancel", async () => {
+      const c = new AbortController();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(
+          (_url: string, init?: RequestInit) =>
+            new Promise<Response>((_, reject) => {
+              init?.signal?.addEventListener(
+                "abort",
+                () => reject(new DOMException("Aborted", "AbortError")),
+                { once: true },
+              );
+            }),
+        ),
+      );
+      const { getJSON } = await importClient();
+      const p = getJSON("/api/test", { signal: c.signal, timeoutMs: 1000 });
+      c.abort();
+      expect(((await p) as ApiFailure).error.code).toBe("ABORTED");
+    });
+
+    it("NETWORK_ERROR — fetch throws", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockRejectedValue(new Error("ECONNREFUSED")),
+      );
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect((r as ApiFailure).error.code).toBe("NETWORK_ERROR");
+    });
+
+    it("REDIRECT — 301", async () => {
+      stubFetch(emptyResponse(301));
+      const r = await (await importClient()).getJSON("/api/test");
+      expect((r as ApiFailure).error.code).toBe("REDIRECT");
+    });
+
+    it("HTTP_ERROR — 500", async () => {
+      stubFetch(textResponse("err", 500));
+      const r = await (await importClient()).getJSON("/api/test");
+      expect((r as ApiFailure).error.code).toBe("HTTP_ERROR");
+    });
+
+    it("INVALID_RESPONSE — bad JSON", async () => {
+      stubFetch(
+        new Response("not json", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      const r = await (await importClient()).getJSON("/api/test");
+      expect((r as ApiFailure).error.code).toBe("INVALID_RESPONSE");
+    });
+
+    it("safe message — no HTML in HTTP_ERROR", async () => {
+      stubFetch(textResponse("<html>debug</html>", 500));
+      const r = await importClient();
+      const res = await r.getJSON("/api/test");
+      const f = res as ApiFailure;
+      expect(f.error.message).not.toContain("<html>");
     });
   });
 });
