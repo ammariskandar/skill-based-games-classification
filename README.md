@@ -17,12 +17,13 @@ A web application that classifies games across three skill-based dimensions — 
 - Frontend API layer (server-side Django client, typed results, normalized errors) — see [`docs/frontend-api-layer.md`](docs/frontend-api-layer.md)
 - Security headers and analytics placeholder (vercel.json, opt-in GA, environment variable classification) — see [`docs/frontend-security.md`](docs/frontend-security.md)
 - Django backend skeleton with `django-environ`
+- Django application structure (games, classifications, API routing, environment-specific settings) — see [`docs/backend-architecture.md`](docs/backend-architecture.md)
 - Environment-variable loading for both apps
 - Code-quality tooling (Prettier, ESLint, astro check, Ruff)
 - GitHub Actions CI (frontend + backend jobs)
 - Locked design reference (`design-reference/`)
 
-**Pending:** Django Ninja, PostgreSQL/Neon connectivity, Django domain apps and models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
+**Pending:** Django Ninja, PostgreSQL/Neon connectivity, Django domain models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
 
 | Service  | Development URL           |
 | -------- | ------------------------- |
