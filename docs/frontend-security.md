@@ -21,7 +21,7 @@ All routes receive the following headers via `vercel.json`:
 
 - `PUBLIC_GOOGLE_ANALYTICS_ID` is a public measurement ID — not a secret.
 - When unset, no Google tag is rendered and no analytics request is made.
-- When set, the `vercel.json` CSP does not currently whitelist `googletagmanager.com` or `google-analytics.com`. This must be added when analytics is enabled in production.
+- Analytics requires **both** production mode (`import.meta.env.PROD`) and a valid configured ID. Development mode never renders analytics.
 
 ## Deferred
 

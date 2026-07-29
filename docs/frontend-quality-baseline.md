@@ -23,7 +23,7 @@ This is not a WCAG audit. SBGC-164 tracks the known `--color-dim` contrast failu
 | Check | Status |
 |-------|--------|
 | No analytics script when `PUBLIC_GOOGLE_ANALYTICS_ID` is unset | Verified |
-| One analytics script when a valid `G-XXXXXXXXXX` ID is configured | Verified |
+| One analytics script when a valid `G-XXXXXXXXXX` ID is configured **and in production mode** | Verified |
 | No new client framework or hydration added | Verified |
 | No large analytics npm dependency | No dependency added |
 | No unnecessary client JavaScript in shell or routes | Verified |

@@ -1,15 +1,17 @@
 ---
 const id = import.meta.env.PUBLIC_GOOGLE_ANALYTICS_ID;
+const isProd = import.meta.env.PROD;
 const isValid = typeof id === "string" && /^G-[A-Z0-9]{6,}$/.test(id);
+const enabled = isProd && isValid;
 ---
 
 {
-  isValid && (
+  enabled && (
     <script async src={`https://www.googletagmanager.com/gtag/js?id=${id}`} />
   )
 }
 {
-  isValid && (
+  enabled && (
     <script
       is:inline
       set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${id}');`}
