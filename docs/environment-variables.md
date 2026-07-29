@@ -31,7 +31,6 @@ cp apps/backend/.env.example apps/backend/.env
 | Variable               | Scope    | Public/Secret | Local Example                  | Production Provider | Required Now |
 | ---------------------- | -------- | ------------- | ------------------------------ | ------------------- | ------------ |
 | `DJANGO_SECRET_KEY`    | Server   | Secret        | *(generate locally)*           | Render env vars     | Yes          |
-| `DJANGO_DEBUG`         | Server   | Secret        | `true`                         | Render env vars     | Yes          |
 | `DJANGO_ALLOWED_HOSTS` | Server   | Secret        | `127.0.0.1,localhost`          | Render env vars     | Yes          |
 | `CSRF_TRUSTED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
 | `CORS_ALLOWED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
@@ -46,6 +45,9 @@ cp apps/backend/.env.example apps/backend/.env
 - `DATABASE_URL` is optional until PostgreSQL is configured.
 - `STEAM_API_KEY` remains empty until the Steam integration task requires it.
 - In production, all critical secrets must be set; the application should fail safely if they are absent.
+- `DEBUG` is controlled by the selected settings module (`config.settings.development` or `config.settings.production`), not by an environment variable.
+  See [`docs/backend-architecture.md`](backend-architecture.md) for settings selection.
+- `ADMIN_URL_PATH` and `CORS_ALLOWED_ORIGINS` are currently inert reserved values. They will be wired in SBGC-40 and SBGC-41 respectively.
 
 ## Variable Classification
 
