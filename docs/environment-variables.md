@@ -34,7 +34,7 @@ cp apps/backend/.env.example apps/backend/.env
 | `DJANGO_ALLOWED_HOSTS` | Server   | Secret        | `127.0.0.1,localhost`          | Render env vars     | Yes          |
 | `CSRF_TRUSTED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
 | `CORS_ALLOWED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
-| `DATABASE_URL`         | Server   | Secret        | *(empty — uses SQLite locally)*| Neon dashboard      | No (later)   |
+| `DATABASE_URL`         | Server   | Secret        | *(empty — uses SQLite locally)*| Neon dashboard      | Yes (production only) |
 | `STEAM_API_KEY`        | Server   | Secret        | *(empty)*                      | Render env vars     | No (later)   |
 | `ADMIN_URL_PATH`       | Server   | Secret        | `admin/`                       | Render env vars     | No (later)   |
 
@@ -42,7 +42,7 @@ cp apps/backend/.env.example apps/backend/.env
 
 - Backend secrets belong only in Django's environment or the hosting platform's secret manager.
 - Never commit a real `DJANGO_SECRET_KEY`.
-- `DATABASE_URL` is optional until PostgreSQL is configured.
+- `DATABASE_URL` is optional in development (SQLite is used as fallback) and **required** in production (missing value raises `ImproperlyConfigured`). Use a direct non-pooler Neon connection string — hosts containing `-pooler` are not supported for the current connection mode. See [`docs/database-connectivity.md`](database-connectivity.md).
 - `STEAM_API_KEY` remains empty until the Steam integration task requires it.
 - In production, all critical secrets must be set; the application should fail safely if they are absent.
 - `DEBUG` is controlled by the selected settings module (`config.settings.development` or `config.settings.production`), not by an environment variable.

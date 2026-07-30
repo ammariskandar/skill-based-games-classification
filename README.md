@@ -19,12 +19,13 @@ A web application that classifies games across three skill-based dimensions — 
 - Django backend skeleton with `django-environ`
 - Django application structure (games, classifications, API routing, environment-specific settings) — see [`docs/backend-architecture.md`](docs/backend-architecture.md)
 - Django Ninja 1.6.2 API with versioned v1 endpoints, standardised error envelope, and OpenAPI documentation — see [`docs/backend-api.md`](docs/backend-api.md)
+- SQLite local development and Neon PostgreSQL connectivity via Psycopg 3, with environment-specific fallback policy — see [`docs/database-connectivity.md`](docs/database-connectivity.md)
 - Environment-variable loading for both apps
 - Code-quality tooling (Prettier, ESLint, astro check, Ruff)
 - GitHub Actions CI (frontend + backend jobs)
 - Locked design reference (`design-reference/`)
 
-**Pending:** PostgreSQL/Neon connectivity, Django domain models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
+**Pending:** Django domain models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
 
 | Service  | Development URL           |
 | -------- | ------------------------- |
