@@ -105,6 +105,103 @@ class UnknownPathTests(SimpleTestCase):
         body = r.content.decode()
         self.assertNotIn("not-real", body.lower())
 
+    # -- Nested catch-all paths (under mounted routers) --
+
+    def _assert_unknown_returns_not_found_envelope(self, path: str):
+        c = Client()
+        r = c.get(path)
+        self.assertEqual(r.status_code, 404, f"{path} should return 404")
+        body = r.json()
+        self.assertEqual(body["error"]["code"], "NOT_FOUND")
+        # Path must not be echoed.
+        last_segment = path.rstrip("/").rsplit("/", 1)[-1]
+        self.assertNotIn(last_segment, r.content.decode().lower())
+
+    def test_unknown_under_games_router(self):
+        self._assert_unknown_returns_not_found_envelope("/api/v1/games/not-real")
+
+    def test_unknown_under_classifications_router(self):
+        self._assert_unknown_returns_not_found_envelope(
+            "/api/v1/classifications/not-real"
+        )
+
+    def test_unknown_under_docs_path(self):
+        """
+        /api/v1/docs/not-real — should hit the catch-all, not the docs view.
+        """
+        self._assert_unknown_returns_not_found_envelope("/api/v1/docs/not-real")
+
+    # -- Known routes remain unaffected --
+
+    def test_root_still_works(self):
+        c = Client()
+        r = c.get("/api/v1/")
+        self.assertEqual(r.status_code, 200)
+
+    def test_openapi_still_works(self):
+        c = Client()
+        r = c.get("/api/v1/openapi.json")
+        self.assertEqual(r.status_code, 200)
+
+
+class ProductionSettingsHttpTests(SimpleTestCase):
+    """
+    HTTP-level behaviour when docs are disabled (production config).
+
+    OpenAPI schema availability at /api/v1/openapi.json in all environments
+    is covered by OpenApiSchemaTests — openapi_url is always "/openapi.json".
+    """
+
+    def _production_api(self):
+        """
+        Build a fresh NinjaAPI with docs disabled and handlers registered.
+        """
+        from classifications.api import router as classifications_router
+        from games.api import router as games_router
+        from ninja import NinjaAPI
+
+        from api.errors import register_handlers
+        from api.system import router as system_router
+
+        api = NinjaAPI(
+            title="MyGameDNA API",
+            version="1.0.0",
+            openapi_url="/openapi.json",
+            docs_url=None,
+            urls_namespace=None,
+        )
+        register_handlers(api)
+        api.add_router("", system_router)
+        api.add_router("/games/", games_router)
+        api.add_router("/classifications/", classifications_router)
+        return api
+
+    def test_production_docs_unreachable(self):
+        """
+        When docs_url is None, Ninja does not register the docs view.
+        The TestClient cannot resolve /docs — proving the docs endpoint
+        does not exist at the HTTP-routing level.
+        """
+        from ninja.testing import TestClient
+
+        api = self._production_api()
+        client = TestClient(api)
+        r = client.get("/")
+        self.assertEqual(r.status_code, 200)
+        with self.assertRaisesRegex(Exception, "Cannot resolve"):
+            client.get("/docs")
+
+    def test_production_openapi_configured(self):
+        """
+        OpenAPI schema URL is always configured even when docs are off.
+        HTTP availability is verified by OpenApiSchemaTests against the
+        development instance — the endpoint exists in all environments
+        because openapi_url is never None.
+        """
+        api = self._production_api()
+        self.assertEqual(api.openapi_url, "/openapi.json")
+        self.assertIsNone(api.docs_url)
+
 
 class MethodNotAllowedTests(SimpleTestCase):
     """POST /api/v1/ — no POST handler exists on the root router."""

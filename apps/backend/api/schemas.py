@@ -5,10 +5,8 @@ Request/response contracts, error envelope definitions, and validation
 policies shared across all API version routers.
 """
 
-from functools import cached_property
-
 from ninja import Schema
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 # ---------------------------------------------------------------------------
 # Request conventions
@@ -56,19 +54,7 @@ class ApiError(Schema):
 
     code: str
     message: str
-    details: list[ApiErrorDetail]
-
-    @cached_property
-    def _default_details(self) -> list[ApiErrorDetail]:
-        """
-        Return a new empty list on every access so callers that modify
-        `details` in-place do not mutate a shared mutable default.
-        """
-        return []
-
-    @staticmethod
-    def default_details() -> list[ApiErrorDetail]:
-        return []
+    details: list[ApiErrorDetail] = Field(default_factory=list)
 
 
 class ApiErrorResponse(Schema):

@@ -22,6 +22,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from api.errors import ApiException, register_handlers
 from api.schemas import (
+    ApiError,
     ApiErrorDetail,
     ApiErrorResponse,
     ApiRequestSchema,
@@ -69,15 +70,39 @@ class ApiRootResponseTests(SimpleTestCase):
 
 
 class ApiErrorDetailTests(SimpleTestCase):
-    """ApiErrorResponse default-details independence."""
+    """ApiError default-details independence and serialisation."""
 
-    def test_details_default_independent(self):
-        """Each default details list is a separate empty list."""
+    def test_default_details_is_independent_list(self):
+        """
+        Each ApiError instance receives its own empty details list.
+        Mutating one does not alter another.
+        """
+        e1 = ApiError(code="T1", message="m1")
+        e2 = ApiError(code="T2", message="m2")
+        e1.details.append(ApiErrorDetail(location=["a"], message="x", type="t"))
+        self.assertEqual(len(e1.details), 1)
+        self.assertEqual(len(e2.details), 0)
+
+    def test_default_details_serializes_as_empty_array(self):
+        """ApiErrorResponse with default details serializes as [] not null."""
+        resp = ApiErrorResponse(error=ApiError(code="T1", message="m1"))
+        json_str = resp.model_dump_json()
+        self.assertIn('"details":[]', json_str)
+
+    def test_details_explicit_list(self):
+        """Explicitly passed details are preserved."""
         e1 = ApiErrorResponse(error={"code": "TEST", "message": "m1", "details": []})
         e2 = ApiErrorResponse(error={"code": "TEST", "message": "m2", "details": []})
         e1.error.details.append(ApiErrorDetail(location=["a"], message="x", type="t"))
         self.assertEqual(len(e1.error.details), 1)
         self.assertEqual(len(e2.error.details), 0)
+
+    def test_generated_openapi_schema_details_is_array(self):
+        """OpenAPI schema identifies details as type array."""
+        schema = ApiErrorResponse.model_json_schema()
+        error_props = schema["$defs"]["ApiError"]["properties"]
+        details_schema = error_props["details"]
+        self.assertEqual(details_schema["type"], "array")
 
 
 # ============================================================================
