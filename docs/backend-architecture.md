@@ -125,13 +125,24 @@ See [`docs/backend-api.md`](backend-api.md) for API contracts, error envelope, a
 - `GET /api/v1/docs` — Swagger UI (development only)
 - Unknown paths return standardised 404 JSON envelope.
 
+### Database (`config/database.py`)
+
+**Psycopg 3.3.4** is configured for PostgreSQL connectivity. The `build_database_config()` helper in `config/database.py` parses `DATABASE_URL` through `django-environ` and enforces environment-specific fallback policy.
+
+- **Development:** SQLite fallback at `apps/backend/db.sqlite3` when `DATABASE_URL` is absent.
+- **Production:** `DATABASE_URL` is **required** — missing/blank values raise `ImproperlyConfigured`.
+- **Direct Neon connections only** — pooled hosts (`-pooler` in hostname) are not supported for the current connection mode.
+- **SSL** (`sslmode=require`, `channel_binding=require`) and **connect_timeout=10** are enforced for PostgreSQL.
+- **CONN_MAX_AGE=0** — no persistent connections or application-side pooling.
+
+See [`docs/database-connectivity.md`](database-connectivity.md).
+
 ### Future `users`
 
 A `users` application for final-product accounts is planned but not yet created. It is not required during the MVP foundation phase.
 
 ## Current Limitations
 
-- **No PostgreSQL connectivity** — SBGC-39 will add a PostgreSQL driver and configure Neon connectivity.
 - **No Admin configuration** — SBGC-40 will create superuser access, model registration patterns, and wire `ADMIN_URL_PATH`.
 - **No security hardening** — SBGC-41 will enforce production secrets, hosts, CSRF, cookies, and request limits.
 - **No Steam integration** — SBGC-42 will create the Steam service/client.

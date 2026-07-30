@@ -94,21 +94,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-# DATABASE_URL is optional until PostgreSQL is configured (SBGC-39)
+# Database — SBGC-39
+# Raw DATABASE_URL is read here but not connected.
+# Environment-specific modules use config.database.build_database_config
+# to produce the final DATABASES entry with the correct fallback policy.
 DATABASE_URL = env("DATABASE_URL", default="")
-
-if DATABASE_URL:
-    DATABASES = {"default": env.db()}
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
 
 
 # Password validation

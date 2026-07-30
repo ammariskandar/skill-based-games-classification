@@ -1,0 +1,102 @@
+"""
+Database configuration helper — SBGC-39.
+
+Parses DATABASE_URL through django-environ and produces a
+Django DATABASES entry with environment-specific fallback policy.
+
+Never opens a connection at import time.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import environ
+from django.core.exceptions import ImproperlyConfigured
+
+# Known supported engine labels.
+_POSTGRESQL_ENGINE = "django.db.backends.postgresql"
+_SQLITE_ENGINE = "django.db.backends.sqlite3"
+
+
+def build_database_config(
+    database_url: str | None,
+    base_dir: Path,
+    *,
+    allow_sqlite_fallback: bool,
+) -> dict[str, dict[str, Any]]:
+    """
+    Build the Django ``DATABASES["default"]`` configuration.
+
+    Args:
+        database_url: The raw DATABASE_URL value (may be empty/None).
+        base_dir: Project BASE_DIR (``apps/backend/``).
+        allow_sqlite_fallback: If True, a missing/blank URL selects a local
+            SQLite database at ``base_dir / "db.sqlite3"``.  If False, a
+            missing or blank URL raises ``ImproperlyConfigured``.
+
+    Returns:
+        A dict suitable for ``settings.DATABASES``.
+
+    Raises:
+        ImproperlyConfigured: When *allow_sqlite_fallback* is False and
+            *database_url* is missing, blank, or whitespace-only; or when
+            an unsupported engine or malformed URL is supplied.
+    """
+    stripped = (database_url or "").strip()
+
+    # -- Missing / blank URL ---------------------------------------------------
+    if not stripped:
+        if allow_sqlite_fallback:
+            return {
+                "default": {
+                    "ENGINE": _SQLITE_ENGINE,
+                    "NAME": base_dir / "db.sqlite3",
+                    "CONN_MAX_AGE": 0,
+                }
+            }
+        raise ImproperlyConfigured("DATABASE_URL is required in this environment.")
+
+    # -- Populated URL ----------------------------------------------------------
+    try:
+        env = environ.Env()
+        raw_config = env.db_url_config(stripped)
+    except Exception as exc:
+        raise ImproperlyConfigured(
+            "Unable to parse DATABASE_URL. Verify the value is a valid database URL."
+        ) from exc
+
+    engine = raw_config.get("ENGINE", "")
+
+    # -- Unsupported engine -----------------------------------------------------
+    if engine not in (_SQLITE_ENGINE, _POSTGRESQL_ENGINE):
+        raise ImproperlyConfigured(
+            f"Unsupported database engine: {engine!r}. "
+            f"Expected {_SQLITE_ENGINE!r} or {_POSTGRESQL_ENGINE!r}."
+        )
+
+    config: dict[str, Any] = {"ENGINE": engine, "CONN_MAX_AGE": 0}
+
+    # -- SQLite ----------------------------------------------------------------
+    if engine == _SQLITE_ENGINE:
+        config["NAME"] = raw_config.get("NAME", base_dir / "db.sqlite3")
+        return {"default": config}
+
+    # -- PostgreSQL -------------------------------------------------------------
+    config["NAME"] = raw_config.get("NAME", "")
+    config["USER"] = raw_config.get("USER", "")
+    config["PASSWORD"] = raw_config.get("PASSWORD", "")
+    config["HOST"] = raw_config.get("HOST", "")
+    config["PORT"] = raw_config.get("PORT", "")
+
+    # Preserve and merge OPTIONS.
+    options: dict[str, Any] = dict(raw_config.get("OPTIONS", {}))
+
+    # Enforce a connection timeout if the caller hasn't set a finite one.
+    if not isinstance(options.get("connect_timeout"), (int, float)):
+        options["connect_timeout"] = 10
+
+    config["OPTIONS"] = options
+
+    return {"default": config}

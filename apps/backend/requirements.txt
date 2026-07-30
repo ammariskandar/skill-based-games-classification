@@ -3,6 +3,8 @@ asgiref==3.12.1
 Django==6.0.7
 django-environ==0.14.0
 django-ninja==1.6.2
+psycopg==3.3.4
+psycopg-binary==3.3.4
 pydantic==2.13.4
 pydantic_core==2.46.4
 ruff==0.16.0
