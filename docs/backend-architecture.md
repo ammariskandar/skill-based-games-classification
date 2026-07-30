@@ -16,9 +16,21 @@ apps/backend/
 │   ├── urls.py                 # Root URL configuration
 │   ├── wsgi.py                 # WSGI entry point (defaults to production)
 │   └── asgi.py                 # ASGI entry point (defaults to production)
-├── games/                      # Canonical game identity and metadata (SBGC-4)
+├── api/                        # API routing composition (not a Django app)
+│   ├── __init__.py
+│   ├── urls.py                 # Mounts v1 NinjaAPI + catch-all fallback
+│   ├── v1.py                   # NinjaAPI instance, handler registration, router mounting
+│   ├── schemas.py              # Shared request/response/error schemas
+│   ├── errors.py               # Exception handlers, error response builders
+│   ├── system.py               # System router (GET /)
+│   └── tests/
+│       ├── __init__.py
+│       ├── test_api_mounted.py # URL-level behaviour tests
+│       └── test_schemas_errors.py  # Schema and error-handler tests
+t├── games/                      # Canonical game identity and metadata (SBGC-4)
 │   ├── __init__.py
 │   ├── apps.py                 # GamesConfig
+│   ├── api.py                  # Games API router (no operations yet)
 │   ├── models.py               # No models yet (SBGC-45)
 │   ├── admin.py                # No admin registrations yet (SBGC-40)
 │   ├── tests.py                # No tests yet (SBGC-44)
@@ -27,6 +39,7 @@ apps/backend/
 ├── classifications/            # Challenge and Reward classification records (SBGC-4)
 │   ├── __init__.py
 │   ├── apps.py                 # ClassificationsConfig
+│   ├── api.py                  # Classifications API router (no operations yet)
 │   ├── models.py               # No models yet (SBGC-46)
 │   ├── admin.py                # No admin registrations yet (SBGC-40)
 │   ├── tests.py                # No tests yet (SBGC-44)
@@ -97,9 +110,20 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Status:** Routing composition package — **not** a Django application and **not** registered in `INSTALLED_APPS`.
 
-**Reserved prefix:** `/api/v1/` — wired in `config/urls.py`. All requests currently return 404 because no endpoints exist.
+**Django Ninja 1.6.2** is configured with one `NinjaAPI` instance (`api/v1.py`) for version 1.0.0.
 
-SBGC-38 will install and configure Django Ninja routers here.
+Mounted routers:
+- `""` → System (`GET /api/v1/` — product name and version)
+- `"/games/"` → Games (no operations yet)
+- `"/classifications/"` → Classifications (no operations yet)
+
+See [`docs/backend-api.md`](backend-api.md) for API contracts, error envelope, and exception handling.
+
+**Reserved prefix:** `/api/v1/` — wired in `config/urls.py`.
+- `GET /api/v1/` — API root (200)
+- `GET /api/v1/openapi.json` — OpenAPI schema (200)
+- `GET /api/v1/docs` — Swagger UI (development only)
+- Unknown paths return standardised 404 JSON envelope.
 
 ### Future `users`
 
@@ -107,7 +131,6 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **No Django Ninja** — installation and configuration belongs to SBGC-38.
 - **No PostgreSQL connectivity** — SBGC-39 will add a PostgreSQL driver and configure Neon connectivity.
 - **No Admin configuration** — SBGC-40 will create superuser access, model registration patterns, and wire `ADMIN_URL_PATH`.
 - **No security hardening** — SBGC-41 will enforce production secrets, hosts, CSRF, cookies, and request limits.
