@@ -140,6 +140,14 @@ class AllowedHostsTests(SimpleTestCase):
         with self.assertRaises(ImproperlyConfigured):
             parse_allowed_hosts("@invalid")
 
+    def test_port_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("host:8000")
+
+    def test_ip_with_port_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("127.0.0.1:8000")
+
 
 # ============================================================================
 # CSRF trusted origins

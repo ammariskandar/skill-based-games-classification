@@ -53,14 +53,15 @@ def validate_secret_key(raw: str | None) -> str:
 # Allowed hosts
 # ---------------------------------------------------------------------------
 
-# Allow: hostname, IPv4, IPv6 (bracketed), optional port.
-# Disallow: scheme, path, query, fragment, credentials, wildcard, blank.
+# Allow: hostname, IPv4.
+# Disallow: scheme, port, path, query, fragment, credentials, wildcard, blank,
+# leading/trailing dot, leading/trailing hyphen within labels.
 _HOST_RE = re.compile(
     r"^"
-    r"(?!\*$)"  # not bare *
-    r"[A-Za-z0-9]"  # start with alphanumeric
-    r"[A-Za-z0-9.\-:\[\]]*"  # body
-    r"[A-Za-z0-9\]]?"  # end with alphanumeric or ]
+    r"(?!.*\.\.)"  # no consecutive dots
+    r"(?![.-])"  # does not start with dot or hyphen
+    r"[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?"  # label chain
+    r"(?<![.-])"  # does not end with dot or hyphen
     r"$"
 )
 
@@ -97,6 +98,8 @@ def parse_allowed_hosts(raw: str | None) -> list[str]:
             raise ImproperlyConfigured(
                 "DJANGO_ALLOWED_HOSTS must not contain URLs (scheme detected)."
             )
+        if ":" in entry:
+            raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a port.")
         if "/" in entry:
             raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain paths.")
         if "?" in entry or "#" in entry:

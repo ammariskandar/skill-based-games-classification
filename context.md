@@ -1234,27 +1234,38 @@ Likely backend secrets/configuration:
 ```text
 DJANGO_SECRET_KEY
 DATABASE_URL
-DJANGO_DEBUG
 DJANGO_ALLOWED_HOSTS
 CSRF_TRUSTED_ORIGINS
-CORS_ALLOWED_ORIGINS
+DJANGO_SECURE_HSTS_SECONDS
 STEAM_API_KEY             # only if required by chosen endpoint
-ADMIN_URL_PATH            # optional configuration
+ADMIN_URL_PATH            # optional configuration, validated at startup
 ```
 
 ## 23.2 Platform protection
 
 Vercel and Render provide baseline network/DDoS protection. No paid CDN or standalone WAF is justified initially.
 
-## 23.3 Django hardening
+## 23.3 Django hardening — implemented SBGC-41
 
-- `DEBUG = false` in production;
-- correct allowed hosts;
-- strict CORS origins;
-- correct CSRF trusted origins;
-- HTTPS and secure cookie settings;
+Production security is enforced at settings-import time with environment-specific ownership.  Missing or malformed values raise `ImproperlyConfigured` — production never falls back to development defaults.
+
+- **Environment-specific settings:** `base.py` owns shared infrastructure only (password hashers, request-size limits, installed apps, middleware).  `development.py`, `production.py`, and `test.py` each declare their own security contract.
+- **Secret key:** Production must supply a valid `DJANGO_SECRET_KEY`.  Rejects missing, blank, known placeholder, and short values.  Error messages never echo the supplied value.
+- **Allowed hosts:** Validated comma-separated hostnames — no wildcards, schemes, ports, paths, queries, fragments, credentials, or blank entries.  Deduplicated.
+- **CSRF trusted origins:** Validated comma-separated origins.  Production requires `https://` origins; rejects HTTP, malformed URLs, paths, queries, and fragments.
+- **CORS — deny-by-default:** No `django-cors-headers` middleware is installed.  The architecture requires no browser-to-Django cross-origin access.  Django responses never contain `Access-Control-Allow-Origin`.  A future approved browser-to-Django feature must introduce a validated explicit origin allowlist.
+- **Password hashing — PBKDF2-SHA256 only:** `PASSWORD_HASHERS = ["django.contrib.auth.hashers.PBKDF2PasswordHasher"]`.  No MD5, SHA-1, PBKDF2-SHA1, Argon2, bcrypt, or scrypt.  Default iteration count preserved.
+- **HTTPS and proxy:** `SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")` per Render deployment guide.  `SECURE_SSL_REDIRECT = True`.
+- **Secure cookies:** `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_HTTPONLY` all `True`.  SameSite `Lax` for both session and CSRF cookies.
+- **Response headers:** `SECURE_CONTENT_TYPE_NOSNIFF`, `X_FRAME_OPTIONS = "DENY"`, `SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"`, `SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"`.
+- **HSTS — staged:** `SECURE_HSTS_SECONDS` starts at `0`, stage to `3600` after HTTPS deployment verified, increase to `31536000` after sustained operation.  Subdomains and preload remain `False`.
+- **Request-size limits:** `DATA_UPLOAD_MAX_MEMORY_SIZE` and `FILE_UPLOAD_MAX_MEMORY_SIZE` at 2.5 MiB, `DATA_UPLOAD_MAX_NUMBER_FIELDS` at 1,000, `DATA_UPLOAD_MAX_NUMBER_FILES` at 20.
+- **Rate limiting:** Not yet implemented at the application level.  Login brute-force protection belongs at the deployment/reverse-proxy edge.  Django Ninja cache-based throttling is an application fairness control, not a security boundary — it may be added for expensive or sensitive endpoints in a later ticket.
+- **Remaining deployment blockers:** Real `DJANGO_SECRET_KEY`, `DATABASE_URL`, `DJANGO_ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, login rate-limiting at the edge, and HSTS staging must all be configured before public deployment.
+
+See [`docs/backend-security.md`](docs/backend-security.md) for the full implemented policy.
+
 - ORM rather than unsafe raw SQL;
-- request-size limits;
 - defensive parsing;
 - no sensitive logs;
 - dependency updates;
@@ -2188,6 +2199,11 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07 | Add Google Analytics as non-core analytics | Accepted final architecture; Jira allows late-MVP implementation. |
 | 2026-07 | Add WebLLM only in final product | Accepted. Local prose generation; server chooses recommendation. |
 | 2026-07 | Do not include SigNoz | Accepted due to cost/operational mismatch. |
+| 2026-07-30 | Environment-specific security ownership with fail-closed production | Accepted (SBGC-41).  `base.py` owns shared infrastructure only; `development.py`, `production.py`, and `test.py` each declare their own security contract.  Production raises `ImproperlyConfigured` for missing or malformed security values. |
+| 2026-07-30 | PBKDF2-SHA256-only password hashing | Accepted (SBGC-41).  No legacy hashers, no Argon2/bcrypt/scrypt dependencies.  Default iteration count preserved. |
+| 2026-07-30 | Explicit deny-by-default CORS policy | Accepted (SBGC-41).  No `django-cors-headers` middleware installed; architecture requires no browser-to-Django access. |
+| 2026-07-30 | Staged HSTS rollout | Accepted (SBGC-41).  Start at 0, stage to 3600 after HTTPS verified, increase to 31536000 after sustained operation. |
+| 2026-07-30 | Rate limiting deferred to deployment edge | Accepted (SBGC-41).  Login brute-force belongs at the reverse-proxy edge; Ninja throttling is an application fairness control, not a security boundary. |
 
 ---
 
@@ -2458,6 +2474,20 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Added the cheating/low-challenge rationale showing that reward can remain enjoyable when challenge is reduced.
 - Updated models, API examples, admin, search, rankings, visualisation, testing, recommendations, glossary, decisions, and open questions.
 - Added unkeyed Jira work to be created under `SBGC-12` for dual-profile and Reward visualisation.
+
+## 2026-07-30 — SBGC-41 backend security foundation
+
+- Implemented environment-specific security ownership — `base.py` owns shared infrastructure only; `development.py`, `production.py`, and `test.py` each declare their own security contract.
+- Enforced production fail-closed behaviour — missing or malformed `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, or `DATABASE_URL` raise `ImproperlyConfigured` at startup.
+- Adopted PBKDF2-SHA256-only password hashing — no legacy hashers, no Argon2/bcrypt/scrypt dependencies.
+- Established explicit deny-by-default CORS policy — no `django-cors-headers` middleware; architecture requires no browser-to-Django access.
+- Implemented validated `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` parsing with safe error messages.
+- Configured production HTTPS, secure proxy (`HTTP_X_FORWARDED_PROTO`), secure cookies, and response headers.
+- Established staged HSTS — `SECURE_HSTS_SECONDS` defaults to 0, stage to 3600 after HTTPS verified, increase to 31536000.
+- Set request-size limits (2.5 MiB upload, 1,000 fields, 20 files).
+- Documented rate limiting as deployment-edge responsibility — no application-level throttling implemented yet.
+- Added 59 automated security tests covering validation, parsing, CORS absence, hostile-host rejection, production import, cookie/header, hashing, and request-size behaviour.
+- Created `docs/backend-security.md` with full policy, threat model, environment boundary, and deployment blockers.
 
 ## 2026-07-22 — Initial canonical consolidation
 
