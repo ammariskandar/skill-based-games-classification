@@ -143,7 +143,6 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **No security hardening** — SBGC-41 will enforce production secrets, hosts, CSRF, cookies, and request limits.
 - **No Steam integration** — SBGC-42 will create the Steam service/client.
 - **No backend operations** — SBGC-43 will add logging, health endpoints, static handling, and Render startup.
 - **No backend tests** — SBGC-44 will establish test settings and conventions.

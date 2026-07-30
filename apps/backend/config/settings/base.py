@@ -22,29 +22,15 @@ if env_file.exists():
     env.read_env(str(env_file))
 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# A committed fallback exists for local development only.
-# Production must supply a real secret (SBGC-41 will enforce this).
-SECRET_KEY = env(
-    "DJANGO_SECRET_KEY", default="django-insecure-dev-key-do-not-use-in-production"
-)
+# ---------------------------------------------------------------------------
+# Security-sensitive values are set by environment-specific modules.
+# base.py does NOT provide production defaults for SECRET_KEY, ALLOWED_HOSTS,
+# or CSRF_TRUSTED_ORIGINS — those are owned by development / production.
+# ---------------------------------------------------------------------------
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG is set by the environment-specific module.
 DEBUG = False
-
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
-
-CSRF_TRUSTED_ORIGINS = env.list(
-    "CSRF_TRUSTED_ORIGINS", default=["http://localhost:4321"]
-)
-
-CORS_ALLOWED_ORIGINS = env.list(
-    "CORS_ALLOWED_ORIGINS", default=["http://localhost:4321"]
-)
-# Note: CORS_ALLOWED_ORIGINS is currently an inert custom setting.
-# It is reserved for SBGC-41, which will decide whether browser-to-Django
-# CORS is required by the approved request topology.
 
 # ADMIN_URL_PATH — SBGC-40
 # Validated single relative path segment (no leading/trailing slash).
@@ -130,6 +116,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password hashing — SBGC-41
+# PBKDF2-SHA256 only.  No legacy hashers, no Argon2/bcrypt/scrypt.
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -152,6 +144,14 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Request-size limits — SBGC-41
+# Conservative values for JSON API payloads and Admin forms.
+# No public file uploads; Steam images are hotlinked.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MiB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MiB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1_000
+DATA_UPLOAD_MAX_NUMBER_FILES = 20
 
 # Django Ninja — SBGC-38
 # Interactive API docs are disabled by default.
