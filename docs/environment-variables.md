@@ -36,7 +36,7 @@ cp apps/backend/.env.example apps/backend/.env
 | `CORS_ALLOWED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
 | `DATABASE_URL`         | Server   | Secret        | *(empty — uses SQLite locally)*| Neon dashboard      | Yes (production only) |
 | `STEAM_API_KEY`        | Server   | Secret        | *(empty)*                      | Render env vars     | No (later)   |
-| `ADMIN_URL_PATH`       | Server   | Secret        | `admin`                        | Render env vars     | Yes          |
+| `ADMIN_URL_PATH`       | Server   | Secret        | `mygamedna-admin`              | Render env vars     | Yes          |
 
 **Rules:**
 

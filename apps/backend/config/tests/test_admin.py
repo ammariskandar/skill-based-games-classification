@@ -138,15 +138,18 @@ class AdminRoutingTests(SimpleTestCase):
         r = c.get(reverse("admin:login"))
         self.assertEqual(r.status_code, 200)
 
-    def test_hardcoded_admin_not_available_when_path_differs(self):
-        """If ADMIN_URL_PATH is not 'admin', the old /admin/ is not mounted."""
-        if settings.ADMIN_URL_PATH == "admin":
-            self.skipTest("Default path is 'admin' — no old route to test")
+    def test_hardcoded_admin_not_available(self):
+        """
+        The hard-coded /admin/ path must NOT serve admin content when
+        ADMIN_URL_PATH is not 'admin'.  The test settings always use
+        a non-default path (test-admin), so this test is unconditional.
+        """
         c = Client()
+        # /test-admin/ — the configured path — must resolve to the admin.
+        r = c.get(f"/{settings.ADMIN_URL_PATH}/")
+        self.assertEqual(r.status_code, 302)  # redirect to login
+        # /admin/ — the hard-coded legacy path — must NOT serve admin content.
         r = c.get("/admin/")
-        # /admin/ should either 404 or redirect to the real admin path
-        # depending on CommonMiddleware's APPEND_SLASH behavior.
-        # Either way, it must not serve admin content.
         self.assertNotEqual(r.status_code, 200)
 
     def test_api_route_still_operational(self):

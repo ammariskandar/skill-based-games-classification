@@ -8,10 +8,10 @@ The admin is mounted at a path controlled by `ADMIN_URL_PATH`:
 
 ```
 # Default (in .env.example):
-ADMIN_URL_PATH=admin
+ADMIN_URL_PATH=mygamedna-admin
 
 # Resulting URL:
-/admin/
+/mygamedna-admin/
 ```
 
 The configured value is validated at settings-import time against the
