@@ -11,3 +11,8 @@ belongs to SBGC-39 and SBGC-41.
 from config.settings.base import *  # noqa: F403
 
 DEBUG = False
+
+# Django Ninja — SBGC-38
+# Interactive API docs are disabled in production.
+# OpenAPI schema remains available at /api/v1/openapi.json.
+NINJA_API_DOCS_ENABLED = False

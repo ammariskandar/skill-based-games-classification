@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "ninja",
     # SBGC-37 — application boundaries (no models yet)
     "games.apps.GamesConfig",
     "classifications.apps.ClassificationsConfig",
@@ -152,3 +153,8 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Django Ninja — SBGC-38
+# Interactive API docs are disabled by default.
+# Development overrides this to True; production keeps it False.
+NINJA_API_DOCS_ENABLED = False
