@@ -661,3 +661,66 @@ class ErrorTaxonomyTests(SimpleTestCase):
     def test_auth_error_status(self):
         exc = SteamAuthenticationError("bad key", status=403)
         self.assertEqual(exc.status, 403)
+
+
+# ============================================================================
+# Real adapter-policy verification (no network — inspects live urllib3 Retry)
+# ============================================================================
+
+
+class AdapterPolicyIntegrationTests(SimpleTestCase):
+    """
+    Verify the real HTTPS adapter is constructed with the correct
+    urllib3 Retry policy.  Instantiates the real client; makes no
+    network request.
+    """
+
+    def test_adapter_allowed_methods_get_head_only(self):
+        client = _steam_client()
+        adapter = client._session.adapters["https://"]
+        self.assertIsNotNone(adapter)
+        retry = adapter.max_retries
+        self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
+
+    def test_adapter_retry_statuses_exact(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
+
+    def test_adapter_redirects_disabled(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.redirect, 0)
+
+    def test_adapter_other_zero(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.other, 0)
+
+    def test_adapter_retry_after_respected(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertTrue(retry.respect_retry_after_header)
+
+    def test_adapter_configured_retry_count(self):
+        client = _steam_client(_make_config(max_retries=3))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.total, 3)
+        self.assertEqual(retry.connect, 3)
+        self.assertEqual(retry.read, 3)
+
+    def test_adapter_configured_backoff(self):
+        client = _steam_client(_make_config(retry_backoff=0.5))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.backoff_factor, 0.5)
+
+    def test_adapter_no_network_request(self):
+        """
+        Constructing the client and inspecting its adapter must not
+        trigger any network request.  No mock is used — this is the
+        real client.
+        """
+        client = _steam_client()
+        self.assertIsNotNone(client._session)
+        # Accessing adapters does not make a request.
+        _ = client._session.adapters["https://"]

@@ -33,9 +33,14 @@ cp apps/backend/.env.example apps/backend/.env
 | `DJANGO_SECRET_KEY`    | Server   | Secret        | *(generate locally)*           | Render env vars     | Yes          |
 | `DJANGO_ALLOWED_HOSTS` | Server   | Secret        | `127.0.0.1,localhost`          | Render env vars     | Yes          |
 | `CSRF_TRUSTED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
-| `CORS_ALLOWED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
 | `DATABASE_URL`         | Server   | Secret        | *(empty — uses SQLite locally)*| Neon dashboard      | Yes (production only) |
-| `STEAM_API_KEY`        | Server   | Secret        | *(empty)*                      | Render env vars     | No (later)   |
+| `STEAM_WEB_API_KEY`          | Server   | Secret        | *(empty)*                      | Render env vars     | No (for authenticated calls) |
+| `STEAM_CONNECT_TIMEOUT_SECONDS` | Server | Public    | `3.05`                         | Render env vars     | No           |
+| `STEAM_READ_TIMEOUT_SECONDS`    | Server | Public    | `10`                           | Render env vars     | No           |
+| `STEAM_MAX_RETRIES`             | Server | Public    | `2`                            | Render env vars     | No           |
+| `STEAM_RETRY_BACKOFF_SECONDS`   | Server | Public    | `0.25`                         | Render env vars     | No           |
+| `STEAM_MAX_RESPONSE_BYTES`      | Server | Public    | `2097152`                      | Render env vars     | No           |
+| `STEAM_CDN_ALLOWED_HOSTS`       | Server | Public    | *(empty)*                      | Render env vars     | No (later)   |
 | `ADMIN_URL_PATH`       | Server   | Secret        | `mygamedna-admin`              | Render env vars     | Yes          |
 
 **Rules:**
@@ -43,12 +48,12 @@ cp apps/backend/.env.example apps/backend/.env
 - Backend secrets belong only in Django's environment or the hosting platform's secret manager.
 - Never commit a real `DJANGO_SECRET_KEY`.
 - `DATABASE_URL` is optional in development (SQLite is used as fallback) and **required** in production (missing value raises `ImproperlyConfigured`). Use a direct non-pooler Neon connection string — hosts containing `-pooler` are not supported for the current connection mode. See [`docs/database-connectivity.md`](database-connectivity.md).
-- `STEAM_API_KEY` remains empty until the Steam integration task requires it.
+- `STEAM_WEB_API_KEY` is optional at startup; required only for authenticated Steam API calls. Sent only through the `x-webapi-key` header. Never included in query strings, logs, or errors. See [`docs/steam-integration.md`](steam-integration.md).
+- Steam HTTP timeouts and retry limits use conservative defaults and are validated at construction. See [`docs/steam-integration.md`](steam-integration.md).
 - In production, all critical secrets must be set; the application should fail safely if they are absent.
 - `DEBUG` is controlled by the selected settings module (`config.settings.development` or `config.settings.production`), not by an environment variable.
   See [`docs/backend-architecture.md`](backend-architecture.md) for settings selection.
 - `ADMIN_URL_PATH` controls the Django Admin route and is validated at startup. Must be a single relative path segment containing only ASCII letters, digits, hyphens, and underscores, starting with an alphanumeric character. The segment "api" is reserved. See [`docs/admin-configuration.md`](admin-configuration.md).
-- `CORS_ALLOWED_ORIGINS` is currently an inert reserved value. It will be wired in SBGC-41.
 
 ## Variable Classification
 
