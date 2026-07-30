@@ -36,7 +36,7 @@ cp apps/backend/.env.example apps/backend/.env
 | `CORS_ALLOWED_ORIGINS` | Server   | Secret        | `http://localhost:4321`        | Render env vars     | Yes          |
 | `DATABASE_URL`         | Server   | Secret        | *(empty — uses SQLite locally)*| Neon dashboard      | Yes (production only) |
 | `STEAM_API_KEY`        | Server   | Secret        | *(empty)*                      | Render env vars     | No (later)   |
-| `ADMIN_URL_PATH`       | Server   | Secret        | `admin/`                       | Render env vars     | No (later)   |
+| `ADMIN_URL_PATH`       | Server   | Secret        | `admin`                        | Render env vars     | Yes          |
 
 **Rules:**
 
@@ -47,7 +47,8 @@ cp apps/backend/.env.example apps/backend/.env
 - In production, all critical secrets must be set; the application should fail safely if they are absent.
 - `DEBUG` is controlled by the selected settings module (`config.settings.development` or `config.settings.production`), not by an environment variable.
   See [`docs/backend-architecture.md`](backend-architecture.md) for settings selection.
-- `ADMIN_URL_PATH` and `CORS_ALLOWED_ORIGINS` are currently inert reserved values. They will be wired in SBGC-40 and SBGC-41 respectively.
+- `ADMIN_URL_PATH` controls the Django Admin route and is validated at startup. Must be a single relative path segment containing only ASCII letters, digits, hyphens, and underscores, starting with an alphanumeric character. The segment "api" is reserved. See [`docs/admin-configuration.md`](admin-configuration.md).
+- `CORS_ALLOWED_ORIGINS` is currently an inert reserved value. It will be wired in SBGC-41.
 
 ## Variable Classification
 

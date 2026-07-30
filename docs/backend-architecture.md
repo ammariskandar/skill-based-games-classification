@@ -96,13 +96,13 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts.
 
-**Status:** Application scaffold only. No models, admin registrations, or tests exist yet. Models will be implemented in SBGC-4 (SBGC-45 onward).
+**Status:** Application scaffold only. No models or admin registrations exist yet. Models will be implemented in SBGC-4 (SBGC-45 onward). Future admin registrations belong in `games/admin.py`.
 
 ### `classifications`
 
 **Ownership:** Separate Challenge and Reward profiles, Micro/Mystiko/Macro classification records, classification-domain concepts.
 
-**Status:** Application scaffold only. No models, admin registrations, or tests exist yet. Models will be implemented in SBGC-4 (SBGC-46 onward).
+**Status:** Application scaffold only. No models or admin registrations exist yet. Models will be implemented in SBGC-4 (SBGC-46 onward). Future admin registrations belong in `classifications/admin.py`.
 
 **Intended dependency direction:** `classifications` → `games` (classifications reference games; not circular).
 
@@ -143,11 +143,10 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **No Admin configuration** — SBGC-40 will create superuser access, model registration patterns, and wire `ADMIN_URL_PATH`.
 - **No security hardening** — SBGC-41 will enforce production secrets, hosts, CSRF, cookies, and request limits.
 - **No Steam integration** — SBGC-42 will create the Steam service/client.
 - **No backend operations** — SBGC-43 will add logging, health endpoints, static handling, and Render startup.
 - **No backend tests** — SBGC-44 will establish test settings and conventions.
 - **No product models** — SBGC-4 (SBGC-45 onward) will implement domain models, constraints, and migrations.
 - **Production settings are incomplete** — `config.settings.production` imports shared base settings and sets `DEBUG=False`. Full security hardening and deployment checks belong to SBGC-39 and SBGC-41.
-- **`ADMIN_URL_PATH` and `CORS_ALLOWED_ORIGINS` are inert** — they are parsed as custom settings but do not yet control application behaviour. They are reserved for SBGC-40 and SBGC-41 respectively.
+- **`CORS_ALLOWED_ORIGINS` is inert** — it is parsed as a custom setting but does not yet control application behaviour. It is reserved for SBGC-41.

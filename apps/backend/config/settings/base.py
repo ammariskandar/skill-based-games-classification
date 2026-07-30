@@ -9,6 +9,8 @@ from pathlib import Path
 
 import environ
 
+from config.admin import validate_admin_url_path
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # config/settings/base.py -> config/settings -> config -> apps/backend
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -44,9 +46,16 @@ CORS_ALLOWED_ORIGINS = env.list(
 # It is reserved for SBGC-41, which will decide whether browser-to-Django
 # CORS is required by the approved request topology.
 
-ADMIN_URL_PATH = env("ADMIN_URL_PATH", default="admin/")
-# Note: ADMIN_URL_PATH is currently an inert custom setting.
-# It is reserved for SBGC-40, which will wire it into URL configuration.
+# ADMIN_URL_PATH — SBGC-40
+# Validated single relative path segment (no leading/trailing slash).
+# Controls the Django Admin route.  The configured value is validated at
+# settings-import time and the URLconf appends the trailing slash.
+#
+# Fails startup with ImproperlyConfigured for:
+#   missing, blank, slashes, backslashes, dots, query/fragment, URL forms,
+#   and the reserved segment "api".
+_ADMIN_URL_PATH_RAW = env("ADMIN_URL_PATH", default="admin")
+ADMIN_URL_PATH = validate_admin_url_path(_ADMIN_URL_PATH_RAW)
 
 
 # Application definition
