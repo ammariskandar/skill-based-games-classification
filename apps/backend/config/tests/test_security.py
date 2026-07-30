@@ -101,8 +101,28 @@ class SecretKeyValidationTests(SimpleTestCase):
 
 
 class AllowedHostsTests(SimpleTestCase):
+    # -- accepted -------------------------------------------------------------
+
     def test_valid_hostname(self):
         self.assertEqual(parse_allowed_hosts("example.com"), ["example.com"])
+
+    def test_subdomain_accepted(self):
+        self.assertEqual(
+            parse_allowed_hosts("api.example.com"),
+            ["api.example.com"],
+        )
+
+    def test_localhost_accepted(self):
+        self.assertEqual(parse_allowed_hosts("localhost"), ["localhost"])
+
+    def test_ipv4_accepted(self):
+        self.assertEqual(parse_allowed_hosts("127.0.0.1"), ["127.0.0.1"])
+
+    def test_label_with_internal_hyphen_accepted(self):
+        self.assertEqual(
+            parse_allowed_hosts("my-game.example.com"),
+            ["my-game.example.com"],
+        )
 
     def test_multiple_hosts(self):
         self.assertEqual(
@@ -116,6 +136,8 @@ class AllowedHostsTests(SimpleTestCase):
             ["a.com", "b.com"],
         )
 
+    # -- blank / missing ------------------------------------------------------
+
     def test_none_rejected(self):
         with self.assertRaises(ImproperlyConfigured):
             parse_allowed_hosts(None)
@@ -123,6 +145,8 @@ class AllowedHostsTests(SimpleTestCase):
     def test_blank_rejected(self):
         with self.assertRaises(ImproperlyConfigured):
             parse_allowed_hosts("")
+
+    # -- wildcard / scheme / path / query / cred / port -----------------------
 
     def test_wildcard_rejected(self):
         with self.assertRaises(ImproperlyConfigured):
@@ -146,7 +170,60 @@ class AllowedHostsTests(SimpleTestCase):
 
     def test_ip_with_port_rejected(self):
         with self.assertRaises(ImproperlyConfigured):
-            parse_allowed_hosts("127.0.0.1:8000")
+            parse_allowed_hosts("example.com:443")
+
+    # -- per-label DNS validation ---------------------------------------------
+
+    def test_hostname_trailing_hyphen_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("host-.example.com")
+
+    def test_hostname_label_leading_dot_hyphen_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("host.-example.com")
+
+    def test_short_label_trailing_hyphen_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("a-.b.com")
+
+    def test_short_label_leading_dot_hyphen_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("a.-b.com")
+
+    def test_consecutive_dots_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("example..com")
+
+    def test_label_too_long_rejected(self):
+        long_label = "a" * 64
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts(f"{long_label}.com")
+
+    def test_hostname_too_long_rejected(self):
+        # 254 bytes of hostname exceeds the 253-char limit.
+        long_host = "a" * 254
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts(long_host)
+
+    # -- IPv6 unsupported -----------------------------------------------------
+
+    def test_ipv6_bracketed_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("[::1]")
+
+    def test_ipv6_unbracketed_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("::1")
+
+    # -- leading / trailing dot -----------------------------------------------
+
+    def test_leading_dot_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts(".example.com")
+
+    def test_trailing_dot_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            parse_allowed_hosts("example.com.")
 
 
 # ============================================================================

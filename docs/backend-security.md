@@ -83,8 +83,8 @@ PASSWORD_HASHERS = [
 ]
 ```
 
-No MD5, SHA-1, PBKDF2-SHA1, Argon2, bcrypt, or scrypt. The default
-PBKDF2 iteration count is preserved. No custom hashers.
+No MD5, SHA-1, PBKDF2-SHA1, Argon2, bcrypt, or scrypt. Django 6.0's
+default PBKDF2 iteration count (1,200,000) is preserved. No custom hashers.
 
 ## HTTPS and Proxy
 

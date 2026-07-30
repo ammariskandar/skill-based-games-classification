@@ -53,17 +53,73 @@ def validate_secret_key(raw: str | None) -> str:
 # Allowed hosts
 # ---------------------------------------------------------------------------
 
-# Allow: hostname, IPv4.
-# Disallow: scheme, port, path, query, fragment, credentials, wildcard, blank,
-# leading/trailing dot, leading/trailing hyphen within labels.
-_HOST_RE = re.compile(
-    r"^"
-    r"(?!.*\.\.)"  # no consecutive dots
-    r"(?![.-])"  # does not start with dot or hyphen
-    r"[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?"  # label chain
-    r"(?<![.-])"  # does not end with dot or hyphen
-    r"$"
-)
+# Per-label DNS validation: starts/ends alphanumeric, hyphens inside only,
+# 1-63 characters per label.
+_DNS_LABEL_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
+
+_MAX_HOSTNAME_LENGTH = 253
+
+
+def _validate_host_entry(entry: str) -> None:
+    """
+    Validate a single ``ALLOWED_HOSTS`` entry in-place.
+
+    Raises ``ImproperlyConfigured`` with a safe message on failure.
+    """
+    # -- obvious rejections first --------------------------------------------
+    if entry == "*":
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a wildcard.")
+    if "://" in entry:
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must not contain URLs (scheme detected)."
+        )
+    if ":" in entry:
+        # ALLOWED_HOSTS entries are hostnames, not origins or network
+        # addresses.  Rejecting ports catches operator mistakes and keeps
+        # deployment host configuration canonical and predictable.
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a port.")
+    if "/" in entry:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain paths.")
+    if "?" in entry or "#" in entry:
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must not contain query strings or fragments."
+        )
+    if "@" in entry:
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain credentials.")
+    if entry.startswith(".") or entry.endswith("."):
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must not start or end with a dot."
+        )
+    if ".." in entry:
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must not contain consecutive dots."
+        )
+
+    # -- IPv4 literal --------------------------------------------------------
+    try:
+        import ipaddress
+
+        ipaddress.IPv4Address(entry)
+        return  # valid IPv4 — no further label checks needed
+    except ValueError:
+        pass  # not an IPv4 literal; fall through to DNS validation
+
+    # -- DNS hostname --------------------------------------------------------
+    if len(entry) > _MAX_HOSTNAME_LENGTH:
+        raise ImproperlyConfigured(
+            f"DJANGO_ALLOWED_HOSTS entry exceeds {_MAX_HOSTNAME_LENGTH} characters."
+        )
+
+    labels = entry.split(".")
+    for label in labels:
+        if not label:
+            raise ImproperlyConfigured(
+                "DJANGO_ALLOWED_HOSTS must not contain empty labels."
+            )
+        if not _DNS_LABEL_RE.match(label):
+            raise ImproperlyConfigured(
+                "DJANGO_ALLOWED_HOSTS contains a malformed host entry."
+            )
 
 
 def parse_allowed_hosts(raw: str | None) -> list[str]:
@@ -71,6 +127,12 @@ def parse_allowed_hosts(raw: str | None) -> list[str]:
     Parse and validate a comma-separated ``DJANGO_ALLOWED_HOSTS`` value.
 
     Returns a deduplicated list of valid host strings.
+
+    Supported forms: DNS hostnames and IPv4 literals.
+    IPv6 literals are deliberately outside the current Render deployment
+    requirement.  IPv6 support would require an intentional parser extension
+    and tests.
+
     Raises ``ImproperlyConfigured`` for missing, blank, wildcard, or
     malformed entries.
     """
@@ -90,30 +152,7 @@ def parse_allowed_hosts(raw: str | None) -> list[str]:
     result: list[str] = []
 
     for entry in entries:
-        if entry == "*":
-            raise ImproperlyConfigured(
-                "DJANGO_ALLOWED_HOSTS must not contain a wildcard."
-            )
-        if "://" in entry:
-            raise ImproperlyConfigured(
-                "DJANGO_ALLOWED_HOSTS must not contain URLs (scheme detected)."
-            )
-        if ":" in entry:
-            raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a port.")
-        if "/" in entry:
-            raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain paths.")
-        if "?" in entry or "#" in entry:
-            raise ImproperlyConfigured(
-                "DJANGO_ALLOWED_HOSTS must not contain query strings or fragments."
-            )
-        if "@" in entry:
-            raise ImproperlyConfigured(
-                "DJANGO_ALLOWED_HOSTS must not contain credentials."
-            )
-        if not _HOST_RE.match(entry):
-            raise ImproperlyConfigured(
-                "DJANGO_ALLOWED_HOSTS contains a malformed host entry."
-            )
+        _validate_host_entry(entry)
         if entry not in seen:
             seen.add(entry)
             result.append(entry)
