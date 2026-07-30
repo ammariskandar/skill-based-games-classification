@@ -6,6 +6,7 @@ Database configuration for the MyGameDNA Django backend.
 
 | Environment  | Database | DATABASE_URL       | Fallback          |
 | ------------ | -------- | ------------------ | ----------------- |
+| Test / CI    | SQLite   | ignored             | N/A (in-memory)   |
 | Development  | SQLite   | blank/absent       | Yes (local .db)   |
 | Development  | Neon     | populated, direct  | Yes (to SQLite)   |
 | Production   | Neon     | **required**       | **No** (fails)    |
@@ -135,13 +136,38 @@ print('Direct Neon endpoint verified')
 The assertion fails if the host is a pooled Neon host (`-pooler` in
 hostname). Switch to a direct host before proceeding.
 
+## Test Settings
+
+Automated backend tests and CI use a dedicated test settings module:
+
+```
+config.settings.test
+```
+
+This module **always** uses an in-memory SQLite database regardless of
+whether `DATABASE_URL` is set in the local `.env` or process environment.
+
+- **Never connects to Neon.**
+- **Never creates a PostgreSQL test database.**
+- **Never prompts.**
+- **Deterministic** — same behavior with or without `apps/backend/.env`.
+
+```bash
+# Run all backend tests (always uses SQLite):
+npm run test:backend
+
+# Equivalent explicit command:
+python manage.py test apps/backend --settings=config.settings.test --noinput
+```
+
 ## CI Policy
 
 GitHub Actions:
+- Uses `config.settings.test`.
+- Connects to an isolated in-memory SQLite test database.
 - Does **not** supply `DATABASE_URL`.
-- Uses development settings.
-- Connects to an isolated SQLite test database.
 - No Neon credentials or PostgreSQL service is configured.
+- Never connects to Neon or any external database.
 
 ## Production Startup
 

@@ -12,7 +12,7 @@
     "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "test:frontend": "npm run test --workspace=apps/frontend",
-    "test:backend": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.development",
+    "test:backend": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput",
     "test": "npm run test:frontend && npm run test:backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "npm run lint --workspace=apps/frontend",
