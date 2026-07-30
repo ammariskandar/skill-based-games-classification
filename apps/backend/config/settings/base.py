@@ -5,6 +5,7 @@ Generated from 'django-admin startproject' using Django 6.0.7 and
 subsequently split into environment-specific modules under SBGC-37.
 """
 
+import os
 from pathlib import Path
 
 import environ
@@ -16,9 +17,11 @@ from config.admin import validate_admin_url_path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Read .env from the backend app root (apps/backend/)
+# Skip when DJANGO_SKIP_DOTENV is set (used by test settings to avoid
+# reading the developer's real .env file).
 env = environ.Env()
 env_file = BASE_DIR / ".env"
-if env_file.exists():
+if env_file.exists() and not os.environ.get("DJANGO_SKIP_DOTENV"):
     env.read_env(str(env_file))
 
 
@@ -157,3 +160,15 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 20
 # Interactive API docs are disabled by default.
 # Development overrides this to True; production keeps it False.
 NINJA_API_DOCS_ENABLED = False
+
+# Steam — SBGC-42
+# Raw values read from the environment.  Use steam_client_config_from_settings()
+# to build a validated SteamClientConfig — never instantiate it directly from
+# these raw strings.
+STEAM_WEB_API_KEY = env("STEAM_WEB_API_KEY", default="")
+STEAM_CONNECT_TIMEOUT_SECONDS = env("STEAM_CONNECT_TIMEOUT_SECONDS", default="3.05")
+STEAM_READ_TIMEOUT_SECONDS = env("STEAM_READ_TIMEOUT_SECONDS", default="10")
+STEAM_MAX_RETRIES = env("STEAM_MAX_RETRIES", default="2")
+STEAM_RETRY_BACKOFF_SECONDS = env("STEAM_RETRY_BACKOFF_SECONDS", default="0.25")
+STEAM_MAX_RESPONSE_BYTES = env("STEAM_MAX_RESPONSE_BYTES", default="2097152")
+STEAM_CDN_ALLOWED_HOSTS = env("STEAM_CDN_ALLOWED_HOSTS", default="")

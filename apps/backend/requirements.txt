@@ -7,6 +7,9 @@ psycopg==3.3.4
 psycopg-binary==3.3.4
 pydantic==2.13.4
 pydantic_core==2.46.4
+# SBGC-42 — Steam HTTP client
+# Install with: flatpak-spawn --host apps/backend/.venv/bin/python -m pip install "requests==2.32.5"
+requests==2.32.5
 ruff==0.16.0
 sqlparse==0.5.5
 typing-inspection==0.4.2
