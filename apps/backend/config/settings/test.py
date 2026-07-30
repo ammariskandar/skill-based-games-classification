@@ -8,7 +8,13 @@ regardless of whether a local .env file contains a Neon DATABASE_URL.
 Do not use this module for development runserver, migrate, or shell.
 """
 
-from config.settings.base import *  # noqa: F403
+import os
+
+# Prevent base.py from reading the developer's real .env file.
+# Must be set before importing config.settings.base.
+os.environ["DJANGO_SKIP_DOTENV"] = "1"
+
+from config.settings.base import *  # noqa: F403, E402
 
 DEBUG = True
 
@@ -43,3 +49,14 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_HSTS_SECONDS = 0
+
+# Steam — SBGC-42 (test — deterministic, never reads developer .env)
+# These raw string values are consumed by steam_client_config_from_settings().
+# The test suite overrides them individually when testing parse/validation.
+STEAM_WEB_API_KEY = ""
+STEAM_CONNECT_TIMEOUT_SECONDS = "3.05"
+STEAM_READ_TIMEOUT_SECONDS = "10"
+STEAM_MAX_RETRIES = "2"
+STEAM_RETRY_BACKOFF_SECONDS = "0.25"
+STEAM_MAX_RESPONSE_BYTES = "2097152"
+STEAM_CDN_ALLOWED_HOSTS = ""

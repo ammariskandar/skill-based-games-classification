@@ -932,6 +932,40 @@ No paid CDN is required.
 
 ---
 
+**SBGC-42 (completed)** delivered a synchronous Steam HTTP client under
+`games/services/steam/` (see
+[`docs/steam-integration.md`](docs/steam-integration.md)). Key design:
+
+- **Immutable configuration** (`SteamClientConfig`) — timeouts, retry policy,
+  response-size limit, CDN allowlist, and optional API key.
+- **Synchronous Requests session** — urllib3 `Retry` adapter for bounded
+  idempotent retries.
+- **Fixed trusted origins** — `api_origin` and `store_origin` are code
+  constants, not configurable via environment variables.
+- **Header-only API key** — sent in `x-webapi-key`; never in query strings,
+  logs, errors, or `repr`.
+- **Connect/read timeouts** — every request uses `timeout=(connect, read)`.
+- **GET/HEAD-only retry** — retryable statuses: 429, 500, 502, 503, 504.
+  401 and 403 never retried.
+- **Redirects disabled** — unexpected 3xx raises `SteamRedirectError`.
+- **Bounded response size** — configurable limit (default 2 MiB);
+  `SteamResponseTooLargeError` on exceed.
+- **JSON-object response contract** — arrays, scalars, null, and non-JSON
+  media types rejected.
+- **CDN URL validation** — `validate_steam_cdn_url()` enforces HTTPS,
+  exact-host allowlist, no credentials/ports/fragments/IP literals.
+- **No real network calls in tests** — 85 isolated tests use injected fake
+  sessions.
+- **Endpoint integration deferred** — concrete API adapters (e.g.,
+  `GetAppList`) belong to SBGC-5.
+- **No image downloading or proxying** — CDN validation is pure; image
+  retrieval is a later concern.
+- **Environment configuration** — `config/steam.py`
+  (`steam_client_config_from_settings()`) reads raw Django settings,
+  normalises values (blank key → absent, CDN hosts deduplicated), and
+  delegates validation to `SteamClientConfig.__post_init__`.  No second
+  `.env` reader; no `os.environ` access inside the transport model.
+
 # 15. Steam integration
 
 The backend needs a dedicated client/service that:
@@ -2204,6 +2238,15 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-30 | Explicit deny-by-default CORS policy | Accepted (SBGC-41).  No `django-cors-headers` middleware installed; architecture requires no browser-to-Django access. |
 | 2026-07-30 | Staged HSTS rollout | Accepted (SBGC-41).  Start at 0, stage to 3600 after HTTPS verified, increase to 31536000 after sustained operation. |
 | 2026-07-30 | Rate limiting deferred to deployment edge | Accepted (SBGC-41).  Login brute-force belongs at the reverse-proxy edge; Ninja throttling is an application fairness control, not a security boundary. |
+| 2026-07-30 | Synchronous Requests client for Steam Web API | Accepted (SBGC-42).  No asyncio, httpx, or aiohttp — Requests + urllib3 Retry is sufficient for the MVP synchronous import workflow. |
+| 2026-07-30 | Fixed trusted Steam API origins | Accepted (SBGC-42).  `api_origin` and `store_origin` are code constants — environment variables cannot redirect API-key-bearing requests to arbitrary origins. |
+| 2026-07-30 | Header-only Steam API key transmission | Accepted (SBGC-42).  The key is sent only in the `x-webapi-key` header; never in query strings, logs, errors, or `repr`. |
+| 2026-07-30 | GET/HEAD-only retry with explicit status list | Accepted (SBGC-42).  Only 429, 500, 502, 503, 504 are retried; 401 and 403 are never retried; redirects disabled; `other=0`. |
+| 2026-07-30 | Bounded Steam response size | Accepted (SBGC-42).  Default 2 MiB limit enforced before JSON decoding; `SteamResponseTooLargeError` raised on exceed. |
+| 2026-07-30 | JSON-object response contract | Accepted (SBGC-42).  Arrays, scalars, null roots, and non-JSON media types are rejected with `SteamInvalidResponseError`. |
+| 2026-07-30 | Exact-host CDN allowlist | Accepted (SBGC-42).  `validate_steam_cdn_url()` uses exact hostname matching — no wildcard or suffix matching; empty allowlist rejects all. |
+| 2026-07-30 | No network calls in Steam tests | Accepted (SBGC-42).  All 85 Steam service tests use injected fake sessions or pure-function validation; no real external requests. |
+| 2026-07-30 | Endpoint adapters deferred to SBGC-5 | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`) belong to SBGC-5. |
 
 ---
 
@@ -2488,6 +2531,38 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Documented rate limiting as deployment-edge responsibility — no application-level throttling implemented yet.
 - Added 59 automated security tests covering validation, parsing, CORS absence, hostile-host rejection, production import, cookie/header, hashing, and request-size behaviour.
 - Created `docs/backend-security.md` with full policy, threat model, environment boundary, and deployment blockers.
+
+## 2026-07-30 — SBGC-42 external-service foundations
+
+- Created the synchronous Steam HTTP client under `games/services/steam/` with
+  immutable `SteamClientConfig`, injectable `SteamClient`, CDN URL validation,
+  and a 15-class error taxonomy.
+- Configured urllib3 `Retry` for GET/HEAD-only bounded retries on statuses
+  429, 500, 502, 503, 504 with `Retry-After` respect and backoff.
+- Hardened the API origin (`https://api.steampowered.com`) and store origin
+  (`https://store.steampowered.com`) as code constants — not configurable via
+  environment variables.
+- Enforced header-only API key transmission (`x-webapi-key`) — never in query
+  strings, logs, errors, or `repr`.
+- Implemented path validation rejecting absolute URLs, protocol-relative paths,
+  dot-segments, query strings, and fragments.
+- Enforced bounded response-body reading with configurable limit (default
+  2 MiB) — `SteamResponseTooLargeError` on exceed.
+- Validated JSON-object response contract — arrays, scalars, null, and
+  non-JSON content types rejected with `SteamInvalidResponseError`.
+- Disabled redirects — unexpected 3xx responses raise `SteamRedirectError`.
+- Added `validate_steam_cdn_url()` with exact-host allowlist, HTTPS
+  enforcement, and rejection of credentials, ports, fragments, IP literals,
+  and localhost.
+- Documented all seven Steam environment variables in `.env.example` and
+  `docs/environment-variables.md`.
+- Created `docs/steam-integration.md` covering architecture, retry policy,
+  error taxonomy, CDN trust model, and future work.
+- Added 85 isolated Steam service tests (no real network calls) covering
+  configuration, path validation, API key handling, response processing,
+  session/retry policy, CDN validation, error taxonomy, and real
+  adapter-policy verification.
+- Recorded 10 architecture decisions and the SBGC-42 changelog entry here.
 
 ## 2026-07-22 — Initial canonical consolidation
 

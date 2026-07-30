@@ -13,6 +13,10 @@ apps/backend/
 │   │   ├── base.py             # Shared settings (all environments)
 │   │   ├── development.py      # DEBUG=True, local conveniences
 │   │   └── production.py       # DEBUG=False, deployment defaults
+│   ├── database.py             # Database URL parser and SQLite/PostgreSQL builder
+│   ├── steam.py                # Steam env → SteamClientConfig factory — SBGC-42
+│   ├── security.py             # Host/origin/key validation — SBGC-41
+│   ├── admin.py                # Admin URL validation and branding
 │   ├── urls.py                 # Root URL configuration
 │   ├── wsgi.py                 # WSGI entry point (defaults to production)
 │   └── asgi.py                 # ASGI entry point (defaults to production)
@@ -27,13 +31,22 @@ apps/backend/
 │       ├── __init__.py
 │       ├── test_api_mounted.py # URL-level behaviour tests
 │       └── test_schemas_errors.py  # Schema and error-handler tests
-t├── games/                      # Canonical game identity and metadata (SBGC-4)
+├── games/                      # Canonical game identity and metadata (SBGC-4)
 │   ├── __init__.py
 │   ├── apps.py                 # GamesConfig
 │   ├── api.py                  # Games API router (no operations yet)
 │   ├── models.py               # No models yet (SBGC-45)
 │   ├── admin.py                # No admin registrations yet (SBGC-40)
-│   ├── tests.py                # No tests yet (SBGC-44)
+│   ├── services/
+│   │   └── steam/              # Steam Web API client — SBGC-42
+│   │       ├── __init__.py     # Public re-exports
+│   │       ├── config.py       # SteamClientConfig (immutable dataclass)
+│   │       ├── client.py       # SteamClient (synchronous, injectable)
+│   │       ├── cdn.py          # validate_steam_cdn_url()
+│   │       └── errors.py       # Service-specific exception taxonomy
+│   ├── tests/
+│   │   └── services/steam/
+│   │       └── test_steam.py   # 85 isolated Steam service tests
 │   └── migrations/
 │       └── __init__.py
 ├── classifications/            # Challenge and Reward classification records (SBGC-4)
@@ -143,7 +156,7 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **No Steam integration** — SBGC-42 will create the Steam service/client.
+- **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client under `games/services/steam/` with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. Endpoint adapters and import workflows are deferred to SBGC-5.
 - **No backend operations** — SBGC-43 will add logging, health endpoints, static handling, and Render startup.
 - **No backend tests** — SBGC-44 will establish test settings and conventions.
 - **No product models** — SBGC-4 (SBGC-45 onward) will implement domain models, constraints, and migrations.

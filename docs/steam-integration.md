@@ -5,6 +5,9 @@ External-service foundation for the Steam Web API — SBGC-42.
 ## Architecture
 
 ```
+steam_client_config_from_settings()  (config/steam.py)
+  └── reads raw Django settings → SteamClientConfig
+
 SteamClient (games/services/steam/client.py)
   └── requests.Session (HTTPS + Retry adapter)
        └── https://api.steampowered.com  (fixed, not configurable)
@@ -17,9 +20,31 @@ The Steam client lives under `games/services/steam/` — owned by the
 `games` Django application.  Future domain endpoints and import workflows
 will use this client.
 
+## Environment Configuration
+
+Environment variables are read through the repository's existing
+`django-environ` mechanism in `config/settings/base.py` (shared defaults)
+and consumed by `steam_client_config_from_settings()` in `config/steam.py`.
+
+- **`config/settings/base.py`** — reads raw string values from `.env` with
+  documented defaults.  All seven `STEAM_*` variables are optional.
+- **`config/steam.py`** — the single factory that parses, normalises, and
+  validates raw settings into a `SteamClientConfig`.  This is the only
+  point where Django settings cross into the Steam transport model.
+- **`config/settings/test.py`** — overrides all Steam settings with
+  deterministic values; never reads the developer's `.env` Steam key.
+
+Configuration is **lazy** — `steam_client_config_from_settings()` is
+not called during settings import.  No `SteamClient` is instantiated
+and no network request is made until the application explicitly builds
+a client and calls a method.
+
 ## Package Structure
 
 ```
+config/
+└── steam.py          # steam_client_config_from_settings() — SBGC-42
+
 games/services/steam/
 ├── __init__.py    # Public re-exports
 ├── config.py      # SteamClientConfig (immutable dataclass)
@@ -119,6 +144,12 @@ The function never downloads, caches, or proxies image binaries.
 All tests use injected fake `requests.Session` mocks — **no real network
 calls**.  Retry policy is verified through adapter inspection; response
 handling through mock responses.
+
+Environment-configuration tests in `config/tests/test_steam.py` verify
+that raw Django settings are correctly parsed, validated, and normalised
+into `SteamClientConfig` — including defaults, overrides, malformed-value
+rejection, blank-key normalisation, CDN-host parsing, and test-settings
+isolation from the developer's `.env`.
 
 ## Future Work
 
