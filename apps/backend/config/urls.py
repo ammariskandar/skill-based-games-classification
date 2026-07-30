@@ -15,11 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from config.admin import apply_admin_branding
+
+# SBGC-40 — apply MyGameDNA admin branding (safe here — apps are ready).
+apply_admin_branding()
+
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    # SBGC-37 — reserved versioned API prefix (no endpoints yet)
+    # SBGC-40 — admin route controlled by validated ADMIN_URL_PATH.
+    path(f"{settings.ADMIN_URL_PATH}/", admin.site.urls),
+    # SBGC-37/38 — versioned API prefix.
     path("api/v1/", include("api.urls")),
 ]

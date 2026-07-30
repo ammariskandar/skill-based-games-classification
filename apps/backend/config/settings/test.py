@@ -15,6 +15,11 @@ DEBUG = True
 # Django Ninja — SBGC-38
 NINJA_API_DOCS_ENABLED = True
 
+# Django Admin — SBGC-40
+# Use a deterministic non-default path so routing tests can verify
+# that /admin/ (the hard-coded legacy path) does NOT resolve.
+ADMIN_URL_PATH = "test-admin"
+
 # Database — SBGC-39 / test isolation
 # Use an in-memory SQLite database for every test run.
 # Never connect to Neon, never read DATABASE_URL for the test database,
