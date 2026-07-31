@@ -779,3 +779,37 @@ class RenderBlueprintTests(SimpleTestCase):
         self.assertNotIn("postgresql://", raw)
         self.assertNotIn("secret_key_example", raw)
         self.assertIn("sync: false", raw)
+
+
+class DeployCheckScriptTests(SimpleTestCase):
+    """Invoke the actual deploy-check shell script via subprocess."""
+
+    @staticmethod
+    def _run_script() -> subprocess.CompletedProcess[str]:
+        repo = _ROOT_DIR
+        script = str(repo / "scripts" / "backend-deploy-check.sh")
+
+        if os.path.exists("/.flatpak-info"):
+            return subprocess.run(
+                ["flatpak-spawn", "--host", "bash", script],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        return subprocess.run(
+            ["bash", script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+    def test_script_passes(self):
+        proc = self._run_script()
+        self.assertEqual(proc.returncode, 0, f"Deploy check failed:\n{proc.stderr}")
+        self.assertIn("Deploy check passed", proc.stdout)
+
+    def test_script_accepts_staged_hsts_warnings(self):
+        proc = self._run_script()
+        self.assertIn("ACCEPTED", proc.stdout)
+        self.assertIn("security.W005", proc.stdout)
+        self.assertIn("security.W021", proc.stdout)

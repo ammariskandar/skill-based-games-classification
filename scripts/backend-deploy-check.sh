@@ -6,23 +6,26 @@
 # connection.
 set -euo pipefail
 
-APPS_DIR="$(dirname "$0")/../apps/backend"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APPS_DIR="$REPO_ROOT/apps/backend"
+PYTHON="$APPS_DIR/.venv/bin/python3"
 MANAGE="$APPS_DIR/manage.py"
 
 # Accepted staged-HSTS warnings (space-separated).
 # Remove as each deployment stage progresses.
 ACCEPTED_WARNINGS="security.W005 security.W021"
 
+# Controlled dummy production values — no real credentials.
+export DJANGO_SECRET_KEY="abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
+export DATABASE_URL="postgresql://u:p@example.neon.tech/db?sslmode=require"
+export DJANGO_ALLOWED_HOSTS="example.com"
+export CSRF_TRUSTED_ORIGINS="https://example.com"
+export ADMIN_URL_PATH="mygamedna-prod"
+export DJANGO_LOG_LEVEL="INFO"
+export DJANGO_SECURE_HSTS_SECONDS="3600"
+
 set +e
-output=$(flatpak-spawn --host \
-  --env=DJANGO_SECRET_KEY="abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz" \
-  --env=DATABASE_URL="postgresql://u:p@example.neon.tech/db?sslmode=require" \
-  --env=DJANGO_ALLOWED_HOSTS="example.com" \
-  --env=CSRF_TRUSTED_ORIGINS="https://example.com" \
-  --env=ADMIN_URL_PATH="mygamedna-prod" \
-  --env=DJANGO_LOG_LEVEL="INFO" \
-  --env=DJANGO_SECURE_HSTS_SECONDS="3600" \
-  "$APPS_DIR/.venv/bin/python" "$MANAGE" check --deploy \
+output=$("$PYTHON" "$MANAGE" check --deploy \
   --fail-level ERROR --settings=config.settings.production 2>&1)
 rc=$?
 set -e
@@ -38,7 +41,7 @@ if [ $rc -ne 0 ]; then
 fi
 
 # Classify warnings.
-classify_output=$(echo "$output" | "$APPS_DIR/.venv/bin/python" -c "
+classify_output=$(echo "$output" | "$PYTHON" -c "
 import sys
 sys.path.insert(0, '$APPS_DIR')
 from config.deploy_warnings import classify_warnings
