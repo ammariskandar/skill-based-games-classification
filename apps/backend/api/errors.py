@@ -21,6 +21,7 @@ from ninja.errors import (
     HttpError,
     ValidationError,
 )
+from ninja.responses import codes_4xx, codes_5xx
 
 from api.schemas import ApiError, ApiErrorDetail, ApiErrorResponse
 
@@ -30,7 +31,13 @@ logger = logging.getLogger(__name__)
 # OpenAPI error-response declarations
 # ---------------------------------------------------------------------------
 
-STANDARD_ERROR_RESPONSES = {4: ApiErrorResponse, 5: ApiErrorResponse}
+# Django Ninja 1.6.2 grouped status-code sets — frozenset objects usable as
+# dict keys in response declarations.  Each key expands to every concrete
+# status code in the group when Ninja generates the OpenAPI schema.
+STANDARD_ERROR_RESPONSES = {
+    codes_4xx: ApiErrorResponse,
+    codes_5xx: ApiErrorResponse,
+}
 
 # ---------------------------------------------------------------------------
 # Project exception

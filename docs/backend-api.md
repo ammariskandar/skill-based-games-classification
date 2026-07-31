@@ -59,8 +59,11 @@ from api.errors import STANDARD_ERROR_RESPONSES
 @router.get("/path", response={200: SomeSchema, **STANDARD_ERROR_RESPONSES})
 ```
 
-`STANDARD_ERROR_RESPONSES` maps `4` and `5` status-code groups to
-`ApiErrorResponse`, producing correct OpenAPI error documentation.
+`STANDARD_ERROR_RESPONSES` maps Django Ninja's grouped `codes_4xx` and
+`codes_5xx` status-code sets (`frozenset` objects from `ninja.responses`)
+to `ApiErrorResponse`, producing correct OpenAPI error documentation with
+concrete HTTP status codes (400, 401, 403, 404, 500, 503, etc.) rather than
+invalid group keys "4" and "5" — SBGC-167.
 
 ### Response Status Codes
 
