@@ -1,5 +1,5 @@
 """
-Security configuration helpers — SBGC-41.
+Security configuration helpers — SBGC-41 / SBGC-43.
 
 Pure validation functions for security-sensitive environment values.
 Uses ``ImproperlyConfigured`` for startup failures; never echoes
@@ -9,27 +9,37 @@ secrets or full rejected values in error messages.
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
 # ---------------------------------------------------------------------------
-# Secret key
+# Secret key — SBGC-43 (strengthened to align with Django security.W009)
 # ---------------------------------------------------------------------------
 
 # Development-only placeholder — never accept this in production.
 _DEV_SECRET = "django-insecure-dev-key-do-not-use-in-production"
 
-# Minimum acceptable secret length (arbitrary but prevents trivial values).
-_MIN_SECRET_LENGTH = 20
+# Minimum acceptable secret length (Django W009 recommends 50).
+_MIN_SECRET_LENGTH = 50
+
+# Minimum unique characters (prevents repeated-character placeholders).
+_MIN_UNIQUE_CHARS = 5
+
+# Known insecure prefixes.
+_INSECURE_PREFIXES = (
+    "django-insecure-",
+    "django-secret-",
+)
 
 
 def validate_secret_key(raw: str | None) -> str:
     """
     Return *raw* if it is a valid production secret key.
 
-    Raises ``ImproperlyConfigured`` for missing, blank, known-placeholder,
-    or trivially short values.  Error messages never contain the supplied
-    value.
+    Raises ``ImproperlyConfigured`` for missing, blank, short, low-entropy,
+    known-insecure, or known-placeholder values.  Error messages never
+    contain the supplied value.
     """
     if raw is None:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must not be missing.")
@@ -46,6 +56,18 @@ def validate_secret_key(raw: str | None) -> str:
         raise ImproperlyConfigured(
             f"DJANGO_SECRET_KEY must be at least {_MIN_SECRET_LENGTH} characters."
         )
+    unique = len(set(stripped))
+    if unique < _MIN_UNIQUE_CHARS:
+        raise ImproperlyConfigured(
+            f"DJANGO_SECRET_KEY must contain at least "
+            f"{_MIN_UNIQUE_CHARS} unique characters."
+        )
+    lower = stripped.lower()
+    for prefix in _INSECURE_PREFIXES:
+        if lower.startswith(prefix):
+            raise ImproperlyConfigured(
+                "DJANGO_SECRET_KEY must not use an insecure prefix."
+            )
     return stripped
 
 
@@ -66,7 +88,6 @@ def _validate_host_entry(entry: str) -> None:
 
     Raises ``ImproperlyConfigured`` with a safe message on failure.
     """
-    # -- obvious rejections first --------------------------------------------
     if entry == "*":
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a wildcard.")
     if "://" in entry:
@@ -74,9 +95,6 @@ def _validate_host_entry(entry: str) -> None:
             "DJANGO_ALLOWED_HOSTS must not contain URLs (scheme detected)."
         )
     if ":" in entry:
-        # ALLOWED_HOSTS entries are hostnames, not origins or network
-        # addresses.  Rejecting ports catches operator mistakes and keeps
-        # deployment host configuration canonical and predictable.
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain a port.")
     if "/" in entry:
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must not contain paths.")
@@ -130,8 +148,7 @@ def parse_allowed_hosts(raw: str | None) -> list[str]:
 
     Supported forms: DNS hostnames and IPv4 literals.
     IPv6 literals are deliberately outside the current Render deployment
-    requirement.  IPv6 support would require an intentional parser extension
-    and tests.
+    requirement.
 
     Raises ``ImproperlyConfigured`` for missing, blank, wildcard, or
     malformed entries.
@@ -161,10 +178,65 @@ def parse_allowed_hosts(raw: str | None) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# CSRF trusted origins
+# CSRF trusted origins — SBGC-43 (structured URL parsing)
 # ---------------------------------------------------------------------------
 
-_ORIGIN_RE = re.compile(r"^https?://[A-Za-z0-9]([A-Za-z0-9.\-]*[A-Za-z0-9])?(:\d+)?/?$")
+
+def _validate_csrf_origin(origin: str, *, require_https: bool) -> str:
+    """
+    Validate a single CSRF trusted origin and return the normalised form.
+
+    Normalises: scheme to lowercase, hostname to lowercase, trailing slash
+    to absent.  Raises ``ImproperlyConfigured`` for any violation.
+    """
+    if not origin:
+        raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS entry must not be blank.")
+
+    parsed = urlparse(origin)
+
+    # Scheme.
+    scheme = parsed.scheme.lower()
+    if scheme not in ("http", "https"):
+        raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must use http:// or https://.")
+    if require_https and scheme != "https":
+        raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must use HTTPS origins.")
+
+    # Hostname (netloc without port/credentials).
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise ImproperlyConfigured(
+            "CSRF_TRUSTED_ORIGINS must contain a nonempty hostname."
+        )
+
+    # Reject credentials, query, fragment, path beyond root.
+    if "@" in parsed.netloc:
+        raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must not contain credentials.")
+    if parsed.query:
+        raise ImproperlyConfigured(
+            "CSRF_TRUSTED_ORIGINS must not contain a query string."
+        )
+    if parsed.fragment:
+        raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must not contain a fragment.")
+    if parsed.path and parsed.path != "/":
+        raise ImproperlyConfigured(
+            "CSRF_TRUSTED_ORIGINS must not contain a path beyond root '/'."
+        )
+
+    # Port validation.
+    port = parsed.port
+    if port is not None:
+        if port < 1 or port > 65535:
+            raise ImproperlyConfigured(
+                f"CSRF_TRUSTED_ORIGINS port must be 1–65535, got {port}."
+            )
+
+    # Hostname validation (reuse shared DNS label rules).
+    _validate_host_entry(hostname)
+
+    # Build normalised origin.
+    if port:
+        return f"{scheme}://{hostname}:{port}"
+    return f"{scheme}://{hostname}"
 
 
 def parse_trusted_origins(raw: str | None, *, require_https: bool) -> list[str]:
@@ -175,9 +247,8 @@ def parse_trusted_origins(raw: str | None, *, require_https: bool) -> list[str]:
         raw: Raw comma-separated value from the environment.
         require_https: If True, only ``https://`` origins are accepted.
 
-    Returns a deduplicated list of valid origin strings.
-    Raises ``ImproperlyConfigured`` for missing, blank, malformed,
-    or HTTP-only origins when *require_https* is True.
+    Returns a deduplicated list of validated, normalised origin strings.
+    Raises ``ImproperlyConfigured`` for missing, blank, or malformed origins.
     """
     if raw is None:
         raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must not be missing.")
@@ -194,14 +265,8 @@ def parse_trusted_origins(raw: str | None, *, require_https: bool) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
 
-    for origin in entries:
-        if require_https and not origin.startswith("https://"):
-            raise ImproperlyConfigured("CSRF_TRUSTED_ORIGINS must use HTTPS origins.")
-        if not _ORIGIN_RE.match(origin):
-            raise ImproperlyConfigured(
-                "CSRF_TRUSTED_ORIGINS contains a malformed origin. "
-                "Expected scheme://host[:port] without path, query, or fragment."
-            )
+    for entry in entries:
+        origin = _validate_csrf_origin(entry, require_https=require_https)
         if origin not in seen:
             seen.add(origin)
             result.append(origin)
@@ -235,3 +300,34 @@ def parse_non_negative_integer(raw: str | None) -> int:
     if value < 0:
         raise ImproperlyConfigured("Value must not be negative.")
     return value
+
+
+# ---------------------------------------------------------------------------
+# Log level — SBGC-43
+# ---------------------------------------------------------------------------
+
+_VALID_LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
+
+
+def validate_log_level(raw: str | None) -> str:
+    """
+    Validate *raw* as a supported Django log level.
+
+    Returns the upper-cased level string.  Raises ``ImproperlyConfigured``
+    for missing, blank, or unsupported values.
+    """
+    if raw is None:
+        raise ImproperlyConfigured("DJANGO_LOG_LEVEL must not be missing.")
+    if not isinstance(raw, str):
+        raise ImproperlyConfigured("DJANGO_LOG_LEVEL must be a string.")
+    stripped = raw.strip()
+    if not stripped:
+        raise ImproperlyConfigured("DJANGO_LOG_LEVEL must not be blank.")
+    upper = stripped.upper()
+    if upper not in _VALID_LOG_LEVELS:
+        raise ImproperlyConfigured(
+            f"DJANGO_LOG_LEVEL must be one of "
+            f"{', '.join(sorted(_VALID_LOG_LEVELS))}, "
+            f"got {stripped!r}."
+        )
+    return upper

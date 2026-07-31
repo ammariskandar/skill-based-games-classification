@@ -56,10 +56,11 @@ def _manage(*args, env=None):
 def _prod_env(**overrides):
     """Return a dict with all required production security values."""
     return {
-        "DJANGO_SECRET_KEY": "a-valid-production-secret-key-long-enough",
+        "DJANGO_SECRET_KEY": "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz",
         "DATABASE_URL": _DUMMY_PG_URL,
         "DJANGO_ALLOWED_HOSTS": "example.com",
         "CSRF_TRUSTED_ORIGINS": "https://example.com",
+        "ADMIN_URL_PATH": "mygamedna-prod",
         **overrides,
     }
 
@@ -71,10 +72,10 @@ def _prod_env(**overrides):
 
 class SecretKeyValidationTests(SimpleTestCase):
     def test_valid_key_accepted(self):
-        result = validate_secret_key("a-valid-secret-that-is-long-enough")
-        self.assertEqual(result, "a-valid-secret-that-is-long-enough")
-
-    def test_none_rejected(self):
+        result = validate_secret_key(
+            "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
+        )
+        self.assertEqual(result, "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz")
         with self.assertRaises(ImproperlyConfigured):
             validate_secret_key(None)
 

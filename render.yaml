@@ -1,0 +1,40 @@
+# SBGC-43 — Render Blueprint for the Django backend web service.
+# https://render.com/docs/blueprint-spec
+#
+# This defines one Python web service.  The Neon PostgreSQL database is
+# provisioned separately through the Neon dashboard — do not define a
+# Render database resource here.
+#
+# No real credentials or secrets are stored in this file.
+# Deployment has not been verified against a live Render service.
+
+services:
+  - type: web
+    name: mygamedna-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: apps/backend
+    buildCommand: ../../scripts/backend-build.sh
+    preDeployCommand: ../../scripts/backend-migrate.sh
+    startCommand: ../../scripts/backend-start.sh
+    healthCheckPath: /health/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: ADMIN_URL_PATH
+        sync: false
+      - key: DJANGO_LOG_LEVEL
+        value: INFO
+      - key: STEAM_WEB_API_KEY
+        sync: false
+      - key: DJANGO_SECURE_HSTS_SECONDS
+        value: "0"
+      - key: WEB_CONCURRENCY
+        value: "2"

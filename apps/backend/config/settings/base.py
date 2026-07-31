@@ -64,6 +64,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # SBGC-43 — WhiteNoise for production static files (Admin CSS/JS).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -143,6 +145,19 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# SBGC-43 — collected static root for WhiteNoise production serving.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# SBGC-43 — WhiteNoise compressed manifest storage.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
@@ -172,3 +187,37 @@ STEAM_MAX_RETRIES = env("STEAM_MAX_RETRIES", default="2")
 STEAM_RETRY_BACKOFF_SECONDS = env("STEAM_RETRY_BACKOFF_SECONDS", default="0.25")
 STEAM_MAX_RESPONSE_BYTES = env("STEAM_MAX_RESPONSE_BYTES", default="2097152")
 STEAM_CDN_ALLOWED_HOSTS = env("STEAM_CDN_ALLOWED_HOSTS", default="")
+
+# Logging — SBGC-43
+# DJANGO_LOG_LEVEL controls the root Django logger threshold.
+# Production default: INFO.  Development may use DEBUG.
+# Valid: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+_LOG_LEVEL_RAW = env("DJANGO_LOG_LEVEL", default="INFO")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{asctime} [{levelname}] {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": _LOG_LEVEL_RAW,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": _LOG_LEVEL_RAW,
+            "propagate": False,
+        },
+    },
+}
