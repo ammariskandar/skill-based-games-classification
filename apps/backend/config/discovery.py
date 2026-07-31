@@ -222,3 +222,21 @@ def main(start_dir: str) -> int:
     print()
     print("Discovery audit passed.")
     return 0
+
+
+if __name__ == "__main__":
+    import sys as _sys
+
+    _backend = Path(__file__).resolve().parent.parent
+    _sys.path.insert(0, str(_backend))
+
+    import os as _os
+
+    _os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.test")
+    _os.environ["DJANGO_SKIP_DOTENV"] = "1"
+
+    import django
+
+    django.setup()
+
+    raise SystemExit(main(str(_backend)))

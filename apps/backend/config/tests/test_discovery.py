@@ -387,6 +387,49 @@ class DiscoveryLauncherSubprocessTests(SimpleTestCase):
         self.assertIn("EMPTY TEST MODULE", proc.stdout)
 
 
+class DiscoveryShellScriptTests(SimpleTestCase):
+    """
+    Invoke the actual tracked shell script scripts/backend-test-discovery.sh
+    via subprocess to prove it works end-to-end on the real repository.
+    Uses flatpak-spawn if running inside Flatpak, otherwise direct invocation.
+    """
+
+    @staticmethod
+    def _run_script() -> subprocess.CompletedProcess[str]:
+        p = _BACKEND_DIR.parent.parent / "scripts"
+        p = p / "backend-test-discovery.sh"
+        script = str(p)
+
+        # Inside Flatpak, use flatpak-spawn to reach the host.
+        if os.path.exists("/.flatpak-info"):
+            return subprocess.run(
+                ["flatpak-spawn", "--host", "bash", script],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        return subprocess.run(
+            ["bash", script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+    def test_real_repository_discovery_passes(self):
+        proc = self._run_script()
+        self.assertEqual(
+            proc.returncode,
+            0,
+            f"Discovery script failed:\n{proc.stderr}",
+        )
+        self.assertIn("Discovery audit passed", proc.stdout)
+
+    def test_script_output_includes_module_counts(self):
+        proc = self._run_script()
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("By module:", proc.stdout)
+
+
 class DiscoveryCleanupTests(SimpleTestCase):
     """Temporary modules are cleaned up after tests."""
 
