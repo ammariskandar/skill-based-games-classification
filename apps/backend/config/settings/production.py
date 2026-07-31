@@ -107,8 +107,8 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 _hsts_raw = env("DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405
 SECURE_HSTS_SECONDS = parse_non_negative_integer(_hsts_raw)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 # -- Response protections -----------------------------------------------------
 

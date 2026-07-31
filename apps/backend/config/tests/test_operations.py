@@ -557,6 +557,8 @@ class DeploymentCheckTests(SimpleTestCase):
         rc, stdout, stderr = _manage(
             "check",
             "--deploy",
+            "--fail-level",
+            "WARNING",
             "--settings=config.settings.production",
             env=env,
         )
@@ -572,10 +574,17 @@ class DeploymentCheckTests(SimpleTestCase):
         rc, stdout, stderr = _manage(
             "check",
             "--deploy",
+            "--fail-level",
+            "WARNING",
             "--settings=config.settings.production",
             env=env,
         )
         self.assertNotEqual(rc, 0)
+
+    def test_deploy_check_script_contains_fail_level_warning(self):
+        """The deploy check script enforces --fail-level WARNING."""
+        script = (_ROOT_DIR / "scripts" / "backend-deploy-check.sh").read_text()
+        self.assertIn("--fail-level WARNING", script)
 
 
 # ============================================================================

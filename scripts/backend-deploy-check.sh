@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SBGC-43 — deployment check gate.
 # Runs manage.py check --deploy against production settings with controlled
-# dummy values.  Makes no network or database connection.
+# dummy values.  Fails on WARNING or higher.  Makes no network or database
+# connection.
 set -euo pipefail
 
 APPS_DIR="$(dirname "$0")/../apps/backend"
@@ -15,4 +16,6 @@ exec flatpak-spawn --host \
   --env=DJANGO_LOG_LEVEL="INFO" \
   --env=DJANGO_SECURE_HSTS_SECONDS="3600" \
   "$APPS_DIR/.venv/bin/python" \
-  "$APPS_DIR/manage.py" check --deploy --settings=config.settings.production
+  "$APPS_DIR/manage.py" check --deploy \
+  --fail-level WARNING \
+  --settings=config.settings.production
