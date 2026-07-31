@@ -25,6 +25,11 @@ from config.security import (
     validate_log_level,
     validate_secret_key,
 )
+from config.testing import (
+    minimal_subprocess_env,
+    prod_test_env,
+    run_manage,
+)
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 _MANAGE_PY = _BACKEND_DIR / "manage.py"
@@ -32,32 +37,19 @@ _ROOT_DIR = _BACKEND_DIR.parent.parent
 
 
 def _manage(*args, env=None):
-    merged = {**os.environ}
+    """Run manage.py in an isolated subprocess environment."""
+    merged = minimal_subprocess_env()
     if env is not None:
         merged.update(env)
-    proc = subprocess.run(
-        [sys.executable, str(_MANAGE_PY), *args],
-        cwd=str(_BACKEND_DIR),
-        capture_output=True,
-        text=True,
-        env=merged,
-        timeout=15,
-    )
+    proc = run_manage(*args, env=merged)
     return proc.returncode, proc.stdout, proc.stderr
 
 
 def _prod_env(**overrides):
-    return {
-        "DJANGO_SECRET_KEY": "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz",
-        "DATABASE_URL": (
-            "postgresql://u:p@example.neon.tech/db"
-            "?sslmode=require&channel_binding=require"
-        ),
-        "DJANGO_ALLOWED_HOSTS": "example.com",
-        "CSRF_TRUSTED_ORIGINS": "https://example.com",
-        "ADMIN_URL_PATH": "mygamedna-prod",
-        **overrides,
-    }
+    """Return production dummy env values."""
+    env = prod_test_env()
+    env.update(overrides)
+    return env
 
 
 # ============================================================================
@@ -375,14 +367,15 @@ class ProductionAdminPathTests(SimpleTestCase):
 
     def test_missing_rejected(self):
         env = _prod_env()
-        del env["ADMIN_URL_PATH"]
+        env["ADMIN_URL_PATH"] = ""
         rc, stdout, stderr = _manage(
             "check", "--settings=config.settings.production", env=env
         )
         self.assertNotEqual(rc, 0)
 
     def test_blank_rejected(self):
-        env = _prod_env(ADMIN_URL_PATH="")
+        env = _prod_env()
+        env["ADMIN_URL_PATH"] = ""
         rc, stdout, stderr = _manage(
             "check", "--settings=config.settings.production", env=env
         )
@@ -786,3 +779,37 @@ class RenderBlueprintTests(SimpleTestCase):
         self.assertNotIn("postgresql://", raw)
         self.assertNotIn("secret_key_example", raw)
         self.assertIn("sync: false", raw)
+
+
+class DeployCheckScriptTests(SimpleTestCase):
+    """Invoke the actual deploy-check shell script via subprocess."""
+
+    @staticmethod
+    def _run_script() -> subprocess.CompletedProcess[str]:
+        repo = _ROOT_DIR
+        script = str(repo / "scripts" / "backend-deploy-check.sh")
+
+        if os.path.exists("/.flatpak-info"):
+            return subprocess.run(
+                ["flatpak-spawn", "--host", "bash", script],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        return subprocess.run(
+            ["bash", script],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+    def test_script_passes(self):
+        proc = self._run_script()
+        self.assertEqual(proc.returncode, 0, f"Deploy check failed:\n{proc.stderr}")
+        self.assertIn("Deploy check passed", proc.stdout)
+
+    def test_script_accepts_staged_hsts_warnings(self):
+        proc = self._run_script()
+        self.assertIn("ACCEPTED", proc.stdout)
+        self.assertIn("security.W005", proc.stdout)
+        self.assertIn("security.W021", proc.stdout)

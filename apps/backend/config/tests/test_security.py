@@ -9,9 +9,6 @@ hostile-header rejection.
 
 from __future__ import annotations
 
-import os
-import subprocess
-import sys
 from pathlib import Path
 
 from django.conf import settings
@@ -25,6 +22,7 @@ from config.security import (
     parse_trusted_origins,
     validate_secret_key,
 )
+from config.testing import minimal_subprocess_env
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -38,18 +36,13 @@ _DUMMY_PG_URL = (
 
 
 def _manage(*args, env=None):
-    """Run manage.py in a subprocess and return (rc, stdout, stderr)."""
-    merged = {**os.environ}
+    """Run manage.py in a subprocess with isolated environment."""
+    from config.testing import run_manage
+
+    merged = minimal_subprocess_env()
     if env is not None:
         merged.update(env)
-    proc = subprocess.run(
-        [sys.executable, str(_MANAGE_PY), *args],
-        cwd=str(_BACKEND_DIR),
-        capture_output=True,
-        text=True,
-        env=merged,
-        timeout=15,
-    )
+    proc = run_manage(*args, env=merged)
     return proc.returncode, proc.stdout, proc.stderr
 
 
