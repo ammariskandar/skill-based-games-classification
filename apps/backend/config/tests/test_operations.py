@@ -550,7 +550,7 @@ class ReverseProxyTests(SimpleTestCase):
 class DeploymentCheckTests(SimpleTestCase):
     """check --deploy with valid dummy config — SBGC-43."""
 
-    def test_deploy_check_succeeds_with_valid_config(self):
+    def test_deploy_check_succeeds_with_staged_hsts(self):
         env = _prod_env(
             DJANGO_SECURE_HSTS_SECONDS="3600",
         )
@@ -558,7 +558,7 @@ class DeploymentCheckTests(SimpleTestCase):
             "check",
             "--deploy",
             "--fail-level",
-            "WARNING",
+            "ERROR",
             "--settings=config.settings.production",
             env=env,
         )
@@ -575,16 +575,20 @@ class DeploymentCheckTests(SimpleTestCase):
             "check",
             "--deploy",
             "--fail-level",
-            "WARNING",
+            "ERROR",
             "--settings=config.settings.production",
             env=env,
         )
         self.assertNotEqual(rc, 0)
 
-    def test_deploy_check_script_contains_fail_level_warning(self):
-        """The deploy check script enforces --fail-level WARNING."""
+    def test_deploy_check_script_has_accepted_warning_list(self):
+        """The deploy check script documents accepted staged-HSTS warnings."""
         script = (_ROOT_DIR / "scripts" / "backend-deploy-check.sh").read_text()
-        self.assertIn("--fail-level WARNING", script)
+        self.assertIn("ACCEPTED_WARNINGS", script)
+        self.assertIn("security.W004", script)
+        self.assertIn("security.W005", script)
+        self.assertIn("security.W021", script)
+        self.assertIn("--fail-level ERROR", script)
 
 
 # ============================================================================

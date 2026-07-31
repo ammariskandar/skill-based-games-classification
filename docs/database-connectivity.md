@@ -194,3 +194,8 @@ DATABASE_URL="" python manage.py check --settings=config.settings.production
 - **No read replicas.**
 - **No Neon API automation.**
 - **No database health endpoint.**
+
+
+## SBGC-43 — PostgreSQL-Only Production
+
+Production enforces PostgreSQL-only database connectivity via . Missing, blank, SQLite, MySQL, Oracle, and unknown engine URLs all raise  at startup. Development retains SQLite fallback; tests remain in-memory SQLite. No PostgreSQL integration behaviour has been verified yet — SBGC-52 owns later PostgreSQL-specific verification.

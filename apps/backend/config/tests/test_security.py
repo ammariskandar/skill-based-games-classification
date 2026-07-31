@@ -76,6 +76,8 @@ class SecretKeyValidationTests(SimpleTestCase):
             "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
         )
         self.assertEqual(result, "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz")
+
+    def test_none_rejected(self):
         with self.assertRaises(ImproperlyConfigured):
             validate_secret_key(None)
 

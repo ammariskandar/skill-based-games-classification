@@ -185,3 +185,17 @@ with valid dummy values produces:
   a real generated secret will pass.
 
 No other warnings or errors. These are documented, not silenced.
+
+
+## SBGC-43 Updates
+
+- Production secret key now requires 50+ characters with 5+ unique characters; rejects insecure prefixes.
+- Production requires explicit non-default ADMIN_URL_PATH.
+- CSRF trusted origins use structured URL parsing with hostname and port validation.
+- SBGC-43 preserves staged HSTS:
+ and
+ until every relevant subdomain is HTTPS-only.
+The deployment-check gate accepts  and 
+as documented staging warnings.
+- Production database accepts PostgreSQL only; SQLite and other engines raise ImproperlyConfigured.
+- No live Render or Neon verification has been performed.
