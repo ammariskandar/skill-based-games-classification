@@ -582,13 +582,88 @@ class DeploymentCheckTests(SimpleTestCase):
         self.assertNotEqual(rc, 0)
 
     def test_deploy_check_script_has_accepted_warning_list(self):
-        """The deploy check script documents accepted staged-HSTS warnings."""
+        """The deploy check script uses the shared classifier module."""
         script = (_ROOT_DIR / "scripts" / "backend-deploy-check.sh").read_text()
         self.assertIn("ACCEPTED_WARNINGS", script)
-        self.assertIn("security.W004", script)
         self.assertIn("security.W005", script)
         self.assertIn("security.W021", script)
+        self.assertNotIn("security.W004", script)
+        self.assertIn("deploy_warnings", script)
         self.assertIn("--fail-level ERROR", script)
+
+
+# ============================================================================
+# Warning classifier behavioral tests — SBGC-43
+# ============================================================================
+
+
+class WarningClassifierTests(SimpleTestCase):
+    """Behavioral tests for config.deploy_warnings.classify_warnings."""
+
+    @staticmethod
+    def _classify(output, accepted):
+        from config.deploy_warnings import classify_warnings
+
+        return classify_warnings(output, accepted)
+
+    def test_no_warnings_success(self):
+        cr = self._classify("System check identified no issues (0 silenced).", set())
+        self.assertFalse(cr.has_unexpected)
+        self.assertEqual(len(cr.accepted), 0)
+        self.assertEqual(len(cr.unexpected), 0)
+
+    def test_w005_and_w021_only_success(self):
+        output = (
+            "WARNINGS:\n"
+            "?: (security.W005) HSTS includeSubDomains is False.\n"
+            "?: (security.W021) HSTS preload is False.\n"
+            "System check identified 2 issues (0 silenced).\n"
+        )
+        accepted = {"security.W005", "security.W021"}
+        cr = self._classify(output, accepted)
+        self.assertFalse(cr.has_unexpected)
+        self.assertEqual(len(cr.accepted), 2)
+        self.assertEqual(len(cr.unexpected), 0)
+
+    def test_w004_not_accepted_causes_failure(self):
+        output = "?: (security.W004) HSTS seconds too small.\n"
+        accepted = {"security.W005", "security.W021"}
+        cr = self._classify(output, accepted)
+        self.assertTrue(cr.has_unexpected)
+        self.assertEqual(len(cr.unexpected), 1)
+        self.assertEqual(cr.unexpected[0].warning_id, "security.W004")
+
+    def test_unknown_warning_causes_failure(self):
+        output = "?: (security.W999) Unknown deployment warning.\n"
+        accepted = {"security.W005", "security.W021"}
+        cr = self._classify(output, accepted)
+        self.assertTrue(cr.has_unexpected)
+        self.assertEqual(cr.unexpected[0].warning_id, "security.W999")
+
+    def test_mixed_accepted_and_unexpected(self):
+        output = (
+            "?: (security.W005) HSTS includeSubDomains.\n"
+            "?: (security.W999) Unexpected!\n"
+        )
+        accepted = {"security.W005", "security.W021"}
+        cr = self._classify(output, accepted)
+        self.assertTrue(cr.has_unexpected)
+        self.assertEqual(len(cr.accepted), 1)
+        self.assertEqual(len(cr.unexpected), 1)
+        self.assertEqual(cr.accepted[0].warning_id, "security.W005")
+        self.assertEqual(cr.unexpected[0].warning_id, "security.W999")
+
+    def test_non_warning_lines_preserved(self):
+        output = "Some preamble\n?: (security.W005) warning\nSome epilogue\n"
+        accepted = {"security.W005"}
+        cr = self._classify(output, accepted)
+        self.assertFalse(cr.has_unexpected)
+        self.assertEqual(len(cr.other_lines), 2)
+
+    def test_accepted_w004_removed_from_allowlist(self):
+        """W004 must not be in the accepted set — HSTS seconds are controlled."""
+        accepted = {"security.W005", "security.W021"}
+        self.assertNotIn("security.W004", accepted)
 
 
 # ============================================================================
