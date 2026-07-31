@@ -2,8 +2,8 @@
 Schema and error-handling tests — SBGC-38.
 
 Validates request validation, error envelope serialisation, exception
-handler behaviour, shared response declarations, and explicit endpoint
-response handling — SBGC-167.
+handler behaviour, shared response declarations, explicit endpoint
+response handling, and malformed-payload rejection — SBGC-167.
 
 Handler-level tests create a fresh NinjaAPI instance with registered error
 handlers so they can dynamically add test routes without tripping over
@@ -314,6 +314,11 @@ class StandardErrorResponsesTests(SimpleTestCase):
         self.assertIn(codes_4xx, keys)
         self.assertIn(codes_5xx, keys)
 
+    def test_422_not_in_standard_4xx_group(self):
+        """422 is not included in Django Ninja's codes_4xx — endpoints returning
+        explicit 422 responses must declare it separately."""
+        self.assertNotIn(422, codes_4xx)
+
     def test_maps_to_api_error_response(self):
         for schema in STANDARD_ERROR_RESPONSES.values():
             self.assertIs(schema, ApiErrorResponse)
@@ -332,9 +337,12 @@ class StandardErrorResponsesTests(SimpleTestCase):
 
 class ExplicitEndpointResponseTests(SimpleTestCase):
     """
-    Explicit (status, body) returns work alongside STANDARD_ERROR_RESPONSES.
-    The grouped codes_4xx/codes_5xx keys are primarily for OpenAPI schema
-    generation; runtime validation depends on the concrete status match.
+    Explicit (status, body) endpoint returns work with grouped and
+    explicit response declarations.
+
+    Django Ninja's codes_4xx does not include 422 — endpoints that return
+    explicit 422 responses must declare ``422: ApiErrorResponse`` in
+    addition to ``STANDARD_ERROR_RESPONSES``.
     """
 
     def test_explicit_200_works_with_standard_responses(self):
@@ -349,11 +357,44 @@ class ExplicitEndpointResponseTests(SimpleTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), {"name": "X", "version": "1"})
 
-    def test_explicit_422_no_config_error(self):
+    def test_explicit_422_with_explicit_declaration(self):
         """
-        Returning an explicit 422 with STANDARD_ERROR_RESPONSES in the
-        declaration does not raise ConfigError at route registration time.
-        The grouped keys enable OpenAPI schema generation for all 4xx codes.
+        422 is not in codes_4xx.  When an endpoint returns explicit 422
+        responses it must declare 422: ApiErrorResponse explicitly alongside
+        STANDARD_ERROR_RESPONSES.  The explicit key does not collide with
+        the grouped codes_4xx frozenset.
+        """
+        api = _fresh_api()
+        error_body = ApiErrorResponse(
+            error=ApiError(
+                code="VALIDATION_ERROR",
+                message="Invalid input.",
+                details=[],
+            )
+        )
+
+        @api.get(
+            "/fail",
+            response={
+                200: dict,
+                **STANDARD_ERROR_RESPONSES,
+                422: ApiErrorResponse,
+            },
+        )
+        def test_op(request):
+            return 422, error_body
+
+        client = TestClient(api)
+        r = client.get("/fail")
+        self.assertEqual(r.status_code, 422)
+        body = r.json()
+        self.assertEqual(body["error"]["code"], "VALIDATION_ERROR")
+
+    def test_explicit_422_without_declaration_falls_back(self):
+        """
+        When an endpoint returns 422 but only uses STANDARD_ERROR_RESPONSES
+        (which does not include 422), Ninja cannot validate the response
+        and produces a 500 via the unexpected-exception handler.
         """
         api = _fresh_api()
         error_body = ApiErrorResponse(
@@ -370,11 +411,14 @@ class ExplicitEndpointResponseTests(SimpleTestCase):
 
         client = TestClient(api)
         r = client.get("/fail")
-        self.assertIn(r.status_code, (422, 500))
+        # Without an explicit 422 declaration, Ninja fails response-schema
+        # validation and the unexpected-exception handler returns 500.
+        self.assertEqual(r.status_code, 500)
         body = r.json()
         self.assertIn("error", body)
 
-    def test_explicit_404_no_config_error(self):
+    def test_explicit_404_matches_grouped_set(self):
+        """404 is in codes_4xx — explicit 404 returns work through the group."""
         api = _fresh_api()
         error_body = ApiErrorResponse(
             error=ApiError(code="NOT_FOUND", message="Gone.", details=[])
@@ -386,11 +430,12 @@ class ExplicitEndpointResponseTests(SimpleTestCase):
 
         client = TestClient(api)
         r = client.get("/missing")
-        self.assertIn(r.status_code, (404, 500))
+        self.assertEqual(r.status_code, 404)
         body = r.json()
-        self.assertIn("error", body)
+        self.assertEqual(body["error"]["code"], "NOT_FOUND")
 
-    def test_explicit_500_no_config_error(self):
+    def test_explicit_500_matches_grouped_set(self):
+        """500 is in codes_5xx — explicit 500 returns work through the group."""
         api = _fresh_api()
         error_body = ApiErrorResponse(
             error=ApiError(code="INTERNAL_SERVER_ERROR", message="Boom.", details=[])
@@ -402,9 +447,40 @@ class ExplicitEndpointResponseTests(SimpleTestCase):
 
         client = TestClient(api)
         r = client.get("/crash")
-        self.assertIn(r.status_code, (500,))
+        self.assertEqual(r.status_code, 500)
         body = r.json()
-        self.assertIn("error", body)
+        self.assertEqual(body["error"]["code"], "INTERNAL_SERVER_ERROR")
+
+    def test_malformed_error_payload_is_rejected(self):
+        """
+        When an endpoint returns a body that does not satisfy the declared
+        ApiErrorResponse schema, Ninja rejects it with response-schema
+        validation.  The malformed body is never silently returned as a
+        valid API error.
+
+        The test suppresses the expected internal logging from the
+        unexpected-exception handler.
+        """
+        api = _fresh_api()
+
+        @api.get(
+            "/bad",
+            response={
+                200: dict,
+                **STANDARD_ERROR_RESPONSES,
+                422: ApiErrorResponse,
+            },
+        )
+        def test_op(request):
+            # Missing the required "error" wrapper key.
+            return 422, {"code": "OOPS", "message": "bad"}
+
+        client = TestClient(api)
+        with self.assertLogs("api.errors", level="ERROR"):
+            r = client.get("/bad")
+        self.assertEqual(r.status_code, 500)
+        body = r.json()
+        self.assertEqual(body["error"]["code"], "INTERNAL_SERVER_ERROR")
 
     def test_handler_response_is_not_double_wrapped(self):
         """
