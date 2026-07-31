@@ -1,0 +1,1353 @@
+SOFTWARE DEVELOPMENT REVIEW 3
+
+Review metadata
+
+Jira task: SBGC-141
+Review number: 3
+Review filename: review3.txt
+Previous report: reviews/review2.txt
+Earlier report: reviews/review1.txt
+Repository: /home/ammaris/projects/skill-based-games-classification
+Review date: 2026-07-30
+Timezone: Asia/Kuala_Lumpur
+Review mode: Read-only
+Scope endpoint: merged SBGC-42
+Checked-out branch: main
+Checked-out HEAD: e0fa962ce50713170c9b3fd1714c0758caa2cb35
+Checked-out tree: f0a2a8c1a9b6000162b4d914e4f48b51df8da5cc
+Local main: e0fa962ce50713170c9b3fd1714c0758caa2cb35
+Cached origin/main: e0fa962ce50713170c9b3fd1714c0758caa2cb35
+Verified live remote main: e0fa962ce50713170c9b3fd1714c0758caa2cb35
+Merge base with Review 2 baseline: a17a4e3bf28fc21a21261757dc798de7ebb71bef
+Review 2 substantive/remote-main baseline: a17a4e3bf28fc21a21261757dc798de7ebb71bef
+Exact review range: a17a4e3bf28fc21a21261757dc798de7ebb71bef..e0fa962ce50713170c9b3fd1714c0758caa2cb35
+Working-tree state before and after review: Clean
+Design-reference changes in range: None
+
+Executive verdict
+
+Overall recommendation: Continue after targeted remediation.
+
+The repository still implements the accepted Browser → Astro MPA/hybrid SSR → server-only frontend transport → Django Ninja → Django services → PostgreSQL/external-services architecture. No browser-to-Django bypass, second API client, SPA architecture, frontend domain-rule duplication, import-time external connection, speculative domain model, or design-reference leakage was found.
+
+No Critical or High finding was established.
+
+The material concerns are foundational contract defects that should be corrected before the affected layers acquire real consumers:
+
+- Django Ninja’s standard 4xx/5xx response declaration uses invalid status keys and produces invalid OpenAPI response keys.
+- Production settings accept explicit SQLite URLs despite the canonical PostgreSQL-only production contract.
+- Steam API origins are constructor-configurable even though canonical architecture calls them fixed trusted constants; an API key can consequently be sent to a caller-selected origin.
+- Steam retry delays are not bounded to the documented five seconds and can honor a Retry-After delay of up to six hours with the installed urllib3.
+- The frontend transport is substantially improved and well tested, but invalid headers can still escape the ApiResult contract and cleanup, while abort/timeout errors during body draining are swallowed.
+- Production secret validation permits trivially predictable 20-character values even though Django’s own deployment check rejects that quality level.
+- Active operational documentation materially contradicts current code, tests, and provider behavior.
+
+Review 3 introduces:
+
+- 7 Medium findings.
+- 5 Low findings.
+- 0 High findings.
+- 0 Critical findings.
+
+Three inherited Review 2 Medium findings—dual-profile descriptions, defensive profile validation, and text contrast—also remain unresolved.
+
+Public production deployment is not ready. Backend operations work and domain-model implementation can continue with the sequencing constraints in this report. Concrete Steam consumers and the first real Astro-to-Django endpoint should wait for targeted transport/configuration remediation.
+
+Repository and evidence state
+
+Repository preparation succeeded without modification:
+
+- Current branch is main.
+- HEAD, local main, cached origin/main, and verified live remote main all equal e0fa962ce50713170c9b3fd1714c0758caa2cb35.
+- The branch is 0 commits ahead and 0 behind origin/main.
+- The working tree remained clean after every test and probe.
+- git diff --check reported no whitespace errors.
+- SBGC-42 is present through merge commit e0fa962ce50713170c9b3fd1714c0758caa2cb35, with feature parent df00118c216bbee76a8c7ed486ab14f09c815b9f.
+- Hosted CI run 30537454613 completed successfully on the exact reviewed HEAD: [GitHub Actions run](https://github.com/ammariskandar/skill-based-games-classification/actions/runs/30537454613).
+
+The exact range contains:
+
+- 36 commits.
+- 11 merge commits.
+- 25 non-merge commits.
+- 86 changed files.
+- 10,487 insertions.
+- 274 deletions.
+- No direct commits on main; the first-parent delta consists only of the eleven PR merges.
+- No design-reference changes.
+
+Merged work in range:
+
+- PR #21 — SBGC-140, save Review 2.
+  Merge: 7ce57ac
+  Feature: 96df9f3
+
+- PR #22 — SBGC-160, harden frontend API transport.
+  Merge: 984dfa3
+  Feature: f8164cf
+
+- PR #23 — SBGC-161, frontend transport tests.
+  Merge: 0ecddf3
+  Feature/corrections: d29ba4, ad8d6f, 5e20962, 47b54b0
+
+- PR #24 — SBGC-35, frontend analytics and security.
+  Merge: 01cd4f0
+  Feature/correction: 100b8c, 55758ff
+
+- PR #25 — SBGC-159, responsive mobile navigation.
+  Merge: 3a6c0d
+  Feature/correction: 23cbb5, 0c9f3a2
+
+- PR #26 — SBGC-37, Django application structure.
+  Merge: 6949aeb
+  Feature/correction: 714b1f, 8bc3772
+
+- PR #27 — SBGC-38, Django Ninja foundation.
+  Merge: 6c510f1
+  Feature/correction: e94c2f, 5ec4c8e
+
+- PR #28 — SBGC-39, database connectivity.
+  Merge: f125103
+  Feature/correction: 3ce415, 8c1e71d
+
+- PR #29 — SBGC-40, Django Admin.
+  Merge: 6af147e
+  Feature/corrections: b34a88, 2b1ddab, f808123
+
+- PR #30 — SBGC-41, backend security.
+  Merge: 7fe657a
+  Feature/corrections: 47d2fa, 37fc671, 3763c7d
+
+- PR #31 — SBGC-42, external-service foundations.
+  Merge: e0fa962
+  Feature/corrections: cd45184, 9f7d796, df00118
+
+Correction commits generally address concrete review or discovery failures rather than arbitrary rewrites. However, the frequency of corrections—transport path rules, malformed encoding, Django routing/schema defaults, test discovery, host validation, Admin path behavior, Zed execution, and documentation—shows that ticket completion summaries are not reliable without independent contract checks.
+
+Delta since Review 2
+
+The repository progressed from a frontend-heavy foundation with no real test suites to a materially tested full-stack foundation:
+
+- Backend Python files: 6 at Review 2 to 50.
+- Frontend source files: 42 at Review 2 to 45.
+- Backend tests: 0 to 337 discovered tests.
+- Frontend tests: 0 to 101 executed tests.
+- Django Ninja API foundation added with one v1 API instance and three routers.
+- Environment-specific Django settings added.
+- PostgreSQL/SQLite configuration helper added.
+- Django Admin route, branding, and access-control tests added.
+- Production security configuration added.
+- Steam configuration, HTTP transport, CDN validator, error taxonomy, and tests added.
+- Frontend transport was materially repaired before any route began consuming it.
+
+The accepted architecture did not drift. The principal delta risk is that several new foundations state stronger guarantees than their implementation or tests establish.
+
+Review 2 finding resolution matrix
+
+REVIEW-2-01 — Resolved
+
+Production no longer silently uses the committed development secret. config/settings/production.py validates DJANGO_SECRET_KEY at import time and fails on missing, blank, placeholder, or short values. A new equivalent weakness exists in REVIEW-3-06: the replacement validation accepts predictable 20-character secrets that Django’s own deployment check considers unsafe.
+
+REVIEW-2-02 — Resolved
+
+ADMIN_URL_PATH now controls the mounted Admin route through config/settings/base.py:38-47 and config/urls.py:27-31. CORS is no longer presented as an operative allowlist: no CORS middleware is installed, and the accepted Browser→Astro→Django topology deliberately uses deny-by-default cross-origin behavior. A smaller Admin default-path issue remains under REVIEW-3-12.
+
+REVIEW-2-03 — Partially resolved
+
+The timeout and caller-abort signal now remain active while a successful JSON response body is read. Ignored response bodies are drained. Tests cover slow bodies, aborts, timeouts, and body consumption. Residual lifecycle failures remain: drainBody suppresses abort/timeout failures, and Headers construction occurs after timer/listener registration but outside cleanup and normalization. See REVIEW-3-05.
+
+REVIEW-2-04 — Partially resolved
+
+Base URLs are parsed; credentials, paths, queries, fragments, absolute request paths, protocol-relative paths, traversal, malformed percent encoding, and redirects are rejected. Query composition is corrected. Production HTTPS is still not enforced, and server-only environment access remains conventional rather than mechanical.
+
+REVIEW-2-05 — Partially resolved
+
+204 now has an explicit ApiNoContent form; request-body serialization is separated; Headers normalizes casing; media-type parsing accepts +json; status ownership is consolidated at the result level; body-read and JSON errors are separated. Invalid Headers input can still throw outside the ApiResult contract, raw causes remain part of exported errors, UNKNOWN_ERROR remains unreachable, and drain failures can be misclassified. See REVIEW-3-05.
+
+REVIEW-2-06 — Resolved
+
+Vitest is installed and the frontend transport suite executes 101 tests in CI and locally. The suite covers configuration, URLs, queries, headers, serialization, redirects, statuses, media types, body reads, 204, malformed JSON, timeout, cancellation, cleanup, and no retries. Two critical edge cases remain missing, but the finding’s requirement for a genuine behavioral suite is satisfied.
+
+REVIEW-2-07 — Unresolved
+
+DIMENSIONS still stores one challenge-oriented description per Micro/Mystiko/Macro identifier. SkillLegend still lacks required Challenge/Reward context. The six distinct canonical meanings remain unrepresented.
+
+REVIEW-2-08 — Unresolved
+
+validateProfile remains used only by the internal visual-system demonstration. Score-rendering components do not enforce it or require a validated adapter.
+
+REVIEW-2-09 — Unresolved
+
+--color-dim remains #484f58 and is still used for meaningful normal-sized text and placeholders at insufficient contrast.
+
+REVIEW-2-10 — Unresolved
+
+The API transport remains under src/lib/server and reads a non-PUBLIC_ variable, but there is still no astro:env/server schema or restricted-import rule that mechanically prevents browser imports. Astro’s supported typed server environment boundary remains available: [Astro environment API](https://docs.astro.build/en/reference/modules/astro-env/).
+
+REVIEW-2-11 — Unresolved
+
+PagePlaceholder remains unused while routes duplicate placeholder structures. The previously identified UI prop/behavior inconsistencies remain.
+
+REVIEW-2-12 — Unresolved
+
+The production-deployable internal showcase still contains real game names and obsolete-looking 0–10 score values without Challenge/Reward identity or 100-point totals.
+
+REVIEW-2-13 — Unresolved
+
+BaseLayout.astro:22 still falls back to http://localhost:4321 and constructs canonical URLs by string concatenation without production failure or URL validation.
+
+REVIEW-2-14 — Unresolved
+
+Both package manifests still declare node >=22.12.0. The installed Node 22.23.1 is compatible, but the range includes unsupported 22.12.x and odd/future majors. The lock requires at least Node 22.22.3 for eslint-plugin-astro. Python setup still uses whichever python3 is present without declaring Django 6’s Python 3.12 floor. Django officially supports Python 3.12–3.14: [Django 6 release notes](https://docs.djangoproject.com/en/6.0/releases/6.0/).
+
+REVIEW-2-15 — Unresolved
+
+CI still has no explicit permissions declaration and uses mutable major action tags. GitHub recommends least-privilege GITHUB_TOKEN permissions and states that a full commit SHA is the only immutable action reference: [GitHub secure-use reference](https://docs.github.com/en/actions/reference/security/secure-use).
+
+REVIEW-2-16 — Regressed
+
+All eleven PRs in this review range have zero submitted reviews through their public GitHub review endpoints. All historical feature branches remain live. The remote SBGC-35 branch also contains a post-merge Zed task commit not in main; main later acquired a divergent Zed configuration through other work. This does not prove source loss, but it increases stale-branch and mistaken-base risk.
+
+REVIEW-2-17 — Regressed
+
+Documentation drift expanded substantially. Active documents now misstate test existence, test counts, production database enforcement, Steam retry limits, fixed origins, rate-limit deployment checks, environment-variable names, API completion status, and rendering modes. See REVIEW-3-07.
+
+REVIEW-2-18 — Unresolved
+
+context.md still assigns substantially overlapping frontend transport responsibilities to SBGC-34 and SBGC-90 without recording supersession or narrowed scope. Only one transport exists today.
+
+Inherited Review 1 finding status
+
+REVIEW-1-01 — Resolved, with an equivalent weaker-secret problem introduced
+
+The original unconditional committed-secret fallback is gone. REVIEW-3-06 addresses the insufficient quality threshold in the replacement production validator.
+
+REVIEW-1-02 — Resolved
+
+ADMIN_URL_PATH now affects routing. CORS has been consciously removed from the supported configuration contract because direct browser access is not part of the accepted architecture.
+
+REVIEW-1-03 — Remains resolved
+
+CI executes both genuine test entry points and the design-reference isolation check.
+
+REVIEW-1-04 — Remains resolved
+
+Root/workspace dependency ownership remains corrected.
+
+REVIEW-1-05 — Original defect remains resolved; equivalent documentation drift exists elsewhere
+
+The original Tailwind/frontend starter-text inconsistency was corrected. REVIEW-3-07 records newer active misinformation.
+
+REVIEW-1-06 — Resolved
+
+Review 3 was performed from clean, fully updated main. Local, cached remote, and live remote evidence agree.
+
+REVIEW-1-07 — Regressed
+
+The predicted synchronization cost of duplicated documentation has materialized across security, testing, database, Steam, API, CI, and route documentation.
+
+Review 2 requested metrics and evidence
+
+Evidence now available:
+
+- Exact updated-main state and review range.
+- Live remote-main verification.
+- Hosted CI result for the exact reviewed merge.
+- Exact backend and frontend test discovery counts.
+- Behavioral frontend transport tests.
+- Backend API, database, Admin, security, and Steam test counts.
+- Confirmation that all earlier suites remain discovered.
+- Git evidence for all merges, feature tips, and correction commits.
+- Public PR review records for PRs #21–#31.
+- Live remote branch inventory.
+- Installed dependency metadata and API signatures.
+- Primary documentation for Django, Django Ninja, Requests, urllib3, Steam, Neon, Astro, Psycopg, Render, Tailwind, Ruff, and GitHub Actions.
+- Non-mutating probes for production database selection, secret validation, CDN IP validation, Steam origin behavior, retry behavior, OpenAPI response keys, and CSRF parsing.
+- Confirmation that no frontend route imports the API transport.
+- Confirmation that no Neon, Steam, or other real external connection was made.
+
+Evidence unavailable or deliberately not obtained:
+
+- Live Jira state and ticket amendments.
+- Private/off-platform review conversations.
+- Branch-protection, required-review, default-token, and repository action-policy settings.
+- Render service configuration, Vercel project settings, provider logs, health checks, or secrets.
+- Real Neon direct-connection behavior.
+- Real Steam response behavior.
+- Production reverse-proxy header behavior.
+- Browser/device accessibility results.
+- Load tests or 1,000-user evidence.
+- Real endpoint integration because no domain endpoint exists.
+- Local production build output, because generating repository artifacts was outside the read-only review discipline; hosted CI built the exact HEAD successfully.
+- An npm audit result. The sandboxed request could not reach npm, and the elevated audit was rejected because it would transmit the repository dependency graph to an external service. No workaround was attempted.
+
+Technical debt changed in both directions:
+
+- Decreased: frontend transport correctness, behavioral tests, Django environment separation, API routing, database isolation, Admin access tests, security defaults, Steam error containment.
+- Increased: total foundation volume, duplicated validation, documentation drift, mocked-boundary false confidence, process-global test settings, direct reliance on an undeclared transitive dependency, stale branches, and unused helpers/settings.
+
+Development sequencing mostly followed Review 2:
+
+- The generic frontend transport and its tests were repaired before any route consumed it.
+- Django application, API, database, Admin, security, and Steam foundations were added in the recommended dependency order.
+- No domain models or endpoint schemas were invented prematurely.
+- The unresolved profile semantics, defensive rendering, contrast, server-only enforcement, canonical URL, runtime, CI, documentation, and Jira-overlap warnings were not addressed.
+- Dependent endpoint work has not expanded, so the remaining transport defects can still be corrected cheaply.
+
+Critical findings
+
+None.
+
+High-priority findings
+
+None.
+
+Medium-priority findings
+
+ID: REVIEW-3-01
+Severity: Medium
+Area: Django Ninja API contract
+Type: Defect
+Status relative to Review 2: New; SBGC-38 was implemented after Review 2
+Finding: The standard 4xx/5xx response mapping uses the integer keys 4 and 5 rather than Django Ninja’s status-code sets, producing invalid OpenAPI response keys and no runtime schema for real 4xx/5xx endpoint results.
+Evidence: apps/backend/api/errors.py:33 defines STANDARD_ERROR_RESPONSES = {4: ApiErrorResponse, 5: ApiErrorResponse}. apps/backend/api/system.py:15-18 expands these keys into the operation response declaration. The installed Ninja operation contains response-model keys 200, 4, and 5. A safe test-client probe showed OpenAPI response keys "200", "4", and "5". Django Ninja’s official API requires codes_4xx/codes_5xx or a frozenset of concrete status codes: [Django Ninja multiple response codes](https://django-ninja.dev/guides/response/).
+Why it matters: OpenAPI clients and validators receive nonstandard response keys. A future endpoint returning a declared Status(404, payload) will not match key 4 and can raise Ninja ConfigError instead of serializing the error.
+Current impact: The only real operation returns 200. Exception handlers return HttpResponse directly and therefore mask the declaration defect during existing tests.
+Future impact: Every domain endpoint that spreads STANDARD_ERROR_RESPONSES can publish an invalid contract and fail when returning explicit error results.
+Recommended action: Use Django Ninja’s documented codes_4xx and codes_5xx sets, or explicit status frozensets. Add tests that assert concrete 400/404/422/500 keys in OpenAPI and exercise an endpoint returning a non-2xx Status value through response-schema validation.
+Suggested Jira scope: SBGC-38 corrective API-contract ticket, coordinated with SBGC-89/SBGC-100.
+Dependencies or sequencing: Fix before defining the first domain endpoint schema.
+Confidence: High
+
+ID: REVIEW-3-02
+Severity: Medium
+Area: Steam trusted-origin boundary
+Type: Security
+Status relative to Review 2: New; SBGC-42 was implemented after Review 2
+Finding: Steam API origins are public dataclass constructor fields rather than fixed trusted constants, allowing a directly constructed configuration to redirect API-key-bearing requests.
+Evidence: games/services/steam/config.py:14-27 defines api_origin and store_origin as ordinary SteamClientConfig fields and __post_init__ does not validate them. client.py:201-218 concatenates config.api_origin and sends x-webapi-key. A fake-session probe using SteamClientConfig(api_key="SECRET", api_origin="https://attacker.example") showed the client targeting https://attacker.example/probe with the key header. config/steam.py’s factory omits origin overrides, but the dataclass is public and exported. config/tests/test_steam.py:607-622 proves only that Django setting overrides leave the factory defaults unchanged. context.md:2242 and docs/steam-integration.md:56-67 call the origins fixed constants.
+Why it matters: The API-key secrecy guarantee depends on the destination origin being immutable. Constructor-level configurability makes the trust boundary depend on every future caller using the preferred factory correctly.
+Current impact: No endpoint or concrete Steam adapter consumes the client, and no user-controlled input reaches the config. No active key exposure was demonstrated.
+Future impact: A test override, management command, adapter, or refactor can pass a custom origin and silently forward a protected Steam key outside Valve.
+Recommended action: Remove trusted origins from constructor input and represent them as module constants or ClassVar values. If testability requires substitution, inject a separate explicitly unsafe test transport rather than weakening production configuration. Add a direct-construction test proving origin replacement is impossible or rejected.
+Suggested Jira scope: SBGC-42 corrective trusted-origin hardening; amend SBGC-53 acceptance criteria.
+Dependencies or sequencing: Complete before any authenticated Steam endpoint, command, or scheduled import.
+Confidence: High
+
+ID: REVIEW-3-03
+Severity: Medium
+Area: Production database configuration
+Type: Configuration
+Status relative to Review 2: New; SBGC-39 was implemented after Review 2
+Finding: Production disables only blank-URL fallback; it does not require PostgreSQL and accepts an explicit SQLite DATABASE_URL.
+Evidence: config/settings/production.py:26 calls build_database_config(..., allow_sqlite_fallback=False). config/database.py:70-84 accepts either SQLite or PostgreSQL whenever a URL is populated. config/tests/test_steam.py:515-579 explicitly imports production with DATABASE_URL=sqlite:///:memory: and asserts the SQLite engine. A safe settings probe confirmed the same behavior. docs/database-connectivity.md:7-12 and 172-177, docs/backend-security.md:155-165, and context.md’s deployment architecture state production uses Neon/PostgreSQL with no SQLite fallback.
+Why it matters: A deployment typo can produce a valid production process using an ephemeral or local SQLite database while operators believe PostgreSQL persistence is active.
+Current impact: No public backend deployment or domain data exists.
+Future impact: Render deployment could lose data across instances/restarts, diverge from PostgreSQL constraint behavior, or run migrations against the wrong engine.
+Recommended action: Make production require django.db.backends.postgresql explicitly. Separate “allow missing SQLite fallback” from “allowed engines.” Add production import tests rejecting sqlite:// and accepting valid PostgreSQL without connecting.
+Suggested Jira scope: SBGC-39/SBGC-43 production database-contract correction.
+Dependencies or sequencing: Correct before preview deployment and before any production migration. Model implementation can proceed independently.
+Confidence: High
+
+ID: REVIEW-3-04
+Severity: Medium
+Area: Steam retries and synchronous availability
+Type: Performance
+Status relative to Review 2: New; SBGC-42 was implemented after Review 2
+Finding: The Steam retry policy does not implement its documented five-second delay bound and can block a synchronous worker for a Retry-After value up to six hours per retry.
+Evidence: client.py:133-145 sets respect_retry_after_header=True but does not set backoff_max or retry_after_max. Installed urllib3 2.7.0 defaults to backoff_max=120 and retry_after_max=21600. A probe parsed Retry-After: 999999 as 21600 seconds. docs/steam-integration.md:93-100 states “no delay beyond 5 seconds.” Requests connect/read timeouts are not wall-clock deadlines and read timeout measures inactivity between bytes: [Requests timeout documentation](https://requests.readthedocs.io/en/latest/user/quickstart/?highlight=timeout). urllib3 documents the retry/backoff defaults: [urllib3 Retry reference](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html).
+Why it matters: A trusted upstream 429/503 response can hold a synchronous Django worker far beyond provider and request budgets. With max_retries=3, the policy permits the initial request plus three retries, not three total attempts.
+Current impact: No endpoint invokes the client. Tests inspect adapter properties but do not execute retry sleep behavior.
+Future impact: A Steam degradation or rate limit can exhaust workers, extend cold-start/serverless invocations, and amplify upstream load.
+Recommended action: Define an explicit wall-clock budget and retry contract. Set an intentional short backoff_max and retry_after_max, or disable automatic Retry-After sleeping and surface retry metadata to the caller. Add behavior tests with sleep replaced by a spy; assert attempts, delay caps, 429 handling, and exhausted status behavior.
+Suggested Jira scope: SBGC-42 retry correction, incorporated into SBGC-53 before endpoint work.
+Dependencies or sequencing: Fix before any synchronous request path consumes Steam.
+Confidence: High
+
+ID: REVIEW-3-05
+Severity: Medium
+Area: Frontend API transport
+Type: Defect
+Status relative to Review 2: Partially resolved continuation of REVIEW-2-03 and REVIEW-2-05
+Finding: The transport still has paths that violate its “ApiResult for every call” and operation-lifetime cleanup guarantees.
+Evidence: client.ts:258-278 registers a timer and abort listener. new Headers(opts.headers) at line 281 is outside any try/finally; invalid header names or values can throw rather than return CONFIG_ERROR and leave the timer/listener active until timeout. drainBody at lines 192-199 catches every body-read exception. Redirect, non-2xx, 204, and invalid-media paths await drainBody at lines 321-359 and then return their original result, so an abort or timeout during draining is suppressed and misclassified. Existing tests prove normal draining but do not cover invalid Headers construction or abort/timeout during a drain.
+Why it matters: The shared transport’s strongest value is one deterministic result/cancellation contract. Exceptional construction and ignored drain failures reintroduce caller-specific exception handling and incorrect timeout attribution.
+Current impact: No route imports the transport.
+Future impact: The first endpoint may leak operation-lifetime resources, escape the result union, or report HTTP/redirect/media errors when the real failure was caller cancellation or timeout.
+Recommended action: Enclose header construction and the entire network/body lifecycle in one cleanup-finally boundary. Normalize construction failures to CONFIG_ERROR. Make draining cancellation-aware and preserve whether the caller or timer aborted. Add targeted tests for invalid headers and every drain branch under timeout and caller abort.
+Suggested Jira scope: Small SBGC-160/SBGC-161 corrective follow-up; amend SBGC-90/SBGC-92 rather than creating another client.
+Dependencies or sequencing: Complete before the first route imports the client.
+Confidence: High
+
+ID: REVIEW-3-06
+Severity: Medium
+Area: Production secret management
+Type: Security
+Status relative to Review 2: New equivalent problem after REVIEW-2-01 was resolved
+Finding: Production secret validation accepts low-entropy, predictable values that Django’s deployment check identifies as unsafe.
+Evidence: config/security.py:22-49 requires only 20 characters and rejects one known development placeholder. A probe showed twenty repeated characters are accepted. Django 6’s security.W009 warns when SECRET_KEY has fewer than 50 characters, fewer than five unique characters, or a django-insecure- prefix. The repository’s production validator therefore permits values its framework flags as vulnerable. Django’s deployment checklist requires a large random secret: [Django deployment checklist](https://docs.djangoproject.com/en/dev/howto/deployment/checklist/).
+Why it matters: Operators may treat successful settings import as proof the production secret is adequate. Weak predictable secrets undermine signing-dependent framework behavior.
+Current impact: No production deployment was inspected, and no tracked real secret was found.
+Future impact: A public deployment can start with a weak key and retain apparently functioning sessions, messages, or reset tokens.
+Recommended action: Align startup validation with at least Django’s W009 characteristics, retain secret-safe error messages, and execute check --deploy against production settings in CI or deployment gating. Keep generated random keys and later SECRET_KEY_FALLBACKS rotation as operational concerns.
+Suggested Jira scope: SBGC-41/SBGC-104 security correction; include in SBGC-43 deployment validation.
+Dependencies or sequencing: Must be corrected before preview environments issue persistent signed data and before public deployment.
+Confidence: High
+
+ID: REVIEW-3-07
+Severity: Medium
+Area: Documentation and operator contract
+Type: Documentation drift
+Status relative to Review 2: Regressed continuation of REVIEW-2-17 and REVIEW-1-07
+Finding: Active documentation now contains operationally material false statements about tests, production database enforcement, Steam trust/retry behavior, rate-limit checks, and environment names.
+Evidence: README.md:166-167, docs/code-quality.md:109, docs/git-workflow.md:64-68, and CI step names still call both test suites placeholders despite 438 executed tests. docs/database-connectivity.md:172-177 says SQLite cannot be used in production, but code and tests accept it. docs/steam-integration.md:56-67 calls origins fixed and lines 93-100 promise a five-second retry bound, while code violates both claims. docs/backend-security.md:151 says check --deploy warns about absent rate limiting; a production-like probe produced only Django’s HSTS/secret warnings and no rate-limit warning. apps/backend/.env.example:21 contains the inert STEAM_API_KEY name, while code consumes STEAM_WEB_API_KEY. context.md and agenticoutput.md claim 59 security tests; current discovery finds 76. docs/backend-api.md still says SBGC-41 will decide CORS. docs/backend-architecture.md still calls security incomplete and CORS inert.
+Why it matters: These are not harmless retrospective inaccuracies. They can cause wrong environment configuration, false deployment confidence, incorrect retry assumptions, and future implementation based on a trust guarantee the code does not provide.
+Current impact: Maintainers must compare code, several documents, tests, and context manually to reconstruct reality.
+Future impact: Automated agents and humans can reproduce unsafe assumptions, skip real tests, or deploy with wrong variables.
+Recommended action: Correct active operational documents in the same changes that repair the code. Remove the inert STEAM_API_KEY line. Update test counts or avoid hard-coded counts where they cannot be synchronized. Make one canonical settings/operations document and reduce secondary summaries to links or generated projections.
+Suggested Jira scope: Documentation synchronization ticket spanning SBGC-37 through SBGC-42; preserve context.md as canonical rather than rewriting product decisions.
+Dependencies or sequencing: Correct safety-sensitive statements with their associated code fixes; general consolidation may follow.
+Confidence: High
+
+Low-priority findings
+
+ID: REVIEW-3-08
+Severity: Low
+Area: Steam CDN validation
+Type: Defect
+Status relative to Review 2: New
+Finding: The helper intended to reject every IP literal catches and suppresses its own rejection exceptions.
+Evidence: cdn.py:96-110 calls ipaddress.ip_address(), raises ValueError for private or public IPs inside the try block, and then catches every ValueError. A probe with allowed_hosts={"127.0.0.1"} accepted https://127.0.0.1/image.jpg. The existing test uses a Steam DNS hostname allowlist, so it fails earlier at allowlist matching and does not exercise the helper’s IP branch. The settings factory normally rejects IP entries, which contains the current path.
+Why it matters: The exported pure validator’s security contract is false and can become unsafe when called with a manually supplied allowlist.
+Current impact: No server-side image fetching occurs, and the normal settings factory prevents IP allowlists.
+Future impact: A future caller or CDN configuration refactor can admit local/private IP URLs, particularly if the validator later guards server-side fetching.
+Recommended action: Catch only the parse failure, then perform IP rejection outside the exception handler. Test allowed public, private, loopback, link-local, IPv4, and IPv6 literals directly.
+Suggested Jira scope: SBGC-42 CDN validator correction; amend future CDN/import acceptance criteria.
+Dependencies or sequencing: Fix before populating the CDN allowlist or introducing any server-side fetch.
+Confidence: High
+
+ID: REVIEW-3-09
+Severity: Low
+Area: Test settings and environment isolation
+Type: Testing gap
+Status relative to Review 2: New
+Finding: Importing test settings mutates the process environment, and subprocess tests described as exercising normal development/production .env paths inherit the skip flag.
+Evidence: config/settings/test.py:11-17 sets os.environ["DJANGO_SKIP_DOTENV"]="1" before importing base settings. config/tests/test_steam.py:546-555 inherits os.environ into subprocesses. Consequently the development and production scripts at lines 488-581 also inherit DJANGO_SKIP_DOTENV=1 and do not test normal .env loading despite their class documentation. The production subprocess additionally uses SQLite, reinforcing REVIEW-3-03.
+Why it matters: The tests provide false confidence about environment-loading behavior and can contaminate later subprocess imports inside the same suite.
+Current impact: The inherited skip flag makes tests safer by preventing access to the developer’s real .env. No external connection occurred.
+Future impact: Changes to .env precedence, environment override behavior, or production loading can regress while the tests remain green.
+Recommended action: Keep test isolation, but make subprocess environments explicit and remove DJANGO_SKIP_DOTENV when testing normal settings behavior. Prefer a helper or context that restores process-global state where practical. Use temporary controlled env files only if the test harness can do so without touching the repository.
+Suggested Jira scope: SBGC-44 backend test-convention correction.
+Dependencies or sequencing: Non-blocking for models; address before relying on subprocess settings tests as deployment proof.
+Confidence: High
+
+ID: REVIEW-3-10
+Severity: Low
+Area: Python dependency declaration
+Type: Dependency/tooling
+Status relative to Review 2: New
+Finding: Production code imports urllib3 directly but requirements.txt declares only Requests, whose supported urllib3 range is much broader than the API surface the code assumes.
+Evidence: games/services/steam/client.py:16 imports Retry from urllib3 and passes allowed_methods and other. requirements.txt pins requests==2.32.5 but does not declare urllib3. Installed Requests metadata permits urllib3>=1.21.1,<3, while installed urllib3 is 2.7.0. A valid resolver outcome under that declared range can lack modern Retry keyword behavior or have materially different defaults.
+Why it matters: Direct dependencies and directly used APIs should be declared by the application rather than inherited accidentally from another package’s compatibility range.
+Current impact: The installed environment resolves urllib3 2.7.0 and all tests pass.
+Future impact: Reinstallation, resolver changes, or Requests constraints can break startup or silently change retry behavior without a requirements diff naming urllib3.
+Recommended action: Declare and pin/compatibly constrain urllib3 as a direct dependency, document the required Retry API version, and test the resolved retry defaults explicitly. Keep Requests separately pinned.
+Suggested Jira scope: SBGC-24/SBGC-42 dependency-contract correction.
+Dependencies or sequencing: Complete with REVIEW-3-04 before deploying a concrete Steam client.
+Confidence: High
+
+ID: REVIEW-3-11
+Severity: Low
+Area: Steam response processing
+Type: Performance
+Status relative to Review 2: New
+Finding: Response processing is bounded in size but performs repeated whole-body joins, delays status classification until after reading most error bodies, and rejects some documented +json media types.
+Evidence: client.py:277-286 rebuilds body = b"".join(chunks) after every chunk, making the bounded 2 MiB read unnecessarily quadratic. Status mapping occurs only at lines 288-307 after the body read, so 401/403/404/429/5xx bodies can consume the full limit or mask status as SteamResponseTooLargeError. _JSON_MEDIA_PATTERN at lines 35-38 accepts only alphabetic vendor prefixes; application/vnd.api+json does not match even though docs/steam-integration.md:102-107 promises application/*+json.
+Why it matters: These behaviors are contained today but add avoidable latency and contract inconsistency to a synchronous external-service boundary.
+Current impact: The 2 MiB limit bounds memory, tests use mocks, and Steam normally returns application/json.
+Future impact: Large error bodies can consume worker time or hide useful status classification; future vendor media types can be rejected unexpectedly.
+Recommended action: Track byte count while collecting chunks and join once. Define whether status should be classified before or after a bounded drain. Parse media types structurally or use a pattern that matches valid structured-suffix subtypes. Add focused tests.
+Suggested Jira scope: SBGC-42 response-processing correction or SBGC-53 concrete-adapter acceptance.
+Dependencies or sequencing: Address before a high-frequency Steam consumer; may be combined with REVIEW-3-04.
+Confidence: High
+
+ID: REVIEW-3-12
+Severity: Low
+Area: Security-settings consistency
+Type: Configuration
+Status relative to Review 2: New residual after REVIEW-2-02
+Finding: Production still permits the default /admin/ path and the CSRF-origin parser is materially less strict than the hostname parser.
+Evidence: config/settings/base.py:38-47 defaults ADMIN_URL_PATH to "admin"; production does not require an explicit non-default value, while .env.example and Admin documentation present mygamedna-admin. The path change is correctly documented as defense-in-depth, not primary protection. config/security.py:167-209 uses a broad regex that accepts consecutive-dot hosts and out-of-range ports such as https://a..b and https://example.com:99999; ALLOWED_HOSTS validation rejects analogous malformed hostnames.
+Why it matters: Operators can receive successful startup with malformed or ineffective configuration and may overestimate the protection of a customized path.
+Current impact: Secure cookies, authentication, CSRF middleware, and authorization remain the actual Admin controls. Malformed trusted origins are more likely inert than exploitable.
+Future impact: Deployment mistakes become harder to diagnose and duplicated host/origin validators can continue diverging.
+Recommended action: Decide whether production must explicitly set ADMIN_URL_PATH; if so, fail closed there. Parse trusted origins with URL semantics and reuse the canonical hostname validation where contracts overlap, including numeric port-range validation.
+Suggested Jira scope: SBGC-41/SBGC-43 settings-validation cleanup.
+Dependencies or sequencing: Complete before public deployment; not a blocker for domain models.
+Confidence: High
+
+Observations
+
+- The Steam Web API officially supports x-webapi-key as well as a standard parameter. Header-only handling is valid and preferable for avoiding URL leakage: [Steamworks API-key authentication](https://partner.steamgames.com/doc/webapi_overview/auth?l=english).
+- No real API key, database URL, private key, or tracked .env file was found in repository history or tracked source.
+- Steam errors suppress raw upstream bodies, response headers, and full URLs.
+- No global mutable Steam client or import-time network call exists.
+- The CDN validator currently hotlinks only; it does not download or proxy images.
+- The database helper does not open a connection during settings import.
+- Test settings always use in-memory SQLite and did not contact Neon.
+- WSGI and ASGI correctly default to production settings; manage.py defaults to development.
+- OpenAPI documentation UI is disabled in production, but /api/v1/openapi.json remains available. This is a deliberate public-contract choice, not an established vulnerability.
+- Django Ninja’s 405 response remains Django-generated HTML rather than the shared JSON envelope. Tests and documentation acknowledge this. It is an integration inconsistency, not currently a security defect.
+- Django 6.0.7 uses PBKDF2-SHA256 with 1,200,000 iterations in the installed environment. The configured single-hasher policy matches the accepted decision.
+- No user records or legacy password hashes exist, so the deliberate absence of legacy hashers causes no current lockout.
+- Direct Neon connections with CONN_MAX_AGE=0 are proportionate for current expected traffic. Neon recommends direct connections for ORM migrations: [Neon connection pooling](https://neon.com/docs/connect/connection-pooling?a=ed8b82d5-b8a1-4d19-b424-004272ac70d4).
+- The current code does not enforce the documented direct-host policy. This should be resolved operationally before migrations, but pooling itself need not be introduced prematurely.
+- Admin model registrations are correctly deferred to app-owned admin.py files.
+- No health endpoint, production server, static-file strategy, Render service configuration, deployment migration command, backup verification, or error-reporting integration exists yet. These are upcoming operational requirements, not defects in intentionally incomplete domain work.
+- Render’s Django guide expects PostgreSQL, production static-file handling, a deployment build process, migrations, and a production WSGI/ASGI server: [Render Django deployment guide](https://render.com/docs/deploy-django).
+- No evidence supports current “1,000 simultaneous users” scalability claims. The foundations are suitable for low-traffic MVP work, not load-certified.
+
+Whole-system architecture assessment
+
+The architecture remains coherent.
+
+- Browser code does not call Django directly.
+- The only production fetch call is in src/lib/server/api/client.ts.
+- No second transport, Axios/Ky wrapper, route-local client, or browser API base exists.
+- Astro remains output: "server" with the Vercel adapter.
+- No React, SPA router, global client state, or design-reference application architecture leaked into production.
+- Django owns API composition, validation, persistence foundations, Admin, security, and Steam.
+- Astro owns rendering, metadata, presentation, and small progressive interactions.
+- No Django model performs I/O.
+- No frontend code implements ranking, classification, filtering, authorization, publication, or exclusion decisions.
+- No speculative Game or Classification fields were invented.
+- No hidden circular import was found. SteamClient lazily imports its config class, but that is a narrow implementation choice rather than a current cycle.
+- The largest drift precursors are duplicate validators, overlapping SBGC-34/SBGC-90 scope, and the unmechanized server-only boundary.
+
+Settings and environment architecture assessment
+
+The Django side uses one primary environment-loading paradigm through django-environ. Real environment values take precedence over .env because django-environ uses setdefault semantics: [django-environ documentation](https://django-environ.readthedocs.io/en/latest/).
+
+Strengths:
+
+- base.py owns shared infrastructure.
+- development.py, test.py, and production.py own environment-specific security behavior.
+- Production settings fail on missing secret, hosts, CSRF origins, and database URL.
+- WSGI/ASGI select production.
+- Test settings override database and secrets deterministically.
+- Configuration errors use ImproperlyConfigured at the Django boundary.
+- Raw Steam strings are converted to a pure dataclass by a separate factory.
+- Steam settings are validated lazily without import-time client construction.
+
+Weaknesses:
+
+- DJANGO_SKIP_DOTENV is process-global.
+- Production database engine is not restricted.
+- Admin path has a production default despite stronger documentation.
+- Secret quality validation is weaker than Django’s check.
+- CSRF and hostname validation duplicate logic with different strictness.
+- Steam trusted origins live in caller configuration.
+- The inert STEAM_API_KEY example conflicts with STEAM_WEB_API_KEY.
+- Direct SteamClientConfig construction permits NaN numeric values because ordinary range comparisons do not reject NaN; the Django factory does reject NaN. This is contained but should be corrected with the trusted-origin work.
+
+Django project and application-boundary assessment
+
+The project boundaries are appropriate:
+
+- config owns project settings, URL composition, Admin project branding, database helpers, and settings adapters.
+- api is a project-level routing/composition package and is correctly not an installed Django app.
+- games owns game-domain API placeholders and Steam services.
+- classifications owns classification-domain API placeholders.
+- Future users ownership remains unimplemented rather than forced into config.
+- Domain Admin registrations remain app-owned.
+- Error schemas and API exception translation are centralized.
+- No generic repository/service framework was added before repeated use exists.
+- Empty routers and migration packages are intentional foundations.
+- classifications/tests.py remains an obsolete one-line stub with zero tests; it is harmless but can be removed when real classification tests are organized.
+- games/tests.py was correctly deleted in commit 9f7d796 because it conflicted with the games/tests/ package during discovery.
+
+Database connectivity and migration-safety assessment
+
+Development behavior is proportionate:
+
+- Missing development DATABASE_URL falls back to a local SQLite file.
+- Configured PostgreSQL URLs preserve URL options.
+- connect_timeout defaults to 10 seconds.
+- CONN_MAX_AGE is 0.
+- No connection occurs during settings import.
+- Test settings ignore DATABASE_URL and use :memory:.
+- No production or local test touched Neon.
+
+The main defect is REVIEW-3-03. Additional limits:
+
+- Direct versus pooled Neon is documented but not enforced.
+- No PostgreSQL integration test exists.
+- Constraint behavior has only SQLite proof.
+- No domain migrations exist yet.
+- No migration deployment command or backup/restore procedure exists.
+- The local untracked .env was not read, printed, or used.
+
+No production pooling, replicas, Redis, or extensive connection framework is justified now. A direct migration URL and a separately considered runtime pooler URL can be introduced later if measured deployment behavior requires them.
+
+Django Ninja API assessment
+
+Strengths:
+
+- One NinjaAPI instance.
+- Stable /api/v1/ prefix.
+- App-owned routers.
+- Strict request-schema extra-field rejection.
+- Shared safe JSON error envelope.
+- Sanitized validation details.
+- Authentication, authorization, 404, HttpError, ApiException, and unexpected-exception handlers.
+- Unexpected errors log a traceback internally and return a generic public message.
+- Unknown nested paths receive a JSON 404 fallback.
+- Docs UI is development-only.
+- Tests cover routing, OpenAPI availability, schemas, handlers, unknown paths, and method mismatch.
+
+Weaknesses:
+
+- REVIEW-3-01 invalid status groups.
+- 405 responses use a different HTML contract.
+- v1.py:22-25 describes game identities, classifications, search, rankings, and catalogue data that do not yet exist.
+- errors.py:185-201 contains unused _is_framework_validation_error.
+- ApiException does not call Exception.__init__, which is low-value cleanup rather than a behavioral defect.
+- http_error_handler publishes str(exc); this is acceptable only for deliberately constructed HttpError messages.
+- Frontend non-2xx handling currently discards Django’s structured code/message/details, so the cross-layer error contract is not integrated.
+
+Django Admin assessment
+
+The Admin foundation is correct for its stage:
+
+- Uses the default AdminSite rather than premature customization.
+- Branding is applied after app loading through URL composition.
+- The route uses validated ADMIN_URL_PATH.
+- /admin/ is absent under test settings.
+- Anonymous, normal, staff, inactive, and superuser behavior is tested.
+- Login/logout and branding are exercised.
+- Future model registration belongs in app admin.py modules.
+- Custom path is documented as defense-in-depth, not primary authorization.
+
+Deployment gaps remain:
+
+- Production can retain the default admin path.
+- No edge login rate limiting.
+- No static-file production solution.
+- No staff operational recovery or secondary-owner process.
+- No deployed HTTPS/proxy test.
+- No model-specific search/filter/bulk-action configuration yet.
+
+Backend security assessment
+
+Strengths:
+
+- DEBUG=False in production.
+- Missing production secrets/hosts/origins fail closed.
+- Wildcard hosts, schemes, ports, paths, credentials, empty labels, and malformed DNS labels are rejected.
+- Production CSRF origins require HTTPS.
+- CORS is deny-by-default.
+- Secure cookies, HttpOnly sessions, SameSite=Lax, SSL redirects, proxy SSL header, no-sniff, frame denial, referrer policy, and opener policy are configured.
+- HSTS is staged rather than prematurely preloaded.
+- API unexpected errors suppress internal messages.
+- No tracked secret leakage was found.
+- Django 6.0.7 is current for the review date and includes the July 2026 security fixes: [Django 6.0.7 release notes](https://docs.djangoproject.com/en/6.0/releases/6.0.7/).
+
+Weaknesses:
+
+- REVIEW-3-06 secret quality.
+- REVIEW-3-12 parser inconsistency.
+- No SECRET_KEY_FALLBACKS rotation process.
+- No login rate limiting.
+- Documentation falsely attributes a rate-limit warning to check --deploy.
+- DATA_UPLOAD_MAX_MEMORY_SIZE is not a complete upstream request-size boundary. Django documents that file data is treated separately and recommends additional protections in front of ASGI deployments: [Django settings reference](https://docs.djangoproject.com/en/6.1/ref/settings/#data-upload-max-memory-size).
+- Render’s X-Forwarded-Proto behavior was not verified against a live service.
+- The application trusts that header from the configured deployment topology; the service must not be directly reachable through an untrusted proxy path.
+
+External-service and Steam foundation assessment
+
+Strengths:
+
+- Correct games.services.steam ownership.
+- No endpoint-specific domain assumptions.
+- No import-time network activity.
+- Injectable Session and clear ownership/close semantics.
+- API key uses Valve’s supported header.
+- Redirects are disabled both in Requests and retry configuration.
+- Caller params are copied before use.
+- Relative paths reject absolute, protocol-relative, query, fragment, credentials, backslashes, and traversal patterns.
+- Safe exception hierarchy suppresses response bodies and secrets.
+- Separate connect/read timeout values.
+- Response body is streamed and bounded.
+- Content-Length is checked but not trusted exclusively.
+- JSON must be an object.
+- CDN allowlist is exact and empty-by-default.
+- Tests make no real network calls.
+
+Weaknesses:
+
+- REVIEW-3-02 mutable origins.
+- REVIEW-3-04 retry duration.
+- REVIEW-3-08 CDN IP bug.
+- REVIEW-3-10 undeclared urllib3.
+- REVIEW-3-11 response processing.
+- Adapter tests inspect configuration but do not exercise real urllib3 retry behavior.
+- store_origin and the client timeout constants are currently unused.
+- The CDN allowlist is empty, so no real Steam image URL is currently accepted.
+- Optional API-key startup behavior is appropriate for a foundation, but authenticated endpoint startup/readiness requirements must be decided when a concrete endpoint exists.
+
+Cross-boundary error-taxonomy assessment
+
+The project appropriately retains layer-specific errors:
+
+- Frontend transport errors describe configuration, network, cancellation, timeout, HTTP, redirect, and malformed response states.
+- Django Ninja errors describe public API semantics.
+- Django settings use ImproperlyConfigured.
+- Steam errors describe configuration, network, upstream, rate limit, authentication, missing resource, invalid body, redirects, and size.
+- Django Admin uses ordinary framework responses.
+
+Translation boundaries remain incomplete:
+
+- Steam errors are not yet mapped to Ninja errors.
+- Ninja error envelopes are discarded by the frontend transport for non-2xx responses.
+- Frontend TIMEOUT is a whole frontend operation budget, while SteamTimeoutError is a Requests connect/read inactivity timeout; neither currently guarantees a complete wall-clock deadline.
+- SteamResponseTooLargeError sits outside SteamResponseError even though it can arise from a response.
+- Django’s 405 HTML response competes with the JSON API envelope.
+- Raw cause objects in frontend ApiError must remain internal and must not be rendered.
+
+One universal error type is not recommended. SBGC-89/SBGC-92 should define explicit translation rules at the Steam→Ninja and Ninja→Astro boundaries.
+
+Frontend/backend integration-readiness assessment
+
+The repository is not yet ready for the first real integrated endpoint without targeted remediation.
+
+Minimum prerequisites:
+
+1. Correct REVIEW-3-01 response status declarations.
+2. Correct REVIEW-3-05 transport lifecycle.
+3. Mechanically define DJANGO_API_URL as a typed server-only variable and require HTTPS outside local development.
+4. Decide how the frontend preserves Django’s safe structured error code/message/details.
+5. Keep redirects rejected on both sides.
+6. Match /api/v1/ path and trailing-slash conventions explicitly.
+7. Define a combined Astro timeout that is longer than the bounded Django/Steam work but shorter than provider execution limits.
+8. Add one cross-application test for 200, structured 4xx, unexpected 5xx, timeout, cancellation, and malformed response behavior.
+9. Do not add client-side direct Django access or CORS merely to simplify integration.
+10. Do not invent a second transport under SBGC-90.
+
+204, media types, query encoding, no-retry frontend behavior, and success body timing are otherwise ready.
+
+Domain-model readiness assessment
+
+The foundations are ready for Game and Classification model work.
+
+Preserve the accepted ownership and invariants:
+
+- Game identity belongs to games.
+- Classification profiles belong to classifications.
+- Challenge and Reward remain independent.
+- Each profile uses Micro/Mystiko/Macro and totals 100.
+- Manual non-Steam records remain valid first-class records.
+- Steam identity must be source-qualified rather than assumed universal.
+- Publication/editorial/community state must remain distinct.
+- Exclusion/listing rules belong in Django.
+- Constraints should be database-backed where practical.
+- Migrations must be app-owned.
+- Admin registrations should follow the app boundary.
+- API schemas should follow models/contracts rather than drive their invention.
+
+Nothing in the current foundation forces a Steam-only domain model, Challenge/Reward conflation, or frontend-owned business rules. PostgreSQL-specific constraint behavior will still require later PostgreSQL verification.
+
+Testing and test-discovery assessment
+
+Executed frontend suite:
+
+- Command reached Vitest run.
+- 1 test file.
+- 101 tests passed.
+- Runtime approximately 0.9 seconds.
+- No real network.
+- No repository changes.
+
+Executed backend suite:
+
+- 337 tests passed.
+- Runtime approximately 30.8 seconds.
+- In-memory SQLite.
+- Test database created/destroyed in memory.
+- No Neon or Steam connection.
+- Django system check: 0 issues.
+- Expected noisy output included a deliberately logged unexpected exception and a django-environ warning from a malformed URL test.
+
+Exact backend discovery:
+
+- API mounted/routing: 23.
+- API schemas/errors: 20.
+- Database: 29.
+- Admin: 34.
+- Security: 76.
+- Steam settings/configuration: 70.
+- Steam service: 85.
+- classifications/tests.py stub: 0.
+- Total: 337.
+
+Earlier suites remain present; the higher count is not replacement arithmetic.
+
+The volume is high for foundation code but still finite and fast enough for CI. The main concern is test quality at selected boundaries:
+
+- Invalid Ninja status-group declarations were not detected.
+- Mutable Steam origins were tested only through the preferred factory.
+- CDN IP rejection was tested through a host that fails earlier.
+- Retry behavior is inspected, not executed.
+- .env behavior tests inherit the skip flag.
+- Frontend invalid Headers and abort-during-drain cases are absent.
+- No PostgreSQL behavior test exists.
+- No production provider integration test exists.
+
+The suite should favor contract matrices and boundary behavior over adding more single-value validation permutations.
+
+Performance and proportionate-scalability assessment
+
+Current MVP-positive properties:
+
+- Settings imports perform no network or database I/O.
+- API composition is small.
+- Pydantic schemas are minimal.
+- Database connections are nonpersistent.
+- Requests Session enables connection reuse.
+- Steam responses are bounded.
+- Frontend client has a finite operation timeout.
+- No premature cache, queue, microservice, or distributed system exists.
+
+Concerns:
+
+- Steam retries can block for extreme durations.
+- Requests read timeout is not a total download deadline.
+- Steam body construction is unnecessarily quadratic.
+- Error statuses are read before classification.
+- Synchronous Steam requests will occupy Django workers.
+- PBKDF2 login cost is intentional but reinforces the need for rate limiting.
+- 337 backend tests already take roughly 31 seconds, substantially because of subprocess and password-hashing coverage.
+- No load evidence supports concurrency claims.
+
+No Redis, Celery, async rewrite, Kubernetes, or microservice split is justified. First establish bounded upstream work, a real production server, observed Neon behavior, and basic deployment metrics.
+
+Production-deployment-readiness assessment
+
+Public production deployment: Not ready.
+
+Missing or defective requirements include:
+
+- REVIEW-3-03 PostgreSQL enforcement.
+- REVIEW-3-06 secret quality.
+- Production server dependency and start command.
+- Render service definition or verified dashboard configuration.
+- Static Admin asset collection/serving.
+- Health endpoint.
+- Migration deployment step.
+- Direct Neon migration URL verification.
+- Backup and restore evidence.
+- Login brute-force control.
+- Provider request/body/time limits.
+- Error monitoring.
+- Structured operational logging and correlation identifiers.
+- Incident-response ownership.
+- Actual CDN allowlist.
+- Steam retry correction.
+- HSTS staged rollout.
+- check --deploy as an enforced gate.
+- Preview-to-production configuration parity.
+- Dependency vulnerability scanning.
+
+Passing unit tests and check --deploy cannot establish provider readiness. Django’s own deployment guidance requires a production WSGI/ASGI server, static-file plan, and deployment checklist: [Django deployment documentation](https://docs.djangoproject.com/en/6.0/howto/deployment/).
+
+Framework and dependency-currency assessment
+
+Installed/locked runtime evidence:
+
+- Node 22.23.1.
+- npm 10.9.8.
+- Python 3.12.3 locally.
+- Django 6.0.7.
+- django-environ 0.14.0.
+- django-ninja 1.6.2.
+- psycopg/psycopg-binary 3.3.4.
+- Requests 2.32.5.
+- urllib3 2.7.0.
+- Pydantic 2.13.4.
+- Ruff 0.16.0.
+- Astro 7.1.3.
+- @astrojs/vercel 11.0.3.
+- Tailwind CSS 4.3.3.
+- TypeScript 6.0.3.
+- Vitest 4.1.10.
+- ESLint 10.8.0.
+- eslint-plugin-astro 3.0.1.
+
+Assessment:
+
+- Django 6.0.7 is appropriate for Python 3.12 and current on the review date.
+- Django Ninja 1.6.2 supports grouped response codes, but the repository is using the API incorrectly.
+- django-environ supports Django 6 and the PostgreSQL/SQLite URL types used here: [django-environ API](https://django-environ.readthedocs.io/en/stable/api.html).
+- Psycopg 3 supports Python 3.10–3.14 and the binary install is supported for this development setup: [Psycopg installation](https://www.psycopg.org/psycopg3/docs/basic/install.html).
+- Steam’s API-key header is supported.
+- Requests timeout and urllib3 retry semantics are misdocumented locally.
+- Astro 7 requires Node 22.12 or newer, but odd Node versions are unsupported: [Astro installation requirements](https://docs.astro.build/es/install-and-setup/).
+- The repository engine range remains broader than the locked lint stack.
+- Tailwind 4.3 is current and correctly integrated through the Vite plugin: [Tailwind 4.3 release](https://tailwindcss.com/blog/tailwindcss-v4-3).
+- Ruff 0.16.0 is current but introduced a substantially expanded default rule set; current CI passing confirms the repository is compatible: [Ruff releases](https://github.com/astral-sh/ruff/releases).
+- GitHub-maintained action v6 tags are not shown to be obsolete; the issue is mutability and implicit permissions.
+- No deprecated production API was found beyond Django Ninja tuple behavior in installed source; repository endpoints currently return models, not deprecated status tuples.
+- npm audit evidence was unavailable as documented above.
+
+Orphaned-code, duplication, and premature-abstraction assessment
+
+Intentional foundations:
+
+- Empty games/classifications routers.
+- Empty domain migration packages.
+- Steam exception classes for the imminent concrete client.
+- Config factory separated from transport.
+- Shared API schemas and handlers.
+
+Genuinely unused or drifting elements:
+
+- api/errors.py:_is_framework_validation_error.
+- client.py:_MAX_CONNECT_TIMEOUT and _MAX_READ_TIMEOUT.
+- SteamClientConfig.store_origin.
+- classifications/tests.py stub.
+- PagePlaceholder.astro.
+- UNKNOWN_ERROR frontend category.
+- Some UI value/loading props.
+- Inert STEAM_API_KEY example.
+- API description for nonexistent resources.
+- Documentation of test placeholders.
+- Duplicate DNS/origin/CDN hostname validators.
+- Repeated safe-message and media-type concepts across layers.
+- Repeated placeholder route markup.
+- Overlapping SBGC-34/SBGC-90 client responsibilities.
+
+The Steam service split is not yet excessive, but it should acquire a concrete consumer before further generic wrappers or repositories are introduced.
+
+Security and silent-business-logic assessment
+
+No evidence was found of:
+
+- Active credential leakage.
+- Tracked real secrets.
+- Browser bundle secret exposure.
+- Redirect-following with a Steam key.
+- Raw Steam body leakage.
+- Arbitrary user-driven SSRF.
+- Unbounded Steam body reads.
+- Import-time Neon/Steam connections.
+- Debug-enabled production settings.
+- Wildcard production hosts.
+- insecure production cookies.
+- csrf_exempt usage.
+- frontend ranking/classification logic.
+- Steam-only domain assumptions in models.
+- Challenge/Reward persistence conflation.
+- hypothetical IDOR, mass assignment, or SQL injection surfaces where no resource endpoint exists.
+
+Silent failures that do exist are captured by REVIEW-3-01, REVIEW-3-02, REVIEW-3-03, REVIEW-3-05, REVIEW-3-06, and REVIEW-3-08.
+
+Frontend architecture and growth assessment
+
+The frontend remains a server-first Astro MPA:
+
+- SSR/on-demand is the default.
+- Selected fixed routes are prerendered.
+- No production React/Vue/Svelte dependency.
+- Navigation uses ordinary links and small progressive scripts.
+- No client-side domain state.
+- No direct Django calls from the browser.
+- Analytics is production-gated and opt-in.
+- Vercel headers provide a conservative baseline.
+
+Growth risks:
+
+- Dual-profile meanings remain collapsed in DIMENSIONS.
+- Rendering validation remains optional.
+- The dim token still fails contrast.
+- Server-only transport is not mechanically enforced.
+- Canonical metadata fails open to localhost.
+- Internal showcase data resembles an obsolete model.
+- UI component contracts and placeholder strategies remain inconsistent.
+- Frontend non-2xx handling discards the backend’s structured error contract.
+- No response-size limit exists in the frontend transport; defer the exact limit until the first endpoint payload is known, but do not leave it unconsidered.
+
+Git, PR, and AI-development-process assessment
+
+Positive:
+
+- Every reviewed feature entered main through a merge commit.
+- Jira keys are traceable.
+- Correction commits are named and scoped.
+- Current review began from updated main.
+- Hosted CI passed exact main.
+- No design-reference changes.
+- No accidental tracked .venv or .env content.
+- No direct main commits in range.
+
+Concerns:
+
+- PRs #21–#31 have zero recorded reviews.
+- Historical remote feature branches remain undeleted.
+- SBGC-35’s live branch contains a post-merge divergent Zed task commit.
+- Documentation claims routinely overstate tested behavior.
+- The 337-test suite still missed several direct boundary defects because tests followed prompt structure rather than adversarial contracts.
+- Agenticoutput.md understates security tests and should not be trusted as current inventory.
+- Repeated correction cycles suggest ticket verification should include a short explicit contract checklist before merge.
+- Reviewer prompts are becoming detailed enough to shape implementation. They should continue to state invariants and evidence needs without dictating unnecessary file structures or abstractions.
+- Code/test volume is growing faster than product functionality. The next cycle should prioritize one thin domain slice rather than more generalized foundation.
+
+Documentation, context, and inheritability assessment
+
+context.md remains a usable source of truth and preserved the correct architecture when code/docs conflicted. The decision log is valuable.
+
+However:
+
+- Active documentation is too duplicated.
+- Historical statements are not consistently marked as superseded.
+- Hard-coded test counts drift immediately.
+- README, CI labels, code-quality docs, workflow docs, backend architecture, backend API, security, Steam, and database docs disagree.
+- Environment-variable names differ.
+- Future agents can select plausible but false safety claims.
+- SBGC-34 and SBGC-90 overlap remains unresolved.
+- context.md still records 59 security tests rather than 76.
+
+Inheritability remains acceptable only because source precedence is explicitly documented. REVIEW-3-07 should be treated as operational remediation, not cosmetic writing.
+
+Technical-debt delta
+
+Net assessment: technical debt increased moderately in absolute terms but decreased in several high-value foundations.
+
+Debt retired:
+
+- Frontend header-only timeout.
+- Redirect-following default.
+- bodyless-success type cast.
+- missing transport tests.
+- inert Admin path.
+- insecure unconditional production secret fallback.
+- unsplit Django settings.
+- absent database isolation.
+- absent API envelope.
+- absent Admin access tests.
+- absent external-service error containment.
+
+Debt added or exposed:
+
+- Invalid Ninja status groups.
+- Production engine mismatch.
+- Mutable trusted origins.
+- excessive retry delays.
+- residual frontend cleanup paths.
+- weak secret quality threshold.
+- false documentation.
+- duplicate validators.
+- test environment mutation.
+- transitive urllib3 reliance.
+- mocked-boundary false confidence.
+- stale branches and unreviewed PRs.
+- unused helpers and settings.
+- 438 tests around no real domain endpoint.
+
+The debt remains manageable because no real endpoint or production data depends on the flawed foundations yet.
+
+Development-sequencing assessment
+
+Ready decisions:
+
+- Continued frontend foundation work: Ready after targeted remediation.
+  Independent route/layout work may continue, but dual-profile semantics, contrast, validation, canonical URL handling, and UI contracts should be corrected before score/data components expand.
+
+- Continued backend operations work: Ready.
+  SBGC-43 is the correct place to add production server, static files, health, deployment configuration, migration commands, deployment checks, and provider verification. It should incorporate REVIEW-3-03, REVIEW-3-06, and relevant documentation fixes.
+
+- Game and Classification model implementation: Ready.
+  App boundaries and migration structure are suitable. Preserve dual profiles, manual records, source-qualified identities, database constraints, editorial/publication separation, and app ownership. PostgreSQL verification should follow before deployment.
+
+- Concrete Steam endpoint implementation: Ready after targeted remediation.
+  Correct trusted origins, retry budgets, CDN IP rejection, urllib3 dependency declaration, and response handling first.
+
+- First real Astro-to-Django endpoint integration: Ready after targeted remediation.
+  Correct Ninja status declarations and frontend lifecycle/server-env/error translation first.
+
+- Preview deployment: Not ready for the complete system.
+  A frontend-only Vercel preview is plausible, but the Django backend lacks the required production server, static asset, migration, health, and provider configuration.
+
+- Public production deployment: Not ready.
+  Operations, security, database enforcement, rate limiting, backups, monitoring, provider verification, and integration smoke tests remain incomplete.
+
+Recommended remediation order
+
+1. Correct REVIEW-3-01 before defining domain endpoint response schemas.
+2. Correct REVIEW-3-02, REVIEW-3-04, REVIEW-3-08, REVIEW-3-10, and REVIEW-3-11 as one bounded Steam transport hardening scope.
+3. Correct REVIEW-3-05 and extend the existing frontend transport suite.
+4. Correct REVIEW-3-03 before any preview/production backend migration.
+5. Correct REVIEW-3-06 and make production check --deploy an enforced deployment gate.
+6. Correct safety-sensitive documentation concurrently with those code changes under REVIEW-3-07.
+7. Resolve inherited REVIEW-2-07, REVIEW-2-08, and REVIEW-2-09 before real profiles reach frontend components.
+8. Proceed with SBGC-43 backend operations and SBGC-44 test-convention work.
+9. Proceed with Game and Classification models and constraints in the planned sequence.
+10. Reconcile SBGC-34/SBGC-90 before the first endpoint integration.
+11. Mechanically enforce server-only frontend environment/import boundaries.
+12. Resolve canonical URL and UI component/showcase debt before public frontend deployment.
+13. Add explicit GitHub Actions permissions and an immutable action revision policy before deployment workflows.
+14. Reconcile the approval policy with solo-development reality and delete or archive merged branches.
+15. Do not begin public production deployment until provider, backup, migration, rate-limit, static-file, logging, and smoke-test evidence exists.
+
+Suggested Jira tickets and existing-ticket amendments
+
+Suggested scope: Django Ninja response-contract correction
+
+- Replace integer 4/5 response keys with supported status sets.
+- Validate concrete OpenAPI response keys.
+- Exercise explicit non-2xx Status responses.
+- Decide and document 405 envelope behavior.
+
+Existing relationship: SBGC-38, SBGC-89, SBGC-100.
+
+Suggested scope: Steam trusted-origin and retry hardening
+
+- Make Steam origins non-configurable constants.
+- Bound Retry-After/backoff and total operation time.
+- Declare urllib3 directly.
+- Correct CDN IP rejection.
+- Correct media-type and streamed-body handling.
+- Add real adapter behavior tests with network and sleep mocked at the lowest necessary boundary.
+
+Existing relationship: SBGC-42 and amendment to SBGC-53.
+
+Suggested scope: Production settings contract
+
+- Require PostgreSQL in production.
+- Decide direct migration URL versus later runtime pooling.
+- Align secret validation with Django deployment checks.
+- Decide production Admin-path requirement.
+- Tighten trusted-origin parsing.
+- Add production import/check tests without connections.
+
+Existing relationship: SBGC-39, SBGC-41, SBGC-43, SBGC-104, SBGC-105.
+
+Suggested scope: Frontend transport lifecycle closure
+
+- Normalize invalid Headers to ApiResult.
+- Put timer/listener cleanup in one final operation boundary.
+- Preserve timeout/caller-abort during body draining.
+- Add the two missing behavioral cases.
+- Adopt typed astro:env/server access and import enforcement.
+
+Existing relationship: SBGC-160, SBGC-161; amend SBGC-90/SBGC-92.
+
+Suggested scope: Active documentation synchronization
+
+- Correct test-suite claims/counts.
+- Remove STEAM_API_KEY.
+- Correct database, retry, origin, and check --deploy claims.
+- Update backend architecture/API completion status.
+- Reduce duplicated operational summaries.
+
+Existing relationship: documentation follow-up across SBGC-37–SBGC-42.
+
+Suggested existing-ticket amendments:
+
+- SBGC-43: include production PostgreSQL enforcement, check --deploy gate, server/static/health/migration configuration, and provider verification.
+- SBGC-44: include explicit subprocess environments, test-count discovery, retry behavior tests, and PostgreSQL test strategy.
+- SBGC-45–SBGC-47: preserve manual records, dual profiles, database constraints, and source-qualified identities.
+- SBGC-52: include actual PostgreSQL constraint/migration verification without requiring premature pooling.
+- SBGC-53: block on Steam trusted-origin/retry/CDN corrections.
+- SBGC-89/SBGC-100: correct Ninja response sets and define structured error translation.
+- SBGC-90: narrow to integration/maturity of the existing transport; prohibit a second client.
+- SBGC-91: add typed server-only frontend environments and production HTTPS/canonical URL validation.
+- SBGC-106/SBGC-107: define Admin/login rate limiting and edge/application responsibility using verified provider capabilities.
+- SBGC-108: add explicit CI permissions, SHA policy, dependency scanning, and runtime-version alignment.
+
+Positive findings worth preserving
+
+- Exact Browser→Astro→Django topology.
+- One frontend transport and one NinjaAPI.
+- No direct browser-to-Django calls.
+- No speculative domain models.
+- App-owned routers, migrations, and future Admin registrations.
+- Environment-specific Django settings.
+- No external connections during settings import or tests.
+- In-memory SQLite test isolation.
+- Fail-closed missing production configuration.
+- Safe public unexpected-error handling.
+- Header-only Steam keys.
+- Redirect rejection.
+- Bounded Steam response size.
+- Exact empty-by-default CDN allowlist.
+- Injectable Sessions and explicit ownership.
+- Strong frontend behavioral transport coverage.
+- Comprehensive Django API/Admin/security/service tests.
+- Hosted CI on exact main.
+- Clean main and unchanged design reference.
+- Explicit architecture/source precedence.
+- Avoidance of Redis, queues, microservices, and other premature infrastructure.
+
+Metrics and evidence required for Review 4
+
+Repository/process:
+
+- Exact Review 3 baseline and current main relationship.
+- PR list, approvals, correction commits, and branch cleanup.
+- Evidence of branch-protection/review policy or documented solo exception.
+- Hosted CI for exact review HEAD.
+- Design-reference diff.
+
+Findings:
+
+- Status of every REVIEW-3-* and unresolved REVIEW-2-* finding.
+- Concrete OpenAPI response keys and non-2xx runtime tests.
+- Proof Steam origins cannot be overridden.
+- Retry attempts and maximum actual delay.
+- Production SQLite rejection.
+- Secret validator/check --deploy alignment.
+- Frontend invalid-header and drain-abort tests.
+- Correct CDN IP rejection.
+- Direct urllib3 declaration/resolution.
+
+Testing:
+
+- Exact discovered counts by module.
+- Duration and slowest-test distribution.
+- Confirmation all prior suites remain.
+- PostgreSQL strategy and whether any real isolated PostgreSQL test exists.
+- Explicit proof no production credentials are read.
+- Any real endpoint integration tests.
+- Test warnings/noise and skipped tests.
+
+Deployment:
+
+- Production server and start command.
+- Render/Vercel service settings.
+- Static Admin asset behavior.
+- Health endpoint and dependency semantics.
+- Migration release procedure.
+- Neon direct/pooler decision and connection limits.
+- Backup/restore evidence.
+- check --deploy output using production settings.
+- Login/rate-limit evidence.
+- HSTS stage.
+- Logging/error-monitoring evidence.
+- Provider timeout and body-size limits.
+- Incident response and secret rotation.
+
+Product/integration:
+
+- First Game/Classification migrations and constraints.
+- Manual/non-Steam record support.
+- Challenge/Reward independence.
+- Micro/Mystiko/Macro total constraints.
+- Publication/editorial separation.
+- First Steam concrete adapter contract.
+- First Astro→Django endpoint error/timeout/cancellation evidence.
+- Proof no second API client or frontend business logic appeared.
+
+Documentation:
+
+- Accurate test and deployment claims.
+- Exact environment-variable names.
+- Correct retry and origin statements.
+- SBGC-34/SBGC-90 disposition.
+- Context/agent summary synchronization.
+- Reduction or automated validation of duplicated operational facts.
+
+Evidence reviewed
+
+Governance and architecture:
+
+- context.md, including architecture, decision log, Jira registry, changelog, security, operations, dual-profile model, and review governance.
+- codex.md.
+- skills.md.
+- README.md.
+- agenticoutput.md.
+- reviews/review1.txt.
+- reviews/review2.txt.
+- reviews/README.md.
+- reviews/review-template.txt.
+- docs/software-development-reviews.md.
+- All relevant active docs and archived context where needed.
+- Design-reference governance and tracked inventory.
+
+Backend:
+
+- manage.py.
+- All tracked config modules, settings, WSGI/ASGI, URLs, Admin helpers, database helpers, security helpers, Steam settings adapter, and tests.
+- All tracked api modules and tests.
+- All tracked games modules, Steam service modules, tests, and Git deletion of games/tests.py.
+- All tracked classifications modules, tests stub, Admin/API/apps, and migration package.
+- requirements.txt.
+- .env.example.
+- Installed package metadata and selected installed source.
+
+Frontend:
+
+- Root and frontend package manifests.
+- package-lock.json.
+- Astro and Vercel configuration.
+- Shared frontend transport, types, errors, and 101 tests.
+- Routes, layouts, components, visual system, environment usage, analytics, security headers, metadata, and global styles.
+- Direct fetch/import inventories.
+- Design-reference isolation.
+
+Delivery and Git:
+
+- .github/workflows/ci.yml.
+- .gitignore.
+- .zed/tasks.json and divergent branch history.
+- Full reviewed Git range, first-parent history, merge parents, branch ancestry, remote heads, PR review endpoints, and hosted CI.
+- git diff --check and repeated clean-state checks.
+
+Executed checks/probes:
+
+- Frontend Vitest: 101 passed.
+- Backend Django tests: 337 passed.
+- Django deployment check under controlled production-like settings.
+- Production SQLite settings import.
+- Weak-secret validation.
+- Steam origin/key fake-session behavior.
+- urllib3 Retry defaults and Retry-After cap.
+- CDN IP validation.
+- OpenAPI response keys.
+- Dependency/version metadata.
+- Test-loader count reconciliation.
+- Secret-pattern history scan.
+- Final repository status and design-reference check.
+
+Primary external references:
+
+- Django 6 documentation and release notes.
+- Django Ninja response documentation.
+- django-environ documentation.
+- Psycopg installation/support documentation.
+- Requests timeout documentation.
+- urllib3 Retry documentation.
+- Steamworks Web API authentication documentation.
+- Neon pooling/migration documentation.
+- Astro configuration/environment/install documentation.
+- Render Django deployment documentation.
+- Tailwind 4.3 release documentation.
+- Ruff releases.
+- GitHub Actions secure-use and token-permission documentation.
+
+Uncertainties and unavailable evidence
+
+- No Jira access; ticket state and scope amendments are inferred only from repository evidence.
+- No private review or communication evidence.
+- No branch-protection or repository-settings access.
+- No live Vercel, Render, Neon, or Steam access.
+- No real provider logs, secrets, health checks, or reverse-proxy headers.
+- No real PostgreSQL or Steam integration test.
+- No local build was run because it could generate repository-local artifacts; exact-HEAD hosted CI build success was used.
+- No npm audit result for the reason documented above.
+- No browser accessibility/device test.
+- No load test.
+- No production data, users, backups, or migrations.
+- No concrete domain endpoint exists, so authorization, object permissions, endpoint schemas, and business-query behavior are not yet applicable.
+- The untracked local .env was deliberately not read.
+- Effective provider-side DDoS/rate-limit capability was not assumed from retrospective documentation.
+
+Final continuation recommendation: Continue after targeted remediation.
