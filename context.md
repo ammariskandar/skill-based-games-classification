@@ -2258,6 +2258,11 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-31 | Non-default Admin path in production | Accepted (SBGC-43).  'admin' rejected; validated path-segment format reused. |
 | 2026-07-31 | Structured CSRF origin parsing | Accepted (SBGC-43).  urlparse-based; hostname DNS label validation; port 1-65535. |
 | 2026-07-31 | Staged HSTS without preload/subdomains | Accepted (SBGC-43).  SECURE_HSTS_INCLUDE_SUBDOMAINS=False, SECURE_HSTS_PRELOAD=False until subdomain readiness verified.  Deployment gate accepts W005/W021 as documented staging warnings. |
+| 2026-07-31 | Django unittest test framework | Accepted (SBGC-44).  No pytest, factory-boy, or coverage; SimpleTestCase is default for non-DB tests; TestCase for DB-backed tests. |
+| 2026-07-31 | Test discovery audit in CI | Accepted (SBGC-44).  Discovery audit validates structure (duplicate IDs, empty modules) without hard-coded counts. |
+| 2026-07-31 | Subprocess test environment isolation | Accepted (SBGC-44).  Shared minimal_subprocess_env() never inherits credentials, settings module, or .env flag. |
+| 2026-07-31 | Network isolation in tests | Accepted (SBGC-44).  No live HTTP requests; assert_no_live_requests() guard; mocks/fakes/adapter inspection only. |
+| 2026-07-31 | Reverse and shuffle test verification | Accepted (SBGC-44).  Order-independence verified; not in normal CI. |
 | 2026-07-31 | No live deployment verification | Accepted (SBGC-43).  No Render service created; no Neon migration ran; SBGC-44 remains before SBGC-3 epic closes. | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`) belong to SBGC-5. |
 
 ---

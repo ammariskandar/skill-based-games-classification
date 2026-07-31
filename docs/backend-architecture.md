@@ -158,7 +158,7 @@ A `users` application for final-product accounts is planned but not yet created.
 
 - **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client under `games/services/steam/` with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. Endpoint adapters and import workflows are deferred to SBGC-5.
 - **Backend operations** — SBGC-43 delivered Gunicorn/WhiteNoise, health endpoint, production logging, PostgreSQL-only enforcement, strengthened secret/CSRF validation, Render Blueprint, deployment checks, and operational scripts. See docs/backend-operations.md.
-- **No backend tests** — SBGC-44 will establish test settings and conventions.
+- **Backend testing** — SBGC-44 established test conventions, discovery audit, subprocess isolation, and canonical testing documentation. See docs/backend-testing.md.
 - **No product models** — SBGC-4 (SBGC-45 onward) will implement domain models, constraints, and migrations.
 - **Production settings are incomplete** — `config.settings.production` imports shared base settings and sets `DEBUG=False`. Full security hardening and deployment checks belong to SBGC-39 and SBGC-41.
 - **`CORS_ALLOWED_ORIGINS` is inert** — it is parsed as a custom setting but does not yet control application behaviour. It is reserved for SBGC-41.
