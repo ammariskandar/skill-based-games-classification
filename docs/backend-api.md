@@ -59,8 +59,28 @@ from api.errors import STANDARD_ERROR_RESPONSES
 @router.get("/path", response={200: SomeSchema, **STANDARD_ERROR_RESPONSES})
 ```
 
-`STANDARD_ERROR_RESPONSES` maps `4` and `5` status-code groups to
-`ApiErrorResponse`, producing correct OpenAPI error documentation.
+`STANDARD_ERROR_RESPONSES` maps Django Ninja's grouped `codes_4xx` and
+`codes_5xx` status-code sets (`frozenset` objects from `ninja.responses`)
+to `ApiErrorResponse`, producing correct OpenAPI error documentation with
+concrete HTTP status codes (400, 401, 403, 404, 500, 503, etc.) rather than
+invalid group keys "4" and "5" — SBGC-167.
+
+**Note:** Django Ninja's `codes_4xx` does **not** include 422 (Unprocessable
+Entity).  Endpoints that return explicit 422 responses must declare it
+separately alongside `STANDARD_ERROR_RESPONSES`:
+
+```python
+@router.get("/endpoint", response={
+    200: SuccessSchema,
+    **STANDARD_ERROR_RESPONSES,
+    422: ApiErrorResponse,
+})
+```
+
+The explicit int key `422` does not collide with the `codes_4xx` frozenset
+key — they are distinct dictionary keys.  Framework validation-error handlers
+return 422 directly through the Ninja exception-handler path and do not rely
+on the operation response declaration.
 
 ### Response Status Codes
 
