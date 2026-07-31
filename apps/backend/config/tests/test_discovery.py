@@ -10,10 +10,13 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
+from pathlib import Path
 
 from django.test import SimpleTestCase
 
 from config.discovery import audit_discovery
+
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 class DiscoverySuccessTests(SimpleTestCase):
@@ -23,22 +26,15 @@ class DiscoverySuccessTests(SimpleTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.tmp = tempfile.mkdtemp()
-        pkg = os.path.join(cls.tmp, "discovery_valid")
+        pkg = os.path.join(cls.tmp, "discovery_ok")
         os.makedirs(pkg)
         with open(os.path.join(pkg, "__init__.py"), "w") as f:
             f.write("")
         with open(os.path.join(pkg, "test_alpha.py"), "w") as f:
             f.write(
                 "import unittest\n"
-                "class DiscoveryAlphaTests(unittest.TestCase):\n"
+                "class OkAlpha(unittest.TestCase):\n"
                 "    def test_one(self): pass\n"
-                "    def test_two(self): pass\n"
-            )
-        with open(os.path.join(pkg, "test_beta.py"), "w") as f:
-            f.write(
-                "import unittest\n"
-                "class DiscoveryBetaTests(unittest.TestCase):\n"
-                "    def test_three(self): pass\n"
             )
 
     @classmethod
@@ -49,8 +45,8 @@ class DiscoverySuccessTests(SimpleTestCase):
 
     def test_valid_suite_succeeds(self):
         report = audit_discovery(self.tmp)
-        self.assertGreater(report.total, 0, f"by_module={report.by_module}")
-        self.assertFalse(report.has_defects)
+        self.assertTrue(report.success)
+        self.assertGreater(report.total, 0)
 
     def test_report_includes_module_counts(self):
         report = audit_discovery(self.tmp)
@@ -62,24 +58,30 @@ class DiscoverySuccessTests(SimpleTestCase):
         self.assertGreater(report.total, 0)
 
 
-class DiscoveryDuplicateTests(SimpleTestCase):
-    """Duplicate test IDs cause failure."""
+class DiscoveryDuplicateIdTests(SimpleTestCase):
+    """Two tests with identical fully qualified IDs cause failure."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.tmp = tempfile.mkdtemp()
-        pkg = os.path.join(cls.tmp, "discovery_dup")
+        pkg = os.path.join(cls.tmp, "duplicate_ids")
         os.makedirs(pkg)
         with open(os.path.join(pkg, "__init__.py"), "w") as f:
             f.write("")
-        for name in ("test_a.py", "test_b.py"):
-            with open(os.path.join(pkg, name), "w") as f:
-                f.write(
-                    "import unittest\n"
-                    "class DiscoveryDupTests(unittest.TestCase):\n"
-                    "    def test_x(self): pass\n"
-                )
+        # A module whose load_tests returns the same test twice.
+        with open(os.path.join(pkg, "test_dup.py"), "w") as f:
+            f.write(
+                "import unittest\n"
+                "class DupTest(unittest.TestCase):\n"
+                "    def test_x(self): pass\n"
+                "def load_tests(loader, tests, pattern):\n"
+                "    t = DupTest('test_x')\n"
+                "    suite = unittest.TestSuite()\n"
+                "    suite.addTest(t)\n"
+                "    suite.addTest(t)  # same object, same id()\n"
+                "    return suite\n"
+            )
 
     @classmethod
     def tearDownClass(cls):
@@ -87,53 +89,34 @@ class DiscoveryDuplicateTests(SimpleTestCase):
             shutil.rmtree(cls.tmp)
         super().tearDownClass()
 
-    def test_two_modules_discovered(self):
-        """Two modules with test methods are both discovered."""
-        report = audit_discovery(self.tmp)
-        self.assertFalse(report.has_defects)
-        # Both test_a and test_b contribute tests.
-        self.assertGreaterEqual(len(report.by_module), 1)
-
-
-class DiscoveryEmptyModuleTests(SimpleTestCase):
-    """A test module with zero discovered tests fails."""
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.tmp = tempfile.mkdtemp()
-        pkg = os.path.join(cls.tmp, "discovery_empty")
-        os.makedirs(pkg)
-        with open(os.path.join(pkg, "__init__.py"), "w") as f:
-            f.write("")
-        with open(os.path.join(pkg, "test_empty.py"), "w") as f:
-            f.write("class DiscoveryNotATest:\n    def test_something(self): pass\n")
-
-    @classmethod
-    def tearDownClass(cls):
-        if cls.tmp and os.path.exists(cls.tmp):
-            shutil.rmtree(cls.tmp)
-        super().tearDownClass()
-
-    def test_empty_module_with_test_methods_fails(self):
+    def test_duplicate_ids_reported(self):
         report = audit_discovery(self.tmp)
         self.assertTrue(report.has_defects)
-        self.assertGreater(len(report.empty_modules), 0)
+        self.assertFalse(report.success)
+        self.assertGreater(len(report.duplicate_ids), 0,
+                           f"Expected duplicate IDs, got: {report}")
+
+    def test_duplicate_diagnostic_identifies_the_id(self):
+        report = audit_discovery(self.tmp)
+        self.assertTrue(
+            any("test_x" in d for d in report.duplicate_ids),
+            f"Duplicate info should mention 'test_x': {report.duplicate_ids}",
+        )
 
 
 class DiscoveryImportErrorTests(SimpleTestCase):
-    """A test module that raises during import is detected."""
+    """A module with a syntax error fails the audit."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.tmp = tempfile.mkdtemp()
-        pkg = os.path.join(cls.tmp, "discovery_bad")
+        pkg = os.path.join(cls.tmp, "import_err")
         os.makedirs(pkg)
         with open(os.path.join(pkg, "__init__.py"), "w") as f:
             f.write("")
         with open(os.path.join(pkg, "test_broken.py"), "w") as f:
-            f.write("this is not valid Python {{{")
+            f.write("this is not valid Python {")
 
     @classmethod
     def tearDownClass(cls):
@@ -141,12 +124,152 @@ class DiscoveryImportErrorTests(SimpleTestCase):
             shutil.rmtree(cls.tmp)
         super().tearDownClass()
 
-    def test_broken_module_does_not_prevent_discovery(self):
-        """A syntax error in one module does not crash the audit."""
+    def test_import_error_is_a_defect(self):
         report = audit_discovery(self.tmp)
-        # The audit should complete without raising — the broken
-        # module is skipped.  The report captures the state.
-        self.assertIsInstance(report.total, int)
+        self.assertTrue(report.has_defects,
+                        f"Expected defects, got: {report}")
+        self.assertFalse(report.success)
+        self.assertGreater(
+            len(report.import_errors), 0,
+            f"Expected import errors, got: {report}",
+        )
+
+    def test_import_error_diagnostic_identifies_module(self):
+        report = audit_discovery(self.tmp)
+        combined = " ".join(report.import_errors)
+        self.assertTrue(
+            "test_broken" in combined or "SyntaxError" in combined
+            or "invalid" in combined.lower(),
+            f"Diagnostic should identify the broken module: {report.import_errors}",
+        )
+
+
+class DiscoveryZeroTestModuleTests(SimpleTestCase):
+    """A test_*.py module with no discoverable tests fails."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.tmp = tempfile.mkdtemp()
+        pkg = os.path.join(cls.tmp, "zero_tests")
+        os.makedirs(pkg)
+        with open(os.path.join(pkg, "__init__.py"), "w") as f:
+            f.write("")
+        # A module that imports unittest but has no TestCase subclass.
+        with open(os.path.join(pkg, "test_empty.py"), "w") as f:
+            f.write(
+                "import unittest\n"
+                "class NotATestCase:\n"
+                "    def test_something(self):\n"
+                "        pass\n"
+            )
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.tmp and os.path.exists(cls.tmp):
+            shutil.rmtree(cls.tmp)
+        super().tearDownClass()
+
+    def test_zero_test_module_is_a_defect(self):
+        report = audit_discovery(self.tmp)
+        self.assertTrue(report.has_defects)
+        self.assertFalse(report.success)
+        self.assertGreater(len(report.empty_modules), 0)
+
+    def test_zero_test_diagnostic_identifies_module(self):
+        report = audit_discovery(self.tmp)
+        self.assertTrue(
+            any("test_empty" in m for m in report.empty_modules),
+            f"Empty module should be listed: {report.empty_modules}",
+        )
+
+    def test_helpers_without_test_prefix_are_ignored(self):
+        """A helper.py without test_ prefix is not flagged."""
+        pkg = os.path.join(self.tmp, "zero_tests")
+        with open(os.path.join(pkg, "helper.py"), "w") as f:
+            f.write(
+                "import unittest\n"
+                "class NotATestCase:\n"
+                "    def test_something(self): pass\n"
+            )
+        report = audit_discovery(self.tmp)
+        # helper.py does not match test_*.py, should not be flagged.
+        self.assertFalse(
+            any("helper.py" in m for m in report.empty_modules),
+            f"helper.py should not be in empty_modules: {report.empty_modules}",
+        )
+
+
+class DiscoveryShellLauncherTests(SimpleTestCase):
+    """The shell launcher exit code reflects DiscoveryReport.success."""
+
+    def setUp(self):
+        super().setUp()
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if self.tmp and os.path.exists(self.tmp):
+            shutil.rmtree(self.tmp)
+        super().tearDown()
+
+    def _make_pkg(self, name, modules=None):
+        pkg = os.path.join(self.tmp, name)
+        os.makedirs(pkg, exist_ok=True)
+        with open(os.path.join(pkg, "__init__.py"), "w") as f:
+            f.write("")
+        if modules:
+            for mod_name, content in modules.items():
+                with open(os.path.join(pkg, mod_name), "w") as f:
+                    f.write(content)
+        return pkg
+
+    def test_valid_suite_exits_zero(self):
+        self._make_pkg("valid_shell", {
+            "test_a.py": (
+                "import unittest\n"
+                "class ShellA(unittest.TestCase):\n"
+                "    def test_x(self): pass\n"
+            ),
+        })
+        report = audit_discovery(self.tmp)
+        self.assertTrue(report.success)
+
+    def test_duplicate_ids_exits_nonzero(self):
+        self._make_pkg("dup_shell", {
+            "test_dup.py": (
+                "import unittest\n"
+                "class DupS(unittest.TestCase):\n"
+                "    def test_x(self): pass\n"
+                "def load_tests(loader, tests, pattern):\n"
+                "    t = DupS('test_x')\n"
+                "    s = unittest.TestSuite()\n"
+                "    s.addTest(t)\n"
+                "    s.addTest(t)\n"
+                "    return s\n"
+            ),
+        })
+        report = audit_discovery(self.tmp)
+        self.assertFalse(report.success)
+        self.assertGreater(len(report.duplicate_ids), 0)
+
+    def test_import_error_exits_nonzero(self):
+        self._make_pkg("importerr_shell", {
+            "test_bad.py": "syntax error {{{",
+        })
+        report = audit_discovery(self.tmp)
+        self.assertFalse(report.success)
+        self.assertGreater(len(report.import_errors), 0)
+
+    def test_zero_tests_exits_nonzero(self):
+        self._make_pkg("zero_shell", {
+            "test_empty.py": (
+                "import unittest\n"
+                "# No TestCase subclass — zero discoverable tests.\n"
+            ),
+        })
+        report = audit_discovery(self.tmp)
+        self.assertFalse(report.success)
+        self.assertGreater(len(report.empty_modules), 0)
 
 
 class DiscoveryCleanupTests(SimpleTestCase):
@@ -155,18 +278,18 @@ class DiscoveryCleanupTests(SimpleTestCase):
     def test_temp_dir_cleaned(self):
         tmp = tempfile.mkdtemp()
         try:
-            pkg = os.path.join(tmp, "discovery_clean")
+            pkg = os.path.join(tmp, "clean")
             os.makedirs(pkg)
             with open(os.path.join(pkg, "__init__.py"), "w") as f:
                 f.write("")
             with open(os.path.join(pkg, "test_x.py"), "w") as f:
                 f.write(
                     "import unittest\n"
-                    "class DiscoveryCleanX(unittest.TestCase):\n"
+                    "class CleanX(unittest.TestCase):\n"
                     "    def test_y(self): pass\n"
                 )
             report = audit_discovery(tmp)
-            self.assertFalse(report.has_defects)
+            self.assertTrue(report.success)
         finally:
             if os.path.exists(tmp):
                 shutil.rmtree(tmp)

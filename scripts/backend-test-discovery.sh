@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SBGC-44 — backend test discovery audit.
 # Thin launcher for config.discovery.audit_discovery.
+# Exits 0 when no structural defects are found.
 set -euo pipefail
 
-APPS_DIR="$(dirname "$0")/../apps/backend"
+APPS_DIR="${APPS_DIR_OVERRIDE:-$(dirname "$0")/../apps/backend}"
 
 exec flatpak-spawn --host "$APPS_DIR/.venv/bin/python" -c "
 import os, sys
@@ -33,8 +34,8 @@ if report.duplicate_ids:
 if report.import_errors:
     print()
     print('IMPORT ERRORS:')
-    for mod, err in report.import_errors:
-        print(f'  {mod}: {err}')
+    for err in report.import_errors:
+        print(f'  {err}')
 
 if report.empty_modules:
     print()
@@ -42,7 +43,7 @@ if report.empty_modules:
     for m in report.empty_modules:
         print(f'  {m}')
 
-if report.has_defects:
+if not report.success:
     print()
     print('Discovery audit FAILED: structural defects found.')
     sys.exit(1)
