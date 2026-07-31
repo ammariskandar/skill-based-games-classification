@@ -86,7 +86,7 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
 
     Use for subprocess tests that import config.settings.production.
     """
-    return minimal_subprocess_env(
+    env = minimal_subprocess_env(
         DJANGO_SECRET_KEY=_DUMMY_SECRET,
         DATABASE_URL=_DUMMY_PG_URL,
         DJANGO_ALLOWED_HOSTS="example.com",
@@ -94,8 +94,9 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
         ADMIN_URL_PATH="mygamedna-prod",
         DJANGO_LOG_LEVEL="INFO",
         DJANGO_SECURE_HSTS_SECONDS="3600",
-        **overrides,
     )
+    env.update(overrides)
+    return env
 
 
 # ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
 from config.database import build_database_config
+from config.test_helpers import minimal_subprocess_env
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -263,7 +264,6 @@ class SettingsModuleBehaviorTests(SimpleTestCase):
     @staticmethod
     def _manage_py(*args, env=None):
         """Run manage.py in a subprocess and return (rc, stdout, stderr)."""
-        import os
         import subprocess
         import sys
         from pathlib import Path
@@ -272,7 +272,7 @@ class SettingsModuleBehaviorTests(SimpleTestCase):
         manage = backend / "manage.py"
         cmd = [sys.executable, str(manage), *args]
 
-        merged_env = {**os.environ}
+        merged_env = minimal_subprocess_env()
         if env is not None:
             merged_env.update(env)
 
