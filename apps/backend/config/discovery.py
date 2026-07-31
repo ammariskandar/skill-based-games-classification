@@ -26,11 +26,7 @@ class DiscoveryReport:
 
     @property
     def has_defects(self) -> bool:
-        return bool(
-            self.duplicate_ids
-            or self.import_errors
-            or self.empty_modules
-        )
+        return bool(self.duplicate_ids or self.import_errors or self.empty_modules)
 
     @property
     def success(self) -> bool:
@@ -60,9 +56,7 @@ def audit_discovery(
         suite = loader.discover(start_dir, pattern=pattern)
     except Exception:
         report = DiscoveryReport()
-        report.import_errors.append(
-            f"Discovery crashed: {traceback.format_exc()}"
-        )
+        report.import_errors.append(f"Discovery crashed: {traceback.format_exc()}")
         return report
 
     report = DiscoveryReport()
@@ -86,9 +80,7 @@ def audit_discovery(
                 report.by_module[mod] = report.by_module.get(mod, 0) + 1
                 discovered_modules.add(mod)
                 if tid in seen_ids:
-                    report.duplicate_ids.append(
-                        f"{tid} (also in {seen_ids[tid]})"
-                    )
+                    report.duplicate_ids.append(f"{tid} (also in {seen_ids[tid]})")
                 seen_ids[tid] = mod
 
     _walk(suite)
@@ -113,9 +105,7 @@ def audit_discovery(
             if loaded:
                 continue
             # The module was not loaded — this is an import error.
-            report.import_errors.append(
-                f"{rel}: module could not be imported"
-            )
+            report.import_errors.append(f"{rel}: module could not be imported")
 
     # Empty-module check: test_*.py files that look like test modules
     # (import unittest or django.test) but produced zero discovered tests.
@@ -144,8 +134,7 @@ def audit_discovery(
             rel = os.path.relpath(full, start_dir)
             mod_name = rel.replace("/", ".").replace(".py", "")
             found = any(
-                m == mod_name
-                or m.endswith("." + mod_name.split(".")[-1])
+                m == mod_name or m.endswith("." + mod_name.split(".")[-1])
                 for m in discovered_modules
             )
             if not found:
@@ -188,3 +177,48 @@ class _AuditLoader(unittest.TestLoader):
             # Module import failed (e.g., SyntaxError).
             self.import_errors.append((full_path, str(exc)))
             return self.suiteClass(), False
+
+
+def main(start_dir: str) -> int:
+    """
+    Entry point for the discovery audit launcher.
+
+    Calls audit_discovery, prints the report to stdout, and returns
+    exit code 0 on success, 1 on defects.  The shell launcher and
+    subprocess tests invoke this function.
+
+    Does NOT require Django setup — uses pure unittest discovery.
+    """
+    report = audit_discovery(start_dir)
+    print(f"Total discovered: {report.total}")
+    print()
+    print("By module:")
+    for mod, count in sorted(report.by_module.items()):
+        print(f"  {mod}: {count}")
+
+    if report.duplicate_ids:
+        print()
+        print("DUPLICATE TEST IDs:")
+        for d in report.duplicate_ids:
+            print(f"  {d}")
+
+    if report.import_errors:
+        print()
+        print("IMPORT ERRORS:")
+        for err in report.import_errors:
+            print(f"  {err}")
+
+    if report.empty_modules:
+        print()
+        print("EMPTY TEST MODULES:")
+        for m in report.empty_modules:
+            print(f"  {m}")
+
+    if not report.success:
+        print()
+        print("Discovery audit FAILED: structural defects found.")
+        return 1
+
+    print()
+    print("Discovery audit passed.")
+    return 0

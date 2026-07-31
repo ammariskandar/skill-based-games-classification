@@ -2,13 +2,16 @@
 Discovery-audit behavioral tests — SBGC-44.
 
 Proves that audit_discovery detects structural defects using
-synthetic test suites in temporary directories.
+synthetic test suites in temporary directories, and that the
+launcher exit codes propagate correctly.
 """
 
 from __future__ import annotations
 
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -16,7 +19,7 @@ from django.test import SimpleTestCase
 
 from config.discovery import audit_discovery
 
-_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class DiscoverySuccessTests(SimpleTestCase):
@@ -69,7 +72,6 @@ class DiscoveryDuplicateIdTests(SimpleTestCase):
         os.makedirs(pkg)
         with open(os.path.join(pkg, "__init__.py"), "w") as f:
             f.write("")
-        # A module whose load_tests returns the same test twice.
         with open(os.path.join(pkg, "test_dup.py"), "w") as f:
             f.write(
                 "import unittest\n"
@@ -93,14 +95,12 @@ class DiscoveryDuplicateIdTests(SimpleTestCase):
         report = audit_discovery(self.tmp)
         self.assertTrue(report.has_defects)
         self.assertFalse(report.success)
-        self.assertGreater(len(report.duplicate_ids), 0,
-                           f"Expected duplicate IDs, got: {report}")
+        self.assertGreater(len(report.duplicate_ids), 0)
 
     def test_duplicate_diagnostic_identifies_the_id(self):
         report = audit_discovery(self.tmp)
         self.assertTrue(
             any("test_x" in d for d in report.duplicate_ids),
-            f"Duplicate info should mention 'test_x': {report.duplicate_ids}",
         )
 
 
@@ -126,21 +126,17 @@ class DiscoveryImportErrorTests(SimpleTestCase):
 
     def test_import_error_is_a_defect(self):
         report = audit_discovery(self.tmp)
-        self.assertTrue(report.has_defects,
-                        f"Expected defects, got: {report}")
+        self.assertTrue(report.has_defects)
         self.assertFalse(report.success)
-        self.assertGreater(
-            len(report.import_errors), 0,
-            f"Expected import errors, got: {report}",
-        )
+        self.assertGreater(len(report.import_errors), 0)
 
     def test_import_error_diagnostic_identifies_module(self):
         report = audit_discovery(self.tmp)
         combined = " ".join(report.import_errors)
         self.assertTrue(
-            "test_broken" in combined or "SyntaxError" in combined
+            "test_broken" in combined
+            or "SyntaxError" in combined
             or "invalid" in combined.lower(),
-            f"Diagnostic should identify the broken module: {report.import_errors}",
         )
 
 
@@ -155,7 +151,6 @@ class DiscoveryZeroTestModuleTests(SimpleTestCase):
         os.makedirs(pkg)
         with open(os.path.join(pkg, "__init__.py"), "w") as f:
             f.write("")
-        # A module that imports unittest but has no TestCase subclass.
         with open(os.path.join(pkg, "test_empty.py"), "w") as f:
             f.write(
                 "import unittest\n"
@@ -180,11 +175,9 @@ class DiscoveryZeroTestModuleTests(SimpleTestCase):
         report = audit_discovery(self.tmp)
         self.assertTrue(
             any("test_empty" in m for m in report.empty_modules),
-            f"Empty module should be listed: {report.empty_modules}",
         )
 
     def test_helpers_without_test_prefix_are_ignored(self):
-        """A helper.py without test_ prefix is not flagged."""
         pkg = os.path.join(self.tmp, "zero_tests")
         with open(os.path.join(pkg, "helper.py"), "w") as f:
             f.write(
@@ -193,10 +186,8 @@ class DiscoveryZeroTestModuleTests(SimpleTestCase):
                 "    def test_something(self): pass\n"
             )
         report = audit_discovery(self.tmp)
-        # helper.py does not match test_*.py, should not be flagged.
         self.assertFalse(
             any("helper.py" in m for m in report.empty_modules),
-            f"helper.py should not be in empty_modules: {report.empty_modules}",
         )
 
 
@@ -224,52 +215,176 @@ class DiscoveryShellLauncherTests(SimpleTestCase):
         return pkg
 
     def test_valid_suite_exits_zero(self):
-        self._make_pkg("valid_shell", {
-            "test_a.py": (
-                "import unittest\n"
-                "class ShellA(unittest.TestCase):\n"
-                "    def test_x(self): pass\n"
-            ),
-        })
+        self._make_pkg(
+            "valid_shell",
+            {
+                "test_a.py": (
+                    "import unittest\n"
+                    "class ShellA(unittest.TestCase):\n"
+                    "    def test_x(self): pass\n"
+                ),
+            },
+        )
         report = audit_discovery(self.tmp)
         self.assertTrue(report.success)
 
     def test_duplicate_ids_exits_nonzero(self):
-        self._make_pkg("dup_shell", {
-            "test_dup.py": (
-                "import unittest\n"
-                "class DupS(unittest.TestCase):\n"
-                "    def test_x(self): pass\n"
-                "def load_tests(loader, tests, pattern):\n"
-                "    t = DupS('test_x')\n"
-                "    s = unittest.TestSuite()\n"
-                "    s.addTest(t)\n"
-                "    s.addTest(t)\n"
-                "    return s\n"
-            ),
-        })
+        self._make_pkg(
+            "dup_shell",
+            {
+                "test_dup.py": (
+                    "import unittest\n"
+                    "class DupS(unittest.TestCase):\n"
+                    "    def test_x(self): pass\n"
+                    "def load_tests(loader, tests, pattern):\n"
+                    "    t = DupS('test_x')\n"
+                    "    s = unittest.TestSuite()\n"
+                    "    s.addTest(t)\n"
+                    "    s.addTest(t)\n"
+                    "    return s\n"
+                ),
+            },
+        )
         report = audit_discovery(self.tmp)
         self.assertFalse(report.success)
         self.assertGreater(len(report.duplicate_ids), 0)
 
     def test_import_error_exits_nonzero(self):
-        self._make_pkg("importerr_shell", {
-            "test_bad.py": "syntax error {{{",
-        })
+        self._make_pkg(
+            "importerr_shell",
+            {
+                "test_bad.py": "syntax error {{{",
+            },
+        )
         report = audit_discovery(self.tmp)
         self.assertFalse(report.success)
         self.assertGreater(len(report.import_errors), 0)
 
     def test_zero_tests_exits_nonzero(self):
-        self._make_pkg("zero_shell", {
-            "test_empty.py": (
-                "import unittest\n"
-                "# No TestCase subclass — zero discoverable tests.\n"
-            ),
-        })
+        self._make_pkg(
+            "zero_shell",
+            {
+                "test_empty.py": (
+                    "import unittest\n"
+                    "# No TestCase subclass — zero discoverable tests.\n"
+                ),
+            },
+        )
         report = audit_discovery(self.tmp)
         self.assertFalse(report.success)
         self.assertGreater(len(report.empty_modules), 0)
+
+
+class DiscoveryLauncherSubprocessTests(SimpleTestCase):
+    """
+    Invoke config.discovery.main() via a real subprocess to prove
+    the launcher exit-code contract.  These mirror what the shell
+    script does but work with any temporary directory.
+    """
+
+    @staticmethod
+    def _run_main(start_dir: str) -> subprocess.CompletedProcess[str]:
+        """Run config.discovery.main(start_dir) in a subprocess."""
+        return subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                f"import sys; sys.path.insert(0, '{_BACKEND_DIR}'); "
+                f"from config.discovery import main; "
+                f"sys.exit(main('{start_dir}'))",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if self.tmp and os.path.exists(self.tmp):
+            shutil.rmtree(self.tmp)
+        super().tearDown()
+
+    def _make_pkg(self, name, modules):
+        pkg = os.path.join(self.tmp, name)
+        os.makedirs(pkg)
+        with open(os.path.join(pkg, "__init__.py"), "w") as f:
+            f.write("")
+        for mod_name, content in modules.items():
+            with open(os.path.join(pkg, mod_name), "w") as f:
+                f.write(content)
+        return pkg
+
+    def test_valid_suite_exits_zero(self):
+        self._make_pkg(
+            "main_ok",
+            {
+                "test_ok.py": (
+                    "import unittest\n"
+                    "class MainOk(unittest.TestCase):\n"
+                    "    def test_x(self): pass\n"
+                ),
+            },
+        )
+        proc = self._run_main(self.tmp)
+        self.assertEqual(
+            proc.returncode, 0, f"stdout:\n{proc.stdout}\nstderr:\n{proc.stderr}"
+        )
+        self.assertIn("Discovery audit passed", proc.stdout)
+
+    def test_duplicate_id_exits_nonzero(self):
+        self._make_pkg(
+            "main_dup",
+            {
+                "test_dup.py": (
+                    "import unittest\n"
+                    "class MainDup(unittest.TestCase):\n"
+                    "    def test_x(self): pass\n"
+                    "def load_tests(loader, tests, pattern):\n"
+                    "    t = MainDup('test_x')\n"
+                    "    s = unittest.TestSuite()\n"
+                    "    s.addTest(t)\n"
+                    "    s.addTest(t)\n"
+                    "    return s\n"
+                ),
+            },
+        )
+        proc = self._run_main(self.tmp)
+        self.assertNotEqual(
+            proc.returncode, 0, f"Expected nonzero, got {proc.returncode}"
+        )
+        self.assertIn("DUPLICATE TEST ID", proc.stdout)
+
+    def test_import_error_exits_nonzero(self):
+        self._make_pkg(
+            "main_bad",
+            {
+                "test_bad.py": "syntax error }}}",
+            },
+        )
+        proc = self._run_main(self.tmp)
+        self.assertNotEqual(
+            proc.returncode, 0, f"Expected nonzero, got {proc.returncode}"
+        )
+        self.assertIn("IMPORT ERRORS", proc.stdout)
+
+    def test_zero_test_module_exits_nonzero(self):
+        self._make_pkg(
+            "main_zero",
+            {
+                "test_zero.py": (
+                    "import unittest\n"
+                    "# No TestCase subclass — zero discoverable tests.\n"
+                ),
+            },
+        )
+        proc = self._run_main(self.tmp)
+        self.assertNotEqual(
+            proc.returncode, 0, f"Expected nonzero, got {proc.returncode}"
+        )
+        self.assertIn("EMPTY TEST MODULE", proc.stdout)
 
 
 class DiscoveryCleanupTests(SimpleTestCase):
