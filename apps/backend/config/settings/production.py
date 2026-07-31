@@ -1,18 +1,28 @@
 """
-Production settings — SBGC-41.
+Production settings — SBGC-41 / SBGC-43.
 
-Used by WSGI/ASGI entry points for deployed environments.
+Used by WSGI entry points for deployed environments (Gunicorn on Render).
 
 All security-sensitive values are validated at settings-import time.
 Missing or malformed values raise ImproperlyConfigured — production
 never falls back to development defaults.
+
+SBGC-43 additions:
+- PostgreSQL-only database enforcement (no SQLite in production).
+- Strengthened secret-key validation (50+ chars, 5+ unique, no insecure prefix).
+- Non-default ADMIN_URL_PATH required.
+- Structured CSRF trusted-origin parsing with hostname and port validation.
+- Validated DJANGO_LOG_LEVEL (default INFO).
 """
+
+from django.core.exceptions import ImproperlyConfigured
 
 from config.database import build_database_config
 from config.security import (
     parse_allowed_hosts,
     parse_non_negative_integer,
     parse_trusted_origins,
+    validate_log_level,
     validate_secret_key,
 )
 from config.settings.base import *  # noqa: F403
@@ -22,23 +32,57 @@ DEBUG = False
 # Django Ninja — SBGC-38
 NINJA_API_DOCS_ENABLED = False
 
-# Database — SBGC-39
-DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=False)  # noqa: F405
-
 # ---------------------------------------------------------------------------
-# Security — SBGC-41 (production — fail-closed)
+# Database — SBGC-43 (PostgreSQL-only enforcement)
 # ---------------------------------------------------------------------------
 
-# -- Secret key ---------------------------------------------------------------
+DATABASES = build_database_config(
+    DATABASE_URL,  # noqa: F405
+    BASE_DIR,  # noqa: F405
+    allow_sqlite_fallback=False,
+    require_postgresql=True,
+)
+
+# ---------------------------------------------------------------------------
+# Logging — SBGC-43
+# ---------------------------------------------------------------------------
+
+_log_level_raw = env("DJANGO_LOG_LEVEL", default="INFO")  # noqa: F405
+_log_level = validate_log_level(_log_level_raw)
+
+LOGGING["root"]["level"] = _log_level  # noqa: F405
+LOGGING["loggers"]["django"]["level"] = _log_level  # noqa: F405
+
+# ---------------------------------------------------------------------------
+# Security — SBGC-41 / SBGC-43 (production — fail-closed)
+# ---------------------------------------------------------------------------
+
+# -- Secret key — SBGC-43 (strengthened) --------------------------------------
 
 SECRET_KEY = validate_secret_key(env("DJANGO_SECRET_KEY", default=None))  # noqa: F405
+
+# -- Admin path — SBGC-43 (production must be non-default) ---------------------
+
+_ADMIN_RAW = env("ADMIN_URL_PATH", default=None)  # noqa: F405
+if _ADMIN_RAW is None:
+    raise ImproperlyConfigured("ADMIN_URL_PATH is required in production.")
+if not isinstance(_ADMIN_RAW, str):
+    raise ImproperlyConfigured("ADMIN_URL_PATH must be a string.")
+_stripped_admin = _ADMIN_RAW.strip()
+if not _stripped_admin:
+    raise ImproperlyConfigured("ADMIN_URL_PATH must not be blank.")
+if _stripped_admin.lower() == "admin":
+    raise ImproperlyConfigured(
+        "ADMIN_URL_PATH must not be the default 'admin' in production."
+    )
+ADMIN_URL_PATH = validate_admin_url_path(_stripped_admin)  # noqa: F405
 
 # -- Allowed hosts ------------------------------------------------------------
 
 _raw_hosts = env("DJANGO_ALLOWED_HOSTS", default=None)  # noqa: F405
 ALLOWED_HOSTS = parse_allowed_hosts(_raw_hosts)
 
-# -- CSRF ---------------------------------------------------------------------
+# -- CSRF — SBGC-43 (structured origin parsing) --------------------------------
 
 _raw_csrf = env("CSRF_TRUSTED_ORIGINS", default=None)  # noqa: F405
 CSRF_TRUSTED_ORIGINS = parse_trusted_origins(_raw_csrf, require_https=True)

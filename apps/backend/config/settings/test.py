@@ -1,5 +1,5 @@
 """
-Test settings — SBGC-39 / SBGC-41.
+Test settings — SBGC-39 / SBGC-41 / SBGC-43.
 
 Deterministic, secret-free, Neon-isolated settings for automated
 backend tests and CI.  Always uses an in-memory SQLite database
@@ -60,3 +60,17 @@ STEAM_MAX_RETRIES = "2"
 STEAM_RETRY_BACKOFF_SECONDS = "0.25"
 STEAM_MAX_RESPONSE_BYTES = "2097152"
 STEAM_CDN_ALLOWED_HOSTS = ""
+
+# SBGC-43 — WhiteNoise non-manifest storage (no collectstatic in tests).
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# SBGC-43 — logging (deterministic test level, suppress noise).
+LOGGING["root"]["level"] = "WARNING"  # noqa: F405
+LOGGING["loggers"]["django"]["level"] = "WARNING"  # noqa: F405

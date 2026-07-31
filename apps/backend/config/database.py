@@ -1,8 +1,9 @@
 """
-Database configuration helper — SBGC-39.
+Database configuration helper — SBGC-39 / SBGC-43.
 
 Parses DATABASE_URL through django-environ and produces a
-Django DATABASES entry with environment-specific fallback policy.
+Django DATABASES entry with environment-specific fallback policy
+and PostgreSQL-only production enforcement.
 
 Never opens a connection at import time.
 """
@@ -25,6 +26,7 @@ def build_database_config(
     base_dir: Path,
     *,
     allow_sqlite_fallback: bool,
+    require_postgresql: bool = False,
 ) -> dict[str, dict[str, Any]]:
     """
     Build the Django ``DATABASES["default"]`` configuration.
@@ -33,21 +35,28 @@ def build_database_config(
         database_url: The raw DATABASE_URL value (may be empty/None).
         base_dir: Project BASE_DIR (``apps/backend/``).
         allow_sqlite_fallback: If True, a missing/blank URL selects a local
-            SQLite database at ``base_dir / "db.sqlite3"``.  If False, a
-            missing or blank URL raises ``ImproperlyConfigured``.
+            SQLite database at ``base_dir / "db.sqlite3"``.
+        require_postgresql: If True, only ``django.db.backends.postgresql``
+            is accepted — missing URLs, SQLite, MySQL, Oracle, and unknown
+            engines all raise ``ImproperlyConfigured``.
 
     Returns:
         A dict suitable for ``settings.DATABASES``.
 
     Raises:
-        ImproperlyConfigured: When *allow_sqlite_fallback* is False and
-            *database_url* is missing, blank, or whitespace-only; or when
-            an unsupported engine or malformed URL is supplied.
+        ImproperlyConfigured: When the URL is missing/blank/malformed, the
+            engine is unsupported, or *require_postgresql* is True and the
+            resolved engine is not PostgreSQL.
     """
     stripped = (database_url or "").strip()
 
     # -- Missing / blank URL ---------------------------------------------------
     if not stripped:
+        if require_postgresql:
+            raise ImproperlyConfigured(
+                "DATABASE_URL is required in production and must be a "
+                "PostgreSQL connection URL."
+            )
         if allow_sqlite_fallback:
             return {
                 "default": {
@@ -70,7 +79,13 @@ def build_database_config(
     engine = raw_config.get("ENGINE", "")
 
     # -- Unsupported engine -----------------------------------------------------
-    if engine not in (_SQLITE_ENGINE, _POSTGRESQL_ENGINE):
+    if require_postgresql:
+        if engine != _POSTGRESQL_ENGINE:
+            raise ImproperlyConfigured(
+                f"Production requires PostgreSQL, got engine {engine!r}. "
+                f"SQLite and other engines are not supported in production."
+            )
+    elif engine not in (_SQLITE_ENGINE, _POSTGRESQL_ENGINE):
         raise ImproperlyConfigured(
             f"Unsupported database engine: {engine!r}. "
             f"Expected {_SQLITE_ENGINE!r} or {_POSTGRESQL_ENGINE!r}."

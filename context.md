@@ -2246,7 +2246,19 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-30 | JSON-object response contract | Accepted (SBGC-42).  Arrays, scalars, null roots, and non-JSON media types are rejected with `SteamInvalidResponseError`. |
 | 2026-07-30 | Exact-host CDN allowlist | Accepted (SBGC-42).  `validate_steam_cdn_url()` uses exact hostname matching — no wildcard or suffix matching; empty allowlist rejects all. |
 | 2026-07-30 | No network calls in Steam tests | Accepted (SBGC-42).  All 85 Steam service tests use injected fake sessions or pure-function validation; no real external requests. |
-| 2026-07-30 | Endpoint adapters deferred to SBGC-5 | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`) belong to SBGC-5. |
+| 2026-07-30 | Endpoint adapters deferred to SBGC-5 | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., ``GetAppList``, ``GetSchemaForGame``) belong to SBGC-5. |
+| 2026-07-31 | Gunicorn WSGI runtime | Accepted (SBGC-43).  Synchronous Gunicorn workers; no Uvicorn, ASGI, or async. |
+| 2026-07-31 | WhiteNoise Admin static files | Accepted (SBGC-43).  Compressed manifest storage; collectstatic in build phase only. |
+| 2026-07-31 | /health/ liveness endpoint | Accepted (SBGC-43).  Public, no-auth, no-DB, no-Steam, no-secret-disclosure.  Liveness/startup only. |
+| 2026-07-31 | stdout/stderr logging | Accepted (SBGC-43).  Console handlers only; DJANGO_LOG_LEVEL validated; no file/remote handlers. |
+| 2026-07-31 | Repository-owned Render Blueprint | Accepted (SBGC-43).  render.yaml defines one web service; Neon provisioned separately. |
+| 2026-07-31 | Separate build, migrate, start phases | Accepted (SBGC-43).  Build collects static; pre-deploy migrates; start runs Gunicorn only. |
+| 2026-07-31 | PostgreSQL-only production enforcement | Accepted (SBGC-43).  require_postgresql=True rejects SQLite, MySQL, Oracle; missing/blank URL raises ImproperlyConfigured. |
+| 2026-07-31 | Strengthened secret-key policy | Accepted (SBGC-43).  50+ chars, 5+ unique chars, no insecure prefix. |
+| 2026-07-31 | Non-default Admin path in production | Accepted (SBGC-43).  'admin' rejected; validated path-segment format reused. |
+| 2026-07-31 | Structured CSRF origin parsing | Accepted (SBGC-43).  urlparse-based; hostname DNS label validation; port 1-65535. |
+| 2026-07-31 | Staged HSTS without preload/subdomains | Accepted (SBGC-43).  SECURE_HSTS_INCLUDE_SUBDOMAINS=False, SECURE_HSTS_PRELOAD=False until subdomain readiness verified.  Deployment gate accepts W005/W021 as documented staging warnings. |
+| 2026-07-31 | No live deployment verification | Accepted (SBGC-43).  No Render service created; no Neon migration ran; SBGC-44 remains before SBGC-3 epic closes. | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`) belong to SBGC-5. |
 
 ---
 
