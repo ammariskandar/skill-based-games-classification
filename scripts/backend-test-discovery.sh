@@ -1,46 +1,52 @@
 #!/usr/bin/env bash
 # SBGC-44 — backend test discovery audit.
-# Runs manage.py test at verbosity 2 and reports discovered tests.
+# Thin launcher for config.discovery.audit_discovery.
 set -euo pipefail
 
 APPS_DIR="$(dirname "$0")/../apps/backend"
 
-flatpak-spawn --host "$APPS_DIR/.venv/bin/python" \
-  "$APPS_DIR/manage.py" test apps/backend \
-  --settings=config.settings.test --noinput --verbosity 2 2>&1 | \
-  "$APPS_DIR/.venv/bin/python" -c "
-import sys, re
+exec flatpak-spawn --host "$APPS_DIR/.venv/bin/python" -c "
+import os, sys
 
-by_module = {}
-total = 0
-ok = False
+os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings.test'
+os.environ['DJANGO_SKIP_DOTENV'] = '1'
+sys.path.insert(0, '$APPS_DIR')
 
-for line in sys.stdin:
-    line = line.rstrip()
-    m = re.match(r'^Found (\d+) test', line)
-    if m:
-        total = int(m.group(1))
-    # test_name (module.Class.method)
-    m2 = re.match(r'^test_\w+ \(([\w.]+)\.\w+\.\w+\)', line)
-    if m2:
-        mod = m2.group(1)
-        # Normalise: strip 'apps.backend.' or 'apps/backend/' prefix
-        mod = re.sub(r'^apps\.backend\.', '', mod)
-        by_module[mod] = by_module.get(mod, 0) + 1
-    if line.strip() == 'OK':
-        ok = True
+import django
+django.setup()
 
-print(f'Total discovered: {total}')
+from config.discovery import audit_discovery
+
+report = audit_discovery('$APPS_DIR')
+print(f'Total discovered: {report.total}')
 print()
 print('By module:')
-for mod in sorted(by_module):
-    print(f'  {mod}: {by_module[mod]}')
+for mod, count in sorted(report.by_module.items()):
+    print(f'  {mod}: {count}')
 
-if not ok:
+if report.duplicate_ids:
     print()
-    print('Suite FAILED.')
+    print('DUPLICATE TEST IDs:')
+    for d in report.duplicate_ids:
+        print(f'  {d}')
+
+if report.import_errors:
+    print()
+    print('IMPORT ERRORS:')
+    for mod, err in report.import_errors:
+        print(f'  {mod}: {err}')
+
+if report.empty_modules:
+    print()
+    print('EMPTY TEST MODULES:')
+    for m in report.empty_modules:
+        print(f'  {m}')
+
+if report.has_defects:
+    print()
+    print('Discovery audit FAILED: structural defects found.')
     sys.exit(1)
 
 print()
 print('Discovery audit passed.')
-" 2>&1
+"

@@ -22,7 +22,7 @@ from config.security import (
     parse_trusted_origins,
     validate_secret_key,
 )
-from config.test_helpers import minimal_subprocess_env
+from config.testing import minimal_subprocess_env
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -37,7 +37,7 @@ _DUMMY_PG_URL = (
 
 def _manage(*args, env=None):
     """Run manage.py in a subprocess with isolated environment."""
-    from config.test_helpers import run_manage
+    from config.testing import run_manage
 
     merged = minimal_subprocess_env()
     if env is not None:

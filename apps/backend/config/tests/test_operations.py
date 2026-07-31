@@ -25,7 +25,7 @@ from config.security import (
     validate_log_level,
     validate_secret_key,
 )
-from config.test_helpers import (
+from config.testing import (
     minimal_subprocess_env,
     prod_test_env,
     run_manage,

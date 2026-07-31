@@ -16,7 +16,7 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
-from config.test_helpers import (
+from config.testing import (
     minimal_subprocess_env,
     prod_test_env,
     run_manage,
@@ -76,7 +76,7 @@ os.environ["INJECTED_SECRET"] = "should-not-leak"
 # Now call our helper
 import sys
 sys.path.insert(0, "{_BACKEND_DIR.parent}")
-from config.test_helpers import minimal_subprocess_env
+from config.testing import minimal_subprocess_env
 env = minimal_subprocess_env()
 print(json.dumps({{k: "***" if "SECRET" in k else v for k, v in env.items()}}))
 """)

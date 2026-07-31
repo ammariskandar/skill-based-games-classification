@@ -11,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase
 
 from config.database import build_database_config
-from config.test_helpers import minimal_subprocess_env
+from config.testing import minimal_subprocess_env
 
 # ---------------------------------------------------------------------------
 # Constants
