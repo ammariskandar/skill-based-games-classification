@@ -94,9 +94,27 @@ Registered at `/admin/classifications/editorialclassification/` with:
 - `readonly_fields`: created_at, updated_at, updated_by
 - `updated_by` set from `request.user` in `save_model`
 
+### Admin persistence contract
+
+The Admin saves the parent and inline profiles **directly** (not through
+`set_editorial_classification()`).  Django's `changeform_view` wraps the
+entire save in `transaction.atomic()`, so a database failure during inline
+persistence rolls back the parent.
+
+**Limitations:**
+- `min_num=1` on inlines is an editing convenience — Django does not
+  enforce it at form-submit time.  An Admin user can submit the form
+  without inline profiles, creating an incomplete parent.
+- The database guarantees at-most-one parent and at-most-one of each
+  profile.  It does **not** guarantee every parent has both child rows.
+- The service layer (`set_editorial_classification()`) guarantees
+  completeness.  Prefer the service for programmatic creation.
+
 ## Limitations
 
-- Total=100 is application-enforced, not DB-enforced
+- Database guarantees at-most-one; service guarantees completeness;
+  Admin creates parent + inlines atomically but does not enforce child
+  existence at form-submit time.
 - No community/user classifications (SBGC-47)
 - No API endpoints
 - No PostgreSQL-specific constraint verification (SBGC-52)

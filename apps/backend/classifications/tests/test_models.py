@@ -4,6 +4,8 @@ Editorial classification model tests — SBGC-46.
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -386,3 +388,157 @@ class RewardProfileDbTotalsTests(TestCase):
             classification=self.parent, micro_score=33, mystiko_score=33, macro_score=34
         )
         self.assertEqual(RewardProfile.objects.count(), 1)
+
+
+# ---------------------------------------------------------------------------
+# Boolean rejection — post-construction assignment
+# ---------------------------------------------------------------------------
+
+
+class PostConstructionBooleanTests(TestCase):
+    """Boolean values assigned after construction are rejected in clean_fields."""
+
+    def setUp(self):
+        self.game = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="BoolAssign",
+            slug="bool-assign",
+        )
+        self.user = User.objects.create_user(username="bool_assign_u", password="test")
+        self.parent = EditorialClassification.objects.create(
+            game=self.game, updated_by=self.user
+        )
+
+    def test_challenge_bool_assigned_after_construction(self):
+        cp = ChallengeProfile(
+            classification=self.parent, micro_score=50, mystiko_score=50, macro_score=0
+        )
+        cp.micro_score = True
+        with self.assertRaises(ValidationError) as cm:
+            cp.full_clean()
+        self.assertIn("Challenge Micro", str(cm.exception))
+
+    def test_challenge_bool_each_field(self):
+        for attr in ("micro_score", "mystiko_score", "macro_score"):
+            cp = ChallengeProfile(
+                classification=self.parent,
+                micro_score=34,
+                mystiko_score=33,
+                macro_score=33,
+            )
+            setattr(cp, attr, False)
+            with self.assertRaises(ValidationError, msg=f"{attr} not rejected"):
+                cp.full_clean()
+
+    def test_reward_bool_assigned_after_construction(self):
+        rp = RewardProfile(
+            classification=self.parent, micro_score=50, mystiko_score=50, macro_score=0
+        )
+        rp.macro_score = False
+        with self.assertRaises(ValidationError) as cm:
+            rp.full_clean()
+        self.assertIn("Reward Macro", str(cm.exception))
+
+    def test_reward_bool_each_field(self):
+        for attr in ("micro_score", "mystiko_score", "macro_score"):
+            rp = RewardProfile(
+                classification=self.parent,
+                micro_score=34,
+                mystiko_score=33,
+                macro_score=33,
+            )
+            setattr(rp, attr, True)
+            with self.assertRaises(ValidationError, msg=f"{attr} not rejected"):
+                rp.full_clean()
+
+
+# ---------------------------------------------------------------------------
+# No-network — model and service
+# ---------------------------------------------------------------------------
+
+
+class NoNetworkModelTests(TestCase):
+    """Model construction, clean, and save make no Steam calls."""
+
+    def setUp(self):
+        self.game = Game.objects.create(
+            source_type=SourceType.MANUAL, name="NoNetM", slug="nonet-m"
+        )
+        self.user = User.objects.create_user(username="nonet_m_u", password="test")
+        self.parent = EditorialClassification.objects.create(
+            game=self.game, updated_by=self.user
+        )
+        self._guard = patch(
+            "games.services.steam.client.SteamClient.__init__",
+            side_effect=RuntimeError("SteamClient must not be called"),
+        )
+
+    def test_construction_no_steam(self):
+        with self._guard:
+            c = EditorialClassification(game=self.game, updated_by=self.user)
+            self.assertIsNotNone(c)
+
+    def test_challenge_full_clean_no_steam(self):
+        with self._guard:
+            cp = ChallengeProfile(
+                classification=self.parent,
+                micro_score=50,
+                mystiko_score=20,
+                macro_score=30,
+            )
+            cp.full_clean()
+
+    def test_reward_full_clean_no_steam(self):
+        with self._guard:
+            rp = RewardProfile(
+                classification=self.parent,
+                micro_score=10,
+                mystiko_score=30,
+                macro_score=60,
+            )
+            rp.full_clean()
+
+    def test_profile_save_no_steam(self):
+        with self._guard:
+            cp = ChallengeProfile.objects.create(
+                classification=self.parent,
+                micro_score=50,
+                mystiko_score=20,
+                macro_score=30,
+            )
+            self.assertIsNotNone(cp.pk)
+
+    def test_str_no_steam(self):
+        with self._guard:
+            s = str(self.parent)
+            self.assertIn("NoNetM", s)
+
+    def test_service_create_no_steam(self):
+        from classifications.services.editorial import (
+            ScoreDistribution,
+            set_editorial_classification,
+        )
+
+        with self._guard:
+            result = set_editorial_classification(
+                game=self.game,
+                updated_by=self.user,
+                challenge=ScoreDistribution(micro=50, mystiko=20, macro=30),
+                reward=ScoreDistribution(micro=10, mystiko=30, macro=60),
+            )
+            self.assertIsNotNone(result.pk)
+
+    def test_service_update_no_steam(self):
+        from classifications.services.editorial import (
+            ScoreDistribution,
+            set_editorial_classification,
+        )
+
+        with self._guard:
+            result = set_editorial_classification(
+                game=self.game,
+                updated_by=self.user,
+                challenge=ScoreDistribution(micro=30, mystiko=40, macro=30),
+                reward=ScoreDistribution(micro=20, mystiko=20, macro=60),
+            )
+            self.assertIsNotNone(result.pk)
