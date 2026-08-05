@@ -101,14 +101,24 @@ The Admin saves the parent and inline profiles **directly** (not through
 entire save in `transaction.atomic()`, so a database failure during inline
 persistence rolls back the parent.
 
+**Profile completeness:** Custom `BaseInlineFormSet` subclasses
+(`ChallengeProfileInlineFormSet`, `RewardProfileInlineFormSet`) enforce
+exactly one active profile per formset:
+- Zero submitted forms → `ValidationError`
+- More than one submitted form → `ValidationError`
+- Empty extra rows are ignored
+- Existing unchanged instances count as one
+- Deletion of the sole profile is blocked (`can_delete=False`)
+
+The Admin therefore guarantees the same completeness invariant as the
+service: every saved `EditorialClassification` has exactly one Challenge
+and one Reward profile.
+
 **Limitations:**
-- `min_num=1` on inlines is an editing convenience — Django does not
-  enforce it at form-submit time.  An Admin user can submit the form
-  without inline profiles, creating an incomplete parent.
 - The database guarantees at-most-one parent and at-most-one of each
   profile.  It does **not** guarantee every parent has both child rows.
-- The service layer (`set_editorial_classification()`) guarantees
-  completeness.  Prefer the service for programmatic creation.
+- Direct unrestricted ORM use (bypassing both Admin and service) may
+  still create an incomplete parent.
 
 ## Limitations
 

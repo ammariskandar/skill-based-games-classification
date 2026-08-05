@@ -13,7 +13,9 @@ from games.models import Game, SourceType
 
 from classifications.admin import (
     ChallengeProfileInline,
+    ChallengeProfileInlineFormSet,
     RewardProfileInline,
+    RewardProfileInlineFormSet,
 )
 from classifications.models import (
     ChallengeProfile,
@@ -21,32 +23,8 @@ from classifications.models import (
     RewardProfile,
 )
 
-
-class AdminRegistrationTests(TestCase):
-    def test_model_registered(self):
-        from django.contrib import admin
-
-        self.assertTrue(admin.site.is_registered(EditorialClassification))
-
-    def test_challenge_inline_config(self):
-        self.assertEqual(ChallengeProfileInline.extra, 0)
-        self.assertEqual(ChallengeProfileInline.max_num, 1)
-        self.assertEqual(ChallengeProfileInline.min_num, 1)
-        self.assertFalse(ChallengeProfileInline.can_delete)
-
-    def test_reward_inline_config(self):
-        self.assertEqual(RewardProfileInline.extra, 0)
-        self.assertEqual(RewardProfileInline.max_num, 1)
-        self.assertEqual(RewardProfileInline.min_num, 1)
-        self.assertFalse(RewardProfileInline.can_delete)
-
-    def test_inline_labels_distinct(self):
-        self.assertEqual(ChallengeProfileInline.verbose_name, "Challenge Profile")
-        self.assertEqual(RewardProfileInline.verbose_name, "Reward Profile")
-
-
 # ---------------------------------------------------------------------------
-# Helpers for inline POST data
+# Helpers
 # ---------------------------------------------------------------------------
 
 CH_PREFIX = "challenge_profile"
@@ -90,6 +68,36 @@ def _valid_post_data(game_pk):
 
 
 # ---------------------------------------------------------------------------
+# Inline registration
+# ---------------------------------------------------------------------------
+
+
+class AdminRegistrationTests(TestCase):
+    def test_model_registered(self):
+        from django.contrib import admin
+
+        self.assertTrue(admin.site.is_registered(EditorialClassification))
+
+    def test_challenge_inline_config(self):
+        self.assertEqual(ChallengeProfileInline.extra, 0)
+        self.assertEqual(ChallengeProfileInline.max_num, 1)
+        self.assertEqual(ChallengeProfileInline.min_num, 1)
+        self.assertFalse(ChallengeProfileInline.can_delete)
+        self.assertEqual(ChallengeProfileInline.formset, ChallengeProfileInlineFormSet)
+
+    def test_reward_inline_config(self):
+        self.assertEqual(RewardProfileInline.extra, 0)
+        self.assertEqual(RewardProfileInline.max_num, 1)
+        self.assertEqual(RewardProfileInline.min_num, 1)
+        self.assertFalse(RewardProfileInline.can_delete)
+        self.assertEqual(RewardProfileInline.formset, RewardProfileInlineFormSet)
+
+    def test_inline_labels_distinct(self):
+        self.assertEqual(ChallengeProfileInline.verbose_name, "Challenge Profile")
+        self.assertEqual(RewardProfileInline.verbose_name, "Reward Profile")
+
+
+# ---------------------------------------------------------------------------
 # Admin POST tests
 # ---------------------------------------------------------------------------
 
@@ -105,59 +113,36 @@ class AdminPostTests(TestCase):
         )
         self.url = reverse("admin:classifications_editorialclassification_add")
 
-    # -- valid creation -------------------------------------------------------
+    # -- valid creation --------------------------------------------------------
 
-    def test_valid_post_creates_parent_and_both_profiles(self):
+    def test_valid_post_creates_exactly_one_of_each(self):
         response = self.client.post(self.url, _valid_post_data(self.game.pk))
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(EditorialClassification.objects.filter(game=self.game).exists())
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertIsNotNone(c.challenge_profile)
-        self.assertIsNotNone(c.reward_profile)
-
-    def test_valid_post_persists_notes(self):
-        self.client.post(self.url, _valid_post_data(self.game.pk))
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertEqual(c.notes, "Admin test notes")
-
-    def test_valid_post_sets_updated_by_from_request(self):
-        self.client.post(self.url, _valid_post_data(self.game.pk))
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertEqual(c.updated_by, self.user)
-
-    def test_valid_post_challenge_scores_correct(self):
-        self.client.post(self.url, _valid_post_data(self.game.pk))
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertEqual(c.challenge_profile.micro_score, 50)
-        self.assertEqual(c.challenge_profile.mystiko_score, 20)
-        self.assertEqual(c.challenge_profile.macro_score, 30)
-
-    def test_valid_post_reward_scores_correct(self):
-        self.client.post(self.url, _valid_post_data(self.game.pk))
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertEqual(c.reward_profile.micro_score, 10)
-        self.assertEqual(c.reward_profile.macro_score, 60)
-
-    def test_valid_post_profiles_distinct(self):
-        data = _valid_post_data(self.game.pk)
-        data[f"{CH_PREFIX}-0-micro_score"] = "70"
-        data[f"{CH_PREFIX}-0-macro_score"] = "10"  # total still 100
-        self.client.post(self.url, data)
-        c = EditorialClassification.objects.get(game=self.game)
-        self.assertEqual(c.challenge_profile.micro_score, 70)
-        self.assertEqual(c.reward_profile.micro_score, 10)
-
-    def test_valid_post_exactly_three_rows(self):
-        self.client.post(self.url, _valid_post_data(self.game.pk))
         self.assertEqual(EditorialClassification.objects.count(), 1)
         self.assertEqual(ChallengeProfile.objects.count(), 1)
         self.assertEqual(RewardProfile.objects.count(), 1)
 
-    # -- invalid Challenge ----------------------------------------------------
+    def test_valid_post_updated_by_from_request(self):
+        self.client.post(self.url, _valid_post_data(self.game.pk))
+        c = EditorialClassification.objects.get(game=self.game)
+        self.assertEqual(c.updated_by, self.user)
 
-    def test_invalid_challenge_total_no_persistence(self):
+    def test_valid_post_notes_and_scores_persist(self):
+        self.client.post(self.url, _valid_post_data(self.game.pk))
+        c = EditorialClassification.objects.get(game=self.game)
+        self.assertEqual(c.notes, "Admin test notes")
+        self.assertEqual(c.challenge_profile.micro_score, 50)
+        self.assertEqual(c.challenge_profile.mystiko_score, 20)
+        self.assertEqual(c.challenge_profile.macro_score, 30)
+        self.assertEqual(c.reward_profile.micro_score, 10)
+        self.assertEqual(c.reward_profile.mystiko_score, 30)
+        self.assertEqual(c.reward_profile.macro_score, 60)
+
+    # -- missing Challenge -----------------------------------------------------
+
+    def test_missing_challenge_rejected(self):
         data = _valid_post_data(self.game.pk)
-        data[f"{CH_PREFIX}-0-macro_score"] = "20"  # total = 90
+        data[f"{CH_PREFIX}-TOTAL_FORMS"] = "0"
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(
@@ -170,7 +155,56 @@ class AdminPostTests(TestCase):
             RewardProfile.objects.filter(classification__game=self.game).exists()
         )
 
-    # -- invalid Reward -------------------------------------------------------
+    # -- missing Reward --------------------------------------------------------
+
+    def test_missing_reward_rejected(self):
+        data = _valid_post_data(self.game.pk)
+        data[f"{RW_PREFIX}-TOTAL_FORMS"] = "0"
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            EditorialClassification.objects.filter(game=self.game).exists()
+        )
+
+    # -- duplicate Challenge ---------------------------------------------------
+
+    def test_duplicate_challenge_rejected(self):
+        data = _valid_post_data(self.game.pk)
+        data[f"{CH_PREFIX}-TOTAL_FORMS"] = "2"
+        # Add second form's scores
+        data[f"{CH_PREFIX}-1-micro_score"] = "60"
+        data[f"{CH_PREFIX}-1-mystiko_score"] = "20"
+        data[f"{CH_PREFIX}-1-macro_score"] = "20"
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            EditorialClassification.objects.filter(game=self.game).exists()
+        )
+
+    # -- duplicate Reward ------------------------------------------------------
+
+    def test_duplicate_reward_rejected(self):
+        data = _valid_post_data(self.game.pk)
+        data[f"{RW_PREFIX}-TOTAL_FORMS"] = "2"
+        data[f"{RW_PREFIX}-1-micro_score"] = "60"
+        data[f"{RW_PREFIX}-1-mystiko_score"] = "20"
+        data[f"{RW_PREFIX}-1-macro_score"] = "20"
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            EditorialClassification.objects.filter(game=self.game).exists()
+        )
+
+    # -- invalid totals --------------------------------------------------------
+
+    def test_invalid_challenge_total_no_persistence(self):
+        data = _valid_post_data(self.game.pk)
+        data[f"{CH_PREFIX}-0-macro_score"] = "20"  # total = 90
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            EditorialClassification.objects.filter(game=self.game).exists()
+        )
 
     def test_invalid_reward_total_no_persistence(self):
         data = _valid_post_data(self.game.pk)
@@ -180,11 +214,6 @@ class AdminPostTests(TestCase):
         self.assertFalse(
             EditorialClassification.objects.filter(game=self.game).exists()
         )
-
-        # Admin inlines with min_num=1 do not enforce presence at form-submit
-        # time — Django accepts TOTAL_FORMS=0 and creates the parent without
-        # profiles.  The service layer enforces completeness;
-        # min_num is an editing convenience.  See docs/editorial-classification.md.
 
 
 # ---------------------------------------------------------------------------
@@ -238,13 +267,48 @@ class AdminViewTests(TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Transaction rollback
+# ---------------------------------------------------------------------------
+
+
+class AdminTransactionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username="txn_admin", password="testpass"
+        )
+        self.client.force_login(self.user)  # type: ignore[attr-defined]
+        self.game = Game.objects.create(
+            source_type=SourceType.MANUAL, name="Txn Game", slug="txn-game"
+        )
+        self.url = reverse("admin:classifications_editorialclassification_add")
+
+    def test_inline_db_failure_rolls_back_parent(self):
+        """Patching RewardProfile._meta to cause a DB error during inline
+        save proves the parent is rolled back by Django's transaction."""
+        data = _valid_post_data(self.game.pk)
+        # Cause a unique-violation on reward by pre-creating a stray row.
+        c = EditorialClassification.objects.create(game=self.game, updated_by=self.user)
+        RewardProfile.objects.create(
+            classification=c, micro_score=50, mystiko_score=30, macro_score=20
+        )
+        # Now POST — the form tries to create another RewardProfile for the
+        # same classification, causing IntegrityError.  The transaction
+        # should roll back the parent.
+        self.client.post(self.url, data)
+        # The parent is rolled back.
+        self.assertFalse(
+            EditorialClassification.objects.filter(
+                game=self.game, notes="Admin test notes"
+            ).exists()
+        )
+
+
+# ---------------------------------------------------------------------------
 # No-network tests
 # ---------------------------------------------------------------------------
 
 
 class NoNetworkTests(TestCase):
-    """All classifications Admin and model operations make no Steam calls."""
-
     def setUp(self):
         self.user = User.objects.create_superuser(
             username="nonet_admin", password="testpass"
@@ -256,7 +320,6 @@ class NoNetworkTests(TestCase):
         self.add_url = reverse("admin:classifications_editorialclassification_add")
 
     def _steam_guard(self):
-        """Patch SteamClient.__init__ to fail if imported/called."""
         return patch(
             "games.services.steam.client.SteamClient.__init__",
             side_effect=RuntimeError("SteamClient must not be called"),
@@ -278,16 +341,26 @@ class NoNetworkTests(TestCase):
             response = self.client.post(self.add_url, _valid_post_data(self.game.pk))
             self.assertEqual(response.status_code, 302)
 
-    def test_invalid_challenge_post_no_steam(self):
+    def test_missing_challenge_no_steam(self):
         data = _valid_post_data(self.game.pk)
-        data[f"{CH_PREFIX}-0-macro_score"] = "20"
+        data[f"{CH_PREFIX}-TOTAL_FORMS"] = "0"
         with self._steam_guard():
             response = self.client.post(self.add_url, data)
             self.assertEqual(response.status_code, 200)
 
-    def test_invalid_reward_post_no_steam(self):
+    def test_duplicate_challenge_no_steam(self):
         data = _valid_post_data(self.game.pk)
-        data[f"{RW_PREFIX}-0-macro_score"] = "20"
+        data[f"{CH_PREFIX}-TOTAL_FORMS"] = "2"
+        data[f"{CH_PREFIX}-1-micro_score"] = "60"
+        data[f"{CH_PREFIX}-1-mystiko_score"] = "20"
+        data[f"{CH_PREFIX}-1-macro_score"] = "20"
+        with self._steam_guard():
+            response = self.client.post(self.add_url, data)
+            self.assertEqual(response.status_code, 200)
+
+    def test_invalid_total_no_steam(self):
+        data = _valid_post_data(self.game.pk)
+        data[f"{CH_PREFIX}-0-macro_score"] = "20"
         with self._steam_guard():
             response = self.client.post(self.add_url, data)
             self.assertEqual(response.status_code, 200)
