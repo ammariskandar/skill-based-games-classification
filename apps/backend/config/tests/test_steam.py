@@ -16,7 +16,9 @@ import sys
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
+from games.services.steam.cdn import validate_steam_cdn_url
 from games.services.steam.config import SteamClientConfig
+from games.services.steam.constants import STEAM_STORE_API_ORIGIN, STEAM_WEB_API_ORIGIN
 
 from config.steam import steam_client_config_from_settings
 
@@ -32,8 +34,8 @@ class FactoryDefaultsTests(SimpleTestCase):
         self.assertEqual(cfg.max_retries, 2)
         self.assertEqual(cfg.retry_backoff, 0.25)
         self.assertEqual(cfg.max_response_bytes, 2_097_152)
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
         self.assertEqual(tuple(cfg.cdn_allowed_hosts), ())
 
     def test_factory_returns_steam_client_config(self):
@@ -607,16 +609,313 @@ class NoImportSideEffectTests(SimpleTestCase):
 class OriginImmutabilityTests(SimpleTestCase):
     """API and store origins are fixed and not affected by environment."""
 
-    def test_api_origin_is_not_configurable(self):
-        cfg = steam_client_config_from_settings()
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+    def test_origin_is_code_constant(self):
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
 
-    def test_origin_unchanged_with_overrides(self):
+    def test_origin_unaffected_by_settings_overrides(self):
         with override_settings(
             STEAM_WEB_API_KEY="KEY123",
             STEAM_CONNECT_TIMEOUT_SECONDS="1.0",
         ):
-            cfg = steam_client_config_from_settings()
-            self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-            self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+            self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+            self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
+
+
+class CdnNumericHostTests(SimpleTestCase):
+    """CDN host allowlist rejects numeric IP representations."""
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="2130706433")
+    def test_decimal_ip_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="0x7f000001")
+    def test_hex_ip_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="017700000001")
+    def test_octal_ip_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+
+class CdnUrlNumericHostTests(SimpleTestCase):
+    """validate_steam_cdn_url rejects numeric host representations."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._allowed = {"images.steamusercontent.com"}
+
+    def test_decimal_host_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://2130706433/steam/apps/730/header.jpg",
+                allowed_hosts=self._allowed,
+            )
+
+    def test_hex_host_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://0x7f000001/steam/apps/730/header.jpg",
+                allowed_hosts=self._allowed,
+            )
+
+    def test_octal_host_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://017700000001/steam/apps/730/header.jpg",
+                allowed_hosts=self._allowed,
+            )
+
+
+class DirectConfigFiniteNumberTests(SimpleTestCase):
+    """Direct SteamClientConfig construction rejects NaN, inf, bool."""
+
+    _VALID_KWARGS: dict[str, object] = {
+        "connect_timeout": 3.05,
+        "read_timeout": 10.0,
+        "max_retries": 2,
+        "retry_backoff": 0.25,
+        "retry_sleep_max_seconds": 5,
+        "max_response_bytes": 1000,
+    }
+
+    def _make(self, **overrides: object) -> SteamClientConfig:
+        kwargs = {**self._VALID_KWARGS, **overrides}
+        return SteamClientConfig(**kwargs)  # type: ignore[arg-type]
+
+    # -- NaN ----------------------------------------------------------------
+
+    def test_nan_connect_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(connect_timeout=float("nan"))
+
+    def test_nan_read_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(read_timeout=float("nan"))
+
+    def test_nan_retry_backoff_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_backoff=float("nan"))
+
+    def test_nan_sleep_cap_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_sleep_max_seconds=float("nan"))
+
+    # -- +inf ---------------------------------------------------------------
+
+    def test_inf_connect_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(connect_timeout=float("inf"))
+
+    def test_inf_read_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(read_timeout=float("inf"))
+
+    def test_inf_retry_backoff_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_backoff=float("inf"))
+
+    def test_inf_sleep_cap_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_sleep_max_seconds=float("inf"))
+
+    # -- -inf ---------------------------------------------------------------
+
+    def test_neg_inf_connect_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(connect_timeout=float("-inf"))
+
+    def test_neg_inf_read_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(read_timeout=float("-inf"))
+
+    def test_neg_inf_retry_backoff_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_backoff=float("-inf"))
+
+    def test_neg_inf_sleep_cap_rejected(self):
+        # Float rejected — retry_sleep_max_seconds is int (urllib3 type contract).
+        with self.assertRaises(TypeError):
+            self._make(retry_sleep_max_seconds=float("-inf"))
+
+    def test_float_sleep_cap_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_sleep_max_seconds=5.0)
+
+    # -- bool ---------------------------------------------------------------
+
+    # -- bool ---------------------------------------------------------------
+
+    def test_bool_connect_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(connect_timeout=True)
+
+    def test_bool_read_timeout_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(read_timeout=True)
+
+    def test_bool_retry_backoff_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_backoff=False)
+
+    def test_bool_sleep_cap_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(retry_sleep_max_seconds=True)
+
+    def test_bool_max_retries_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(max_retries=True)
+
+    def test_bool_max_response_bytes_rejected(self):
+        with self.assertRaises(TypeError):
+            self._make(max_response_bytes=False)
+
+
+class FactorySleepCapTypeTests(SimpleTestCase):
+    """Non-integer sleep-cap env values become ImproperlyConfigured."""
+
+    @override_settings(STEAM_RETRY_SLEEP_MAX_SECONDS="5.0")
+    def test_float_string_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_RETRY_SLEEP_MAX_SECONDS="not-int")
+    def test_non_numeric_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_RETRY_SLEEP_MAX_SECONDS="NaN")
+    def test_nan_string_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_RETRY_SLEEP_MAX_SECONDS="Infinity")
+    def test_infinity_string_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+
+class CdnHostIpInAllowlistRejectedTests(SimpleTestCase):
+    """IP / numeric hosts are rejected even when included in the allowlist."""
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="127.0.0.1")
+    def test_ipv4_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="192.168.1.1")
+    def test_private_ipv4_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="[::1]")
+    def test_ipv6_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="2130706433")
+    def test_decimal_ip_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="0x7f000001")
+    def test_hex_ip_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_CDN_ALLOWED_HOSTS="017700000001")
+    def test_octal_ip_in_allowlist_rejected(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+
+class CdnUrlIpInAllowlistRejectedTests(SimpleTestCase):
+    """validate_steam_cdn_url rejects IP/numeric hosts even when allowlisted."""
+
+    def test_ipv4_in_allowlist_rejected(self):
+        allowed = {"127.0.0.1", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://127.0.0.1/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_private_ipv4_in_allowlist_rejected(self):
+        allowed = {"192.168.1.1", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://192.168.1.1/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_ipv6_in_allowlist_rejected(self):
+        allowed = {"::1", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://[::1]/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_ipv4_mapped_in_allowlist_rejected(self):
+        allowed = {"::ffff:127.0.0.1", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://[::ffff:127.0.0.1]/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_decimal_ip_in_allowlist_rejected(self):
+        allowed = {"2130706433", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://2130706433/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_hex_ip_in_allowlist_rejected(self):
+        allowed = {"0x7f000001", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://0x7f000001/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_octal_ip_in_allowlist_rejected(self):
+        allowed = {"017700000001", "cdn.example.com"}
+        with self.assertRaises(ValueError):
+            validate_steam_cdn_url(
+                "https://017700000001/steam/apps/730/header.jpg",
+                allowed_hosts=allowed,
+            )
+
+    def test_exact_dns_host_still_accepted(self):
+        """Exact DNS hostnames are still accepted alongside IP rejections."""
+        allowed = {"cdn.example.com"}
+        result = validate_steam_cdn_url(
+            "https://cdn.example.com/steam/apps/730/header.jpg",
+            allowed_hosts=allowed,
+        )
+        self.assertTrue(result.startswith("https://cdn.example.com"))
+
+
+class FactoryImproperlyConfiguredTests(SimpleTestCase):
+    """Non-finite env values become ImproperlyConfigured at the factory."""
+
+    @override_settings(STEAM_CONNECT_TIMEOUT_SECONDS="NaN")
+    def test_nan_connect_becomes_improperly_configured(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_READ_TIMEOUT_SECONDS="Infinity")
+    def test_inf_read_becomes_improperly_configured(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()
+
+    @override_settings(STEAM_RETRY_BACKOFF_SECONDS="-Infinity")
+    def test_neg_inf_backoff_becomes_improperly_configured(self):
+        with self.assertRaises(ImproperlyConfigured):
+            steam_client_config_from_settings()

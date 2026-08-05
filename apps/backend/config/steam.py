@@ -48,6 +48,7 @@ def steam_client_config_from_settings(
     steam_retry_backoff_seconds: str | None = _sentinel,  # type: ignore[valid-type]
     steam_max_response_bytes: str | None = _sentinel,  # type: ignore[valid-type]
     steam_cdn_allowed_hosts: str | None = _sentinel,  # type: ignore[valid-type]
+    steam_retry_sleep_max_seconds: str | None = _sentinel,  # type: ignore[valid-type]
 ) -> SteamClientConfig:
     """
     Build a validated ``SteamClientConfig`` from Django settings.
@@ -129,6 +130,15 @@ def steam_client_config_from_settings(
     )
     cdn_allowed_hosts: Collection[str] = _parse_cdn_hosts(hosts)
 
+    # -- Retry sleep cap ------------------------------------------------------
+    sleep_raw = _resolve(
+        steam_retry_sleep_max_seconds,
+        getattr(settings, "STEAM_RETRY_SLEEP_MAX_SECONDS", "5"),
+    )
+    retry_sleep_max = _parse_int(
+        sleep_raw, label="STEAM_RETRY_SLEEP_MAX_SECONDS", default=5
+    )
+
     # -- Construct (validation via __post_init__) ------------------------------
     try:
         return SteamClientConfig(
@@ -137,6 +147,7 @@ def steam_client_config_from_settings(
             read_timeout=read_timeout,
             max_retries=max_retries,
             retry_backoff=retry_backoff,
+            retry_sleep_max_seconds=retry_sleep_max,
             max_response_bytes=max_response_bytes,
             cdn_allowed_hosts=cdn_allowed_hosts,
         )
@@ -229,6 +240,9 @@ _MAX_HOSTNAME_LENGTH = 253
 
 _CDN_HOST_RESERVED = frozenset({"localhost", "localhost.localdomain"})
 
+# Reject numeric-only host representations (decimal, hex, octal IP forms).
+_NUMERIC_HOST_RE = re.compile(r"^(?:0[xX][0-9a-fA-F]+|0[0-7]+|[0-9]+)$")
+
 
 def _validate_cdn_host_entry(entry: str) -> None:
     """
@@ -291,16 +305,23 @@ def _validate_cdn_host_entry(entry: str) -> None:
             "STEAM_CDN_ALLOWED_HOSTS must not contain localhost."
         )
 
+    # Numeric-only hosts (decimal, hex, octal IP representations).
+    if _NUMERIC_HOST_RE.match(entry):
+        raise ImproperlyConfigured(
+            "STEAM_CDN_ALLOWED_HOSTS must not contain numeric hosts."
+        )
+
     # IP literal (IPv4 or IPv6).
     try:
         import ipaddress
 
         ipaddress.ip_address(entry)
+    except ValueError:
+        pass  # not an IP address — proceed to DNS validation
+    else:
         raise ImproperlyConfigured(
             "STEAM_CDN_ALLOWED_HOSTS must not contain IP literals."
         )
-    except ValueError:
-        pass  # not an IP address — proceed to DNS validation
 
     # DNS hostname length.
     if len(entry) > _MAX_HOSTNAME_LENGTH:

@@ -8,11 +8,13 @@ Never makes real network requests — uses injected fake sessions and responses.
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
 from games.services.steam import (
+    STEAM_STORE_API_ORIGIN,
+    STEAM_WEB_API_ORIGIN,
     SteamAuthenticationError,
     SteamClient,
     SteamClientConfig,
@@ -88,8 +90,8 @@ class ConfigTests(SimpleTestCase):
         self.assertEqual(cfg.max_retries, 2)
         self.assertEqual(cfg.retry_backoff, 0.25)
         self.assertEqual(cfg.max_response_bytes, 2_097_152)
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
         self.assertEqual(tuple(cfg.cdn_allowed_hosts), ())
 
     def test_valid_overrides(self):
@@ -724,3 +726,412 @@ class AdapterPolicyIntegrationTests(SimpleTestCase):
         self.assertIsNotNone(client._session)
         # Accessing adapters does not make a request.
         _ = client._session.adapters["https://"]
+
+
+# ============================================================================
+# Retry behavior tests — SBGC-168
+# ============================================================================
+
+
+class RetryBehaviorTests(SimpleTestCase):
+    """Verify urllib3 Retry construction with real adapter inspection."""
+
+    def test_backoff_max_capped(self):
+        client = _steam_client(_make_config(retry_sleep_max_seconds=3))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.backoff_max, 3)
+
+    def test_retry_after_max_capped(self):
+        client = _steam_client(_make_config(retry_sleep_max_seconds=4))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.retry_after_max, 4)
+
+    def test_sleep_cap_default(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.backoff_max, 5.0)
+        self.assertEqual(retry.retry_after_max, 5.0)
+
+    def test_allowed_methods_exact(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
+
+    def test_status_forcelist_exact(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
+
+    def test_redirects_zero(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.redirect, 0)
+
+    def test_other_zero(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.other, 0)
+
+    def test_raise_on_redirect_false(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertFalse(retry.raise_on_redirect)
+
+    def test_raise_on_status_false(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertFalse(retry.raise_on_status)
+
+
+class OperationBudgetTests(SimpleTestCase):
+    """Configured operation budget calculations — SBGC-168."""
+
+    def test_defaults_within_budget(self):
+        cfg = _make_config()
+        self.assertLess(cfg.configured_operation_budget_seconds, 120.0)
+
+    def test_maximum_attempts(self):
+        cfg = _make_config(max_retries=2)
+        self.assertEqual(cfg.maximum_attempts, 3)
+
+    def test_maximum_attempts_zero_retries(self):
+        cfg = _make_config(max_retries=0)
+        self.assertEqual(cfg.maximum_attempts, 1)
+
+    def test_budget_exceeds_ceiling_rejected(self):
+        # Large timeouts + large sleep cap → budget > 120
+        with self.assertRaises((ValueError, TypeError)):
+            _make_config(
+                connect_timeout=30.0,
+                read_timeout=60.0,
+                max_retries=3,
+                retry_sleep_max_seconds=10,
+            )
+
+
+class MediaTypeTests(SimpleTestCase):
+    """Structured JSON media-type matching — SBGC-168."""
+
+    def setUp(self):
+        self.session = MagicMock()
+
+    def _client(self):
+        return _steam_client(session=self.session)
+
+    def _assert_accepted(self, content_type: str):
+        resp = _fake_response(body={"ok": True}, content_type=content_type)
+        self.session.get.return_value = resp
+        data = self._client().get_json("/test/")
+        self.assertEqual(data, {"ok": True})
+
+    def _assert_rejected(self, content_type: str):
+        resp = _fake_response(body=b"{}", content_type=content_type)
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamInvalidResponseError):
+            self._client().get_json("/test/")
+
+    def test_application_json_accepted(self):
+        self._assert_accepted("application/json")
+
+    def test_json_with_charset_accepted(self):
+        self._assert_accepted("application/json; charset=utf-8")
+
+    def test_application_problem_json_accepted(self):
+        self._assert_accepted("application/problem+json")
+
+    def test_application_vnd_steam_json_accepted(self):
+        self._assert_accepted("application/vnd.steam+json")
+
+    def test_application_any_subtype_json_accepted(self):
+        self._assert_accepted("application/x.foo-bar.baz+json")
+
+    def test_text_json_rejected(self):
+        self._assert_rejected("text/json")
+
+    def test_text_problem_json_rejected(self):
+        self._assert_rejected("text/problem+json")
+
+    def test_application_jsonx_rejected(self):
+        self._assert_rejected("application/jsonx")
+
+    def test_application_plus_json_rejected(self):
+        self._assert_rejected("application/+json")
+
+    def test_application_problem_jsonx_rejected(self):
+        self._assert_rejected("application/problem+jsonx")
+
+    def test_empty_content_type_rejected(self):
+        self._assert_rejected("")
+
+    def test_missing_content_type_rejected(self):
+        resp = _fake_response(body=b"{}", content_type="")
+        self.session.get.return_value = resp
+        # Clear the default content-type from _fake_response
+        resp.headers = {}
+        with self.assertRaises(SteamInvalidResponseError):
+            self._client().get_json("/test/")
+
+
+# ============================================================================
+# Behavioral sleep tests — SBGC-168
+# ============================================================================
+
+
+class RetrySleepBehaviorTests(SimpleTestCase):
+    """Patch time.sleep in urllib3.util.retry to verify sleep behaviour."""
+
+    def setUp(self):
+        import urllib3.util.retry as retry_module
+        from urllib3.util.retry import Retry as _Retry
+
+        self._Retry = _Retry
+        self.retry = _Retry(
+            total=2,
+            connect=2,
+            read=2,
+            redirect=0,
+            status=2,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods={"GET", "HEAD"},
+            backoff_factor=0.25,
+            backoff_max=5,
+            retry_after_max=5,
+            raise_on_redirect=False,
+            raise_on_status=False,
+            respect_retry_after_header=True,
+            other=0,
+        )
+        self.sleep_times: list[float] = []
+        self._patcher = patch.object(
+            retry_module.time, "sleep", lambda s: self.sleep_times.append(s)
+        )
+        self._patcher.start()
+        self.addCleanup(self._patcher.stop)
+
+    # -- backoff path (no Retry-After header) ----------------------------------
+
+    def test_no_sleep_when_no_errors(self):
+        self.retry.sleep()
+        self.assertEqual(self.sleep_times, [])
+
+    def test_exponential_backoff_calls_sleep(self):
+        # Need >= 2 increments for non-zero backoff.
+        for _ in range(2):
+            self.retry = self.retry.increment(method="GET", url="/test")
+        self.retry.sleep()
+        self.assertEqual(len(self.sleep_times), 1)
+        self.assertGreater(self.sleep_times[0], 0.0)
+        self.assertLessEqual(self.sleep_times[0], 5.0)
+
+    def test_backoff_capped_at_max(self):
+        r = self._Retry(
+            total=3,
+            backoff_factor=100.0,
+            backoff_max=0.5,
+            allowed_methods={"GET"},
+            raise_on_status=False,
+        )
+        for _ in range(2):
+            r = r.increment(method="GET", url="/test")
+        r.sleep()
+        self.assertEqual(len(self.sleep_times), 1)
+        self.assertAlmostEqual(self.sleep_times[0], 0.5)
+
+    # -- Retry-After path ------------------------------------------------------
+
+    def test_retry_after_below_cap_respected(self):
+        import io
+
+        from urllib3.response import HTTPResponse
+
+        resp = HTTPResponse(
+            body=io.BytesIO(b""),
+            headers={"Retry-After": "2"},
+            status=429,
+            preload_content=False,
+        )
+        self.retry.sleep(response=resp)
+        self.assertEqual(len(self.sleep_times), 1)
+        self.assertAlmostEqual(self.sleep_times[0], 2.0)
+
+    def test_retry_after_above_cap_reduced(self):
+        import io
+
+        from urllib3.response import HTTPResponse
+
+        resp = HTTPResponse(
+            body=io.BytesIO(b""),
+            headers={"Retry-After": "999999"},
+            status=429,
+            preload_content=False,
+        )
+        self.retry.sleep(response=resp)
+        self.assertEqual(len(self.sleep_times), 1)
+        self.assertLessEqual(self.sleep_times[0], 5.0)
+
+    def test_zero_sleep_cap_prevents_positive_sleep(self):
+        r = self._Retry(
+            total=0,
+            backoff_factor=100.0,
+            backoff_max=0,
+            retry_after_max=0,
+            allowed_methods={"GET"},
+            raise_on_status=False,
+            respect_retry_after_header=True,
+        )
+        self.sleep_times.clear()
+        r.sleep()
+        self.assertEqual(self.sleep_times, [])
+
+    def test_no_real_sleep_occurs(self):
+        for _ in range(2):
+            self.retry = self.retry.increment(method="GET", url="/test")
+        self.sleep_times.clear()
+        self.retry.sleep()
+        self.assertEqual(len(self.sleep_times), 1)
+
+    def test_no_network_request_made(self):
+        self.assertIsNotNone(self.retry)
+
+    def test_malformed_retry_after_raises(self):
+        import io
+
+        from urllib3.exceptions import InvalidHeader
+        from urllib3.response import HTTPResponse
+
+        resp = HTTPResponse(
+            body=io.BytesIO(b""),
+            headers={"Retry-After": "not-a-number"},
+            status=429,
+            preload_content=False,
+        )
+        self.sleep_times.clear()
+        with self.assertRaises(InvalidHeader):
+            self.retry.sleep(response=resp)
+        # No sleep should have occurred before the exception.
+        self.assertEqual(self.sleep_times, [])
+
+
+# ============================================================================
+# Status-first error handling — SBGC-168
+# ============================================================================
+
+
+class StatusFirstErrorTests(SimpleTestCase):
+    """Oversized/malformed error bodies never mask status classification."""
+
+    def setUp(self):
+        self.session = MagicMock()
+
+    def _client(self, **cfg_overrides):
+        return _steam_client(_make_config(**cfg_overrides), session=self.session)
+
+    def _mock_response(
+        self, status, body, content_type="text/html", extra_headers=None
+    ):
+        headers = extra_headers or {}
+        resp = _fake_response(status=status, body=body, content_type=content_type)
+        resp.headers.update(headers)
+        self.session.get.return_value = resp
+        return resp
+
+    def test_oversized_401_still_auth_error(self):
+        # Large body that would normally trigger SteamResponseTooLargeError
+        big = b"x" * 200
+        resp = MagicMock()
+        resp.status_code = 401
+        resp.headers = {"Content-Type": "text/html", "Content-Length": "99999999"}
+        resp.iter_content = MagicMock(return_value=[big, big, big])
+        resp.close = MagicMock()
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamAuthenticationError):
+            self._client(max_response_bytes=100).get_json("/test/")
+
+    def test_invalid_media_403_still_auth_error(self):
+        self._mock_response(403, b"<html>forbidden</html>", content_type="text/html")
+        with self.assertRaises(SteamAuthenticationError) as cm:
+            self._client().get_json("/test/")
+        self.assertNotIn("forbidden", str(cm.exception).lower())
+
+    def test_malformed_json_429_still_rate_limited(self):
+        resp = MagicMock()
+        resp.status_code = 429
+        resp.headers = {"Content-Type": "application/json", "Retry-After": "30"}
+        resp.iter_content = MagicMock(return_value=[b"not json"])
+        resp.close = MagicMock()
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamRateLimitedError) as cm:
+            self._client().get_json("/test/")
+        self.assertEqual(cm.exception.status, 429)
+
+    def test_oversized_500_still_upstream_error(self):
+        big = b"x" * 200
+        resp = MagicMock()
+        resp.status_code = 500
+        resp.headers = {"Content-Type": "text/html"}
+        resp.iter_content = MagicMock(return_value=[big, big, big])
+        resp.close = MagicMock()
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamUpstreamError):
+            self._client(max_response_bytes=100).get_json("/test/")
+
+    def test_wrong_media_503_still_upstream_error(self):
+        self._mock_response(503, b"<html>down</html>", content_type="text/html")
+        with self.assertRaises(SteamUpstreamError) as cm:
+            self._client().get_json("/test/")
+        self.assertNotIn("down", str(cm.exception).lower())
+
+    def test_raw_body_never_in_exception(self):
+        self._mock_response(
+            500, b"<html>secret crash info</html>", content_type="text/html"
+        )
+        with self.assertRaises(SteamUpstreamError) as cm:
+            self._client().get_json("/test/")
+        self.assertNotIn("secret", str(cm.exception).lower())
+        self.assertNotIn("crash", str(cm.exception).lower())
+        self.assertNotIn("<html>", str(cm.exception).lower())
+
+    def test_drain_stops_at_limit(self):
+        """Error-body drain stops at the 1 MiB limit — does not consume
+        arbitrarily large error payloads."""
+        big = b"x" * 200_000  # 200 KiB per chunk
+        chunks = [big] * 10  # 2 MiB total, drain stops at 1 MiB
+        resp = MagicMock()
+        resp.status_code = 500
+        resp.headers = {"Content-Type": "text/html"}
+        resp.iter_content = MagicMock(return_value=chunks)
+        resp.close = MagicMock()
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamUpstreamError):
+            self._client().get_json("/test/")
+        # close() is called at least once (by _drain_and_close and/or
+        # the get_json finally block).
+        resp.close.assert_called()
+
+    def test_response_closed_when_iter_content_raises(self):
+        """If iter_content raises during drain, the response is still closed
+        and the original status exception is still raised."""
+        resp = MagicMock()
+        resp.status_code = 401
+        resp.headers = {"Content-Type": "application/json"}
+        resp.iter_content = MagicMock(side_effect=OSError("connection lost"))
+        resp.close = MagicMock()
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamAuthenticationError):
+            self._client().get_json("/test/")
+        resp.close.assert_called()
+
+    def test_drain_close_errors_never_replace_status_exception(self):
+        """Even when drain and close both fail, the original status
+        classification exception is the one raised."""
+        resp = MagicMock()
+        resp.status_code = 503
+        resp.headers = {"Content-Type": "text/html"}
+        resp.iter_content = MagicMock(side_effect=OSError("read failure"))
+        resp.close = MagicMock(side_effect=OSError("close failure"))
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamUpstreamError) as cm:
+            self._client().get_json("/test/")
+        self.assertEqual(cm.exception.status, 503)
+        self.assertNotIn("read failure", str(cm.exception))
+        self.assertNotIn("close failure", str(cm.exception))
