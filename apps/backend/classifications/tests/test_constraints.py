@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from games.models import Game, SourceType
 
 from classifications.models import (
@@ -334,10 +334,70 @@ class RelationshipTests(TestCase):
         self.assertFalse(RewardProfile.objects.filter(classification=p).exists())
 
 
-class ClassificationMigrationReversibilityTests(TestCase):
-    """``classifications.0001_initial`` operations are all auto-reversible."""
+class ClassificationMigrationReversibilityTests(TransactionTestCase):
+    """``classifications.0001_initial`` executes forward and reverse."""
 
-    def test_all_operations_are_reversible(self):
+    @staticmethod
+    def _migrate_app(app, target):
+        from django.core.management import call_command
+
+        call_command(
+            "migrate",
+            app,
+            target,
+            verbosity=0,
+            interactive=False,
+            skip_checks=True,
+        )
+
+    def test_forward_reverse_forward(self):
+        from django.contrib.auth.models import User
+        from django.db import IntegrityError, connection, transaction
+        from games.models import Game, SourceType
+
+        from classifications.models import (
+            ChallengeProfile,
+            EditorialClassification,
+            RewardProfile,
+        )
+
+        # Reverse classifications to zero.
+        self._migrate_app("classifications", "zero")
+        tables = connection.introspection.table_names()
+        self.assertNotIn("classifications_editorialclassification", tables)
+        self.assertNotIn("classifications_challengeprofile", tables)
+        self.assertNotIn("classifications_rewardprofile", tables)
+        self.assertIn("games_game", tables)
+        self.assertIn("auth_user", tables)
+
+        # Forward classifications back to 0001.
+        self._migrate_app("classifications", "0001")
+        tables = connection.introspection.table_names()
+        self.assertIn("classifications_editorialclassification", tables)
+        self.assertIn("classifications_challengeprofile", tables)
+        self.assertIn("classifications_rewardprofile", tables)
+
+        # Verify constraints by exercising them.
+        g = Game.objects.create(source_type=SourceType.MANUAL, name="Rev", slug="rev")
+        u = User.objects.create_user(username="rev_u", password="p")
+        parent = EditorialClassification.objects.create(game=g, updated_by=u)
+        ChallengeProfile.objects.create(
+            classification=parent, micro_score=50, mystiko_score=20, macro_score=30
+        )
+        RewardProfile.objects.create(
+            classification=parent, micro_score=10, mystiko_score=30, macro_score=60
+        )
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                ChallengeProfile.objects.create(
+                    classification=parent,
+                    micro_score=40,
+                    mystiko_score=40,
+                    macro_score=40,
+                )
+
+    def test_operations_marked_reversible(self):
+        """Supplemental: every operation is marked reversible."""
         from django.db import connection
         from django.db.migrations.loader import MigrationLoader
 

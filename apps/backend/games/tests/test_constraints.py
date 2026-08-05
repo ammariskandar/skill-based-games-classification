@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from games.models import Game, SourceType
 
@@ -208,10 +208,55 @@ class GameDeletionTests(TestCase):
         )
 
 
-class GameMigrationReversibilityTests(TestCase):
-    """``games.0001_initial`` operations are all auto-reversible."""
+class GameMigrationReversibilityTests(TransactionTestCase):
+    """``games.0001_initial`` executes forward and reverse successfully."""
 
-    def test_all_operations_are_reversible(self):
+    @staticmethod
+    def _migrate_app(app, target):
+        from django.core.management import call_command
+
+        call_command(
+            "migrate",
+            app,
+            target,
+            verbosity=0,
+            interactive=False,
+            skip_checks=True,
+        )
+
+    def test_forward_reverse_forward(self):
+        from django.db import IntegrityError, connection, transaction
+
+        from games.models import Game, SourceType
+
+        # Reverse games to zero (removes the games_game table).
+        self._migrate_app("games", "zero")
+        tables = connection.introspection.table_names()
+        self.assertNotIn("games_game", tables)
+
+        # Forward games back to 0001.
+        self._migrate_app("games", "0001")
+        tables = connection.introspection.table_names()
+        self.assertIn("games_game", tables)
+
+        # Verify constraints by exercising them.
+        Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="Fwd",
+            slug="fwd",
+            external_id="1",
+        )
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.MANUAL,
+                    name="Bad",
+                    slug="bad",
+                    external_id="1",
+                )
+
+    def test_operations_marked_reversible(self):
+        """Supplemental: every operation is marked reversible."""
         from django.db import connection
         from django.db.migrations.loader import MigrationLoader
 
