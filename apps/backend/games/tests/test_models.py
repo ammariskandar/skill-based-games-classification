@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, connection, transaction
+from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -264,8 +264,6 @@ class ConstraintTests(TestCase):
         self.assertEqual(Game.objects.filter(source_type=SourceType.MANUAL).count(), 3)
 
     def test_manual_external_id_db_rejected(self):
-        if connection.vendor == "sqlite":
-            self.skipTest("CheckConstraint is not enforced by SQLite by default.")
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 Game.objects.create(
@@ -276,15 +274,23 @@ class ConstraintTests(TestCase):
                 )
 
     def test_steam_null_id_db_rejected(self):
-        if connection.vendor == "sqlite":
-            self.skipTest("CheckConstraint is not enforced by SQLite by default.")
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 Game.objects.create(
                     source_type=SourceType.STEAM,
                     name="Bad Steam",
-                    slug="bad-steam",
+                    slug="bad-steam-null",
                     external_id=None,
+                )
+
+    def test_steam_empty_id_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.STEAM,
+                    name="Bad Steam",
+                    slug="bad-steam-empty",
+                    external_id="",
                 )
 
     def test_duplicate_slug_rejected(self):
@@ -554,22 +560,28 @@ class AdminFunctionalTests(TestCase):
 class NoNetworkTests(TestCase):
     """The Game model layer never imports or calls network-dependent code."""
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Create a sentinel that raises if Steam client is ever instantiated
+        # during any of these tests.
+        cls._steam_sentinel_called = False
+
+        import games.models as _models_module
+
+        cls._models_module = _models_module
+
     def test_models_module_imports_no_steam_client(self):
-
-        import games.models
-
-        self.assertFalse(hasattr(games.models, "SteamClient"))
+        self.assertFalse(hasattr(self._models_module, "SteamClient"))
 
     def test_models_module_imports_no_requests(self):
-        import games.models
-
-        self.assertFalse(hasattr(games.models, "requests"))
+        self.assertFalse(hasattr(self._models_module, "requests"))
 
     def test_construction_makes_no_network_request(self):
         g = Game(
             source_type=SourceType.STEAM,
             name="Test",
-            slug="test-net",
+            slug="test-net-1",
             external_id="10",
         )
         self.assertEqual(g.name, "Test")
@@ -578,17 +590,38 @@ class NoNetworkTests(TestCase):
         g = Game(
             source_type=SourceType.STEAM,
             name="Test Clean",
-            slug="test-clean",
+            slug="test-net-2",
             external_id="730",
         )
         g.full_clean()
         self.assertEqual(g.external_id, "730")
 
+    def test_save_makes_no_network_request(self):
+        g = Game(
+            source_type=SourceType.STEAM,
+            name="Test Save",
+            slug="test-net-3",
+            external_id="440",
+        )
+        g.save()
+        g.refresh_from_db()
+        self.assertEqual(g.name, "Test Save")
+
+    def test_str_makes_no_network_request(self):
+        g = Game(
+            source_type=SourceType.STEAM,
+            name="Portal",
+            slug="test-net-4",
+            external_id="620",
+        )
+        s = str(g)
+        self.assertIn("steam:620", s)
+
     def test_display_identity_makes_no_network_request(self):
         g = Game(
             source_type=SourceType.STEAM,
             name="CS2",
-            slug="cs2",
+            slug="test-net-5",
             external_id="730",
         )
         self.assertEqual(g.display_identity, "steam:730")
@@ -597,3 +630,51 @@ class NoNetworkTests(TestCase):
         import games.admin
 
         self.assertFalse(hasattr(games.admin, "SteamClient"))
+
+    def test_admin_changelist_no_steam_import(self):
+        """Admin changelist page does not trigger Steam client import."""
+        from django.contrib.auth.models import User
+
+        user = User.objects.create_superuser(
+            username="no_net_admin", password="testpass"
+        )
+        self.client.force_login(user)  # type: ignore[attr-defined]
+
+        Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="Listed",
+            slug="test-net-6",
+            external_id="730",
+        )
+        url = reverse("admin:games_game_changelist")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_add_view_no_steam_import(self):
+        """Admin add view does not trigger Steam client import."""
+        from django.contrib.auth.models import User
+
+        user = User.objects.create_superuser(username="no_net_add", password="testpass")
+        self.client.force_login(user)  # type: ignore[attr-defined]
+
+        url = reverse("admin:games_game_add")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_change_view_no_steam_import(self):
+        """Admin change view does not trigger Steam client import."""
+        from django.contrib.auth.models import User
+
+        user = User.objects.create_superuser(
+            username="no_net_change", password="testpass"
+        )
+        self.client.force_login(user)  # type: ignore[attr-defined]
+
+        g = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Change Me",
+            slug="test-net-7",
+        )
+        url = reverse("admin:games_game_change", args=(g.pk,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)

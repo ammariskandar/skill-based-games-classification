@@ -132,12 +132,7 @@ external I/O.
 
 ## Limitations
 
-- PostgreSQL-specific constraint and index behaviour is not verified
-  (SBGC-52).
-- No Classification models or Game-to-Classification relationships yet
-  (SBGC-46).
-- No Steam import or API integration (SBGC-53).
-- No custom managers.
-- No soft deletion.
 - CheckConstraint enforcement depends on the database engine; SQLite
-  may not enforce it without `PRAGMA` configuration.
+  enforces it by default (``PRAGMA ignore_check_constraints=0``).
+  PostgreSQL-specific constraint and index behaviour is verified by
+  SBGC-52.
