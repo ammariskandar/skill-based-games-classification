@@ -1,0 +1,208 @@
+"""
+Game model database-constraint tests — SBGC-47.
+
+Bulk operations, deletions, and direct DB enforcement verified without
+``full_clean()``.
+"""
+
+from __future__ import annotations
+
+from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
+from django.test import TestCase
+
+from games.models import Game, SourceType
+
+
+class GameSourceExternalConstraintTests(TestCase):
+    """CheckConstraint ``game_source_external_id_ck`` behaviour."""
+
+    def test_steam_with_null_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.STEAM,
+                    name="Bad Steam",
+                    slug="bad-steam-null",
+                    external_id=None,
+                )
+
+    def test_steam_with_blank_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.STEAM,
+                    name="Bad Steam",
+                    slug="bad-steam-blank",
+                    external_id="",
+                )
+
+    def test_manual_with_external_id_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.MANUAL,
+                    name="Bad Manual",
+                    slug="bad-manual-ext",
+                    external_id="123",
+                )
+
+    def test_manual_null_accepted(self):
+        Game.objects.create(source_type=SourceType.MANUAL, name="OK", slug="manual-ok")
+        self.assertEqual(Game.objects.filter(slug="manual-ok").count(), 1)
+
+    def test_steam_valid_accepted(self):
+        Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="OK Steam",
+            slug="steam-ok",
+            external_id="730",
+        )
+        self.assertEqual(Game.objects.filter(slug="steam-ok").count(), 1)
+
+
+class GameUniquenessConstraintTests(TestCase):
+    """UniqueConstraint and slug uniqueness at DB level."""
+
+    def test_duplicate_steam_identity_rejected(self):
+        Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="First",
+            slug="first",
+            external_id="620",
+        )
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.STEAM,
+                    name="Second",
+                    slug="second",
+                    external_id="620",
+                )
+
+    def test_multiple_manual_null_accepted(self):
+        for i in range(3):
+            Game.objects.create(
+                source_type=SourceType.MANUAL,
+                name=f"Manual {i}",
+                slug=f"manual-{i}",
+            )
+        self.assertEqual(Game.objects.filter(source_type=SourceType.MANUAL).count(), 3)
+
+    def test_duplicate_slug_rejected(self):
+        Game.objects.create(
+            source_type=SourceType.MANUAL, name="First", slug="dup-slug"
+        )
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.create(
+                    source_type=SourceType.MANUAL,
+                    name="Second",
+                    slug="dup-slug",
+                )
+
+    def test_duplicate_name_accepted(self):
+        Game.objects.create(source_type=SourceType.MANUAL, name="Same", slug="same-1")
+        Game.objects.create(source_type=SourceType.MANUAL, name="Same", slug="same-2")
+        self.assertEqual(Game.objects.filter(name="Same").count(), 2)
+
+
+class GameBulkOperationTests(TestCase):
+    """``QuerySet.update`` and ``bulk_create`` respect DB constraints."""
+
+    def setUp(self):
+        self.steam = Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="Bulk Steam",
+            slug="bulk-steam",
+            external_id="100",
+        )
+        self.manual = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Bulk Manual",
+            slug="bulk-manual",
+        )
+
+    def test_update_steam_external_to_null_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.filter(pk=self.steam.pk).update(external_id=None)
+
+    def test_update_manual_external_to_value_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.filter(pk=self.manual.pk).update(external_id="999")
+
+    def test_bulk_create_valid_steam_and_manual(self):
+        games = [
+            Game(
+                source_type=SourceType.STEAM,
+                name="Bulk S1",
+                slug="bulk-s1",
+                external_id="200",
+            ),
+            Game(
+                source_type=SourceType.MANUAL,
+                name="Bulk M1",
+                slug="bulk-m1",
+            ),
+        ]
+        Game.objects.bulk_create(games)
+        self.assertEqual(Game.objects.filter(slug="bulk-s1").count(), 1)
+        self.assertEqual(Game.objects.filter(slug="bulk-m1").count(), 1)
+
+    def test_bulk_create_duplicate_steam_rejected(self):
+        games = [
+            Game(
+                source_type=SourceType.STEAM,
+                name="Bulk S2",
+                slug="bulk-s2",
+                external_id="100",  # same as self.steam
+            ),
+        ]
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.bulk_create(games)
+
+    def test_update_slug_to_duplicate_rejected(self):
+        Game.objects.create(
+            source_type=SourceType.MANUAL, name="Other", slug="other-slug"
+        )
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Game.objects.filter(pk=self.steam.pk).update(slug="other-slug")
+
+    def test_update_slug_to_same_accepted(self):
+        """Updating slug to the same value is not a constraint violation."""
+        Game.objects.filter(pk=self.steam.pk).update(slug="bulk-steam")
+        self.steam.refresh_from_db()
+        self.assertEqual(self.steam.slug, "bulk-steam")
+
+
+class GameDeletionTests(TestCase):
+    """Cascade and protection behaviour."""
+
+    def test_game_deletion_cascades_empty(self):
+        g = Game.objects.create(
+            source_type=SourceType.MANUAL, name="Del Me", slug="del-me"
+        )
+        g.delete()
+        self.assertFalse(Game.objects.filter(slug="del-me").exists())
+
+    def test_game_deletion_cascades_classification(self):
+        from classifications.models import EditorialClassification
+
+        user = User.objects.create_user(username="del_user", password="p")
+        g = Game.objects.create(
+            source_type=SourceType.STEAM,
+            name="Del Steam",
+            slug="del-steam",
+            external_id="300",
+        )
+        EditorialClassification.objects.create(game=g, updated_by=user)
+        slug = g.slug
+        g.delete()
+        self.assertFalse(Game.objects.filter(slug=slug).exists())
+        self.assertFalse(
+            EditorialClassification.objects.filter(game__slug=slug).exists()
+        )
