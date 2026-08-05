@@ -335,7 +335,13 @@ class RelationshipTests(TestCase):
 
 
 class ClassificationMigrationReversibilityTests(TransactionTestCase):
-    """``classifications.0001_initial`` executes forward and reverse."""
+    """``classifications.0001_initial`` executes forward and reverse.
+
+    ``TransactionTestCase`` permits schema-changing migration operations.
+    The test explicitly restores the latest app migration state in a
+    ``finally`` block so that assertion failures or migration errors
+    do not leave the database in an incomplete state.
+    """
 
     @staticmethod
     def _migrate_app(app, target):
@@ -361,40 +367,72 @@ class ClassificationMigrationReversibilityTests(TransactionTestCase):
             RewardProfile,
         )
 
-        # Reverse classifications to zero.
-        self._migrate_app("classifications", "zero")
+        # Confirm initial state: all three tables exist.
         tables = connection.introspection.table_names()
-        self.assertNotIn("classifications_editorialclassification", tables)
-        self.assertNotIn("classifications_challengeprofile", tables)
-        self.assertNotIn("classifications_rewardprofile", tables)
+        self.assertIn(
+            "classifications_editorialclassification",
+            tables,
+            "editorial table must exist before reverse test",
+        )
+        self.assertIn("classifications_challengeprofile", tables)
+        self.assertIn("classifications_rewardprofile", tables)
         self.assertIn("games_game", tables)
         self.assertIn("auth_user", tables)
 
-        # Forward classifications back to 0001.
-        self._migrate_app("classifications", "0001")
+        try:
+            # -- (1) Reverse classifications to zero --------------------------
+            self._migrate_app("classifications", "zero")
+            tables = connection.introspection.table_names()
+            self.assertNotIn("classifications_editorialclassification", tables)
+            self.assertNotIn("classifications_challengeprofile", tables)
+            self.assertNotIn("classifications_rewardprofile", tables)
+            self.assertIn("games_game", tables)
+            self.assertIn("auth_user", tables)
+
+            # -- (2) Forward classifications to 0001 --------------------------
+            self._migrate_app("classifications", "0001")
+            tables = connection.introspection.table_names()
+            self.assertIn("classifications_editorialclassification", tables)
+            self.assertIn("classifications_challengeprofile", tables)
+            self.assertIn("classifications_rewardprofile", tables)
+
+            # -- (3) Verify constraints by exercising them --------------------
+            g = Game.objects.create(
+                source_type=SourceType.MANUAL, name="Rev", slug="rev"
+            )
+            u = User.objects.create_user(username="rev_u", password="p")
+            parent = EditorialClassification.objects.create(game=g, updated_by=u)
+            ChallengeProfile.objects.create(
+                classification=parent,
+                micro_score=50,
+                mystiko_score=20,
+                macro_score=30,
+            )
+            RewardProfile.objects.create(
+                classification=parent,
+                micro_score=10,
+                mystiko_score=30,
+                macro_score=60,
+            )
+            with transaction.atomic():
+                with self.assertRaises(IntegrityError):
+                    ChallengeProfile.objects.create(
+                        classification=parent,
+                        micro_score=40,
+                        mystiko_score=40,
+                        macro_score=40,
+                    )
+        finally:
+            # Always restore the full project to the latest migration state.
+            self._migrate_app("", "")
+
+        # Confirm restored.
         tables = connection.introspection.table_names()
         self.assertIn("classifications_editorialclassification", tables)
         self.assertIn("classifications_challengeprofile", tables)
         self.assertIn("classifications_rewardprofile", tables)
-
-        # Verify constraints by exercising them.
-        g = Game.objects.create(source_type=SourceType.MANUAL, name="Rev", slug="rev")
-        u = User.objects.create_user(username="rev_u", password="p")
-        parent = EditorialClassification.objects.create(game=g, updated_by=u)
-        ChallengeProfile.objects.create(
-            classification=parent, micro_score=50, mystiko_score=20, macro_score=30
-        )
-        RewardProfile.objects.create(
-            classification=parent, micro_score=10, mystiko_score=30, macro_score=60
-        )
-        with transaction.atomic():
-            with self.assertRaises(IntegrityError):
-                ChallengeProfile.objects.create(
-                    classification=parent,
-                    micro_score=40,
-                    mystiko_score=40,
-                    macro_score=40,
-                )
+        self.assertIn("games_game", tables)
+        self.assertIn("auth_user", tables)
 
     def test_operations_marked_reversible(self):
         """Supplemental: every operation is marked reversible."""

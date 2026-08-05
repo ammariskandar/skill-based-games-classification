@@ -209,7 +209,13 @@ class GameDeletionTests(TestCase):
 
 
 class GameMigrationReversibilityTests(TransactionTestCase):
-    """``games.0001_initial`` executes forward and reverse successfully."""
+    """``games.0001_initial`` executes forward and reverse.
+
+    ``TransactionTestCase`` permits schema-changing migration operations.
+    The test explicitly restores the latest app migration state in a
+    ``finally`` block so that assertion failures or migration errors
+    do not leave the database in an incomplete state.
+    """
 
     @staticmethod
     def _migrate_app(app, target):
@@ -229,35 +235,58 @@ class GameMigrationReversibilityTests(TransactionTestCase):
 
         from games.models import Game, SourceType
 
-        # Reverse games to zero (removes the games_game table).
-        self._migrate_app("games", "zero")
+        # Confirm initial state: games table exists.
         tables = connection.introspection.table_names()
-        self.assertNotIn("games_game", tables)
+        self.assertIn("games_game", tables, "games_game must exist before reverse test")
 
-        # Forward games back to 0001.
-        self._migrate_app("games", "0001")
+        try:
+            # -- (1) Reverse games to zero ------------------------------------
+            self._migrate_app("games", "zero")
+            tables = connection.introspection.table_names()
+            self.assertNotIn("games_game", tables)
+
+            # -- (2) Forward games to 0001 ------------------------------------
+            self._migrate_app("games", "0001")
+            tables = connection.introspection.table_names()
+            self.assertIn("games_game", tables)
+
+            # -- (3) Verify constraints by exercising them --------------------
+            Game.objects.create(
+                source_type=SourceType.STEAM,
+                name="Fwd",
+                slug="fwd",
+                external_id="1",
+            )
+            with transaction.atomic():
+                with self.assertRaises(IntegrityError):
+                    Game.objects.create(
+                        source_type=SourceType.MANUAL,
+                        name="Bad",
+                        slug="bad",
+                        external_id="1",
+                    )
+        finally:
+            # Always restore the full project to the latest migration state.
+            # Reversing an app may cascade to dependent apps, so we must
+            # restore everything, not just the app under test.
+            self._migrate_app("", "")
+
+        # Confirm restored: table exists and constraints work.
         tables = connection.introspection.table_names()
         self.assertIn("games_game", tables)
-
-        # Verify constraints by exercising them.
-        Game.objects.create(
-            source_type=SourceType.STEAM,
-            name="Fwd",
-            slug="fwd",
-            external_id="1",
-        )
-        with transaction.atomic():
-            with self.assertRaises(IntegrityError):
-                Game.objects.create(
-                    source_type=SourceType.MANUAL,
-                    name="Bad",
-                    slug="bad",
-                    external_id="1",
-                )
 
     def test_operations_marked_reversible(self):
         """Supplemental: every operation is marked reversible."""
         from django.db import connection
+        from django.db.migrations.loader import MigrationLoader
+
+        loader = MigrationLoader(connection)
+        migration = loader.disk_migrations[("games", "0001_initial")]
+        for op in migration.operations:
+            self.assertTrue(
+                op.reversible,
+                f"Operation '{op.describe()}' must be reversible",
+            )
         from django.db.migrations.loader import MigrationLoader
 
         loader = MigrationLoader(connection)
