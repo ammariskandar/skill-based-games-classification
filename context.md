@@ -2297,6 +2297,7 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-08-05 | SBGC-168 Steam hardening complete | SBGC-53 (Steam endpoint adapters) unblocked but not started.  No live deployment. |
 | 2026-08-05 | SBGC-45 Game model | ``Game`` model with automatic PK, source-qualified optional external ID, name/slug, content type, listing status, manual metadata, timestamps, display identity, constraints, indexes, Admin registration, and 59 focused tests.  SBGC-46 (Classifications) unblocked. |
 | 2026-08-05 | SBGC-46 Editorial classification | ``EditorialClassification`` with separate ``ChallengeProfile`` and ``RewardProfile``, independent Micro/Mystiko/Macro scores totaling 100 each, atomic service layer, DB range constraints, Admin with two inlines, and 50 tests.  SBGC-47 unblocked. |
+| 2026-08-05 | SBGC-47 Database constraints | Verified all existing DB constraints (8 Game + 16 Classification invariants). No schema changes required.  Added 48 bulk/delete/relationship/migration-reversibility tests.  Constraint inventory, invalid-state matrix, PostgreSQL verification matrix (11 items for SBGC-52), and questionnaire-readiness separation all documented in ``docs/database-constraints.md``.  SBGC-52 unblocked. |
 
 ---
 

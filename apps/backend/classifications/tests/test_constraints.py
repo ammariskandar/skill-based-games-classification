@@ -332,3 +332,19 @@ class RelationshipTests(TestCase):
         self.assertIsNotNone(p.pk)
         self.assertFalse(ChallengeProfile.objects.filter(classification=p).exists())
         self.assertFalse(RewardProfile.objects.filter(classification=p).exists())
+
+
+class ClassificationMigrationReversibilityTests(TestCase):
+    """``classifications.0001_initial`` operations are all auto-reversible."""
+
+    def test_all_operations_are_reversible(self):
+        from django.db import connection
+        from django.db.migrations.loader import MigrationLoader
+
+        loader = MigrationLoader(connection)
+        migration = loader.disk_migrations[("classifications", "0001_initial")]
+        for op in migration.operations:
+            self.assertTrue(
+                op.reversible,
+                f"Operation '{op.describe()}' must be reversible",
+            )

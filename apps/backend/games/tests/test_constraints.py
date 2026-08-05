@@ -206,3 +206,19 @@ class GameDeletionTests(TestCase):
         self.assertFalse(
             EditorialClassification.objects.filter(game__slug=slug).exists()
         )
+
+
+class GameMigrationReversibilityTests(TestCase):
+    """``games.0001_initial`` operations are all auto-reversible."""
+
+    def test_all_operations_are_reversible(self):
+        from django.db import connection
+        from django.db.migrations.loader import MigrationLoader
+
+        loader = MigrationLoader(connection)
+        migration = loader.disk_migrations[("games", "0001_initial")]
+        for op in migration.operations:
+            self.assertTrue(
+                op.reversible,
+                f"Operation '{op.describe()}' must be reversible",
+            )
