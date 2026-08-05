@@ -115,7 +115,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Separate Challenge and Reward profiles, Micro/Mystiko/Macro classification records, classification-domain concepts.
 
-**Status:** Application scaffold only. No models or admin registrations exist yet. Models will be implemented in SBGC-4 (SBGC-46 onward). Future admin registrations belong in `classifications/admin.py`.
+**Status:** `EditorialClassification`, `ChallengeProfile`, and `RewardProfile` models implemented in SBGC-46 — one editorial classification per Game with independent Challenge/Reward score profiles, Admin with two inlines, and an atomic service layer.  Community classifications and API endpoints remain for SBGC-47 onward.
 
 **Intended dependency direction:** `classifications` → `games` (classifications reference games; not circular).
 

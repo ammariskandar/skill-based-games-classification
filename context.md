@@ -2296,6 +2296,7 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-31 | No live deployment verification | Accepted (SBGC-43).  No Render service created; no Neon migration ran; SBGC-44 remains before SBGC-3 epic closes. |
 | 2026-08-05 | SBGC-168 Steam hardening complete | SBGC-53 (Steam endpoint adapters) unblocked but not started.  No live deployment. |
 | 2026-08-05 | SBGC-45 Game model | ``Game`` model with automatic PK, source-qualified optional external ID, name/slug, content type, listing status, manual metadata, timestamps, display identity, constraints, indexes, Admin registration, and 59 focused tests.  SBGC-46 (Classifications) unblocked. |
+| 2026-08-05 | SBGC-46 Editorial classification | ``EditorialClassification`` with separate ``ChallengeProfile`` and ``RewardProfile``, independent Micro/Mystiko/Macro scores totaling 100 each, atomic service layer, DB range constraints, Admin with two inlines, and 50 tests.  SBGC-47 unblocked. |
 
 ---
 
