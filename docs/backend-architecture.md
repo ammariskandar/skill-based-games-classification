@@ -109,7 +109,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts.
 
-**Status:** Application scaffold only. No models or admin registrations exist yet. Models will be implemented in SBGC-4 (SBGC-45 onward). Future admin registrations belong in `games/admin.py`.
+**Status:** `Game` model implemented in SBGC-45.  Admin registered under `games/admin.py`.  Classifications (SBGC-46) and Steam import (SBGC-53) remain unimplemented.
 
 ### `classifications`
 
