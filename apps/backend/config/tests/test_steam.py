@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 from games.services.steam.config import SteamClientConfig
+from games.services.steam.constants import STEAM_STORE_API_ORIGIN, STEAM_WEB_API_ORIGIN
 
 from config.steam import steam_client_config_from_settings
 
@@ -32,8 +33,8 @@ class FactoryDefaultsTests(SimpleTestCase):
         self.assertEqual(cfg.max_retries, 2)
         self.assertEqual(cfg.retry_backoff, 0.25)
         self.assertEqual(cfg.max_response_bytes, 2_097_152)
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
         self.assertEqual(tuple(cfg.cdn_allowed_hosts), ())
 
     def test_factory_returns_steam_client_config(self):
@@ -607,16 +608,14 @@ class NoImportSideEffectTests(SimpleTestCase):
 class OriginImmutabilityTests(SimpleTestCase):
     """API and store origins are fixed and not affected by environment."""
 
-    def test_api_origin_is_not_configurable(self):
-        cfg = steam_client_config_from_settings()
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+    def test_origin_is_code_constant(self):
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
 
-    def test_origin_unchanged_with_overrides(self):
+    def test_origin_unaffected_by_settings_overrides(self):
         with override_settings(
             STEAM_WEB_API_KEY="KEY123",
             STEAM_CONNECT_TIMEOUT_SECONDS="1.0",
         ):
-            cfg = steam_client_config_from_settings()
-            self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-            self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+            self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+            self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")

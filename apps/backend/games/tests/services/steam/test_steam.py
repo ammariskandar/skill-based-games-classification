@@ -13,6 +13,8 @@ from unittest.mock import MagicMock
 from django.test import SimpleTestCase
 
 from games.services.steam import (
+    STEAM_STORE_API_ORIGIN,
+    STEAM_WEB_API_ORIGIN,
     SteamAuthenticationError,
     SteamClient,
     SteamClientConfig,
@@ -88,8 +90,8 @@ class ConfigTests(SimpleTestCase):
         self.assertEqual(cfg.max_retries, 2)
         self.assertEqual(cfg.retry_backoff, 0.25)
         self.assertEqual(cfg.max_response_bytes, 2_097_152)
-        self.assertEqual(cfg.api_origin, "https://api.steampowered.com")
-        self.assertEqual(cfg.store_origin, "https://store.steampowered.com")
+        self.assertEqual(STEAM_WEB_API_ORIGIN, "https://api.steampowered.com")
+        self.assertEqual(STEAM_STORE_API_ORIGIN, "https://store.steampowered.com")
         self.assertEqual(tuple(cfg.cdn_allowed_hosts), ())
 
     def test_valid_overrides(self):
@@ -724,3 +726,147 @@ class AdapterPolicyIntegrationTests(SimpleTestCase):
         self.assertIsNotNone(client._session)
         # Accessing adapters does not make a request.
         _ = client._session.adapters["https://"]
+
+
+# ============================================================================
+# Retry behavior tests — SBGC-168
+# ============================================================================
+
+
+class RetryBehaviorTests(SimpleTestCase):
+    """Verify urllib3 Retry construction with real adapter inspection."""
+
+    def test_backoff_max_capped(self):
+        client = _steam_client(_make_config(retry_sleep_max_seconds=3.0))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.backoff_max, 3.0)
+
+    def test_retry_after_max_capped(self):
+        client = _steam_client(_make_config(retry_sleep_max_seconds=4.0))
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.retry_after_max, 4.0)
+
+    def test_sleep_cap_default(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.backoff_max, 5.0)
+        self.assertEqual(retry.retry_after_max, 5.0)
+
+    def test_allowed_methods_exact(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
+
+    def test_status_forcelist_exact(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
+
+    def test_redirects_zero(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.redirect, 0)
+
+    def test_other_zero(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertEqual(retry.other, 0)
+
+    def test_raise_on_redirect_false(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertFalse(retry.raise_on_redirect)
+
+    def test_raise_on_status_false(self):
+        client = _steam_client()
+        retry = client._session.adapters["https://"].max_retries
+        self.assertFalse(retry.raise_on_status)
+
+
+class OperationBudgetTests(SimpleTestCase):
+    """Configured operation budget calculations — SBGC-168."""
+
+    def test_defaults_within_budget(self):
+        cfg = _make_config()
+        self.assertLess(cfg.configured_operation_budget_seconds, 120.0)
+
+    def test_maximum_attempts(self):
+        cfg = _make_config(max_retries=2)
+        self.assertEqual(cfg.maximum_attempts, 3)
+
+    def test_maximum_attempts_zero_retries(self):
+        cfg = _make_config(max_retries=0)
+        self.assertEqual(cfg.maximum_attempts, 1)
+
+    def test_budget_exceeds_ceiling_rejected(self):
+        # Large timeouts + large sleep cap → budget > 120
+        with self.assertRaises((ValueError, TypeError)):
+            _make_config(
+                connect_timeout=30.0,
+                read_timeout=60.0,
+                max_retries=3,
+                retry_sleep_max_seconds=10.0,
+            )
+
+
+class MediaTypeTests(SimpleTestCase):
+    """Structured JSON media-type matching — SBGC-168."""
+
+    def setUp(self):
+        self.session = MagicMock()
+
+    def _client(self):
+        return _steam_client(session=self.session)
+
+    def _assert_accepted(self, content_type: str):
+        resp = _fake_response(body={"ok": True}, content_type=content_type)
+        self.session.get.return_value = resp
+        data = self._client().get_json("/test/")
+        self.assertEqual(data, {"ok": True})
+
+    def _assert_rejected(self, content_type: str):
+        resp = _fake_response(body=b"{}", content_type=content_type)
+        self.session.get.return_value = resp
+        with self.assertRaises(SteamInvalidResponseError):
+            self._client().get_json("/test/")
+
+    def test_application_json_accepted(self):
+        self._assert_accepted("application/json")
+
+    def test_json_with_charset_accepted(self):
+        self._assert_accepted("application/json; charset=utf-8")
+
+    def test_application_problem_json_accepted(self):
+        self._assert_accepted("application/problem+json")
+
+    def test_application_vnd_steam_json_accepted(self):
+        self._assert_accepted("application/vnd.steam+json")
+
+    def test_application_any_subtype_json_accepted(self):
+        self._assert_accepted("application/x.foo-bar.baz+json")
+
+    def test_text_json_rejected(self):
+        self._assert_rejected("text/json")
+
+    def test_text_problem_json_rejected(self):
+        self._assert_rejected("text/problem+json")
+
+    def test_application_jsonx_rejected(self):
+        self._assert_rejected("application/jsonx")
+
+    def test_application_plus_json_rejected(self):
+        self._assert_rejected("application/+json")
+
+    def test_application_problem_jsonx_rejected(self):
+        self._assert_rejected("application/problem+jsonx")
+
+    def test_empty_content_type_rejected(self):
+        self._assert_rejected("")
+
+    def test_missing_content_type_rejected(self):
+        resp = _fake_response(body=b"{}", content_type="")
+        self.session.get.return_value = resp
+        # Clear the default content-type from _fake_response
+        resp.headers = {}
+        with self.assertRaises(SteamInvalidResponseError):
+            self._client().get_json("/test/")

@@ -17,3 +17,4 @@ typing_extensions==4.16.0
 # SBGC-43 — production operations
 gunicorn==23.0.0
 whitenoise==6.9.0
+urllib3==2.7.0

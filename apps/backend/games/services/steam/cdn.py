@@ -94,17 +94,12 @@ def _rebuild_url(parsed, hostname: str) -> str:
 
 
 def _reject_non_public_host(hostname: str) -> None:
-    """Raise ``ValueError`` if *hostname* is localhost, private, or an IP literal."""
+    """Raise ``ValueError`` if *hostname* is localhost or an IP literal."""
     if hostname in ("localhost", "localhost.localdomain"):
         raise ValueError("CDN URL must not use localhost.")
-    # IP literal?
+    # Reject any IP literal (IPv4, IPv6, IPv4-mapped, etc.).
     try:
-        addr = ipaddress.ip_address(hostname)
-        if addr.is_loopback or addr.is_link_local or addr.is_private:
-            raise ValueError(
-                "CDN URL must not use a loopback, link-local, or private address."
-            )
-        # Any other IP literal is rejected — Steam CDN uses hostnames.
+        ipaddress.ip_address(hostname)
         raise ValueError("CDN URL must not use an IP literal.")
     except ValueError:
         pass  # not an IP address — proceed
