@@ -12,6 +12,9 @@ import re
 from collections.abc import Collection
 from urllib.parse import urlparse
 
+# Reject numeric-only host representations (decimal, hex, octal IP forms).
+_NUMERIC_HOST_RE = re.compile(r"^(?:0[xX][0-9a-fA-F]+|0[0-7]+|[0-9]+)$")
+
 # ---------------------------------------------------------------------------
 
 
@@ -94,9 +97,15 @@ def _rebuild_url(parsed, hostname: str) -> str:
 
 
 def _reject_non_public_host(hostname: str) -> None:
-    """Raise ``ValueError`` if *hostname* is localhost or an IP literal."""
+    """Raise ``ValueError`` if *hostname* is localhost, a numeric-only
+    host (decimal/hex/octal IP representation), or an IP literal."""
     if hostname in ("localhost", "localhost.localdomain"):
         raise ValueError("CDN URL must not use localhost.")
+    # Reject numeric-only hosts before IP-literal check — these are
+    # ambiguous decimal/hex/octal IP representations (e.g. 2130706433,
+    # 0x7f000001, 017700000001) that ipaddress does not recognise.
+    if _NUMERIC_HOST_RE.match(hostname):
+        raise ValueError("CDN URL must not use a numeric host.")
     # Reject any IP literal (IPv4, IPv6, IPv4-mapped, etc.).
     try:
         ipaddress.ip_address(hostname)

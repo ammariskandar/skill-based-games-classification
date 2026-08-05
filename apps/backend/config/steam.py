@@ -240,6 +240,9 @@ _MAX_HOSTNAME_LENGTH = 253
 
 _CDN_HOST_RESERVED = frozenset({"localhost", "localhost.localdomain"})
 
+# Reject numeric-only host representations (decimal, hex, octal IP forms).
+_NUMERIC_HOST_RE = re.compile(r"^(?:0[xX][0-9a-fA-F]+|0[0-7]+|[0-9]+)$")
+
 
 def _validate_cdn_host_entry(entry: str) -> None:
     """
@@ -300,6 +303,12 @@ def _validate_cdn_host_entry(entry: str) -> None:
     if entry.lower() in _CDN_HOST_RESERVED:
         raise ImproperlyConfigured(
             "STEAM_CDN_ALLOWED_HOSTS must not contain localhost."
+        )
+
+    # Numeric-only hosts (decimal, hex, octal IP representations).
+    if _NUMERIC_HOST_RE.match(entry):
+        raise ImproperlyConfigured(
+            "STEAM_CDN_ALLOWED_HOSTS must not contain numeric hosts."
         )
 
     # IP literal (IPv4 or IPv6).

@@ -55,13 +55,14 @@ games/services/steam/
 
 ## Trusted Origins
 
-Steam API and Store origins are **fixed trusted constants** — not
-configurable via environment variables:
+Steam API and Store origins are **immutable code constants** in
+`games.services.steam.constants` — not configurable via dataclass,
+Django settings, or environment variables:
 
 | Constant | Value |
 |----------|-------|
-| `api_origin` | `https://api.steampowered.com` |
-| `store_origin` | `https://store.steampowered.com` |
+| `STEAM_WEB_API_ORIGIN` | `https://api.steampowered.com` |
+| `STEAM_STORE_API_ORIGIN` | `https://store.steampowered.com` |
 
 Production environment variables cannot redirect API-key-bearing requests
 to arbitrary origins.
@@ -75,6 +76,7 @@ to arbitrary origins.
 | `STEAM_READ_TIMEOUT_SECONDS` | `10` | Read timeout (0 < t ≤ 60) |
 | `STEAM_MAX_RETRIES` | `2` | Retry count (0–3) for idempotent GET/HEAD |
 | `STEAM_RETRY_BACKOFF_SECONDS` | `0.25` | urllib3 Retry backoff factor |
+| `STEAM_RETRY_SLEEP_MAX_SECONDS` | `5.0` | Ceiling for exponential backoff and Retry-After sleep (0–10) |
 | `STEAM_MAX_RESPONSE_BYTES` | `2097152` | Response body size limit (2 MiB) |
 | `STEAM_CDN_ALLOWED_HOSTS` | *(empty)* | Comma-separated trusted CDN hostnames |
 
@@ -91,21 +93,54 @@ to arbitrary origins.
 Every request uses `timeout=(connect_timeout, read_timeout)` — never `None`.
 
 Retries (via urllib3 `Retry`):
-- **Total:** `max_retries` (default 2, max 3 total attempts)
+- **Maximum attempts:** `1 + max_retries` (default 3). The urllib3 `total`
+  counter is the master cap — individual connect/read/status counters share it.
 - **Methods:** GET and HEAD only
 - **Statuses:** 429, 500, 502, 503, 504
 - **Never retried:** 401, 403, ordinary 4xx, configuration errors, JSON/schema failures
-- **Redirects:** disabled (`redirect=0`, `allow_redirects=False`)
+- **Redirects:** disabled (`redirect=0`, `allow_redirects=False`, `raise_on_redirect=False`)
 - **Other:** 0 (no retry on unlisted statuses)
-- `Retry-After` header respected; backoff bounded; no delay beyond 5 seconds
+- **Backoff cap:** `backoff_max = retry_sleep_max_seconds` (default 5.0 s).
+  Exponential backoff cannot exceed this ceiling.
+- **Retry-After cap:** `retry_after_max = retry_sleep_max_seconds` (default 5.0 s).
+  Server-supplied `Retry-After` values above the cap are reduced to this ceiling.
+- **Configured operation budget:**
+  `maximum_attempts × (connect_timeout + read_timeout)
+   + max_retries × retry_sleep_max_seconds`
+  Default 49.15 s; hard ceiling 120 s. This is a budget ceiling, not a
+  strict wall-clock deadline — DNS, TLS, scheduling, and library overhead
+  can add elapsed time.
+  Configurations exceeding the ceiling are rejected at construction.
 
 ## Response Handling
 
-- `Content-Length` inspected before body read; enforced during streaming read
+### Status-first error processing
+
+For non-2xx responses the status is classified **before** any body parsing:
+
+1. classify status → `SteamAuthenticationError`, `SteamRateLimitedError`,
+   `SteamNotFoundError`, `SteamUpstreamError`, or `SteamRedirectError`;
+2. bounded-drain the error body (1 MiB limit) for connection hygiene;
+3. close the response;
+4. raise the originally classified exception.
+
+An oversized, malformed, or wrong-media error body never masks the
+status-based error classification.  Raw upstream body content never
+appears in exceptions or logs.
+
+### Success responses
+
+1. `Content-Length` prechecked against `max_response_bytes`
+2. Body streamed under the byte limit with `iter_content()`
+3. Chunks accumulated in a list and joined once with `b"".join(chunks)`
+4. `Content-Type` validated against `application/json` or
+   `application/<subtype>+json` (with optional parameters)
+5. JSON decoded; root must be an object (`dict`) — arrays, scalars,
+   and null rejected
+
 - Default 2 MiB limit — raises `SteamResponseTooLargeError`
-- Accepted media types: `application/json`, `application/*+json` (with optional parameters)
-- JSON root must be an object (`dict`) — arrays, scalars, and null rejected
 - Redirects (3xx) raise `SteamRedirectError` — never followed
+- Missing `Content-Type` or wrong media type raises `SteamInvalidResponseError`
 
 ## Error Taxonomy
 
@@ -133,7 +168,11 @@ request URL, raw response body, upstream HTML, full response headers.
 `validate_steam_cdn_url()` enforces:
 - HTTPS only
 - Exact hostname match against configured allowlist (no wildcard/suffix matching)
-- No credentials, custom ports, fragments, IP literals, localhost
+- No credentials, custom ports, fragments
+- No IP literals (IPv4, IPv6, IPv4-mapped, link-local, loopback, private)
+- No numeric-only host representations (decimal/hex/octal IP forms —
+  e.g. `2130706433`, `0x7f000001`, `017700000001`)
+- No `localhost` or `localhost.localdomain`
 - Nonempty meaningful path required
 - Empty allowlist rejects all CDN URLs
 

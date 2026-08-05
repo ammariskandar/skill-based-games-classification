@@ -940,24 +940,47 @@ No paid CDN is required.
   response-size limit, CDN allowlist, and optional API key.
 - **Synchronous Requests session** — urllib3 `Retry` adapter for bounded
   idempotent retries.
-- **Fixed trusted origins** — `api_origin` and `store_origin` are code
-  constants, not configurable via environment variables.
+- **Immutable trusted origins** — `STEAM_WEB_API_ORIGIN` and
+  `STEAM_STORE_API_ORIGIN` are module-level constants in
+  `games.services.steam.constants`, not dataclass fields, Django settings,
+  or environment variables (SBGC-168).
 - **Header-only API key** — sent in `x-webapi-key`; never in query strings,
   logs, errors, or `repr`.
 - **Connect/read timeouts** — every request uses `timeout=(connect, read)`.
 - **GET/HEAD-only retry** — retryable statuses: 429, 500, 502, 503, 504.
   401 and 403 never retried.
 - **Redirects disabled** — unexpected 3xx raises `SteamRedirectError`.
+- **Bounded sleep** — `backoff_max` and `retry_after_max` both capped at
+  `retry_sleep_max_seconds` (default 5.0 s, max 10.0 s).  Retry-After values
+  above the cap are reduced; exponential backoff cannot exceed the cap
+  (SBGC-168).
+- **Configured operation budget** — `maximum_attempts × (connect + read)
+  + max_retries × retry_sleep_max_seconds` (default 49.15 s, ceiling 120 s).
+  Configurations exceeding the ceiling are rejected (SBGC-168).
+- **Direct urllib3 dependency** — pinned at 2.7.0 alongside requests 2.32.5
+  (SBGC-168).
+- **Status-first error processing** — error status classified before body
+  read; oversized/malformed error bodies never mask status classification;
+  raw upstream body never in exceptions (SBGC-168).
+- **Single-join body assembly** — chunks accumulated in list, joined once
+  with `b"".join()` (SBGC-168).
+- **Structured JSON media matching** — regex accepts `application/json` and
+  `application/<subtype>+json` with optional parameters; rejects `text/json`,
+  `application/jsonx`, `application/+json` (SBGC-168).
+- **CDN numeric-host rejection** — decimal, hex, and octal IP
+  representations (e.g. `2130706433`, `0x7f000001`, `017700000001`) are
+  rejected alongside IP literals and localhost (SBGC-168).
 - **Bounded response size** — configurable limit (default 2 MiB);
   `SteamResponseTooLargeError` on exceed.
 - **JSON-object response contract** — arrays, scalars, null, and non-JSON
   media types rejected.
 - **CDN URL validation** — `validate_steam_cdn_url()` enforces HTTPS,
-  exact-host allowlist, no credentials/ports/fragments/IP literals.
-- **No real network calls in tests** — 85 isolated tests use injected fake
-  sessions.
+  exact-host allowlist, no credentials/ports/fragments/IP literals/numeric
+  hosts.
+- **No real network calls in tests** — isolated tests use injected fake
+  sessions and patched urllib3 sleep.
 - **Endpoint integration deferred** — concrete API adapters (e.g.,
-  `GetAppList`) belong to SBGC-5.
+  `GetAppList`) belong to SBGC-53.
 - **No image downloading or proxying** — CDN validation is pure; image
   retrieval is a later concern.
 - **Environment configuration** — `config/steam.py`
@@ -2239,13 +2262,20 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-30 | Staged HSTS rollout | Accepted (SBGC-41).  Start at 0, stage to 3600 after HTTPS verified, increase to 31536000 after sustained operation. |
 | 2026-07-30 | Rate limiting deferred to deployment edge | Accepted (SBGC-41).  Login brute-force belongs at the reverse-proxy edge; Ninja throttling is an application fairness control, not a security boundary. |
 | 2026-07-30 | Synchronous Requests client for Steam Web API | Accepted (SBGC-42).  No asyncio, httpx, or aiohttp — Requests + urllib3 Retry is sufficient for the MVP synchronous import workflow. |
-| 2026-07-30 | Fixed trusted Steam API origins | Accepted (SBGC-42).  `api_origin` and `store_origin` are code constants — environment variables cannot redirect API-key-bearing requests to arbitrary origins. |
+| 2026-07-30 | Fixed trusted Steam API origins | Accepted (SBGC-42 / SBGC-168).  `STEAM_WEB_API_ORIGIN` and `STEAM_STORE_API_ORIGIN` are module-level constants in `games.services.steam.constants` — not dataclass fields, Django settings, or environment variables. |
 | 2026-07-30 | Header-only Steam API key transmission | Accepted (SBGC-42).  The key is sent only in the `x-webapi-key` header; never in query strings, logs, errors, or `repr`. |
 | 2026-07-30 | GET/HEAD-only retry with explicit status list | Accepted (SBGC-42).  Only 429, 500, 502, 503, 504 are retried; 401 and 403 are never retried; redirects disabled; `other=0`. |
 | 2026-07-30 | Bounded Steam response size | Accepted (SBGC-42).  Default 2 MiB limit enforced before JSON decoding; `SteamResponseTooLargeError` raised on exceed. |
 | 2026-07-30 | JSON-object response contract | Accepted (SBGC-42).  Arrays, scalars, null roots, and non-JSON media types are rejected with `SteamInvalidResponseError`. |
 | 2026-07-30 | Exact-host CDN allowlist | Accepted (SBGC-42).  `validate_steam_cdn_url()` uses exact hostname matching — no wildcard or suffix matching; empty allowlist rejects all. |
-| 2026-07-30 | No network calls in Steam tests | Accepted (SBGC-42).  All 85 Steam service tests use injected fake sessions or pure-function validation; no real external requests. |
+| 2026-07-30 | No network calls in Steam tests | Accepted (SBGC-42 / SBGC-168).  All Steam service tests use injected fake sessions, adapter inspection, or patched urllib3 sleep; no real external requests. |
+| 2026-08-05 | Bounded sleep and Retry-After caps | Accepted (SBGC-168).  `backoff_max` and `retry_after_max` both capped at `retry_sleep_max_seconds` (default 5.0 s); Retry-After values above cap reduced; exponential backoff cannot exceed cap. |
+| 2026-08-05 | Configured operation budget | Accepted (SBGC-168).  `maximum_attempts × (connect + read) + max_retries × retry_sleep_max_seconds` (default 49.15 s, ceiling 120 s); configs exceeding ceiling rejected. |
+| 2026-08-05 | Status-first error processing | Accepted (SBGC-168).  Error status classified before body read; oversized/malformed error bodies never mask status classification; raw upstream body never in exceptions. |
+| 2026-08-05 | Single-join body assembly | Accepted (SBGC-168).  Chunks accumulated in list, joined once with `b"".join()`. |
+| 2026-08-05 | Structured JSON media-type matching | Accepted (SBGC-168).  Regex accepts `application/json` and `application/<subtype>+json` with optional parameters; rejects `text/json`, `application/jsonx`, `application/+json`. |
+| 2026-08-05 | CDN numeric-host rejection | Accepted (SBGC-168).  Decimal, hex, and octal IP representations (e.g. `2130706433`, `0x7f000001`, `017700000001`) rejected alongside IP literals and localhost. |
+| 2026-08-05 | Direct urllib3 dependency | Accepted (SBGC-168).  Pinned at urllib3 2.7.0 alongside requests 2.32.5; explicit ownership of retry and sleep behavior. |
 | 2026-07-30 | Endpoint adapters deferred to SBGC-5 | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., ``GetAppList``, ``GetSchemaForGame``) belong to SBGC-5. |
 | 2026-07-31 | Gunicorn WSGI runtime | Accepted (SBGC-43).  Synchronous Gunicorn workers; no Uvicorn, ASGI, or async. |
 | 2026-07-31 | WhiteNoise Admin static files | Accepted (SBGC-43).  Compressed manifest storage; collectstatic in build phase only. |
@@ -2263,7 +2293,8 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-07-31 | Subprocess test environment isolation | Accepted (SBGC-44).  Shared minimal_subprocess_env() never inherits credentials, settings module, or .env flag. |
 | 2026-07-31 | Network isolation in tests | Accepted (SBGC-44).  No live HTTP requests; assert_no_live_requests() guard; mocks/fakes/adapter inspection only. |
 | 2026-07-31 | Reverse and shuffle test verification | Accepted (SBGC-44).  Order-independence verified; not in normal CI. |
-| 2026-07-31 | No live deployment verification | Accepted (SBGC-43).  No Render service created; no Neon migration ran; SBGC-44 remains before SBGC-3 epic closes. | Accepted (SBGC-42).  The service foundation is complete; concrete API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`) belong to SBGC-5. |
+| 2026-07-31 | No live deployment verification | Accepted (SBGC-43).  No Render service created; no Neon migration ran; SBGC-44 remains before SBGC-3 epic closes. |
+| 2026-08-05 | SBGC-168 Steam hardening complete | SBGC-53 (Steam endpoint adapters) unblocked but not started.  No live deployment. |
 
 ---
 
