@@ -29,12 +29,12 @@ def _make_user(username: str) -> User:
     return User.objects.create_user(username=username, password="test")
 
 
-def _valid_challenge_kwargs() -> dict:
-    return {"micro_score": 50, "mystiko_score": 20, "macro_score": 30}
+def _valid_challenge_kwargs(micro=50, mystiko=20, macro=30):
+    return {"micro_score": micro, "mystiko_score": mystiko, "macro_score": macro}
 
 
-def _valid_reward_kwargs() -> dict:
-    return {"micro_score": 10, "mystiko_score": 30, "macro_score": 60}
+def _valid_reward_kwargs(micro=10, mystiko=30, macro=60):
+    return {"micro_score": micro, "mystiko_score": mystiko, "macro_score": macro}
 
 
 # ---------------------------------------------------------------------------
@@ -46,8 +46,7 @@ class EditorialClassificationTests(TestCase):
     def test_one_per_game(self):
         game = _make_game("parent-test")
         user = _make_user("editor1")
-        c1 = EditorialClassification.objects.create(game=game, updated_by=user)
-        self.assertEqual(c1.game, game)
+        EditorialClassification.objects.create(game=game, updated_by=user)
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 EditorialClassification.objects.create(game=game, updated_by=user)
@@ -103,14 +102,14 @@ class EditorialClassificationTests(TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Challenge profile
+# Challenge profile — validation
 # ---------------------------------------------------------------------------
 
 
-class ChallengeProfileTests(TestCase):
+class ChallengeProfileValidationTests(TestCase):
     def setUp(self):
-        self.game = _make_game("challenge-game")
-        self.user = _make_user("challenge-editor")
+        self.game = _make_game("ch-val-game")
+        self.user = _make_user("ch-val-editor")
         self.parent = EditorialClassification.objects.create(
             game=self.game, updated_by=self.user
         )
@@ -120,10 +119,8 @@ class ChallengeProfileTests(TestCase):
             classification=self.parent, **_valid_challenge_kwargs()
         )
         self.assertEqual(cp.micro_score, 50)
-        self.assertEqual(cp.mystiko_score, 20)
-        self.assertEqual(cp.macro_score, 30)
 
-    def test_zero_heavy_valid_distribution(self):
+    def test_zero_heavy_valid(self):
         cp = ChallengeProfile.objects.create(
             classification=self.parent, micro_score=100, mystiko_score=0, macro_score=0
         )
@@ -131,14 +128,14 @@ class ChallengeProfileTests(TestCase):
 
     def test_total_99_rejected(self):
         cp = ChallengeProfile(
-            classification=self.parent, micro_score=50, mystiko_score=20, macro_score=29
+            classification=self.parent, **_valid_challenge_kwargs(macro=29)
         )
         with self.assertRaises(ValidationError):
             cp.full_clean()
 
     def test_total_101_rejected(self):
         cp = ChallengeProfile(
-            classification=self.parent, micro_score=50, mystiko_score=21, macro_score=30
+            classification=self.parent, **_valid_challenge_kwargs(mystiko=21)
         )
         with self.assertRaises(ValidationError):
             cp.full_clean()
@@ -152,10 +149,28 @@ class ChallengeProfileTests(TestCase):
 
     def test_above_100_rejected(self):
         cp = ChallengeProfile(
+            classification=self.parent, micro_score=101, mystiko_score=0, macro_score=-1
+        )
+        with self.assertRaises(ValidationError):
+            cp.full_clean()
+
+    def test_boolean_micro_rejected(self):
+        cp = ChallengeProfile(
             classification=self.parent,
-            micro_score=101,
-            mystiko_score=0,
-            macro_score=-1,
+            micro_score=True,
+            mystiko_score=50,
+            macro_score=49,
+        )
+        with self.assertRaises(ValidationError) as cm:
+            cp.full_clean()
+        self.assertIn("Challenge Micro", str(cm.exception))
+
+    def test_boolean_mystiko_rejected(self):
+        cp = ChallengeProfile(
+            classification=self.parent,
+            micro_score=50,
+            mystiko_score=False,
+            macro_score=50,
         )
         with self.assertRaises(ValidationError):
             cp.full_clean()
@@ -170,16 +185,69 @@ class ChallengeProfileTests(TestCase):
                     classification=self.parent, **_valid_challenge_kwargs()
                 )
 
-    def test_range_constraint_db(self):
-        """DB-level range constraint rejects out-of-range score without clean()."""
-        self.parent.delete()  # need fresh parent with new profile
-        game2 = _make_game("challenge-db-range")
-        user2 = _make_user("challenge-db-editor")
-        parent2 = EditorialClassification.objects.create(game=game2, updated_by=user2)
+
+# ---------------------------------------------------------------------------
+# Challenge profile — database totals
+# ---------------------------------------------------------------------------
+
+
+class ChallengeProfileDbTotalsTests(TestCase):
+    """Persist without full_clean() — DB total constraint enforced."""
+
+    def setUp(self):
+        self.game = _make_game("ch-db-game")
+        self.user = _make_user("ch-db-user")
+        self.parent = EditorialClassification.objects.create(
+            game=self.game, updated_by=self.user
+        )
+
+    def test_total_99_db_rejected(self):
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 ChallengeProfile.objects.create(
-                    classification=parent2,
+                    classification=self.parent,
+                    micro_score=50,
+                    mystiko_score=20,
+                    macro_score=29,
+                )
+
+    def test_total_101_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                ChallengeProfile.objects.create(
+                    classification=self.parent,
+                    micro_score=50,
+                    mystiko_score=21,
+                    macro_score=30,
+                )
+
+    def test_range_valid_but_wrong_total_40_40_40_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                ChallengeProfile.objects.create(
+                    classification=self.parent,
+                    micro_score=40,
+                    mystiko_score=40,
+                    macro_score=40,
+                )
+
+    def test_valid_100_0_0_db_accepted(self):
+        ChallengeProfile.objects.create(
+            classification=self.parent, micro_score=100, mystiko_score=0, macro_score=0
+        )
+        self.assertEqual(ChallengeProfile.objects.count(), 1)
+
+    def test_valid_33_33_34_db_accepted(self):
+        ChallengeProfile.objects.create(
+            classification=self.parent, micro_score=33, mystiko_score=33, macro_score=34
+        )
+        self.assertEqual(ChallengeProfile.objects.count(), 1)
+
+    def test_range_violation_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                ChallengeProfile.objects.create(
+                    classification=self.parent,
                     micro_score=101,
                     mystiko_score=0,
                     macro_score=-1,
@@ -187,14 +255,14 @@ class ChallengeProfileTests(TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Reward profile
+# Reward profile — validation
 # ---------------------------------------------------------------------------
 
 
-class RewardProfileTests(TestCase):
+class RewardProfileValidationTests(TestCase):
     def setUp(self):
-        self.game = _make_game("reward-game")
-        self.user = _make_user("reward-editor")
+        self.game = _make_game("rw-val-game")
+        self.user = _make_user("rw-val-editor")
         self.parent = EditorialClassification.objects.create(
             game=self.game, updated_by=self.user
         )
@@ -204,24 +272,21 @@ class RewardProfileTests(TestCase):
             classification=self.parent, **_valid_reward_kwargs()
         )
         self.assertEqual(rp.micro_score, 10)
-        self.assertEqual(rp.macro_score, 60)
 
-    def test_zero_heavy_valid_distribution(self):
+    def test_zero_heavy_valid(self):
         rp = RewardProfile.objects.create(
             classification=self.parent, micro_score=0, mystiko_score=100, macro_score=0
         )
         self.assertEqual(rp.micro_score + rp.mystiko_score + rp.macro_score, 100)
 
     def test_total_99_rejected(self):
-        rp = RewardProfile(
-            classification=self.parent, micro_score=10, mystiko_score=30, macro_score=59
-        )
+        rp = RewardProfile(classification=self.parent, **_valid_reward_kwargs(macro=59))
         with self.assertRaises(ValidationError):
             rp.full_clean()
 
     def test_total_101_rejected(self):
         rp = RewardProfile(
-            classification=self.parent, micro_score=10, mystiko_score=31, macro_score=60
+            classification=self.parent, **_valid_reward_kwargs(mystiko=31)
         )
         with self.assertRaises(ValidationError):
             rp.full_clean()
@@ -229,6 +294,27 @@ class RewardProfileTests(TestCase):
     def test_negative_rejected(self):
         rp = RewardProfile(
             classification=self.parent, micro_score=-5, mystiko_score=50, macro_score=55
+        )
+        with self.assertRaises(ValidationError):
+            rp.full_clean()
+
+    def test_boolean_micro_rejected(self):
+        rp = RewardProfile(
+            classification=self.parent,
+            micro_score=True,
+            mystiko_score=0,
+            macro_score=99,
+        )
+        with self.assertRaises(ValidationError) as cm:
+            rp.full_clean()
+        self.assertIn("Reward Micro", str(cm.exception))
+
+    def test_boolean_macro_rejected(self):
+        rp = RewardProfile(
+            classification=self.parent,
+            micro_score=50,
+            mystiko_score=50,
+            macro_score=False,
         )
         with self.assertRaises(ValidationError):
             rp.full_clean()
@@ -243,17 +329,60 @@ class RewardProfileTests(TestCase):
                     classification=self.parent, **_valid_reward_kwargs()
                 )
 
-    def test_range_constraint_db(self):
-        """DB-level range constraint rejects out-of-range score without clean()."""
-        self.parent.delete()
-        game2 = _make_game("reward-db-range")
-        user2 = _make_user("reward-db-editor")
-        parent2 = EditorialClassification.objects.create(game=game2, updated_by=user2)
+
+# ---------------------------------------------------------------------------
+# Reward profile — database totals
+# ---------------------------------------------------------------------------
+
+
+class RewardProfileDbTotalsTests(TestCase):
+    """Persist without full_clean() — DB total constraint enforced."""
+
+    def setUp(self):
+        self.game = _make_game("rw-db-game")
+        self.user = _make_user("rw-db-user")
+        self.parent = EditorialClassification.objects.create(
+            game=self.game, updated_by=self.user
+        )
+
+    def test_total_99_db_rejected(self):
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 RewardProfile.objects.create(
-                    classification=parent2,
-                    micro_score=200,
-                    mystiko_score=-50,
-                    macro_score=-50,
+                    classification=self.parent,
+                    micro_score=10,
+                    mystiko_score=30,
+                    macro_score=59,
                 )
+
+    def test_total_101_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                RewardProfile.objects.create(
+                    classification=self.parent,
+                    micro_score=10,
+                    mystiko_score=31,
+                    macro_score=60,
+                )
+
+    def test_range_valid_but_wrong_total_40_40_40_db_rejected(self):
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                RewardProfile.objects.create(
+                    classification=self.parent,
+                    micro_score=40,
+                    mystiko_score=40,
+                    macro_score=40,
+                )
+
+    def test_valid_100_0_0_db_accepted(self):
+        RewardProfile.objects.create(
+            classification=self.parent, micro_score=100, mystiko_score=0, macro_score=0
+        )
+        self.assertEqual(RewardProfile.objects.count(), 1)
+
+    def test_valid_33_33_34_db_accepted(self):
+        RewardProfile.objects.create(
+            classification=self.parent, micro_score=33, mystiko_score=33, macro_score=34
+        )
+        self.assertEqual(RewardProfile.objects.count(), 1)

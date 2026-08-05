@@ -88,6 +88,26 @@ class ServiceCreationTests(TestCase):
         self.assertIsNotNone(result.challenge_profile)
         self.assertIsNotNone(result.reward_profile)
 
+    def test_profile_pks_stable_on_update(self):
+        game = _game("svc-pk-stable")
+        user = _user("svc-pk-user")
+        result1 = set_editorial_classification(
+            game=game,
+            updated_by=user,
+            challenge=_challenge(),
+            reward=_reward(),
+        )
+        cp_pk = result1.challenge_profile.pk
+        rp_pk = result1.reward_profile.pk
+        result2 = set_editorial_classification(
+            game=game,
+            updated_by=user,
+            challenge=_challenge(micro=30, mystiko=40, macro=30),
+            reward=_reward(micro=20, mystiko=20, macro=60),
+        )
+        self.assertEqual(result2.challenge_profile.pk, cp_pk)
+        self.assertEqual(result2.reward_profile.pk, rp_pk)
+
 
 class ServiceUpdateTests(TestCase):
     def setUp(self):
@@ -128,6 +148,139 @@ class ServiceUpdateTests(TestCase):
         self.assertEqual(RewardProfile.objects.count(), 1)
 
 
+class ServiceAtomicityTests(TestCase):
+    def test_invalid_challenge_total_creates_nothing(self):
+        game = _game("svc-at-ch")
+        user = _user("svc-at-user1")
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(micro=99, mystiko=0, macro=0),
+                reward=_reward(),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+    def test_invalid_reward_total_creates_nothing(self):
+        game = _game("svc-at-rw")
+        user = _user("svc-at-user2")
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(),
+                reward=_reward(micro=10, mystiko=10, macro=10),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+    def test_invalid_reward_does_not_leave_challenge(self):
+        game = _game("svc-at-noch")
+        user = _user("svc-at-user3")
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(),
+                reward=_reward(micro=99, mystiko=0, macro=0),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+    def test_invalid_update_preserves_existing(self):
+        game = _game("svc-preserve")
+        user = _user("svc-preserve-user")
+        set_editorial_classification(
+            game=game,
+            updated_by=user,
+            challenge=_challenge(),
+            reward=_reward(),
+            notes="Keep me.",
+        )
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(micro=200, mystiko=-50, macro=-50),
+                reward=_reward(),
+            )
+        c = EditorialClassification.objects.get(game=game)
+        self.assertEqual(c.notes, "Keep me.")
+        self.assertEqual(c.challenge_profile.micro_score, 50)
+
+    def test_invalid_update_preserves_notes(self):
+        game = _game("svc-preserve-notes")
+        user = _user("svc-preserve-notes-u")
+        set_editorial_classification(
+            game=game,
+            updated_by=user,
+            challenge=_challenge(),
+            reward=_reward(),
+            notes="Original.",
+        )
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(micro=50, mystiko=20, macro=20),  # total 90
+                reward=_reward(),
+            )
+        c = EditorialClassification.objects.get(game=game)
+        self.assertEqual(c.notes, "Original.")
+
+    def test_invalid_update_preserves_updated_by(self):
+        game = _game("svc-preserve-by")
+        user1 = _user("svc-preserve-by-u1")
+        user2 = _user("svc-preserve-by-u2")
+        set_editorial_classification(
+            game=game,
+            updated_by=user1,
+            challenge=_challenge(),
+            reward=_reward(),
+        )
+        with self.assertRaises(ValidationError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user2,
+                challenge=_challenge(micro=120, mystiko=-10, macro=-10),
+                reward=_reward(),
+            )
+        c = EditorialClassification.objects.get(game=game)
+        self.assertEqual(c.updated_by, user1)
+
+
+class ServiceBooleanRejectionTests(TestCase):
+    def test_challenge_true_rejected(self):
+        with self.assertRaises(TypeError):
+            _challenge(micro=True, mystiko=49, macro=50)
+
+    def test_reward_false_rejected(self):
+        with self.assertRaises(TypeError):
+            _reward(micro=20, mystiko=False, macro=80)
+
+    def test_challenge_true_nothing_persisted(self):
+        game = _game("svc-bool-ch")
+        user = _user("svc-bool-ch-u")
+        with self.assertRaises(TypeError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=ScoreDistribution(micro=True, mystiko=49, macro=50),
+                reward=_reward(),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+    def test_reward_false_nothing_persisted(self):
+        game = _game("svc-bool-rw")
+        user = _user("svc-bool-rw-u")
+        with self.assertRaises(TypeError):
+            set_editorial_classification(
+                game=game,
+                updated_by=user,
+                challenge=_challenge(),
+                reward=ScoreDistribution(micro=20, mystiko=False, macro=80),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+
 class ServiceValidationTests(TestCase):
     def test_rejects_unsaved_game(self):
         g = Game(source_type=SourceType.MANUAL, name="Unsaved", slug="unsaved")
@@ -157,73 +310,3 @@ class ServiceValidationTests(TestCase):
                 challenge=_challenge(),
                 reward=_reward(),
             )
-
-    def test_invalid_challenge_creates_nothing(self):
-        game = _game("svc-atomic")
-        user = _user("svc-atomic-user")
-        with self.assertRaises(ValidationError):
-            set_editorial_classification(
-                game=game,
-                updated_by=user,
-                challenge=_challenge(micro=200, mystiko=0, macro=-100),
-                reward=_reward(),
-            )
-        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
-
-    def test_invalid_reward_creates_nothing(self):
-        game = _game("svc-atomic2")
-        user = _user("svc-atomic-user2")
-        with self.assertRaises(ValidationError):
-            set_editorial_classification(
-                game=game,
-                updated_by=user,
-                challenge=_challenge(),
-                reward=_reward(micro=10, mystiko=10, macro=10),
-            )
-        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
-
-    def test_invalid_reward_does_not_leave_challenge_row(self):
-        game = _game("svc-atomic3")
-        user = _user("svc-atomic-user3")
-        with self.assertRaises(ValidationError):
-            set_editorial_classification(
-                game=game,
-                updated_by=user,
-                challenge=_challenge(),
-                reward=_reward(micro=99, mystiko=0, macro=0),
-            )
-        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
-        self.assertFalse(
-            ChallengeProfile.objects.filter(classification__game=game).exists()
-        )
-
-    def test_invalid_update_preserves_existing(self):
-        game = _game("svc-preserve")
-        user = _user("svc-preserve-user")
-        set_editorial_classification(
-            game=game,
-            updated_by=user,
-            challenge=_challenge(),
-            reward=_reward(),
-            notes="Keep me.",
-        )
-        with self.assertRaises(ValidationError):
-            set_editorial_classification(
-                game=game,
-                updated_by=user,
-                challenge=_challenge(micro=200, mystiko=-50, macro=-50),
-                reward=_reward(),
-            )
-        c = EditorialClassification.objects.get(game=game)
-        self.assertEqual(c.notes, "Keep me.")
-        self.assertEqual(c.challenge_profile.micro_score, 50)
-
-
-class ScoreDistributionTests(TestCase):
-    def test_rejects_bool_micro(self):
-        with self.assertRaises(TypeError):
-            ScoreDistribution(micro=True, mystiko=50, macro=50)
-
-    def test_rejects_bool_macro(self):
-        with self.assertRaises(TypeError):
-            ScoreDistribution(micro=50, mystiko=50, macro=False)

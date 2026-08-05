@@ -9,9 +9,34 @@ Macro integer scores that must sum to exactly 100.
 from __future__ import annotations
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from classifications.validation import validate_score_distribution
+
+
+def _reject_boolean_scores(instance, profile_label: str) -> None:
+    """Reject boolean values on score fields before Django field coercion.
+
+    Django ``PositiveSmallIntegerField.to_python()`` converts ``True → 1``
+    and ``False → 0`` during ``clean_fields()``, which runs before
+    ``clean()``.  This helper inspects the raw instance attributes and
+    raises ``ValidationError`` with profile-specific messages while
+    booleans are still detectable.
+    """
+    errors: dict[str, list[str]] = {}
+    for attr, label in (
+        ("micro_score", f"{profile_label} Micro"),
+        ("mystiko_score", f"{profile_label} Mystiko"),
+        ("macro_score", f"{profile_label} Macro"),
+    ):
+        value = getattr(instance, attr)
+        if isinstance(value, bool):
+            errors.setdefault(attr, []).append(
+                f"{label} must be an integer, not a boolean."
+            )
+    if errors:
+        raise ValidationError(errors)
 
 
 class EditorialClassification(models.Model):
@@ -81,10 +106,22 @@ class ChallengeProfile(models.Model):
                 ),
                 name="challenge_scores_range_ck",
             ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    micro_score=(
+                        100 - models.F("mystiko_score") - models.F("macro_score")
+                    )
+                ),
+                name="challenge_scores_total_100_ck",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"Challenge {self.micro_score}/{self.mystiko_score}/{self.macro_score}"
+
+    def clean_fields(self, exclude=None):
+        _reject_boolean_scores(self, "Challenge")
+        super().clean_fields(exclude=exclude)
 
     def clean(self) -> None:
         super().clean()
@@ -135,10 +172,22 @@ class RewardProfile(models.Model):
                 ),
                 name="reward_scores_range_ck",
             ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    micro_score=(
+                        100 - models.F("mystiko_score") - models.F("macro_score")
+                    )
+                ),
+                name="reward_scores_total_100_ck",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"Reward {self.micro_score}/{self.mystiko_score}/{self.macro_score}"
+
+    def clean_fields(self, exclude=None):
+        _reject_boolean_scores(self, "Reward")
+        super().clean_fields(exclude=exclude)
 
     def clean(self) -> None:
         super().clean()

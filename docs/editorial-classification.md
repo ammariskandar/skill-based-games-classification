@@ -54,11 +54,16 @@ Owned by the `classifications` app.  One `EditorialClassification` per
 | `CheckConstraint` (DB) | Range 0–100 for each score on both profiles |
 | Service | Validates both distributions before any database writes |
 
-The total=100 rule is enforced at the application level (`clean()` +
-service).  Django ORM `F()` arithmetic expressions do not cleanly
-support `CHECK (a + b + c = 100)` across fields because
-`CombinedExpression.__eq__` evaluates at Python class-definition time.
-The range constraints are DB-enforced; the total is application-enforced.
+The total=100 rule is enforced at the database level via
+``CheckConstraint`` using Django ``F()`` expressions:
+
+```sql
+CHECK ("micro_score" = ((100 - "mystiko_score") - "macro_score"))
+```
+
+Application-level validation in ``clean()`` and the service layer
+provides earlier, context-specific error messages.  Both layers
+enforce the same contract; neither can be bypassed.
 
 ## Service
 

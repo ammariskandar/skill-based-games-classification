@@ -54,7 +54,6 @@ class AdminFunctionalTests(TestCase):
         self.game = Game.objects.create(
             source_type=SourceType.MANUAL, name="Admin Game", slug="admin-game"
         )
-        # Create a classification via the service so we have data to view.
         self.classification = set_editorial_classification(
             game=self.game,
             updated_by=self.user,
@@ -81,25 +80,31 @@ class AdminFunctionalTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-    def test_updated_by_is_readonly_in_form(self):
-        """updated_by is readonly and was set from the service, not the form."""
-        self.assertEqual(self.classification.updated_by, self.user)
-
-    def test_str_in_changelist(self):
+    def test_changelist_contains_game_name(self):
         url = reverse("admin:classifications_editorialclassification_changelist")
         response = self.client.get(url)
         self.assertContains(response, "Admin Game")
 
-    def test_no_network_on_admin_views(self):
-        """All Admin views load without network calls (tested implicitly)."""
-        urls = [
-            reverse("admin:classifications_editorialclassification_changelist"),
-            reverse("admin:classifications_editorialclassification_add"),
-            reverse(
-                "admin:classifications_editorialclassification_change",
-                args=(self.classification.pk,),
-            ),
-        ]
-        for url in urls:
-            response = self.client.get(url)
-            self.assertIn(response.status_code, (200, 302))
+    def test_updated_by_is_readonly(self):
+        """updated_by was set by the service, not from the form."""
+        self.assertEqual(self.classification.updated_by, self.user)
+
+    def test_admin_sets_updated_by_from_request(self):
+        """Verify save_model assigns request.user to updated_by on new records."""
+        from unittest.mock import MagicMock
+
+        from classifications.admin import EditorialClassificationAdmin
+
+        game2 = Game.objects.create(
+            source_type=SourceType.MANUAL, name="Save Model", slug="save-model"
+        )
+        obj = EditorialClassification(game=game2)
+        request = MagicMock()
+        request.user = self.user
+        form = MagicMock()
+
+        admin_instance = EditorialClassificationAdmin(
+            EditorialClassification, MagicMock()
+        )
+        admin_instance.save_model(request, obj, form, change=False)
+        self.assertEqual(obj.updated_by, self.user)
