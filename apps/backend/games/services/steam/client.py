@@ -231,7 +231,10 @@ class SteamClient:
         try:
             return self._process_response(response)
         finally:
-            response.close()
+            try:
+                response.close()
+            except Exception:
+                pass
 
     # -- response processing ---------------------------------------------------
 

@@ -109,9 +109,10 @@ def _reject_non_public_host(hostname: str) -> None:
     # Reject any IP literal (IPv4, IPv6, IPv4-mapped, etc.).
     try:
         ipaddress.ip_address(hostname)
-        raise ValueError("CDN URL must not use an IP literal.")
     except ValueError:
         pass  # not an IP address — proceed
+    else:
+        raise ValueError("CDN URL must not use an IP literal.")
 
 
 __all__ = ["validate_steam_cdn_url"]

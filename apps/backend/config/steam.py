@@ -133,10 +133,10 @@ def steam_client_config_from_settings(
     # -- Retry sleep cap ------------------------------------------------------
     sleep_raw = _resolve(
         steam_retry_sleep_max_seconds,
-        getattr(settings, "STEAM_RETRY_SLEEP_MAX_SECONDS", "5.0"),
+        getattr(settings, "STEAM_RETRY_SLEEP_MAX_SECONDS", "5"),
     )
-    retry_sleep_max = _parse_float(
-        sleep_raw, label="STEAM_RETRY_SLEEP_MAX_SECONDS", default=5.0
+    retry_sleep_max = _parse_int(
+        sleep_raw, label="STEAM_RETRY_SLEEP_MAX_SECONDS", default=5
     )
 
     # -- Construct (validation via __post_init__) ------------------------------
@@ -316,11 +316,12 @@ def _validate_cdn_host_entry(entry: str) -> None:
         import ipaddress
 
         ipaddress.ip_address(entry)
+    except ValueError:
+        pass  # not an IP address — proceed to DNS validation
+    else:
         raise ImproperlyConfigured(
             "STEAM_CDN_ALLOWED_HOSTS must not contain IP literals."
         )
-    except ValueError:
-        pass  # not an IP address — proceed to DNS validation
 
     # DNS hostname length.
     if len(entry) > _MAX_HOSTNAME_LENGTH:

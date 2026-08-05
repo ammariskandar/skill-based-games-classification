@@ -39,7 +39,7 @@ cp apps/backend/.env.example apps/backend/.env
 | `STEAM_READ_TIMEOUT_SECONDS`    | Server | Public    | `10`                           | Render env vars     | No           |
 | `STEAM_MAX_RETRIES`             | Server | Public    | `2`                            | Render env vars     | No           |
 | `STEAM_RETRY_BACKOFF_SECONDS`   | Server | Public    | `0.25`                         | Render env vars     | No           |
-| `STEAM_RETRY_SLEEP_MAX_SECONDS` | Server | Public    | `5.0`                          | Render env vars     | No           |
+| `STEAM_RETRY_SLEEP_MAX_SECONDS` | Server | Public    | `5`                            | Render env vars     | No           |
 | `STEAM_MAX_RESPONSE_BYTES`      | Server | Public    | `2097152`                      | Render env vars     | No           |
 | `STEAM_CDN_ALLOWED_HOSTS`       | Server | Public    | *(empty)*                      | Render env vars     | No (later)   |
 | `DJANGO_LOG_LEVEL`      | Server   | Public        | `INFO`                         | Render env vars     | No           |

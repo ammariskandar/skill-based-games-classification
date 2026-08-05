@@ -76,7 +76,7 @@ to arbitrary origins.
 | `STEAM_READ_TIMEOUT_SECONDS` | `10` | Read timeout (0 < t ≤ 60) |
 | `STEAM_MAX_RETRIES` | `2` | Retry count (0–3) for idempotent GET/HEAD |
 | `STEAM_RETRY_BACKOFF_SECONDS` | `0.25` | urllib3 Retry backoff factor |
-| `STEAM_RETRY_SLEEP_MAX_SECONDS` | `5.0` | Ceiling for exponential backoff and Retry-After sleep (0–10) |
+| `STEAM_RETRY_SLEEP_MAX_SECONDS` | `5` | Ceiling for exponential backoff and Retry-After sleep (integer, 0–10; urllib3 `retry_after_max` is typed `int`) |
 | `STEAM_MAX_RESPONSE_BYTES` | `2097152` | Response body size limit (2 MiB) |
 | `STEAM_CDN_ALLOWED_HOSTS` | *(empty)* | Comma-separated trusted CDN hostnames |
 

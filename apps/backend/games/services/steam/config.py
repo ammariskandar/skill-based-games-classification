@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 _MAX_CONNECT_TIMEOUT = 30.0
 _MAX_READ_TIMEOUT = 60.0
-_MAX_RETRY_SLEEP = 10.0
+_MAX_RETRY_SLEEP = 10
 _MAX_OPERATION_BUDGET = 120.0
 
 
@@ -30,6 +30,13 @@ def _is_finite_float(value: object) -> bool:
     if not isinstance(value, (int, float)):
         return False
     return math.isfinite(float(value))
+
+
+def _is_strict_int(value: object) -> bool:
+    """True if *value* is an int, not bool."""
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int)
 
 
 @dataclass(frozen=True)
@@ -58,8 +65,10 @@ class SteamClientConfig:
     retry_backoff: float = 0.25
     """Backoff factor for urllib3 Retry (seconds)."""
 
-    retry_sleep_max_seconds: float = 5.0
-    """Ceiling for backoff_max and retry_after_max (0–10)."""
+    retry_sleep_max_seconds: int = 5
+    """Ceiling for backoff_max and retry_after_max (0–10).  Integer —
+    urllib3 ``retry_after_max`` is typed ``int`` and ``backoff_max``
+    accepts ``float``, so an integer satisfies both contracts."""
 
     # -- Response-size limit ---------------------------------------------------
 
@@ -128,9 +137,9 @@ class SteamClientConfig:
         if self.retry_backoff < 0:
             raise ValueError("retry_backoff must be ≥ 0.")
 
-        # Sleep cap — finite float, 0–10.
-        if not _is_finite_float(self.retry_sleep_max_seconds):
-            raise TypeError("retry_sleep_max_seconds must be a finite number.")
+        # Sleep cap — strict int, 0–10 (urllib3 retry_after_max is typed int).
+        if not _is_strict_int(self.retry_sleep_max_seconds):
+            raise TypeError("retry_sleep_max_seconds must be an integer.")
         if self.retry_sleep_max_seconds < 0:
             raise ValueError("retry_sleep_max_seconds must be ≥ 0.")
         if self.retry_sleep_max_seconds > _MAX_RETRY_SLEEP:
