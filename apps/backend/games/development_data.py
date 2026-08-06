@@ -30,18 +30,37 @@ def get_or_create_seed_editor() -> User:
     """Return the deterministic seed editor, creating or updating as needed.
 
     The editor is a plain user with an unusable password — not staff,
-    not superuser.  Re-running restores the canonical email.
+    not superuser.  If an existing account with the seed username has
+    elevated privileges, ``CommandError`` is raised to avoid silently
+    weakening a privileged account.
+
+    Re-running restores the canonical email and unusable-password state.
     """
-    user, _created = User.objects.update_or_create(
-        username=_SEED_USERNAME,
-        defaults={
-            "email": _SEED_EMAIL,
-            "is_staff": False,
-            "is_superuser": False,
-        },
-    )
+    from django.core.management import CommandError
+
+    try:
+        user = User.objects.get(username=_SEED_USERNAME)
+    except User.DoesNotExist:
+        user = User.objects.create_user(
+            username=_SEED_USERNAME,
+            email=_SEED_EMAIL,
+        )
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        return user
+
+    if user.is_staff or user.is_superuser:
+        raise CommandError(
+            f"Seed user '{_SEED_USERNAME}' exists with elevated privileges "
+            f"(staff={user.is_staff}, superuser={user.is_superuser}).  "
+            f"The seed command will not reuse or modify a privileged account."
+        )
+
+    user.email = _SEED_EMAIL
+    user.is_staff = False
+    user.is_superuser = False
     user.set_unusable_password()
-    user.save(update_fields=["password"])
+    user.save()
     return user
 
 
@@ -95,16 +114,16 @@ SEED_GAMES: list[SeedGame] = [
         notes="Roguelike action with rich narrative.",
     ),
     SeedGame(
-        slug="half-life-2-demo",
-        name="Half-Life 2 Demo",
+        slug="dev-demo-sample",
+        name="Development Demo Sample",
         source_type=SourceType.STEAM,
         external_id="220",
         content_type=ContentType.DEMO,
         listing_status=ListingStatus.PUBLISHED,
     ),
     SeedGame(
-        slug="sample-soundtrack",
-        name="Sample Soundtrack",
+        slug="dev-soundtrack-sample",
+        name="Development Soundtrack Sample",
         source_type=SourceType.STEAM,
         external_id="323190",
         content_type=ContentType.SOUNDTRACK,
@@ -206,6 +225,17 @@ def _seed_one_game(sg: SeedGame, editor: User, stats: dict) -> dict:
         existing = Game.objects.filter(
             source_type=sg.source_type, external_id=sg.external_id
         ).first()
+        # Check for slug collision with an unrelated record.
+        if existing is None:
+            slug_conflict = Game.objects.filter(slug=sg.slug).first()
+            if slug_conflict is not None:
+                from django.core.management import CommandError
+
+                raise CommandError(
+                    f"Slug '{sg.slug}' is occupied by an existing record "
+                    f"(source={slug_conflict.source_type}).  "
+                    f"Cannot seed a Steam record with the same slug."
+                )
     else:
         existing = Game.objects.filter(slug=sg.slug).first()
         if existing is not None and existing.source_type != SourceType.MANUAL:

@@ -330,3 +330,150 @@ class QueryHelperSmokeTests(TestCase):
             category=SkillCategory.MICRO,
         )
         self.assertGreater(qs.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Production refusal (subprocess)
+# ---------------------------------------------------------------------------
+
+
+class ProductionRefusalTests(TestCase):
+    """The command refuses to run under production settings."""
+
+    def test_production_setting_refuses(self):
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=False):
+            with self.assertRaises(CommandError) as cm:
+                call_command("seed_development_data", stdout=StringIO())
+            self.assertIn("DEVELOPMENT_SEEDING_ENABLED", str(cm.exception))
+            self.assertEqual(Game.objects.count(), 0)
+            self.assertFalse(User.objects.filter(username=_SEED_USERNAME).exists())
+
+
+# ---------------------------------------------------------------------------
+# Seed-user conflict handling
+# ---------------------------------------------------------------------------
+
+
+class SeedUserConflictTests(TestCase):
+    def test_privileged_user_rejected(self):
+        User.objects.create_superuser(
+            username=_SEED_USERNAME,
+            email="admin@example.com",
+            password="secret123",
+        )
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            with self.assertRaises(CommandError):
+                call_command("seed_development_data", stdout=StringIO())
+        user = User.objects.get(username=_SEED_USERNAME)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(user.email, "admin@example.com")
+        self.assertEqual(Game.objects.count(), 0)
+
+    def test_staff_user_rejected(self):
+        User.objects.create_user(
+            username=_SEED_USERNAME,
+            email="staff@example.com",
+            password="secret123",
+            is_staff=True,
+        )
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            with self.assertRaises(CommandError):
+                call_command("seed_development_data", stdout=StringIO())
+        user = User.objects.get(username=_SEED_USERNAME)
+        self.assertTrue(user.is_staff)
+        self.assertEqual(Game.objects.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Game conflict handling
+# ---------------------------------------------------------------------------
+
+
+class GameConflictTests(TestCase):
+    def test_steam_slug_collision_rejected(self):
+        Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Block",
+            slug="portal-2",
+        )
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            with self.assertRaises(CommandError):
+                call_command("seed_development_data", stdout=StringIO())
+        self.assertEqual(Game.objects.count(), 1)
+
+    def test_conflict_run_is_atomic(self):
+        User.objects.create_user(username="pre-existing", password="p")
+        Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Pre",
+            slug="pre",
+        )
+        Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Block",
+            slug="portal-2",
+        )
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            with self.assertRaises(CommandError):
+                call_command("seed_development_data", stdout=StringIO())
+        self.assertTrue(User.objects.filter(username="pre-existing").exists())
+        self.assertTrue(Game.objects.filter(slug="pre").exists())
+
+
+# ---------------------------------------------------------------------------
+# Strengthened rollback
+# ---------------------------------------------------------------------------
+
+
+class StrengthenedRollbackTests(TestCase):
+    def test_failure_after_writes_rolls_back_all(self):
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            with patch(
+                "games.development_data.set_editorial_classification",
+                side_effect=RuntimeError("simulated"),
+            ):
+                with self.assertRaises(RuntimeError):
+                    call_command("seed_development_data", stdout=StringIO())
+        self.assertEqual(Game.objects.count(), 0)
+        self.assertFalse(User.objects.filter(username=_SEED_USERNAME).exists())
+        self.assertEqual(EditorialClassification.objects.count(), 0)
+        self.assertEqual(ChallengeProfile.objects.count(), 0)
+        self.assertEqual(RewardProfile.objects.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Command output safety
+# ---------------------------------------------------------------------------
+
+
+class OutputSafetyTests(TestCase):
+    def setUp(self):
+        self.out = StringIO()
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            call_command("seed_development_data", stdout=self.out)
+        self.output = self.out.getvalue()
+
+    def test_no_password_in_output(self):
+        self.assertNotIn("password", self.output.lower())
+
+    def test_no_secret_key_in_output(self):
+        self.assertNotIn("SECRET_KEY", self.output)
+        self.assertNotIn("secret", self.output.lower())
+
+    def test_no_steam_key_in_output(self):
+        self.assertNotIn("WEB_API_KEY", self.output)
+        self.assertNotIn("steam", self.output.lower())
+
+    def test_no_database_url_in_output(self):
+        self.assertNotIn("DATABASE_URL", self.output)
+        self.assertNotIn("postgresql", self.output.lower())
+
+    def test_reports_counts(self):
+        self.assertIn("Development data seeded", self.output)
+        self.assertIn("created", self.output.lower())
+
+    def test_rerun_output_distinguishes(self):
+        out2 = StringIO()
+        with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
+            call_command("seed_development_data", stdout=out2)
+        self.assertIn("Development data seeded", out2.getvalue())
