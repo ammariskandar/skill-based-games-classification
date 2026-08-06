@@ -9,43 +9,43 @@ enforcement, and PostgreSQL-verification criteria for SBGC-52.
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
 |-----------|-----------|------|----|-----|--------|-----|
-| Steam → non-null, nonempty external_id | `game_source_external_id_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| Manual → NULL external_id | `game_source_external_id_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| `(source_type, external_id)` unique when not null | `game_unique_source_external_id` | `UniqueConstraint` (conditional) | ✅ | — | ✅ | TBD |
-| `slug` unique | Field `unique=True` | Implicit unique index | ✅ | — | ✅ | TBD |
-| Duplicate `name` allowed | — | No constraint | — | — | ✅ | TBD |
-| Steam decimal-ID format (`str.isdigit()`) | — | Application (`clean()`) | — | ✅ | ✅ | TBD |
-| Listing index | `game_listing_name_idx` | `Index` | ✅ | — | ✅ | TBD |
-| `BigAutoField` PK | Field `auto_created=True` | Implicit PK | ✅ | — | ✅ | TBD |
+| Steam → non-null, nonempty external_id | `game_source_external_id_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| Manual → NULL external_id | `game_source_external_id_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| `(source_type, external_id)` unique when not null | `game_unique_source_external_id` | `UniqueConstraint` (conditional) | ✅ | — | ✅ | ✅ |
+| `slug` unique | Field `unique=True` | Implicit unique index | ✅ | — | ✅ | ✅ |
+| Duplicate `name` allowed | — | No constraint | — | — | ✅ | ✅ |
+| Steam decimal-ID format (`str.isdigit()`) | — | Application (`clean()`) | — | ✅ | ✅ | ✅ |
+| Listing index | `game_listing_name_idx` | `Index` | ✅ | — | ✅ | ✅ |
+| `BigAutoField` PK | Field `auto_created=True` | Implicit PK | ✅ | — | ✅ | ✅ |
 
 ### `classifications.EditorialClassification`
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
 |-----------|-----------|------|----|-----|--------|-----|
-| One per Game | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | TBD |
-| `updated_by` FK | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | TBD |
-| `game` CASCADE delete | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | TBD |
-| Exactly one Challenge + one Reward | — | Service/Admin only | — | ✅ | ✅ | TBD |
+| One per Game | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | ✅ |
+| `updated_by` FK | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
+| `game` CASCADE delete | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
+| Exactly one Challenge + one Reward | — | Service/Admin only | — | ✅ | ✅ | ✅ |
 
 ### `classifications.ChallengeProfile`
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
 |-----------|-----------|------|----|-----|--------|-----|
-| One per parent | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | TBD |
-| 0 ≤ scores ≤ 100 | `challenge_scores_range_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| micro + mystiko + macro = 100 | `challenge_scores_total_100_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | TBD |
-| CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | TBD |
+| One per parent | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | ✅ |
+| 0 ≤ scores ≤ 100 | `challenge_scores_range_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| micro + mystiko + macro = 100 | `challenge_scores_total_100_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | ✅ |
+| CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 
 ### `classifications.RewardProfile`
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
 |-----------|-----------|------|----|-----|--------|-----|
-| One per parent | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | TBD |
-| 0 ≤ scores ≤ 100 | `reward_scores_range_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| micro + mystiko + macro = 100 | `reward_scores_total_100_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | TBD |
-| Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | TBD |
-| CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | TBD |
+| One per parent | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | ✅ |
+| 0 ≤ scores ≤ 100 | `reward_scores_range_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| micro + mystiko + macro = 100 | `reward_scores_total_100_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
+| Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | ✅ |
+| CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 
 ## Invalid-State Matrix
 
@@ -89,16 +89,19 @@ enforcement, and PostgreSQL-verification criteria for SBGC-52.
 
 ## PostgreSQL Verification Matrix (SBGC-52)
 
-All constraints listed above with PG status "TBD" require disposable
-PostgreSQL verification:
+All constraints listed above with PG status "✅" were verified on an
+isolated PostgreSQL 16 instance.  See `docs/postgresql-verification.md`.
 
+Verification scope included:
 - `game_source_external_id_ck` — CheckConstraint behaviour
 - `game_unique_source_external_id` — conditional partial unique index
 - Score range and total CheckConstraints (4 total)
-- OneToOneField uniqueness under concurrent writes
+- OneToOneField uniqueness under serialized writes
 - CASCADE and PROTECT FK ordering
-- Bulk update constraint enforcement
-- Migration reversibility on PostgreSQL
+- Bulk update/create constraint enforcement
+- Migration forward/reverse on PostgreSQL
+- Service transaction rollback on PostgreSQL
+- Concurrent uniqueness (serialized connections)
 
 ## Questionnaire Readiness
 

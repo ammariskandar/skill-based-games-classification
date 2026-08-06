@@ -179,11 +179,12 @@ Both are run during SBGC-44 verification.  They are not in normal CI to keep dur
 
 ## Future PostgreSQL Lane (SBGC-52)
 
-- Isolated disposable PostgreSQL
-- Separate command or CI job
-- Never production Neon
+- Isolated disposable PostgreSQL (not production Neon)
+- Command: `POSTGRES_TEST_DATABASE_URL='...' npm run test:backend:postgresql`
+- Settings: `config.settings.postgresql_test`
 - Used for: constraints, migrations, indexes, transaction behavior, engine-specific semantics
-- Not required to complete SBGC-44
+- PostgreSQL 16 in CI (GitHub Actions service container)
+- See `docs/postgresql-verification.md`.
 
 ## Current Limitations
 

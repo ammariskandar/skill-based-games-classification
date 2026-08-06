@@ -27,6 +27,7 @@ def build_database_config(
     *,
     allow_sqlite_fallback: bool,
     require_postgresql: bool = False,
+    override_url: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """
     Build the Django ``DATABASES["default"]`` configuration.
@@ -39,6 +40,9 @@ def build_database_config(
         require_postgresql: If True, only ``django.db.backends.postgresql``
             is accepted — missing URLs, SQLite, MySQL, Oracle, and unknown
             engines all raise ``ImproperlyConfigured``.
+        override_url: If provided, use this URL instead of *database_url*.
+            This enables separate runtime (pooled) and migration (direct)
+            connection URLs.  Secrets are never printed.
 
     Returns:
         A dict suitable for ``settings.DATABASES``.
@@ -48,7 +52,9 @@ def build_database_config(
             engine is unsupported, or *require_postgresql* is True and the
             resolved engine is not PostgreSQL.
     """
-    stripped = (database_url or "").strip()
+    # Allow override for migration URL (SBGC-52).
+    effective = override_url if override_url is not None else database_url
+    stripped = (effective or "").strip()
 
     # -- Missing / blank URL ---------------------------------------------------
     if not stripped:

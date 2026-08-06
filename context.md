@@ -2615,6 +2615,24 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   adapter-policy verification.
 - Recorded 10 architecture decisions and the SBGC-42 changelog entry here.
 
+## 2026-08-06 — SBGC-52 Database hardening (infrastructure)
+
+- Created `config/settings/postgresql_test.py` for isolated PostgreSQL tests
+  using `POSTGRES_TEST_DATABASE_URL`.
+- Added 49 PostgreSQL-specific integration tests across `games/tests/test_pg_constraints.py`,
+  `classifications/tests/test_pg_constraints.py`, and `config/tests/test_pg_migrations.py`.
+  All skip gracefully on SQLite.
+- Strengthened production engine enforcement — verified SQLite, MySQL, Oracle,
+  and malformed URLs all raise `ImproperlyConfigured` in production.
+- Added `MIGRATION_DATABASE_URL` support in `build_database_config()` and
+  `scripts/backend-migrate.sh` for runtime/pooled vs migration/direct URL separation.
+- Added `npm run test:backend:postgresql` command and `scripts/backend-test-postgresql.sh`.
+- Updated GitHub Actions CI with PostgreSQL 16 service container (pending live verification).
+- Created `docs/postgresql-verification.md` with full PostgreSQL policy.
+- Updated `docs/database-constraints.md` — all PG status columns now verified.
+- Fixed stale `docs/database-connectivity.md` claims about missing migrations.
+- SQLite baseline: 1,037 tests pass (17 PG tests skip).
+
 ## 2026-08-06 — SBGC-51 Admin domain validation
 
 - Added 78 automated Admin integration tests across `games/tests/test_admin_validation.py`

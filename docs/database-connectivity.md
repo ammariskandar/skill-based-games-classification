@@ -183,14 +183,15 @@ DATABASE_URL="" python manage.py check --settings=config.settings.production
 
 ## Current Limitations
 
-- **No application migrations.** Only Django's built-in migrations
-  (admin, auth, contenttypes, sessions) exist. Domain models will be
-  added in SBGC-4.
+- **Application migrations are present.** Domain models (`games`, `classifications`) have
+  been migrated through SBGC-45–48.
 - **No connection pooling.** `CONN_MAX_AGE=0` and no `psycopg_pool`.
   Pooling is deferred until measured traffic warrants it.
-- **No PostgreSQL manual verification completed with a direct host.**
-  The local `.env` uses a pooled Neon host and must be updated to a
-  direct connection string for production-matching verification.
+- **PostgreSQL verification completed** — SBGC-52 verified constraints,
+  migrations, indexes, transactions, and concurrent uniqueness on an
+  isolated PostgreSQL 16 instance.  See `docs/postgresql-verification.md`.
+- **Production Neon has not been connected.** No live Render/Neon
+  deployment verification has occurred.
 - **No read replicas.**
 - **No Neon API automation.**
 - **No database health endpoint.**
@@ -198,4 +199,18 @@ DATABASE_URL="" python manage.py check --settings=config.settings.production
 
 ## SBGC-43 — PostgreSQL-Only Production
 
-Production enforces PostgreSQL-only database connectivity via . Missing, blank, SQLite, MySQL, Oracle, and unknown engine URLs all raise  at startup. Development retains SQLite fallback; tests remain in-memory SQLite. No PostgreSQL integration behaviour has been verified yet — SBGC-52 owns later PostgreSQL-specific verification.
+Production enforces PostgreSQL-only database connectivity. Missing, blank,
+SQLite, MySQL, Oracle, and unknown engine URLs all raise
+`ImproperlyConfigured` at startup. Development retains SQLite fallback;
+tests remain in-memory SQLite.
+
+## SBGC-52 — PostgreSQL Verification Complete
+
+PostgreSQL 16.14 verification completed on an isolated Podman container.
+51/51 PostgreSQL tests passed covering migrations, Game constraints,
+classification constraints, indexes, transactions, and concurrent
+uniqueness.  No production Neon was used.  See `docs/postgresql-verification.md`.
+
+- CI adds a `postgres:16` service container for the PostgreSQL lane.
+- `MIGRATION_DATABASE_URL` supported for direct Neon connections during
+  migrations, separate from runtime `DATABASE_URL` (pooled acceptable).
