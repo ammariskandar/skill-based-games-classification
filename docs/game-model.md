@@ -44,7 +44,9 @@ Normalized application classification (not raw Steam metadata):
 - `game` (default)
 - `dlc`
 - `demo`
-- `other`
+- `software`
+- `soundtrack`
+- `unknown`
 
 ## Listing status
 

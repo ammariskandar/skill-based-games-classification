@@ -20,13 +20,31 @@ class ContentType(models.TextChoices):
     GAME = "game", "Game"
     DLC = "dlc", "Downloadable content"
     DEMO = "demo", "Demo"
-    OTHER = "other", "Other"
+    SOFTWARE = "software", "Software"
+    SOUNDTRACK = "soundtrack", "Soundtrack"
+    UNKNOWN = "unknown", "Unknown"
 
 
 class ListingStatus(models.TextChoices):
     DRAFT = "draft", "Draft"
     PUBLISHED = "published", "Published"
     ARCHIVED = "archived", "Archived"
+
+
+class GameQuerySet(models.QuerySet):
+    """Custom queryset for ``Game`` — SBGC-48."""
+
+    def publicly_listable(self):
+        """Return only records eligible for the public game listing.
+
+        A game is publicly listable when it has:
+        * ``content_type = GAME``
+        * ``listing_status = PUBLISHED``
+        """
+        return self.filter(
+            content_type="game",
+            listing_status="published",
+        )
 
 
 class Game(models.Model):
@@ -89,6 +107,8 @@ class Game(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = GameQuerySet.as_manager()
 
     # -- Meta -------------------------------------------------------------------
 
