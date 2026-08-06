@@ -7,6 +7,7 @@ Never makes network requests, never imports Steam services.
 
 from __future__ import annotations
 
+from classifications.skills import EditorialProfile, SkillCategory
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -32,7 +33,9 @@ class ListingStatus(models.TextChoices):
 
 
 class GameQuerySet(models.QuerySet):
-    """Custom queryset for ``Game`` — SBGC-48."""
+    """Custom queryset for ``Game`` — SBGC-48 / SBGC-49."""
+
+    # -- listing ---------------------------------------------------------------
 
     def publicly_listable(self):
         """Return only records eligible for the public game listing.
@@ -45,6 +48,168 @@ class GameQuerySet(models.QuerySet):
             content_type=ContentType.GAME,
             listing_status=ListingStatus.PUBLISHED,
         )
+
+    # -- source ----------------------------------------------------------------
+
+    def steam(self):
+        """Return only Steam-sourced records."""
+        return self.filter(source_type=SourceType.STEAM)
+
+    def manual(self):
+        """Return only manual records."""
+        return self.filter(source_type=SourceType.MANUAL)
+
+    # -- editorial classification ----------------------------------------------
+
+    def editorially_classified(self):
+        """Return only Games that have a complete editorial classification.
+
+        Requires: parent row + Challenge profile + Reward profile.
+        Excludes: no parent, parent-only, Challenge-only, Reward-only.
+        """
+        return self.filter(
+            editorial_classification__isnull=False,
+            editorial_classification__challenge_profile__isnull=False,
+            editorial_classification__reward_profile__isnull=False,
+        )
+
+    def with_editorial_profiles(self):
+        """``select_related`` all editorial classification rows.
+
+        Does NOT filter — returns every Game regardless of classification.
+        """
+        return self.select_related(
+            "editorial_classification",
+            "editorial_classification__updated_by",
+            "editorial_classification__challenge_profile",
+            "editorial_classification__reward_profile",
+        )
+
+    # -- score filtering -------------------------------------------------------
+
+    def filter_by_editorial_score(
+        self,
+        *,
+        profile: str,
+        category: str,
+        minimum: int | None = None,
+        maximum: int | None = None,
+    ):
+        """Return Games whose editorial score falls within inclusive bounds.
+
+        At least one bound must be provided.  Bounds must be integers
+        0–100.  *profile* and *category* are validated before querying.
+        Requires complete editorial classification.
+        """
+        if minimum is None and maximum is None:
+            raise ValueError("At least one of minimum or maximum is required.")
+
+        _validate_profile_category(profile, category)
+        _validate_score_bound(minimum, "minimum")
+        _validate_score_bound(maximum, "maximum")
+
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError(
+                f"minimum ({minimum}) must not exceed maximum ({maximum})."
+            )
+
+        field_path = _score_field_path(profile, category)
+        qs = self.editorially_classified()
+
+        if minimum is not None:
+            qs = qs.filter(**{f"{field_path}__gte": minimum})
+        if maximum is not None:
+            qs = qs.filter(**{f"{field_path}__lte": maximum})
+
+        return qs
+
+    # -- score sorting ---------------------------------------------------------
+
+    def order_by_editorial_score(
+        self,
+        *,
+        profile: str,
+        category: str,
+        descending: bool = True,
+    ):
+        """Order Games by editorial score with deterministic tie-breaking.
+
+        Tie-breaker: selected score → name → id.
+        Requires complete editorial classification.
+        """
+        if not isinstance(descending, bool):
+            raise TypeError("descending must be a boolean.")
+
+        _validate_profile_category(profile, category)
+
+        field_path = _score_field_path(profile, category)
+        direction = "-" if descending else ""
+
+        return self.editorially_classified().order_by(
+            f"{direction}{field_path}",
+            "name",
+            "id",
+        )
+
+
+# ---------------------------------------------------------------------------
+# Query helper validators (private, no DB/network)
+# ---------------------------------------------------------------------------
+
+
+def _validate_profile_category(profile: str, category: str) -> None:
+    """Raise ``ValueError`` if *profile* or *category* is invalid."""
+    if profile not in EditorialProfile.values:
+        raise ValueError(
+            f"profile must be one of {set(EditorialProfile.values)}, got {profile!r}."
+        )
+    if category not in SkillCategory.values:
+        raise ValueError(
+            f"category must be one of {set(SkillCategory.values)}, got {category!r}."
+        )
+
+
+def _validate_score_bound(value: int | None, label: str) -> None:
+    """Raise ``TypeError`` or ``ValueError`` for invalid score bounds."""
+    if value is None:
+        return
+    if isinstance(value, bool):
+        raise TypeError(f"{label} must be an integer, not a boolean.")
+    if not isinstance(value, int):
+        raise TypeError(f"{label} must be an integer.")
+    if value < 0 or value > 100:
+        raise ValueError(f"{label} must be 0–100 (got {value}).")
+
+
+_SCORE_FIELD_PATHS: dict[tuple[str, str], str] = {
+    (EditorialProfile.CHALLENGE, SkillCategory.MICRO): (
+        "editorial_classification__challenge_profile__micro_score"
+    ),
+    (EditorialProfile.CHALLENGE, SkillCategory.MYSTIKO): (
+        "editorial_classification__challenge_profile__mystiko_score"
+    ),
+    (EditorialProfile.CHALLENGE, SkillCategory.MACRO): (
+        "editorial_classification__challenge_profile__macro_score"
+    ),
+    (EditorialProfile.REWARD, SkillCategory.MICRO): (
+        "editorial_classification__reward_profile__micro_score"
+    ),
+    (EditorialProfile.REWARD, SkillCategory.MYSTIKO): (
+        "editorial_classification__reward_profile__mystiko_score"
+    ),
+    (EditorialProfile.REWARD, SkillCategory.MACRO): (
+        "editorial_classification__reward_profile__macro_score"
+    ),
+}
+
+
+def _score_field_path(profile: str, category: str) -> str:
+    """Return the ORM field path for *profile*/*category*, or raise."""
+    key = (profile, category)
+    path = _SCORE_FIELD_PATHS.get(key)
+    if path is None:
+        raise ValueError(f"Unsupported profile/category: {profile!r}/{category!r}")
+    return path
 
 
 class Game(models.Model):
