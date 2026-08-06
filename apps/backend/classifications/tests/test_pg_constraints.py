@@ -243,17 +243,22 @@ class BulkConstraintTests(PostgreSQLTestCase):
         parent = EditorialClassification.objects.create(
             game=self.game, updated_by=self.user
         )
-        with self.assertRaises(IntegrityError):
-            ChallengeProfile.objects.bulk_create(
-                [
-                    ChallengeProfile(
-                        classification=parent,
-                        micro_score=90,
-                        mystiko_score=5,
-                        macro_score=5,
-                    ),
-                ]
-            )
+        # 40+40+40=120 — unambiguously violates total=100 constraint.
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                ChallengeProfile.objects.bulk_create(
+                    [
+                        ChallengeProfile(
+                            classification=parent,
+                            micro_score=40,
+                            mystiko_score=40,
+                            macro_score=40,
+                        ),
+                    ]
+                )
+        self.assertFalse(
+            ChallengeProfile.objects.filter(classification=parent).exists()
+        )
 
     def test_bulk_update_invalid_challenge_rejected(self):
         parent = EditorialClassification.objects.create(
@@ -319,26 +324,36 @@ class ServiceTransactionTests(PostgreSQLTestCase):
         self.assertEqual(parent.challenge_profile.micro_score, old_micro)
 
     def test_nested_savepoint_recovers_after_integrity_error(self):
-        """IntegrityError in a savepoint does not poison the outer transaction."""
+        """IntegrityError in a nested atomic block does not poison the
+        outer transaction.  Uses Django's nested atomic() for automatic
+        savepoint management — no manual savepoint calls."""
         game = _game("svc-sp")
         user = _user("svc-sp-user")
 
         with transaction.atomic():
-            # First create a valid classification.
-            set_editorial_classification(
-                game=game,
-                updated_by=user,
-                challenge=ScoreDistribution(micro=50, mystiko=20, macro=30),
-                reward=ScoreDistribution(micro=10, mystiko=30, macro=60),
+            # Establish valid outer-transaction state.
+            original = EditorialClassification.objects.create(
+                game=game, updated_by=user
             )
-            # Then try to create a duplicate within a savepoint.
-            sid = transaction.savepoint()
-            try:
-                EditorialClassification.objects.create(game=game, updated_by=user)
-            except IntegrityError:
-                transaction.savepoint_rollback(sid)
-            # Outer transaction still healthy.
-            self.assertTrue(EditorialClassification.objects.filter(game=game).exists())
+
+            # Nested atomic block — IntegrityError rolls back its savepoint.
+            with self.assertRaises(IntegrityError):
+                with transaction.atomic():
+                    EditorialClassification.objects.create(
+                        game=game, updated_by=user
+                    )
+
+            # Outer transaction still usable.
+            self.assertTrue(
+                EditorialClassification.objects.filter(pk=original.pk).exists()
+            )
+
+            # Another valid write succeeds.
+            game2 = _game("svc-sp-2")
+            second = EditorialClassification.objects.create(
+                game=game2, updated_by=user
+            )
+            self.assertIsNotNone(second.pk)
 
 
 # ============================================================================
