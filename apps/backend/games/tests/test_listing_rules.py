@@ -41,12 +41,12 @@ class ContentTypeMetadataTests(TestCase):
 
     def test_default_is_game(self):
         field = Game._meta.get_field("content_type")
-        self.assertEqual(field.default, ContentType.GAME)
+        self.assertEqual(field.default, ContentType.GAME)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_max_length_accommodates_all(self):
         field = Game._meta.get_field("content_type")
         longest = max(len(v) for v in dict(CONTENT_TYPE_CHOICES))
-        self.assertLessEqual(longest, field.max_length)  # pyright: ignore[reportCallIssue,reportArgumentType]
+        self.assertLessEqual(longest, field.max_length)  # pyright: ignore[reportCallIssue,reportArgumentType,reportAttributeAccessIssue]
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +258,7 @@ class ChainabilityTests(TestCase):
         self.assertEqual(qs.count(), 1)
 
     def test_filter_then_publicly_listable(self):
-        qs = Game.objects.filter(name__icontains="Chain").publicly_listable()
+        qs = Game.objects.filter(name__icontains="Chain").publicly_listable()  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(qs.count(), 3)
 
 
@@ -378,7 +378,7 @@ class AdminContentTypeTests(TestCase):
         """The content_type field offers exactly 6 choices."""
         field = Game._meta.get_field("content_type")
         self.assertEqual(
-            set(field.choices),  # pyright: ignore[reportArgumentType]
+            set(field.choices),  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
             {
                 ("game", "Game"),
                 ("dlc", "Downloadable content"),

@@ -32,7 +32,7 @@ class FieldMetadataTests(SimpleTestCase):
 
     def test_source_type_max_length_and_choices(self):
         field = Game._meta.get_field("source_type")
-        self.assertEqual(field.max_length, 16)
+        self.assertEqual(field.max_length, 16)  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(
             set(field.choices),  # type: ignore[arg-type]
             {("steam", "Steam"), ("manual", "Manual")},
@@ -41,33 +41,33 @@ class FieldMetadataTests(SimpleTestCase):
     def test_external_id_nullable_and_max_length(self):
         field = Game._meta.get_field("external_id")
         self.assertTrue(field.null)
-        self.assertTrue(field.blank)
-        self.assertEqual(field.max_length, 64)
+        self.assertTrue(field.blank)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(field.max_length, 64)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_name_max_length(self):
-        self.assertEqual(Game._meta.get_field("name").max_length, 255)
+        self.assertEqual(Game._meta.get_field("name").max_length, 255)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_slug_unique_and_max_length(self):
         field = Game._meta.get_field("slug")
-        self.assertTrue(field.unique)
-        self.assertEqual(field.max_length, 255)
+        self.assertTrue(field.unique)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(field.max_length, 255)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_content_type_choices_and_default(self):
         field = Game._meta.get_field("content_type")
-        self.assertEqual(field.default, ContentType.GAME)
+        self.assertEqual(field.default, ContentType.GAME)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_listing_status_choices_and_default(self):
         field = Game._meta.get_field("listing_status")
-        self.assertEqual(field.default, ListingStatus.DRAFT)
+        self.assertEqual(field.default, ListingStatus.DRAFT)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_manual_metadata_fields_blank(self):
         for name in ("manual_description", "manual_image_url", "manual_website_url"):
             field = Game._meta.get_field(name)
-            self.assertTrue(field.blank)
+            self.assertTrue(field.blank)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_timestamps_auto(self):
-        self.assertTrue(Game._meta.get_field("created_at").auto_now_add)
-        self.assertTrue(Game._meta.get_field("updated_at").auto_now)
+        self.assertTrue(Game._meta.get_field("created_at").auto_now_add)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertTrue(Game._meta.get_field("updated_at").auto_now)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_ordering(self):
         self.assertEqual(Game._meta.ordering, ["name", "id"])

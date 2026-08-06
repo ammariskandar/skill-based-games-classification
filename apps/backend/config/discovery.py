@@ -153,7 +153,7 @@ class _AuditLoader(unittest.TestLoader):
     def _get_module_from_name(self, name):
         if ".venv" in name:
             raise ImportError(f"Skipping .venv module: {name}")
-        return super()._get_module_from_name(name)
+        return super()._get_module_from_name(name)  # pyright: ignore[reportAttributeAccessIssue] — private base class API
 
     def loadTestsFromName(self, name, module=None):
         try:
@@ -172,7 +172,7 @@ class _AuditLoader(unittest.TestLoader):
 
     def _find_test_path(self, full_path, pattern):
         try:
-            return super()._find_test_path(full_path, pattern)
+            return super()._find_test_path(full_path, pattern)  # pyright: ignore[reportAttributeAccessIssue] — private base class API
         except Exception as exc:
             # Module import failed (e.g., SyntaxError).
             self.import_errors.append((full_path, str(exc)))

@@ -9,6 +9,7 @@ these values in production.
 """
 
 from config.database import build_database_config
+from config.env_typing import env_str
 from config.settings.base import *  # noqa: F403
 
 DEBUG = True
@@ -17,16 +18,17 @@ DEBUG = True
 NINJA_API_DOCS_ENABLED = True
 
 # Database — SBGC-39
-DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=True)  # noqa: F405  # pyright: ignore[reportArgumentType]
+DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=True)  # noqa: F405
 
 # ---------------------------------------------------------------------------
 # Security — SBGC-41 (development — permissive)
 # ---------------------------------------------------------------------------
 
 # Local development secret — explicitly marked insecure.
-SECRET_KEY = env(  # noqa: F405
+SECRET_KEY = env_str(  # noqa: F405
+    env,  # noqa: F405
     "DJANGO_SECRET_KEY",
-    default="django-insecure-dev-key-do-not-use-in-production",  # pyright: ignore[reportArgumentType]
+    default="django-insecure-dev-key-do-not-use-in-production",
 )
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]

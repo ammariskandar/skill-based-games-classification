@@ -18,6 +18,7 @@ SBGC-43 additions:
 from django.core.exceptions import ImproperlyConfigured
 
 from config.database import build_database_config
+from config.env_typing import env_str
 from config.security import (
     parse_allowed_hosts,
     parse_non_negative_integer,
@@ -47,7 +48,7 @@ DATABASES = build_database_config(
 # Logging — SBGC-43
 # ---------------------------------------------------------------------------
 
-_log_level_raw = env("DJANGO_LOG_LEVEL", default="INFO")  # noqa: F405  # pyright: ignore[reportArgumentType]
+_log_level_raw = env_str(env, "DJANGO_LOG_LEVEL", default="INFO")  # noqa: F405
 _log_level = validate_log_level(_log_level_raw)  # pyright: ignore[reportArgumentType]
 
 LOGGING["root"]["level"] = _log_level  # noqa: F405
@@ -105,7 +106,7 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # -- HSTS (staged) ------------------------------------------------------------
 
-_hsts_raw = env("DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405  # pyright: ignore[reportArgumentType]
+_hsts_raw = env_str(env, "DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405
 SECURE_HSTS_SECONDS = parse_non_negative_integer(_hsts_raw)  # pyright: ignore[reportArgumentType]
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False

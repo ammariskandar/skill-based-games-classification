@@ -12,6 +12,5 @@
   ],
   "extraPaths": ["apps/backend"],
   "typeCheckingMode": "standard",
-  "reportMissingTypeStubs": false,
-  "reportAttributeAccessIssue": false
+  "reportMissingTypeStubs": false
 }

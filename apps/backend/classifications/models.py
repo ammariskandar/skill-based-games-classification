@@ -65,7 +65,7 @@ class EditorialClassification(models.Model):
         ordering = ["game__name", "game__id"]
 
     def __str__(self) -> str:
-        game_name = self.game.name if self.game_id else "(unsaved)"
+        game_name = self.game.name if self.game_id else "(unsaved)"  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
         return f"Editorial classification for {game_name}"
 
     if TYPE_CHECKING:

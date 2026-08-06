@@ -139,10 +139,10 @@ class PathValidationTests(SimpleTestCase):
         session = MagicMock()
         resp = _fake_response(body={"ok": True})
         session.get.return_value = resp
-        self.client = _steam_client(session=session)
+        self.client = _steam_client(session=session)  # pyright: ignore[reportAttributeAccessIssue]
 
     def _req(self, path, **kwargs):
-        return self.client.get_json(path, **kwargs)
+        return self.client.get_json(path, **kwargs)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_valid_relative_path(self):
         # Will fail on network, not path validation — good.
@@ -405,50 +405,50 @@ class SessionPolicyTests(SimpleTestCase):
     def test_retry_allowed_methods(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
 
     def test_retry_status_list(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
 
     def test_401_403_not_in_retry_list(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertNotIn(401, retry.status_forcelist)
         self.assertNotIn(403, retry.status_forcelist)
 
     def test_redirect_retry_disabled(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.redirect, 0)
 
     def test_retry_other_zero(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.other, 0)
 
     def test_retry_after_respected(self):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertTrue(retry.respect_retry_after_header)
 
     def test_backoff_factor(self):
         client = _steam_client(_make_config(retry_backoff=0.5))
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.backoff_factor, 0.5)
 
     def test_max_retries_total(self):
         client = _steam_client(_make_config(max_retries=1))
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.total, 1)
 
     def test_owned_session_closed(self):
@@ -681,39 +681,39 @@ class AdapterPolicyIntegrationTests(SimpleTestCase):
         client = _steam_client()
         adapter = client._session.adapters["https://"]  # pyright: ignore[reportOptionalMemberAccess]
         self.assertIsNotNone(adapter)
-        retry = adapter.max_retries
+        retry = adapter.max_retries  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
 
     def test_adapter_retry_statuses_exact(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
 
     def test_adapter_redirects_disabled(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.redirect, 0)
 
     def test_adapter_other_zero(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.other, 0)
 
     def test_adapter_retry_after_respected(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertTrue(retry.respect_retry_after_header)
 
     def test_adapter_configured_retry_count(self):
         client = _steam_client(_make_config(max_retries=3))
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.total, 3)
         self.assertEqual(retry.connect, 3)
         self.assertEqual(retry.read, 3)
 
     def test_adapter_configured_backoff(self):
         client = _steam_client(_make_config(retry_backoff=0.5))
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.backoff_factor, 0.5)
 
     def test_adapter_no_network_request(self):
@@ -738,48 +738,48 @@ class RetryBehaviorTests(SimpleTestCase):
 
     def test_backoff_max_capped(self):
         client = _steam_client(_make_config(retry_sleep_max_seconds=3))
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.backoff_max, 3)
 
     def test_retry_after_max_capped(self):
         client = _steam_client(_make_config(retry_sleep_max_seconds=4))
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.retry_after_max, 4)
 
     def test_sleep_cap_default(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.backoff_max, 5.0)
         self.assertEqual(retry.retry_after_max, 5.0)
 
     def test_allowed_methods_exact(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.allowed_methods, {"GET", "HEAD"})
 
     def test_status_forcelist_exact(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(set(retry.status_forcelist), {429, 500, 502, 503, 504})
 
     def test_redirects_zero(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.redirect, 0)
 
     def test_other_zero(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertEqual(retry.other, 0)
 
     def test_raise_on_redirect_false(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertFalse(retry.raise_on_redirect)
 
     def test_raise_on_status_false(self):
         client = _steam_client()
-        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess]
+        retry = client._session.adapters["https://"].max_retries  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
         self.assertFalse(retry.raise_on_status)
 
 

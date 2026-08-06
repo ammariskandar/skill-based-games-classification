@@ -275,7 +275,7 @@ def _seed_one_game(sg: SeedGame, editor: User, stats: dict) -> dict:
     if sg.classify and sg.challenge and sg.reward:
         _was_new = (
             not hasattr(game, "editorial_classification")
-            or game.editorial_classification is None
+            or game.editorial_classification is None  # pyright: ignore[reportAttributeAccessIssue] — reverse OneToOne relation
         )
         set_editorial_classification(
             game=game,
