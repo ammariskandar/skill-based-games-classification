@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from config.test_typing import model_field
+from config.model_typing import model_field
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase, TestCase
