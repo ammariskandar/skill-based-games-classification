@@ -217,13 +217,16 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **No domain endpoints yet.** Games and Classifications routers exist
-  but contain no operations. Domain endpoints will be added in SBGC-4.
-- **No database models.** Schemas are pure Pydantic; `ModelSchema` or
-  `create_schema` must not be used until real models exist.
+- **No domain API endpoints yet.** Games and Classifications routers exist
+  but contain no operations.  Domain models are implemented (SBGC-45–50),
+  Admin validation is complete (SBGC-51), but public API endpoints are
+  deferred to SBGC-9 and SBGC-10.
+- **Database models exist but are not consumed by API endpoints yet.**
+  Schemas remain pure Pydantic; `ModelSchema` is reserved for when
+  endpoints are implemented.
 - **No authentication.** Handlers are wired but no authentication
-  backend or middleware is configured (SBGC-40 / SBGC-41).
+  backend or middleware is configured.
 - **Method-not-allowed returns HTML.** Documented framework limitation
   for Django Ninja 1.6.2.
-- **No CORS configuration.** SBGC-41 will decide whether browser-to-Django
-  CORS is required by the approved request topology.
+- **CORS deny-by-default** — No browser-to-Django CORS configuration
+  exists; architecture uses Astro SSR as intermediary.
