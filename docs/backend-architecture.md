@@ -119,6 +119,21 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Intended dependency direction:** `classifications` → `games` (classifications reference games; not circular).
 
+### Query Layer (`games/models.py` — `GameQuerySet`)
+
+Reusable queryset helpers live on `GameQuerySet` (SBGC-48 / SBGC-49):
+- `publicly_listable()` — canonical public listing rule
+- `steam()` / `manual()` — source-type filtering
+- `editorially_classified()` — requires complete parent + both profiles
+- `with_editorial_profiles()` — `select_related` for N+1-safe joins
+- `with_dominant_skill_categories()` — SQL-level dominant-skill annotations
+- `filter_by_dominant_skill_category()` — dominant-category filtering
+- `filter_by_editorial_score()` / `order_by_editorial_score()` — score
+  range filtering and deterministic sorting
+
+Skill vocabularies and pure helpers live in `classifications/skills.py`
+(SBGC-49).  See `docs/game-query-helpers.md` for the canonical inventory.
+
 ### `api`
 
 **Status:** Routing composition package — **not** a Django application and **not** registered in `INSTALLED_APPS`.

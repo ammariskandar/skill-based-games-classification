@@ -119,6 +119,16 @@ class ChallengeProfile(models.Model):
     def __str__(self) -> str:
         return f"Challenge {self.micro_score}/{self.mystiko_score}/{self.macro_score}"
 
+    @property
+    def dominant_skill_category(self) -> str | None:
+        from classifications.skills import dominant_skill_category
+
+        return dominant_skill_category(
+            micro_score=self.micro_score,
+            mystiko_score=self.mystiko_score,
+            macro_score=self.macro_score,
+        )
+
     def clean_fields(self, exclude=None):
         _reject_boolean_scores(self, "Challenge")
         super().clean_fields(exclude=exclude)
@@ -184,6 +194,16 @@ class RewardProfile(models.Model):
 
     def __str__(self) -> str:
         return f"Reward {self.micro_score}/{self.mystiko_score}/{self.macro_score}"
+
+    @property
+    def dominant_skill_category(self) -> str | None:
+        from classifications.skills import dominant_skill_category
+
+        return dominant_skill_category(
+            micro_score=self.micro_score,
+            mystiko_score=self.mystiko_score,
+            macro_score=self.macro_score,
+        )
 
     def clean_fields(self, exclude=None):
         _reject_boolean_scores(self, "Reward")

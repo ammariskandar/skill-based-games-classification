@@ -99,3 +99,8 @@ Admin/test makes a Steam call.
 - No frontend listing page
 - No Steam type mapping
 - Index tuning deferred to real query evidence
+
+## See Also
+
+- `docs/game-query-helpers.md` — canonical queryset helpers for Game
+  records (future consumers must use these instead of recreating filters)
