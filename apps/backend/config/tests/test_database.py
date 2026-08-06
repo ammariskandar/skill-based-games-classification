@@ -333,3 +333,78 @@ class SettingsModuleBehaviorTests(SimpleTestCase):
         )
         self.assertNotEqual(rc, 0, "Production should fail without DATABASE_URL")
         self.assertIn("DATABASE_URL is required", stderr)
+
+    def test_production_rejects_sqlite_url(self):
+        """Production raises ImproperlyConfigured when DATABASE_URL is SQLite."""
+        rc, stdout, stderr = self._manage_py(
+            "check",
+            "--settings=config.settings.production",
+            env={"DATABASE_URL": "sqlite:///test.db"},
+        )
+        self.assertNotEqual(rc, 0, "Production should reject SQLite")
+        self.assertIn("PostgreSQL", stderr)
+
+    def test_production_rejects_mysql_url(self):
+        """Production raises ImproperlyConfigured when DATABASE_URL is MySQL."""
+        rc, stdout, stderr = self._manage_py(
+            "check",
+            "--settings=config.settings.production",
+            env={"DATABASE_URL": "mysql://u:p@h/d"},
+        )
+        self.assertNotEqual(rc, 0, "Production should reject MySQL")
+        self.assertIn("PostgreSQL", stderr)
+
+    def test_production_rejects_oracle_url(self):
+        """Production raises ImproperlyConfigured when DATABASE_URL is Oracle."""
+        rc, stdout, stderr = self._manage_py(
+            "check",
+            "--settings=config.settings.production",
+            env={"DATABASE_URL": "oracle://u:p@h:1521/d"},
+        )
+        self.assertNotEqual(rc, 0, "Production should reject Oracle")
+        self.assertIn("PostgreSQL", stderr)
+
+    def test_production_rejects_malformed_url(self):
+        """Production raises ImproperlyConfigured when DATABASE_URL is malformed."""
+        rc, stdout, stderr = self._manage_py(
+            "check",
+            "--settings=config.settings.production",
+            env={"DATABASE_URL": "%%%not-a-database-url"},
+        )
+        self.assertNotEqual(rc, 0, "Production should reject malformed URL")
+
+    def test_production_accepts_postgresql_url(self):
+        """Production accepts a valid PostgreSQL DATABASE_URL."""
+        rc, stdout, stderr = self._manage_py(
+            "check",
+            "--settings=config.settings.production",
+            env={
+                "DATABASE_URL": (
+                    "postgresql://u:p@example.neon.tech/db"
+                    "?sslmode=require&channel_binding=require"
+                ),
+                "DJANGO_SECRET_KEY": (
+                    "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
+                ),
+                "DJANGO_ALLOWED_HOSTS": "example.com",
+                "CSRF_TRUSTED_ORIGINS": "https://example.com",
+                "ADMIN_URL_PATH": "mygamedna-prod",
+            },
+        )
+        # Settings load must succeed; database connection failure is expected
+        # (fake host).
+        self.assertNotIn("ImproperlyConfigured", stderr)
+
+    def test_production_database_url_override(self):
+        """The override_url parameter substitutes the effective URL."""
+        # build_database_config with override_url uses it instead of database_url.
+        from config.database import build_database_config
+
+        cfg = build_database_config(
+            "sqlite:///original.db",
+            Path("/fake"),
+            allow_sqlite_fallback=False,
+            require_postgresql=True,
+            override_url=_FAKE_PG_URL,
+        )
+        self.assertEqual(cfg["default"]["ENGINE"], "django.db.backends.postgresql")

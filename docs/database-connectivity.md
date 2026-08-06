@@ -183,14 +183,15 @@ DATABASE_URL="" python manage.py check --settings=config.settings.production
 
 ## Current Limitations
 
-- **No application migrations.** Only Django's built-in migrations
-  (admin, auth, contenttypes, sessions) exist. Domain models will be
-  added in SBGC-4.
+- **Application migrations are present.** Domain models (`games`, `classifications`) have
+  been migrated through SBGC-45–48.
 - **No connection pooling.** `CONN_MAX_AGE=0` and no `psycopg_pool`.
   Pooling is deferred until measured traffic warrants it.
-- **No PostgreSQL manual verification completed with a direct host.**
-  The local `.env` uses a pooled Neon host and must be updated to a
-  direct connection string for production-matching verification.
+- **PostgreSQL verification completed** — SBGC-52 verified constraints,
+  migrations, indexes, transactions, and concurrent uniqueness on an
+  isolated PostgreSQL 16 instance.  See `docs/postgresql-verification.md`.
+- **Production Neon has not been connected.** No live Render/Neon
+  deployment verification has occurred.
 - **No read replicas.**
 - **No Neon API automation.**
 - **No database health endpoint.**
@@ -198,4 +199,15 @@ DATABASE_URL="" python manage.py check --settings=config.settings.production
 
 ## SBGC-43 — PostgreSQL-Only Production
 
-Production enforces PostgreSQL-only database connectivity via . Missing, blank, SQLite, MySQL, Oracle, and unknown engine URLs all raise  at startup. Development retains SQLite fallback; tests remain in-memory SQLite. No PostgreSQL integration behaviour has been verified yet — SBGC-52 owns later PostgreSQL-specific verification.
+Production enforces PostgreSQL-only database connectivity. Missing, blank,
+SQLite, MySQL, Oracle, and unknown engine URLs all raise
+`ImproperlyConfigured` at startup. Development retains SQLite fallback;
+tests remain in-memory SQLite.
+
+## SBGC-52 — Runtime vs Migration URLs
+
+The `scripts/backend-migrate.sh` script supports `MIGRATION_DATABASE_URL`
+for a direct Neon connection during migrations.  If set, it overrides
+`DATABASE_URL` for the migration command only.  This allows runtime to
+use a pooled connection while migrations use a direct (non-pooler)
+connection.  See `docs/postgresql-verification.md`.
