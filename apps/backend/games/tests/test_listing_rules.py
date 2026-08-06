@@ -167,7 +167,10 @@ class PublicListingTests(TestCase):
     def test_only_published_game_returned(self):
         qs = Game.objects.publicly_listable()
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "pub-game")  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected a publicly listable game to exist")
+        self.assertEqual(game.slug, "pub-game")
 
     def test_draft_game_excluded(self):
         qs = Game.objects.publicly_listable()

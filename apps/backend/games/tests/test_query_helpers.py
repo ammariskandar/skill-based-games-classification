@@ -70,12 +70,18 @@ class SourceHelperTests(TestCase):
     def test_steam_returns_only_steam(self):
         qs = Game.objects.steam()
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().source_type, SourceType.STEAM)  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected a Steam game to exist")
+        self.assertEqual(game.source_type, SourceType.STEAM)
 
     def test_manual_returns_only_manual(self):
         qs = Game.objects.manual()
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().source_type, SourceType.MANUAL)  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected a manual game to exist")
+        self.assertEqual(game.source_type, SourceType.MANUAL)
 
     def test_steam_chainable_with_publicly_listable(self):
         qs = Game.objects.steam().publicly_listable()
@@ -279,14 +285,20 @@ class DominantFilteringTests(TestCase):
             profile=EditorialProfile.CHALLENGE, category=SkillCategory.MICRO
         )
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "df-micro")  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected dominant CHALLENGE/MICRO game to exist")
+        self.assertEqual(game.slug, "df-micro")
 
     def test_filter_challenge_mystiko(self):
         qs = Game.objects.filter_by_dominant_skill_category(
             profile=EditorialProfile.CHALLENGE, category=SkillCategory.MYSTIKO
         )
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "df-mystiko")  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected dominant CHALLENGE/MYSTIKO game to exist")
+        self.assertEqual(game.slug, "df-mystiko")
 
     def test_tie_excluded(self):
         qs = Game.objects.filter_by_dominant_skill_category(
@@ -342,7 +354,10 @@ class ScoreFilteringTests(TestCase):
             minimum=50,
         )
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "sf-high")  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected high-score game to exist")
+        self.assertEqual(game.slug, "sf-high")
 
     def test_maximum_only(self):
         qs = Game.objects.filter_by_editorial_score(
@@ -351,7 +366,10 @@ class ScoreFilteringTests(TestCase):
             maximum=50,
         )
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "sf-low")  # pyright: ignore[reportOptionalMemberAccess]
+        game = qs.first()
+        if game is None:
+            self.fail("Expected low-score game to exist")
+        self.assertEqual(game.slug, "sf-low")
 
     def test_inclusive_bounds(self):
         qs = Game.objects.filter_by_editorial_score(

@@ -18,3 +18,15 @@ def env_str(env_obj: environ.Env, name: str, *, default: str) -> str:
     if not isinstance(value, str):
         raise ImproperlyConfigured(f"Environment variable {name} must be a string.")
     return value
+
+
+def env_optional_str(env_obj: environ.Env, name: str) -> str | None:
+    """Read an optional string env var (None if absent)."""
+    value: object = env_obj(name, default=None)  # pyright: ignore[reportArgumentType]
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ImproperlyConfigured(
+            f"Environment variable {name} must be a string if set."
+        )
+    return value

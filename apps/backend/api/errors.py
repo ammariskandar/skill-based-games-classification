@@ -11,7 +11,7 @@ Provides:
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from django.http import Http404, HttpRequest, HttpResponse
 from ninja import NinjaAPI
@@ -244,10 +244,13 @@ def register_handlers(api: NinjaAPI) -> None:
 
     Call once per NinjaAPI instance after construction.
     """
-    api.add_exception_handler(ApiException, api_exception_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(ValidationError, validation_error_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(AuthenticationError, authentication_error_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(AuthorizationError, authorization_error_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(HttpError, http_error_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(Http404, http404_handler)  # pyright: ignore[reportArgumentType]
-    api.add_exception_handler(Exception, unexpected_exception_handler)  # pyright: ignore[reportArgumentType]
+    # Django Ninja stubs type add_exception_handler with a restrictive generic
+    # that does not match our handler callbacks.  Cast at the framework boundary.
+    _add = cast(object, api.add_exception_handler)
+    _add(ApiException, api_exception_handler)  # type: ignore[operator]
+    _add(ValidationError, validation_error_handler)  # type: ignore[operator]
+    _add(AuthenticationError, authentication_error_handler)  # type: ignore[operator]
+    _add(AuthorizationError, authorization_error_handler)  # type: ignore[operator]
+    _add(HttpError, http_error_handler)  # type: ignore[operator]
+    _add(Http404, http404_handler)  # type: ignore[operator]
+    _add(Exception, unexpected_exception_handler)  # type: ignore[operator]
