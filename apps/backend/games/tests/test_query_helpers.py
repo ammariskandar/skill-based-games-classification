@@ -139,6 +139,166 @@ class EditoriallyClassifiedTests(TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Dominant annotations
+# ---------------------------------------------------------------------------
+
+
+class DominantAnnotationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="da_u", password="p")
+
+        self.micro = _make(name="Micro Dom", slug="micro-dom")
+        _classify(self.micro, self.user, ch=(70, 20, 10), rw=(10, 30, 60))
+
+        self.macro = _make(name="Macro Dom", slug="macro-dom")
+        _classify(self.macro, self.user, ch=(10, 20, 70), rw=(10, 20, 70))
+
+        self.tie_mm = _make(name="Tie MM", slug="tie-mm")
+        _classify(self.tie_mm, self.user, ch=(50, 50, 0), rw=(0, 50, 50))
+
+        self.tie_all = _make(name="Tie All", slug="tie-all")
+        _classify(self.tie_all, self.user, ch=(34, 34, 32), rw=(34, 33, 33))
+
+        self.unclassified = _make(name="Unclassified", slug="unclassified")
+
+    def _get(self, slug):
+        return Game.objects.with_dominant_skill_categories().get(slug=slug)
+
+    def test_challenge_micro_dominant(self):
+        g = self._get("micro-dom")
+        self.assertEqual(g.challenge_dominant_skill_category, SkillCategory.MICRO)
+
+    def test_challenge_macro_dominant(self):
+        g = self._get("macro-dom")
+        self.assertEqual(g.challenge_dominant_skill_category, SkillCategory.MACRO)
+
+    def test_challenge_tie_micro_mystiko_none(self):
+        g = self._get("tie-mm")
+        self.assertIsNone(g.challenge_dominant_skill_category)
+
+    def test_challenge_tie_all_none(self):
+        """34/34/32 — micro and mystiko tie at 34."""
+        g = self._get("tie-all")
+        self.assertIsNone(g.challenge_dominant_skill_category)
+
+    def test_missing_profile_none(self):
+        g = self._get("unclassified")
+        self.assertIsNone(g.challenge_dominant_skill_category)
+        self.assertIsNone(g.reward_dominant_skill_category)
+
+    def test_reward_mystiko_dominant(self):
+        # (10, 30, 60) — macro is highest
+        g = self._get("micro-dom")
+        self.assertEqual(g.reward_dominant_skill_category, SkillCategory.MACRO)
+
+    def test_reward_tie_none(self):
+        g = self._get("tie-mm")
+        self.assertIsNone(g.reward_dominant_skill_category)
+
+    def test_challenge_and_reward_independent(self):
+        g = _make(name="Indep", slug="indep")
+        _classify(g, self.user, ch=(70, 20, 10), rw=(10, 20, 70))
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        self.assertEqual(ga.challenge_dominant_skill_category, SkillCategory.MICRO)
+        self.assertEqual(ga.reward_dominant_skill_category, SkillCategory.MACRO)
+
+    def test_python_sql_parity_challenge(self):
+        """DB annotation matches model property for same row."""
+        g = _make(name="Parity CH", slug="parity-ch")
+        _classify(g, self.user, ch=(70, 20, 10), rw=(10, 30, 60))
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
+        self.assertEqual(
+            ga.challenge_dominant_skill_category,
+            gc.editorial_classification.challenge_profile.dominant_skill_category,
+        )
+
+    def test_python_sql_parity_reward(self):
+        g = _make(name="Parity RW", slug="parity-rw")
+        _classify(g, self.user, ch=(10, 20, 70), rw=(70, 20, 10))
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
+        self.assertEqual(
+            ga.reward_dominant_skill_category,
+            gc.editorial_classification.reward_profile.dominant_skill_category,
+        )
+
+    def test_python_sql_parity_tie(self):
+        g = _make(name="Parity Tie", slug="parity-tie")
+        _classify(g, self.user, ch=(50, 50, 0), rw=(34, 33, 33))
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
+        self.assertIsNone(ga.challenge_dominant_skill_category)
+        self.assertIsNone(
+            gc.editorial_classification.challenge_profile.dominant_skill_category
+        )
+
+
+# ---------------------------------------------------------------------------
+# Dominant filtering
+# ---------------------------------------------------------------------------
+
+
+class DominantFilteringTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="df_u", password="p")
+
+        self.micro = _make(name="DF Micro", slug="df-micro")
+        _classify(self.micro, self.user, ch=(70, 20, 10), rw=(10, 30, 60))
+
+        self.mystiko = _make(name="DF Mystiko", slug="df-mystiko")
+        _classify(self.mystiko, self.user, ch=(10, 70, 20), rw=(20, 10, 70))
+
+        self.tie = _make(name="DF Tie", slug="df-tie")
+        _classify(self.tie, self.user, ch=(50, 50, 0), rw=(34, 33, 33))
+
+    def test_filter_challenge_micro(self):
+        qs = Game.objects.filter_by_dominant_skill_category(
+            profile=EditorialProfile.CHALLENGE, category=SkillCategory.MICRO
+        )
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs.first().slug, "df-micro")
+
+    def test_filter_challenge_mystiko(self):
+        qs = Game.objects.filter_by_dominant_skill_category(
+            profile=EditorialProfile.CHALLENGE, category=SkillCategory.MYSTIKO
+        )
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs.first().slug, "df-mystiko")
+
+    def test_tie_excluded(self):
+        qs = Game.objects.filter_by_dominant_skill_category(
+            profile=EditorialProfile.CHALLENGE, category=SkillCategory.MYSTIKO
+        )
+        self.assertNotIn("df-tie", qs.values_list("slug", flat=True))
+
+    def test_invalid_profile_raises(self):
+        with self.assertRaises(ValueError):
+            Game.objects.filter_by_dominant_skill_category(
+                profile="invalid", category=SkillCategory.MICRO
+            )
+
+    def test_invalid_category_raises(self):
+        with self.assertRaises(ValueError):
+            Game.objects.filter_by_dominant_skill_category(
+                profile=EditorialProfile.CHALLENGE, category="invalid"
+            )
+
+    def test_excludes_unclassified(self):
+        _make(name="No Class", slug="no-class")
+        qs = Game.objects.filter_by_dominant_skill_category(
+            profile=EditorialProfile.CHALLENGE, category=SkillCategory.MICRO
+        )
+        self.assertNotIn("no-class", qs.values_list("slug", flat=True))
+
+    def test_composes_with_publicly_listable(self):
+        qs = Game.objects.publicly_listable().filter_by_dominant_skill_category(
+            profile=EditorialProfile.CHALLENGE, category=SkillCategory.MICRO
+        )
+        self.assertIsNotNone(qs)
+
+
+# ---------------------------------------------------------------------------
 # Score filtering
 # ---------------------------------------------------------------------------
 
@@ -335,6 +495,21 @@ class QueryCountTests(TestCase):
                 _ = g.editorial_classification.challenge_profile.micro_score
                 _ = g.editorial_classification.reward_profile.macro_score
 
+    def test_dominant_annotation_single_query(self):
+        """with_dominant_skill_categories evaluates in one query."""
+        with self.assertNumQueries(1):
+            qs = list(Game.objects.with_dominant_skill_categories())
+            self.assertGreaterEqual(len(qs), 3)
+
+    def test_dominant_filter_single_query(self):
+        with self.assertNumQueries(1):
+            list(
+                Game.objects.filter_by_dominant_skill_category(
+                    profile=EditorialProfile.CHALLENGE,
+                    category=SkillCategory.MICRO,
+                )
+            )
+
 
 # ---------------------------------------------------------------------------
 # No-network
@@ -361,10 +536,23 @@ class NoNetworkTests(TestCase):
         with self._steam_guard():
             list(Game.objects.editorially_classified())
 
-    def test_score_filter_no_steam(self):
+    def test_score_sort_no_steam(self):
         with self._steam_guard():
             list(
                 Game.objects.order_by_editorial_score(
+                    profile=EditorialProfile.CHALLENGE,
+                    category=SkillCategory.MICRO,
+                )
+            )
+
+    def test_dominant_annotation_no_steam(self):
+        with self._steam_guard():
+            list(Game.objects.with_dominant_skill_categories())
+
+    def test_dominant_filter_no_steam(self):
+        with self._steam_guard():
+            list(
+                Game.objects.filter_by_dominant_skill_category(
                     profile=EditorialProfile.CHALLENGE,
                     category=SkillCategory.MICRO,
                 )

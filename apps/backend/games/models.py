@@ -85,6 +85,79 @@ class GameQuerySet(models.QuerySet):
             "editorial_classification__reward_profile",
         )
 
+    # -- dominant skill annotations --------------------------------------------
+
+    def with_dominant_skill_categories(self):
+        """Annotate each Game with its Challenge and Reward dominant skill.
+
+        Annotated fields (``str | None``):
+        * ``challenge_dominant_skill_category``
+        * ``reward_dominant_skill_category``
+
+        Ties produce ``None``.  Missing profiles produce ``None``.
+        Uses strict-greater-than comparisons via Django ``Case/When/Q/F``.
+        """
+        from django.db.models import Case, F, Q, Value, When
+
+        def _dominant(pfx: str):
+            micro = f"{pfx}__micro_score"
+            mystiko = f"{pfx}__mystiko_score"
+            macro = f"{pfx}__macro_score"
+            none_val = Value(None)
+            return Case(
+                When(
+                    condition=Q(**{f"{pfx}__isnull": True}),
+                    then=none_val,
+                ),
+                When(
+                    condition=(
+                        Q(**{f"{micro}__gt": F(mystiko)})
+                        & Q(**{f"{micro}__gt": F(macro)})
+                    ),
+                    then=Value(SkillCategory.MICRO),
+                ),
+                When(
+                    condition=(
+                        Q(**{f"{mystiko}__gt": F(micro)})
+                        & Q(**{f"{mystiko}__gt": F(macro)})
+                    ),
+                    then=Value(SkillCategory.MYSTIKO),
+                ),
+                When(
+                    condition=(
+                        Q(**{f"{macro}__gt": F(micro)})
+                        & Q(**{f"{macro}__gt": F(mystiko)})
+                    ),
+                    then=Value(SkillCategory.MACRO),
+                ),
+                default=none_val,
+            )
+
+        return self.annotate(
+            challenge_dominant_skill_category=_dominant(
+                "editorial_classification__challenge_profile"
+            ),
+            reward_dominant_skill_category=_dominant(
+                "editorial_classification__reward_profile"
+            ),
+        )
+
+    # -- dominant filtering ----------------------------------------------------
+
+    def filter_by_dominant_skill_category(self, *, profile: str, category: str):
+        """Return Games whose *profile* dominant skill equals *category*.
+
+        Ties are excluded (strict-greater-than).  Requires complete
+        editorial classification.
+        """
+        _validate_profile_category(profile, category)
+
+        return (
+            self.editorially_classified()
+            .with_dominant_skill_categories()
+            .filter(**{f"{profile}_dominant_skill_category": category})
+        )
+
     # -- score filtering -------------------------------------------------------
 
     def filter_by_editorial_score(
