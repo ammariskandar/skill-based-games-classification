@@ -11,19 +11,12 @@ from classifications.skills import EditorialProfile, SkillCategory
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from games.types import CONTENT_TYPE_CHOICES, ContentType
+
 
 class SourceType(models.TextChoices):
     STEAM = "steam", "Steam"
     MANUAL = "manual", "Manual"
-
-
-class ContentType(models.TextChoices):
-    GAME = "game", "Game"
-    DLC = "dlc", "Downloadable content"
-    DEMO = "demo", "Demo"
-    SOFTWARE = "software", "Software"
-    SOUNDTRACK = "soundtrack", "Soundtrack"
-    UNKNOWN = "unknown", "Unknown"
 
 
 class ListingStatus(models.TextChoices):
@@ -323,7 +316,7 @@ class Game(models.Model):
 
     content_type = models.CharField(
         max_length=16,
-        choices=ContentType,
+        choices=CONTENT_TYPE_CHOICES,
         default=ContentType.GAME,
     )
 
@@ -426,6 +419,7 @@ class Game(models.Model):
 
 __all__ = [
     "ContentType",
+    "CONTENT_TYPE_CHOICES",
     "Game",
     "ListingStatus",
     "SourceType",

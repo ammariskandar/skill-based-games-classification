@@ -63,25 +63,46 @@ class ProductTypeMappingTests(SimpleTestCase):
         self.assertNotEqual(map_steam_product_type("mod"), "game")
 
 
-class CanonicalDriftTests(SimpleTestCase):
+    def test_unknown_not_game(self):
+        self.assertNotEqual(map_steam_product_type("mod"), "game")
+
+
+class SteamModuleIndependenceTests(SimpleTestCase):
+    """Prove Steam adapter modules import without Django model initialization."""
+
+    def test_mapping_imports_from_games_types(self):
+        """Steam mapping uses games.types, not games.models."""
+        import games.services.steam.mapping
+
+        src = __import__("inspect").getsource(games.services.steam.mapping)
+        self.assertNotIn("games.models", src)
+        self.assertIn("games.types", src)
+
+    def test_adapter_does_not_import_models(self):
+        """Steam adapter has no games.models import."""
+        import games.services.steam.adapters.app_details
+
+        src = __import__("inspect").getsource(
+            games.services.steam.adapters.app_details
+        )
+        self.assertNotIn("games.models", src)
     """Prove mapping values match canonical ContentType enum."""
 
     def test_all_mapped_values_exist_in_content_type(self):
-        from games.models import ContentType
+        from games.types import ContentType
 
-        valid = set(ContentType.values)
-        # Every known Steam type maps to a valid ContentType value.
+        valid = set(ContentType)
         for steam_type in ("game", "dlc", "demo", "software", "music", "soundtrack"):
             mapped = map_steam_product_type(steam_type)
             self.assertIn(
                 mapped,
                 valid,
                 f"map_steam_product_type({steam_type!r}) = {mapped!r} "
-                f"not in ContentType.values {valid}",
+                f"not in ContentType",
             )
 
     def test_unknown_maps_to_unknown_enum(self):
-        from games.models import ContentType
+        from games.types import ContentType
 
         self.assertEqual(
             map_steam_product_type("video"),

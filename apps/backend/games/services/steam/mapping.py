@@ -1,21 +1,23 @@
 """
 Steam product-type mapping — SBGC-53.
 
-Pure function mapping raw Steam type strings to normalized application
-content types.  No database access, no network access.
+Pure function mapping raw Steam type strings to canonical ContentType
+values.  No database access, no network access, no Django ORM import.
 """
 
 from __future__ import annotations
 
+from games.types import ContentType
+
 
 def map_steam_product_type(raw_type: object) -> str:
-    """Map a raw Steam product type string to a normalized content type.
+    """Map a raw Steam product type string to a canonical content type.
 
-    Returns one of: ``game``, ``dlc``, ``demo``, ``software``,
-    ``soundtrack``, ``unknown``.
+    Returns a string matching ``ContentType`` values (``game``, ``dlc``,
+    ``demo``, ``software``, ``soundtrack``, ``unknown``).
 
     Unknown/non-string types raise ``ValueError`` (malformed payload).
-    Unrecognized nonblank strings map to ``unknown``.
+    Unrecognized nonblank strings map to ``ContentType.UNKNOWN``.
     """
     if not isinstance(raw_type, str):
         raise ValueError(
@@ -28,12 +30,12 @@ def map_steam_product_type(raw_type: object) -> str:
         raise ValueError("Steam product type must not be blank.")
 
     _MAP: dict[str, str] = {
-        "game": "game",
-        "dlc": "dlc",
-        "demo": "demo",
-        "software": "software",
-        "music": "soundtrack",
-        "soundtrack": "soundtrack",
+        "game": ContentType.GAME,
+        "dlc": ContentType.DLC,
+        "demo": ContentType.DEMO,
+        "software": ContentType.SOFTWARE,
+        "music": ContentType.SOUNDTRACK,
+        "soundtrack": ContentType.SOUNDTRACK,
     }
 
-    return _MAP.get(key, "unknown")
+    return _MAP.get(key, ContentType.UNKNOWN)
