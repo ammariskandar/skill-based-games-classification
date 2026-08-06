@@ -42,8 +42,8 @@ class GameQuerySet(models.QuerySet):
         * ``listing_status = PUBLISHED``
         """
         return self.filter(
-            content_type="game",
-            listing_status="published",
+            content_type=ContentType.GAME,
+            listing_status=ListingStatus.PUBLISHED,
         )
 
 

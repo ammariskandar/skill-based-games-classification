@@ -15,9 +15,12 @@ Six normalized content types classify every canonical `Game` record:
 | `soundtrack` | Soundtrack | Standalone music/audio product |
 | `unknown` | Unknown | Type not yet determined or cannot be mapped |
 
-`OTHER` has been removed (SBGC-48).  No persisted `other` values exist in
-any environment — the migration is a state-only `AlterField` on the
-choices.
+`OTHER` has been removed (SBGC-48).  A data migration (`games.0003`)
+converts any persisted ``other`` rows to ``unknown``.  The reverse
+migration converts ``unknown`` back to ``other`` — inherently lossy
+for legitimate Unknown records created after the forward migration.
+No ``other`` values exist in any known environment; the data migration
+is a safety net for developer databases.
 
 `GAME` remains the default.
 
@@ -64,9 +67,10 @@ type has not yet been determined.  Unknown records are never returned by
 
 ## Index
 
-No new index was added in SBGC-48.  The existing composite index
-`game_listing_name_idx` on `(listing_status, name, id)` supports current
-listing queries.  Index tuning may be revisited with real query evidence.
+No new listing index is justified yet.  The existing composite index
+``game_listing_name_idx`` on ``(listing_status, name, id)`` may be
+revisited when real listing-query evidence from API endpoints or
+PostgreSQL query plans becomes available.
 
 ## Migration
 
@@ -84,6 +88,13 @@ Admin/test makes a Steam call.
 
 ## Limitations
 
+- Content-type choices are **application-level validation** (Django
+  ``choices``), not a database ``CHECK`` constraint.  Arbitrary direct
+  SQL values are not prevented.  The ``other → unknown`` data migration
+  handles historical values; new raw writes are not DB-enforced.
+- Public listing remains safe because ``publicly_listable()`` explicitly
+  requires ``content_type="game"`` — obsolete or raw values are excluded
+  regardless.
 - No public listing API endpoint yet
 - No frontend listing page
 - No Steam type mapping

@@ -10,7 +10,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from games.models import ContentType, Game, ListingStatus, SourceType
@@ -496,3 +496,93 @@ class NoNetworkTests(TestCase):
         with self._steam_guard():
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Migration data conversion tests
+# ---------------------------------------------------------------------------
+
+
+class MigrationDataTests(TransactionTestCase):
+    """``other → unknown`` data migration executes forward and reverse.
+
+    Uses ``TransactionTestCase`` for schema-changing migration operations.
+    Restores all apps to latest in ``finally`` unconditionally.
+    """
+
+    @staticmethod
+    def _migrate_app(app, target):
+        from django.core.management import call_command
+
+        call_command(
+            "migrate",
+            app,
+            target,
+            verbosity=0,
+            interactive=False,
+            skip_checks=True,
+        )
+
+    def test_other_migrates_to_unknown_and_back(self):
+
+        # -- Reverse to games.0001 so choices still include "other" ---------
+        self._migrate_app("games", "0001")
+
+        # Create a row with the historical "other" value via raw update
+        # (bypassing model-level choice validation).
+        g = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Legacy Other",
+            slug="legacy-other",
+        )
+        Game.objects.filter(pk=g.pk).update(content_type="other")
+        g.refresh_from_db()
+        self.assertEqual(g.content_type, "other")
+
+        try:
+            # -- Forward to latest (0003) — data migration
+            # converts "other" to "unknown"
+            self._migrate_app("games", "0003")
+            g.refresh_from_db()
+            self.assertEqual(g.content_type, "unknown")
+            self.assertIn(g.content_type, dict(ContentType.choices))
+
+            # -- Public listing: migrated "unknown" is NOT listable ---------
+            self.assertFalse(Game.objects.publicly_listable().filter(pk=g.pk).exists())
+
+            # -- Reverse to 0001: data migration converts "unknown" back to "other" --
+            self._migrate_app("games", "0001")
+            g.refresh_from_db()
+            self.assertEqual(g.content_type, "other")
+
+        finally:
+            self._migrate_app("", "")
+
+        # After restoration: row is at latest state.
+        g.refresh_from_db()
+        self.assertIn(g.content_type, dict(ContentType.choices))
+
+
+# ---------------------------------------------------------------------------
+# Queryset constant tests
+# ---------------------------------------------------------------------------
+
+
+class QuerysetConstantTests(TestCase):
+    """The queryset method uses module-level constants, not duplicated literals."""
+
+    def test_constants_match_expected_values(self):
+        self.assertEqual(ContentType.GAME, "game")
+        self.assertEqual(ListingStatus.PUBLISHED, "published")
+
+    def test_raw_other_never_publicly_listable(self):
+        """If a raw 'other' value somehow exists, it is excluded."""
+        g = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Raw Other",
+            slug="raw-other",
+            content_type=ContentType.GAME,
+            listing_status=ListingStatus.PUBLISHED,
+        )
+        Game.objects.filter(pk=g.pk).update(content_type="other")
+        self.assertFalse(Game.objects.publicly_listable().filter(pk=g.pk).exists())
