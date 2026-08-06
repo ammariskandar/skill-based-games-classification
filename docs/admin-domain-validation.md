@@ -89,3 +89,25 @@ No schema changes required.  `makemigrations --check --dry-run` reports
 - No API endpoints consume these Admin workflows.
 - No frontend UI integration.
 - No bulk-action or import-action Admin tests.
+
+## Manual Validation — August 6, 2026
+
+A human smoke test was performed against the local Django development
+server with seeded data and the configured non-default Admin route.
+
+**14/14 checks passed:**
+
+1. Admin URL opened successfully.
+2. Existing superuser logged in.
+3. Games changelist loaded.
+4. Steam and manual records appeared.
+5. DLC and non-game content types appeared in Admin.
+6. Temporary manual Game created.
+7. Manual Game with external ID rejected.
+8. Duplicate Steam external ID rejected.
+9. Content-type edit preserved listing status.
+10. Editorial classification opened.
+11. Valid Challenge/Reward score edits persisted.
+12. Invalid score total redisplayed form with error.
+13. No raw traceback page appeared.
+14. Published DLC remains excluded from public listing.
