@@ -244,8 +244,8 @@ class BulkConstraintTests(PostgreSQLTestCase):
             game=self.game, updated_by=self.user
         )
         # 40+40+40=120 — unambiguously violates total=100 constraint.
-        with transaction.atomic():
-            with self.assertRaises(IntegrityError):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
                 ChallengeProfile.objects.bulk_create(
                     [
                         ChallengeProfile(
