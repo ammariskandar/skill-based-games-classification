@@ -249,6 +249,10 @@ class SteamClient:
         params: Mapping[str, str | int] | None,
         requires_api_key: bool,
     ) -> dict[str, object]:
+        if not isinstance(origin, SteamEndpointOrigin):
+            raise TypeError(
+                f"origin must be a SteamEndpointOrigin, got {type(origin).__name__}."
+            )
         _validate_path(path)
 
         api_key = self._config.api_key
