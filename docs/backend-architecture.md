@@ -35,8 +35,8 @@ apps/backend/
 │   ├── __init__.py
 │   ├── apps.py                 # GamesConfig
 │   ├── api.py                  # Games API router (no operations yet)
-│   ├── models.py               # No models yet (SBGC-45)
-│   ├── admin.py                # No admin registrations yet (SBGC-40)
+│   ├── models.py               # Game model + GameQuerySet (SBGC-45/48/49)
+│   ├── admin.py                # GameAdmin registered (SBGC-45)
 │   ├── services/
 │   │   └── steam/              # Steam Web API client — SBGC-42
 │   │       ├── __init__.py     # Public re-exports
@@ -53,14 +53,16 @@ apps/backend/
 │   ├── __init__.py
 │   ├── apps.py                 # ClassificationsConfig
 │   ├── api.py                  # Classifications API router (no operations yet)
-│   ├── models.py               # No models yet (SBGC-46)
-│   ├── admin.py                # No admin registrations yet (SBGC-40)
-│   ├── tests.py                # No tests yet (SBGC-44)
+│   ├── models.py               # EditorialClassification, ChallengeProfile, RewardProfile (SBGC-46)
+│   ├── admin.py                # EditorialClassificationAdmin with inlines (SBGC-46)
+│   ├── skills.py               # SkillCategory, EditorialProfile, dominant helper (SBGC-49)
+│   ├── validation.py           # validate_score_distribution (SBGC-46)
+│   ├── tests/                  # Test package with 5 modules
 │   └── migrations/
 │       └── __init__.py
 ├── api/                        # API routing composition (not a Django app)
 │   ├── __init__.py
-│   └── urls.py                 # Empty urlpatterns — reserved for SBGC-38
+│   ├── urls.py                 # Mounts v1 NinjaAPI + catch-all fallback (SBGC-38)
 ├── manage.py                   # Development entry point
 ├── .env.example                # Environment variable template
 ├── requirements.txt            # Pinned Python dependencies
@@ -109,13 +111,13 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts.
 
-**Status:** `Game` model implemented in SBGC-45.  Admin registered under `games/admin.py`.  Classifications (SBGC-46) and Steam import (SBGC-53) remain unimplemented.
+**Status:** `Game` model, `GameQuerySet`, and `GameAdmin` implemented in SBGC-45/48/49/51.  Steam import (SBGC-53) remains unimplemented.
 
 ### `classifications`
 
 **Ownership:** Separate Challenge and Reward profiles, Micro/Mystiko/Macro classification records, classification-domain concepts.
 
-**Status:** `EditorialClassification`, `ChallengeProfile`, and `RewardProfile` models implemented in SBGC-46 — one editorial classification per Game with independent Challenge/Reward score profiles, Admin with two inlines, and an atomic service layer.  Community classifications and API endpoints remain for SBGC-47 onward.
+**Status:** `EditorialClassification`, `ChallengeProfile`, and `RewardProfile` models implemented in SBGC-46 — one editorial classification per Game with independent Challenge/Reward score profiles, Admin with two inlines, and an atomic service layer.  Admin validation completed in SBGC-51.  Community classifications and API endpoints remain unimplemented.
 
 **Intended dependency direction:** `classifications` → `games` (classifications reference games; not circular).
 
@@ -174,6 +176,6 @@ A `users` application for final-product accounts is planned but not yet created.
 - **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client under `games/services/steam/` with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. Endpoint adapters and import workflows are deferred to SBGC-5.
 - **Backend operations** — SBGC-43 delivered Gunicorn/WhiteNoise, health endpoint, production logging, PostgreSQL-only enforcement, strengthened secret/CSRF validation, Render Blueprint, deployment checks, and operational scripts. See docs/backend-operations.md.
 - **Backend testing** — SBGC-44 established test conventions, discovery audit, subprocess isolation, and canonical testing documentation. See docs/backend-testing.md.
-- **No product models** — SBGC-4 (SBGC-45 onward) will implement domain models, constraints, and migrations.
-- **Production settings are incomplete** — `config.settings.production` imports shared base settings and sets `DEBUG=False`. Full security hardening and deployment checks belong to SBGC-39 and SBGC-41.
-- **`CORS_ALLOWED_ORIGINS` is inert** — it is parsed as a custom setting but does not yet control application behaviour. It is reserved for SBGC-41.
+- **SBGC-4 domain models complete** — SBGC-45 through SBGC-50 implemented the Game model, editorial classification, database constraints, content types, listing rules, query helpers, and development seed data.  SBGC-51 added Admin validation tests.
+- **No API/frontend game endpoints** — Domain endpoints and public pages are deferred to SBGC-9 and SBGC-10.
+- **Steam import not implemented** — Endpoint adapters and import workflows belong to SBGC-53.

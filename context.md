@@ -2615,6 +2615,19 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   adapter-policy verification.
 - Recorded 10 architecture decisions and the SBGC-42 changelog entry here.
 
+## 2026-08-06 — SBGC-51 Admin domain validation
+
+- Added 78 automated Admin integration tests across `games/tests/test_admin_validation.py`
+  and `classifications/tests/test_admin_validation.py`.
+- Validated Game Admin create, edit, duplicate-identity, manual-validation,
+  DLC-exclusion, changelist, and no-network behaviour through real Django test client.
+- Validated Classification Admin edit, invalid-score, completeness, transaction
+  rollback, changelist, and no-network behaviour.
+- Documented pre-existing edge case where model `clean()` uses profile-labeled
+  error keys incompatible with Django inline form `_update_errors`.
+- Created `docs/admin-domain-validation.md` with validation parity matrix.
+- Updated stale documentation in `docs/backend-architecture.md` and `docs/backend-api.md`.
+
 ## 2026-07-22 — Initial canonical consolidation
 
 - Established `context.md` as source of truth.
