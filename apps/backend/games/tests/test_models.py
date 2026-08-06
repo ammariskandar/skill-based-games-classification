@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from config.test_typing import model_field
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase, TestCase
@@ -31,43 +32,43 @@ class FieldMetadataTests(SimpleTestCase):
         self.assertTrue(field.auto_created)
 
     def test_source_type_max_length_and_choices(self):
-        field = Game._meta.get_field("source_type")
-        self.assertEqual(field.max_length, 16)  # pyright: ignore[reportAttributeAccessIssue]
+        field = model_field(Game, "source_type")
+        self.assertEqual(field.max_length, 16)
         self.assertEqual(
             set(field.choices),  # type: ignore[arg-type]
             {("steam", "Steam"), ("manual", "Manual")},
         )
 
     def test_external_id_nullable_and_max_length(self):
-        field = Game._meta.get_field("external_id")
+        field = model_field(Game, "external_id")
         self.assertTrue(field.null)
-        self.assertTrue(field.blank)  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertEqual(field.max_length, 64)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertTrue(field.blank)
+        self.assertEqual(field.max_length, 64)
 
     def test_name_max_length(self):
-        self.assertEqual(Game._meta.get_field("name").max_length, 255)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(model_field(Game, "name").max_length, 255)
 
     def test_slug_unique_and_max_length(self):
-        field = Game._meta.get_field("slug")
-        self.assertTrue(field.unique)  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertEqual(field.max_length, 255)  # pyright: ignore[reportAttributeAccessIssue]
+        field = model_field(Game, "slug")
+        self.assertTrue(field.unique)
+        self.assertEqual(field.max_length, 255)
 
     def test_content_type_choices_and_default(self):
-        field = Game._meta.get_field("content_type")
-        self.assertEqual(field.default, ContentType.GAME)  # pyright: ignore[reportAttributeAccessIssue]
+        field = model_field(Game, "content_type")
+        self.assertEqual(field.default, ContentType.GAME)
 
     def test_listing_status_choices_and_default(self):
-        field = Game._meta.get_field("listing_status")
-        self.assertEqual(field.default, ListingStatus.DRAFT)  # pyright: ignore[reportAttributeAccessIssue]
+        field = model_field(Game, "listing_status")
+        self.assertEqual(field.default, ListingStatus.DRAFT)
 
     def test_manual_metadata_fields_blank(self):
         for name in ("manual_description", "manual_image_url", "manual_website_url"):
-            field = Game._meta.get_field(name)
-            self.assertTrue(field.blank)  # pyright: ignore[reportAttributeAccessIssue]
+            field = model_field(Game, name)
+            self.assertTrue(field.blank)
 
     def test_timestamps_auto(self):
-        self.assertTrue(Game._meta.get_field("created_at").auto_now_add)  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertTrue(Game._meta.get_field("updated_at").auto_now)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertTrue(model_field(Game, "created_at").auto_now_add)  # pyright: ignore[reportAttributeAccessIssue] — DateField-specific attribute
+        self.assertTrue(model_field(Game, "updated_at").auto_now)  # pyright: ignore[reportAttributeAccessIssue] — DateField-specific attribute
 
     def test_ordering(self):
         self.assertEqual(Game._meta.ordering, ["name", "id"])
