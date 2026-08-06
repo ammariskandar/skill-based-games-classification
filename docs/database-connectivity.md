@@ -204,10 +204,13 @@ SQLite, MySQL, Oracle, and unknown engine URLs all raise
 `ImproperlyConfigured` at startup. Development retains SQLite fallback;
 tests remain in-memory SQLite.
 
-## SBGC-52 — Runtime vs Migration URLs
+## SBGC-52 — PostgreSQL Verification Complete
 
-The `scripts/backend-migrate.sh` script supports `MIGRATION_DATABASE_URL`
-for a direct Neon connection during migrations.  If set, it overrides
-`DATABASE_URL` for the migration command only.  This allows runtime to
-use a pooled connection while migrations use a direct (non-pooler)
-connection.  See `docs/postgresql-verification.md`.
+PostgreSQL 16.14 verification completed on an isolated Podman container.
+51/51 PostgreSQL tests passed covering migrations, Game constraints,
+classification constraints, indexes, transactions, and concurrent
+uniqueness.  No production Neon was used.  See `docs/postgresql-verification.md`.
+
+- CI adds a `postgres:16` service container for the PostgreSQL lane.
+- `MIGRATION_DATABASE_URL` supported for direct Neon connections during
+  migrations, separate from runtime `DATABASE_URL` (pooled acceptable).

@@ -279,7 +279,8 @@ class GameConstraintIntrospectionTests(PostgreSQLTestCase):
             )
             names = {row[0] for row in cursor.fetchall()}
         self.assertNotIn(
-            "game_unique_source_external_id", names,
+            "game_unique_source_external_id",
+            names,
             "Conditional UniqueConstraint is a partial index, not a constraint",
         )
 

@@ -339,9 +339,7 @@ class ServiceTransactionTests(PostgreSQLTestCase):
             # Nested atomic block — IntegrityError rolls back its savepoint.
             with self.assertRaises(IntegrityError):
                 with transaction.atomic():
-                    EditorialClassification.objects.create(
-                        game=game, updated_by=user
-                    )
+                    EditorialClassification.objects.create(game=game, updated_by=user)
 
             # Outer transaction still usable.
             self.assertTrue(
@@ -350,9 +348,7 @@ class ServiceTransactionTests(PostgreSQLTestCase):
 
             # Another valid write succeeds.
             game2 = _game("svc-sp-2")
-            second = EditorialClassification.objects.create(
-                game=game2, updated_by=user
-            )
+            second = EditorialClassification.objects.create(game=game2, updated_by=user)
             self.assertIsNotNone(second.pk)
 
 

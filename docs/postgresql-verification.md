@@ -5,8 +5,8 @@ transactions on an isolated PostgreSQL instance.
 
 ## Supported PostgreSQL Version
 
-PostgreSQL 16 (pinned in CI via `postgres:16`).  Earlier versions may
-work but are not tested.
+PostgreSQL 16 (verified on 16.14 via isolated Podman container).  CI uses
+`postgres:16` service container.
 
 ## Isolated Test Setup
 
@@ -40,10 +40,49 @@ POSTGRES_TEST_DATABASE_URL='postgresql://localhost/sbgc52_test' \
 dropdb sbgc52_test
 ```
 
-### CI (GitHub Actions)
+### Game Constraints (20/20)
+- Source/external-ID CheckConstraint ✅
+- Conditional Steam identity uniqueness (partial unique index) ✅
+- Slug uniqueness ✅
+- Duplicate names allowed ✅
+- Bulk create/update constraint enforcement ✅
+- Listing index structure ✅
+- Partial unique index structure (pg_index, not pg_constraint) ✅
+- Concurrent duplicate Steam identity rejection ✅
 
-The CI workflow starts a `postgres:16` service container with
-auto-generated credentials.  See `.github/workflows/ci.yml`.
+### Classification Constraints (24/24)
+- Challenge score range and total CheckConstraints ✅
+- Reward score range and total CheckConstraints ✅
+- Challenge/Reward independence ✅
+- OneToOneField uniqueness ✅
+- CASCADE delete behaviour ✅
+- PROTECT user FK behaviour ✅
+- Bulk create/update constraint enforcement ✅
+- Service transaction rollback (invalid reward rolls back parent+challenge) ✅
+- Failed update preserves prior state ✅
+- Nested savepoint recovery (canonical nested atomic) ✅
+
+### Key Finding: Conditional UniqueConstraint
+
+`game_unique_source_external_id` is a Django `UniqueConstraint` with
+`condition=Q(external_id__isnull=False)`.  PostgreSQL implements this
+as a **partial unique index** — it resides in `pg_index`/`pg_indexes`,
+not `pg_constraint`.  The index has `indisunique=true` and an
+`indpred` (WHERE clause).  Indexed columns are `source_type, external_id`.
+
+## Verification Results (August 2026)
+
+All 51 PostgreSQL tests passed on PostgreSQL 16.14 (isolated Podman
+container).  No production Neon was used.
+
+### Migration Tests (7/7)
+- Forward to latest ✅
+- Tables exist after forward ✅
+- Reverse classifications and re-apply ✅
+- Reverse games to 0001 and re-apply ✅
+- `other → unknown` forward data migration ✅
+- `unknown → other` reverse data migration ✅
+- No pending migrations ✅
 
 ## Runtime vs Migration URLs
 
