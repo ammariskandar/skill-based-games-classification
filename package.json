@@ -18,6 +18,7 @@
     "test:backend:shuffle": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput --shuffle",
     "test:backend:warnings": "apps/backend/.venv/bin/python -Wa apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput 2>&1",
     "test:backend:postgresql": "scripts/backend-test-postgresql.sh",
+    "typecheck:backend": "apps/backend/.venv/bin/basedpyright apps/backend",
     "test": "npm run test:frontend && npm run test:backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "npm run lint --workspace=apps/frontend",

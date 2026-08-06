@@ -1,0 +1,23 @@
+{
+  "venvPath": "apps/backend",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "include": ["apps/backend"],
+  "exclude": [
+    "apps/backend/.venv",
+    "**/__pycache__",
+    "apps/backend/**/migrations",
+    "apps/backend/staticfiles",
+    "apps/frontend"
+  ],
+  "extraPaths": ["apps/backend"],
+  "typeCheckingMode": "standard",
+  "reportMissingTypeStubs": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownParameterType": false,
+  "reportMissingParameterType": false,
+  "reportUnusedCallResult": false,
+  "reportUnnecessaryComparison": false
+}
