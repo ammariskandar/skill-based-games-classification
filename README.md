@@ -19,13 +19,20 @@ A web application that classifies games across three skill-based dimensions — 
 - Django backend skeleton with `django-environ`
 - Django application structure (games, classifications, API routing, environment-specific settings) — see [`docs/backend-architecture.md`](docs/backend-architecture.md)
 - Django Ninja 1.6.2 API with versioned v1 endpoints, standardised error envelope, and OpenAPI documentation — see [`docs/backend-api.md`](docs/backend-api.md)
+- Game domain model (`Game`, `GameQuerySet`, content types, listing rules) — see [`docs/game-model.md`](docs/game-model.md)
+- Editorial classification (Challenge + Reward profiles, Micro/Mystiko/Macro) — see [`docs/editorial-classification.md`](docs/editorial-classification.md)
+- PostgreSQL 16 verification (constraints, migrations, indexes, transactions) — see [`docs/postgresql-verification.md`](docs/postgresql-verification.md)
+- Hardened Steam transport and Store endpoint adapters — see [`docs/steam-integration.md`](docs/steam-integration.md) and [`docs/steam-endpoint-adapters.md`](docs/steam-endpoint-adapters.md)
+- Django Admin with MyGameDNA branding, games and classifications registered — see [`docs/admin-configuration.md`](docs/admin-configuration.md)
+- Deterministic development seed data (9 games, 5 classifications) — see [`docs/development-seed-data.md`](docs/development-seed-data.md)
 - SQLite local development and Neon PostgreSQL connectivity via Psycopg 3, with environment-specific fallback policy — see [`docs/database-connectivity.md`](docs/database-connectivity.md)
+- Backend test suite (1,168 tests) with discovery audit, reverse, shuffle, warnings, and PostgreSQL lane — see [`docs/backend-testing.md`](docs/backend-testing.md)
 - Environment-variable loading for both apps
-- Code-quality tooling (Prettier, ESLint, astro check, Ruff)
-- GitHub Actions CI (frontend + backend jobs)
+- Code-quality tooling (Prettier, ESLint, astro check, Ruff, BasedPyright)
+- GitHub Actions CI (frontend + backend + PostgreSQL jobs)
 - Locked design reference (`design-reference/`)
 
-**Pending:** Django domain models, Steam integration, Django Admin product workflows, public dynamic catalogue/search/rankings/game pages, production deployment and security hardening, application test suites.
+**Pending:** Steam import persistence (candidate-to-Game workflow), public API endpoints for games and classifications, frontend catalogue/search/rankings/game pages connected to Django, questionnaire/community classification, production deployment.
 
 | Service  | Development URL           |
 | -------- | ------------------------- |

@@ -82,9 +82,13 @@ state).
 
 ## Steam Independence
 
-No Steam endpoint or import mapping is implemented.  The `Game` model
-remains usable for manual records without Steam, and no model/queryset/
-Admin/test makes a Steam call.
+The `Game` model and queryset layer never import Steam services or make
+network calls.  Steam-specific logic is isolated in `games/services/steam/`.
+
+Steam product-type mapping (`map_steam_product_type()`) and endpoint
+adapters (`SteamAppDetailsAdapter`) are implemented (SBGC-53).  Steam
+persistence (candidate → canonical `Game` row) and the public import API
+are not yet implemented.
 
 ## Limitations
 
@@ -97,7 +101,7 @@ Admin/test makes a Steam call.
   regardless.
 - No public listing API endpoint yet
 - No frontend listing page
-- No Steam type mapping
+- No persisted Steam import workflow
 - Index tuning deferred to real query evidence
 
 ## See Also

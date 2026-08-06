@@ -1,5 +1,5 @@
 """
-Django model _meta typing helpers — SBGC-53.
+Django model _meta typing helpers — SBGC-53 / SBGC-181.
 
 Narrow helpers for test code that inspects Django model field metadata
 through ``_meta``.  Centralises framework-boundary casts so individual

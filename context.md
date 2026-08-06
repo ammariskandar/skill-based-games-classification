@@ -2620,7 +2620,7 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Created `games/services/steam/adapters/` package with typed adapter exceptions.
 - Implemented `SteamAppId` — immutable validated decimal-digit string type.
 - Created DTOs: `SteamAppDetails`, `SteamGameImportCandidate`, `SteamAppLookupResult`
-  with `LookupStatus` enum (FOUND/UNAVAILABLE/UNSUPPORTED).
+  with `LookupStatus` enum (FOUND/UNAVAILABLE).
 - Implemented `map_steam_product_type()` pure mapping from raw Steam types to
   normalized content types (game/dlc/demo/software/soundtrack/unknown).
 - Built `SteamAppDetailsAdapter` using existing `SteamClient` transport — validates

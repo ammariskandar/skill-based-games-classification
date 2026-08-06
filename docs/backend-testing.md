@@ -186,11 +186,18 @@ Both are run during SBGC-44 verification.  They are not in normal CI to keep dur
 - PostgreSQL 16 in CI (GitHub Actions service container)
 - See `docs/postgresql-verification.md`.
 
+## PostgreSQL Lane (SBGC-52)
+
+The PostgreSQL verification lane (`config.settings.postgresql_test`) is
+operational — 51 PostgreSQL-specific tests covering constraints, migrations,
+indexes, transactions, and concurrent uniqueness on isolated PostgreSQL 16.
+All PG tests gracefully skip on SQLite.  CI includes a `postgres:16` service
+container for the PostgreSQL job.  See `docs/postgresql-verification.md`.
+
 ## Current Limitations
 
 - No pytest, factory-boy, coverage, or snapshot testing.
 - Warnings mode (`python -Wa`) is not in required CI.
 - No browser or integration testing.
-- No PostgreSQL-specific tests (SBGC-52).
 - Shuffle/reverse not in normal CI.
 - Some subprocess tests in test_security.py and test_steam.py use `os.environ` directly rather than the shared helper — acceptable but not canonical.
