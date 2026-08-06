@@ -33,8 +33,7 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | Games             | `games/api.py`                  | Games            | No operations yet |
 | Classifications   | `classifications/api.py`        | Classifications   | No operations yet |
 
-Routers own domain-specific endpoints. No domain models exist yet — game and
-classification operations will be added in SBGC-4.
+Routers own domain-specific endpoints.  Domain models and services are implemented (SBGC-45 through SBGC-53), but Games and Classifications API routers currently have no domain operations.  Public API endpoints are deferred to SBGC-9 and SBGC-10.
 
 ## Request Schemas
 

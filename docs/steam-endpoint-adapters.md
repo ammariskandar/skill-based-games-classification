@@ -122,9 +122,10 @@ HTTP calls.
 2. `SteamAppDetailsAdapter.fetch()`
 3. `SteamGameImportCandidate` production
 
-It catches adapter-level `STEAM_APP_UNAVAILABLE` → `UNAVAILABLE`
-and other adapter errors → `UNSUPPORTED`.  Transport exceptions
-propagate unchanged.
+It catches adapter-level `STEAM_APP_UNAVAILABLE` → `UNAVAILABLE`.
+Other adapter errors (malformed payloads, missing fields, invalid
+App IDs) and transport exceptions (timeout, connection, etc.)
+propagate unchanged to the caller.
 
 ## Tests
 

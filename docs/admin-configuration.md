@@ -74,8 +74,8 @@ Model admin registrations are **app-owned**:
 
 | App | File | Status |
 |-----|------|--------|
-| `games` | `games/admin.py` | No models yet (SBGC-4) |
-| `classifications` | `classifications/admin.py` | No models yet (SBGC-4) |
+| `games` | `games/admin.py` | `GameAdmin` registered (SBGC-45/51) |
+| `classifications` | `classifications/admin.py` | `EditorialClassificationAdmin` with inlines registered (SBGC-46/51) |
 
 Registrations must not be placed in `config/` or `api/`. No speculative
 `ModelAdmin` base classes should be created before real, repeated model
@@ -122,9 +122,6 @@ globally remove it without explicit Jira ownership.
 
 ## Current Limitations
 
-- **No domain models registered** — `games/admin.py` and
-  `classifications/admin.py` are empty stubs. Model registrations will be
-  added in SBGC-4.
 - **No custom admin actions** — bulk-action conventions are documented
   but not yet implemented.
 - **Full admin security hardening is pending** — rate limiting, staff
