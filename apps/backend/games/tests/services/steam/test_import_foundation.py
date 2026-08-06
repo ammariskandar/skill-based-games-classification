@@ -38,8 +38,8 @@ class PrepareCandidateTests(SimpleTestCase):
         self.assertEqual(result.status, LookupStatus.FOUND)
         self.assertEqual(result.app_id, "730")
         self.assertIsNotNone(result.candidate)
-        self.assertEqual(result.candidate.name, "CS:GO")
-        self.assertEqual(result.candidate.content_type, "game")
+        self.assertEqual(result.candidate.name, "CS:GO")  # pyright: ignore[reportOptionalMemberAccess]
+        self.assertEqual(result.candidate.content_type, "game")  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_found_candidate_mirrors_details(self):
         self.adapter.fetch.return_value = SteamAppDetails(
@@ -57,9 +57,9 @@ class PrepareCandidateTests(SimpleTestCase):
         self.assertEqual(result.status, LookupStatus.FOUND)
         c = result.candidate
         self.assertIsNotNone(c)
-        self.assertEqual(c.app_id, "440")
-        self.assertEqual(c.name, "Team Fortress 2")
-        self.assertTrue(c.is_free)
+        self.assertEqual(c.app_id, "440")  # pyright: ignore[reportOptionalMemberAccess]
+        self.assertEqual(c.name, "Team Fortress 2")  # pyright: ignore[reportOptionalMemberAccess]
+        self.assertTrue(c.is_free)  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_unknown_content_type_is_found(self):
         """Valid response with unrecognised type → FOUND with UNKNOWN content type."""
@@ -69,7 +69,7 @@ class PrepareCandidateTests(SimpleTestCase):
         result = self.foundation.prepare_candidate("9999")
         self.assertEqual(result.status, LookupStatus.FOUND)
         self.assertIsNotNone(result.candidate)
-        self.assertEqual(result.candidate.content_type, "unknown")
+        self.assertEqual(result.candidate.content_type, "unknown")  # pyright: ignore[reportOptionalMemberAccess]
 
     # -- UNAVAILABLE ---------------------------------------------------------
 

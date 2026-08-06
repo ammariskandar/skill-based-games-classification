@@ -429,7 +429,7 @@ class QueryTests(TestCase):
     def test_published_filter(self):
         qs = Game.objects.filter(listing_status=ListingStatus.PUBLISHED)
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "alpha")
+        self.assertEqual(qs.first().slug, "alpha")  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_draft_excluded_from_published(self):
         qs = Game.objects.exclude(listing_status=ListingStatus.PUBLISHED)

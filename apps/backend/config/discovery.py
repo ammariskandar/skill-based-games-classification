@@ -160,7 +160,7 @@ class _AuditLoader(unittest.TestLoader):
             return super().loadTestsFromName(name, module)
         except Exception as exc:
             self.import_errors.append((name, str(exc)))
-            return self.suiteClass()
+            return self.suiteClass()  # pyright: ignore[reportCallIssue]
 
     def loadTestsFromModule(self, module, *, pattern=None):
         try:
@@ -168,7 +168,7 @@ class _AuditLoader(unittest.TestLoader):
         except Exception as exc:
             mod_name = getattr(module, "__name__", str(module))
             self.import_errors.append((mod_name, str(exc)))
-            return self.suiteClass()
+            return self.suiteClass()  # pyright: ignore[reportCallIssue]
 
     def _find_test_path(self, full_path, pattern):
         try:
@@ -176,7 +176,7 @@ class _AuditLoader(unittest.TestLoader):
         except Exception as exc:
             # Module import failed (e.g., SyntaxError).
             self.import_errors.append((full_path, str(exc)))
-            return self.suiteClass(), False
+            return self.suiteClass(), False  # pyright: ignore[reportCallIssue]
 
 
 def main(start_dir: str) -> int:

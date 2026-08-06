@@ -78,10 +78,11 @@ class SteamModuleIndependenceTests(SimpleTestCase):
         """Steam adapter has no games.models import."""
         import games.services.steam.adapters.app_details
 
-        src = __import__("inspect").getsource(
-            games.services.steam.adapters.app_details
-        )
+        src = __import__("inspect").getsource(games.services.steam.adapters.app_details)
         self.assertNotIn("games.models", src)
+
+
+class CanonicalDriftTests(SimpleTestCase):
     """Prove mapping values match canonical ContentType enum."""
 
     def test_all_mapped_values_exist_in_content_type(self):

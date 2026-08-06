@@ -37,7 +37,7 @@ NINJA_API_DOCS_ENABLED = False
 # ---------------------------------------------------------------------------
 
 DATABASES = build_database_config(
-    DATABASE_URL,  # noqa: F405
+    DATABASE_URL,  # noqa: F405  # pyright: ignore[reportArgumentType]
     BASE_DIR,  # noqa: F405
     allow_sqlite_fallback=False,
     require_postgresql=True,
@@ -47,8 +47,8 @@ DATABASES = build_database_config(
 # Logging — SBGC-43
 # ---------------------------------------------------------------------------
 
-_log_level_raw = env("DJANGO_LOG_LEVEL", default="INFO")  # noqa: F405
-_log_level = validate_log_level(_log_level_raw)
+_log_level_raw = env("DJANGO_LOG_LEVEL", default="INFO")  # noqa: F405  # pyright: ignore[reportArgumentType]
+_log_level = validate_log_level(_log_level_raw)  # pyright: ignore[reportArgumentType]
 
 LOGGING["root"]["level"] = _log_level  # noqa: F405
 LOGGING["loggers"]["django"]["level"] = _log_level  # noqa: F405
@@ -59,11 +59,11 @@ LOGGING["loggers"]["django"]["level"] = _log_level  # noqa: F405
 
 # -- Secret key — SBGC-43 (strengthened) --------------------------------------
 
-SECRET_KEY = validate_secret_key(env("DJANGO_SECRET_KEY", default=None))  # noqa: F405
+SECRET_KEY = validate_secret_key(env("DJANGO_SECRET_KEY", default=None))  # noqa: F405  # pyright: ignore[reportArgumentType]
 
 # -- Admin path — SBGC-43 (production must be non-default) ---------------------
 
-_ADMIN_RAW = env("ADMIN_URL_PATH", default=None)  # noqa: F405
+_ADMIN_RAW = env("ADMIN_URL_PATH", default=None)  # noqa: F405  # pyright: ignore[reportArgumentType]
 if _ADMIN_RAW is None:
     raise ImproperlyConfigured("ADMIN_URL_PATH is required in production.")
 if not isinstance(_ADMIN_RAW, str):
@@ -79,13 +79,13 @@ ADMIN_URL_PATH = validate_admin_url_path(_stripped_admin)  # noqa: F405
 
 # -- Allowed hosts ------------------------------------------------------------
 
-_raw_hosts = env("DJANGO_ALLOWED_HOSTS", default=None)  # noqa: F405
-ALLOWED_HOSTS = parse_allowed_hosts(_raw_hosts)
+_raw_hosts = env("DJANGO_ALLOWED_HOSTS", default=None)  # noqa: F405  # pyright: ignore[reportArgumentType]
+ALLOWED_HOSTS = parse_allowed_hosts(_raw_hosts)  # pyright: ignore[reportArgumentType]
 
 # -- CSRF — SBGC-43 (structured origin parsing) --------------------------------
 
-_raw_csrf = env("CSRF_TRUSTED_ORIGINS", default=None)  # noqa: F405
-CSRF_TRUSTED_ORIGINS = parse_trusted_origins(_raw_csrf, require_https=True)
+_raw_csrf = env("CSRF_TRUSTED_ORIGINS", default=None)  # noqa: F405  # pyright: ignore[reportArgumentType]
+CSRF_TRUSTED_ORIGINS = parse_trusted_origins(_raw_csrf, require_https=True)  # pyright: ignore[reportArgumentType]
 
 # No CORS middleware — browser-to-Django access is not required.
 # CORS_ALLOWED_ORIGINS is intentionally absent.
@@ -105,8 +105,8 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 # -- HSTS (staged) ------------------------------------------------------------
 
-_hsts_raw = env("DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405
-SECURE_HSTS_SECONDS = parse_non_negative_integer(_hsts_raw)
+_hsts_raw = env("DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405  # pyright: ignore[reportArgumentType]
+SECURE_HSTS_SECONDS = parse_non_negative_integer(_hsts_raw)  # pyright: ignore[reportArgumentType]
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False
 

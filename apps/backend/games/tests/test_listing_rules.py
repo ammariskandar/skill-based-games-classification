@@ -46,7 +46,7 @@ class ContentTypeMetadataTests(TestCase):
     def test_max_length_accommodates_all(self):
         field = Game._meta.get_field("content_type")
         longest = max(len(v) for v in dict(CONTENT_TYPE_CHOICES))
-        self.assertLessEqual(longest, field.max_length)
+        self.assertLessEqual(longest, field.max_length)  # pyright: ignore[reportCallIssue,reportArgumentType]
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ class PublicListingTests(TestCase):
     def test_only_published_game_returned(self):
         qs = Game.objects.publicly_listable()
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "pub-game")
+        self.assertEqual(qs.first().slug, "pub-game")  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_draft_game_excluded(self):
         qs = Game.objects.publicly_listable()
@@ -378,7 +378,7 @@ class AdminContentTypeTests(TestCase):
         """The content_type field offers exactly 6 choices."""
         field = Game._meta.get_field("content_type")
         self.assertEqual(
-            set(field.choices),
+            set(field.choices),  # pyright: ignore[reportArgumentType]
             {
                 ("game", "Game"),
                 ("dlc", "Downloadable content"),

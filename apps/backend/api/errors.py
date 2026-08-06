@@ -244,10 +244,10 @@ def register_handlers(api: NinjaAPI) -> None:
 
     Call once per NinjaAPI instance after construction.
     """
-    api.add_exception_handler(ApiException, api_exception_handler)
-    api.add_exception_handler(ValidationError, validation_error_handler)
-    api.add_exception_handler(AuthenticationError, authentication_error_handler)
-    api.add_exception_handler(AuthorizationError, authorization_error_handler)
-    api.add_exception_handler(HttpError, http_error_handler)
-    api.add_exception_handler(Http404, http404_handler)
-    api.add_exception_handler(Exception, unexpected_exception_handler)
+    api.add_exception_handler(ApiException, api_exception_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(ValidationError, validation_error_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(AuthenticationError, authentication_error_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(AuthorizationError, authorization_error_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(HttpError, http_error_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(Http404, http404_handler)  # pyright: ignore[reportArgumentType]
+    api.add_exception_handler(Exception, unexpected_exception_handler)  # pyright: ignore[reportArgumentType]

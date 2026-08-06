@@ -276,7 +276,7 @@ class SteamClient:
         timeout = (self._config.connect_timeout, self._config.read_timeout)
 
         try:
-            response = self._session.get(
+            response = self._session.get(  # pyright: ignore[reportOptionalMemberAccess]
                 url,
                 params=params_dict,
                 headers=headers,

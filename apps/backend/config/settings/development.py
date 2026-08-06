@@ -17,7 +17,7 @@ DEBUG = True
 NINJA_API_DOCS_ENABLED = True
 
 # Database — SBGC-39
-DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=True)  # noqa: F405
+DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=True)  # noqa: F405  # pyright: ignore[reportArgumentType]
 
 # ---------------------------------------------------------------------------
 # Security — SBGC-41 (development — permissive)
@@ -26,7 +26,7 @@ DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=
 # Local development secret — explicitly marked insecure.
 SECRET_KEY = env(  # noqa: F405
     "DJANGO_SECRET_KEY",
-    default="django-insecure-dev-key-do-not-use-in-production",
+    default="django-insecure-dev-key-do-not-use-in-production",  # pyright: ignore[reportArgumentType]
 )
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost"]

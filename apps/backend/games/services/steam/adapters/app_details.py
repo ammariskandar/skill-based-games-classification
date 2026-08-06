@@ -116,9 +116,7 @@ class SteamAppDetailsAdapter:
 # ---------------------------------------------------------------------------
 
 
-def _require_nonblank_str(
-    data: dict[str, object], key: str, app_id: str
-) -> str:
+def _require_nonblank_str(data: dict[str, object], key: str, app_id: str) -> str:
     """Extract a required non-blank string field."""
     value = data.get(key)
     if not isinstance(value, str):
@@ -154,9 +152,7 @@ def _optional_bool(data: dict[str, object], key: str) -> bool | None:
     return None
 
 
-def _optional_str_list(
-    data: dict[str, object], key: str
-) -> tuple[str, ...] | None:
+def _optional_str_list(data: dict[str, object], key: str) -> tuple[str, ...] | None:
     """Extract an optional list of strings."""
     value = data.get(key)
     if value is None:
