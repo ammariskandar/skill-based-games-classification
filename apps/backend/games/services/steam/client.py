@@ -188,8 +188,17 @@ class SteamClient:
         *,
         params: Mapping[str, str | int] | None = None,
         requires_api_key: bool = False,
+        origin: str = STEAM_WEB_API_ORIGIN,
     ) -> dict[str, object]:
-        """Perform a GET request and return the decoded JSON object."""
+        """Perform a GET request and return the decoded JSON object.
+
+        Args:
+            path: Relative API path (must start with '/').
+            params: Optional query parameters.
+            requires_api_key: If True, the configured API key must be present.
+            origin: Base URL origin.  Defaults to the Steam Web API origin;
+                use ``STEAM_STORE_API_ORIGIN`` for store endpoints.
+        """
         _validate_path(path)
 
         api_key = self._config.api_key
@@ -203,7 +212,7 @@ class SteamClient:
                 "STEAM_WEB_API_KEY is required for this request."
             )
 
-        url = f"{STEAM_WEB_API_ORIGIN}{path}"
+        url = f"{origin}{path}"
 
         headers: dict[str, str] = {}
         if api_key:

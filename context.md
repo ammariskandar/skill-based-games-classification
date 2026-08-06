@@ -2615,6 +2615,24 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   adapter-policy verification.
 - Recorded 10 architecture decisions and the SBGC-42 changelog entry here.
 
+## 2026-08-06 — SBGC-53 Steam endpoint adapters
+
+- Created `games/services/steam/adapters/` package with typed adapter exceptions.
+- Implemented `SteamAppId` — immutable validated decimal-digit string type.
+- Created DTOs: `SteamAppDetails`, `SteamGameImportCandidate`, `SteamAppLookupResult`
+  with `LookupStatus` enum (FOUND/UNAVAILABLE/UNSUPPORTED).
+- Implemented `map_steam_product_type()` pure mapping from raw Steam types to
+  normalized content types (game/dlc/demo/software/soundtrack/unknown).
+- Built `SteamAppDetailsAdapter` using existing `SteamClient` transport — validates
+  every structural layer of the Store appdetails response.
+- Built `SteamImportFoundation.prepare_candidate()` — combines App ID validation,
+  adapter fetch, and candidate normalisation. Transport exceptions propagate
+  unchanged; adapter errors mapped to lookup statuses.
+- Added `origin` parameter to `SteamClient.get_json()` for Store API origin.
+- 70 new isolated tests (SimpleTestCase, mocked client, no DB, no network).
+- Created `docs/steam-endpoint-adapters.md`.
+- No Game persistence, no API endpoints, no migrations.
+
 ## 2026-08-06 — SBGC-52 Database hardening (infrastructure)
 
 - Created `config/settings/postgresql_test.py` for isolated PostgreSQL tests
