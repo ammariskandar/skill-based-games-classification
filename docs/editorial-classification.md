@@ -120,6 +120,20 @@ and one Reward profile.
 - Direct unrestricted ORM use (bypassing both Admin and service) may
   still create an incomplete parent.
 
+## Score Analysis Helpers
+
+`classifications/skills.py` provides vocabulary enums (`SkillCategory`,
+`EditorialProfile`) and a pure `dominant_skill_category()` function.
+Challenge and Reward `dominant_skill_category` model properties delegate
+to this helper.  Tied highest scores have **no dominant category**.
+
+Game queryset helpers in `games/models.py` (`GameQuerySet`) provide
+DB-level dominant-skill annotations, filtering, score-range filtering,
+and score sorting — all editorial-only, independent of future
+questionnaire/community classifications.
+
+See `docs/game-query-helpers.md` for the complete helper inventory.
+
 ## Limitations
 
 - Database guarantees at-most-one; service guarantees completeness;

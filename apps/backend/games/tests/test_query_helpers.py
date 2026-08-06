@@ -233,6 +233,28 @@ class DominantAnnotationTests(TestCase):
             gc.editorial_classification.challenge_profile.dominant_skill_category
         )
 
+    def test_challenge_only_profile(self):
+        """Missing Reward → Challenge dominant calculated, Reward NULL."""
+        g = _make(name="CH Only", slug="ch-only-ann")
+        parent = EditorialClassification.objects.create(game=g, updated_by=self.user)
+        ChallengeProfile.objects.create(
+            classification=parent, micro_score=70, mystiko_score=20, macro_score=10
+        )
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        self.assertEqual(ga.challenge_dominant_skill_category, SkillCategory.MICRO)
+        self.assertIsNone(ga.reward_dominant_skill_category)
+
+    def test_reward_only_profile(self):
+        """Missing Challenge → Challenge NULL, Reward dominant calculated."""
+        g = _make(name="RW Only", slug="rw-only-ann")
+        parent = EditorialClassification.objects.create(game=g, updated_by=self.user)
+        RewardProfile.objects.create(
+            classification=parent, micro_score=10, mystiko_score=20, macro_score=70
+        )
+        ga = Game.objects.with_dominant_skill_categories().get(pk=g.pk)
+        self.assertIsNone(ga.challenge_dominant_skill_category)
+        self.assertEqual(ga.reward_dominant_skill_category, SkillCategory.MACRO)
+
 
 # ---------------------------------------------------------------------------
 # Dominant filtering

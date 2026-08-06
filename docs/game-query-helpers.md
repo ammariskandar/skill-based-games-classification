@@ -108,3 +108,8 @@ property access.
 - No Steam type mapping
 - Score indexes deferred to real query evidence
 - Questionnaire/community classification is separate (SBGC-171/175)
+
+## See Also
+
+- `docs/game-listing-rules.md` — public listing eligibility
+- `docs/editorial-classification.md` — editorial classification model
