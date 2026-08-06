@@ -44,3 +44,6 @@ CSRF_COOKIE_SECURE = False
 
 # HSTS disabled in development.
 SECURE_HSTS_SECONDS = 0
+
+# SBGC-50 — enable the seed_development_data management command.
+DEVELOPMENT_SEEDING_ENABLED = True

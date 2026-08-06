@@ -74,6 +74,10 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# SBGC-50 — development-only seed-data gate.
+# Enabled only in config.settings.development.
+DEVELOPMENT_SEEDING_ENABLED = False
+
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
