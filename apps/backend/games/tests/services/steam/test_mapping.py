@@ -63,10 +63,6 @@ class ProductTypeMappingTests(SimpleTestCase):
         self.assertNotEqual(map_steam_product_type("mod"), "game")
 
 
-    def test_unknown_not_game(self):
-        self.assertNotEqual(map_steam_product_type("mod"), "game")
-
-
 class SteamModuleIndependenceTests(SimpleTestCase):
     """Prove Steam adapter modules import without Django model initialization."""
 

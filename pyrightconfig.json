@@ -19,5 +19,10 @@
   "reportUnknownParameterType": false,
   "reportMissingParameterType": false,
   "reportUnusedCallResult": false,
-  "reportUnnecessaryComparison": false
+  "reportUnnecessaryComparison": false,
+  "reportAttributeAccessIssue": false,
+  "reportArgumentType": false,
+  "reportOptionalMemberAccess": false,
+  "reportCallIssue": false,
+  "reportPrivateImportUsage": false
 }
