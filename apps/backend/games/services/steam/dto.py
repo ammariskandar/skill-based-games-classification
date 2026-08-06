@@ -63,7 +63,6 @@ class LookupStatus(str, Enum):  # noqa: UP042 — Django TextChoices pattern
 
     FOUND = "found"
     UNAVAILABLE = "unavailable"
-    UNSUPPORTED = "unsupported"
 
 
 # ---------------------------------------------------------------------------
@@ -115,3 +114,14 @@ class SteamAppLookupResult:
     status: LookupStatus
     app_id: str
     candidate: SteamGameImportCandidate | None = None
+
+    def __post_init__(self) -> None:
+        if self.status == LookupStatus.FOUND and self.candidate is None:
+            raise ValueError(
+                "SteamAppLookupResult with status=FOUND must have a candidate."
+            )
+        if self.status != LookupStatus.FOUND and self.candidate is not None:
+            raise ValueError(
+                f"SteamAppLookupResult with status={self.status.value} "
+                f"must not have a candidate."
+            )

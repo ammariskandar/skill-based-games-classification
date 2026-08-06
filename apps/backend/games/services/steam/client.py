@@ -1,5 +1,5 @@
 """
-Steam HTTP client — SBGC-42 / SBGC-168.
+Steam HTTP client — SBGC-42 / SBGC-168 / SBGC-53.
 
 Synchronous, injectable client for the Steam Web API.  Uses Requests
 with urllib3 Retry for bounded idempotent retries.
@@ -11,6 +11,10 @@ SBGC-168 changes:
 - Media-type regex: accepts application/json, application/*+json,
   with optional parameters; rejects text/json and malformed types.
 - Retry: explicit backoff_max and retry_after_max from sleep cap.
+
+SBGC-53 changes:
+- ``get_web_api_json()`` and ``get_store_api_json()`` use closed
+  ``SteamEndpointOrigin`` enum — arbitrary origin strings are rejected.
 """
 
 from __future__ import annotations
@@ -18,12 +22,13 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
+from enum import Enum
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from games.services.steam.constants import STEAM_WEB_API_ORIGIN
+from games.services.steam.constants import STEAM_STORE_API_ORIGIN, STEAM_WEB_API_ORIGIN
 from games.services.steam.errors import (
     SteamAuthenticationError,
     SteamConfigurationError,
@@ -104,6 +109,21 @@ def _validate_path(path: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Closed origin selection
+# ---------------------------------------------------------------------------
+
+
+class SteamEndpointOrigin(Enum):
+    """Closed enum of permitted Steam API origins.
+
+    Callers must select a member — arbitrary URL strings are rejected.
+    """
+
+    WEB_API = STEAM_WEB_API_ORIGIN
+    STORE_API = STEAM_STORE_API_ORIGIN
+
+
+# ---------------------------------------------------------------------------
 # Client
 # ---------------------------------------------------------------------------
 
@@ -180,7 +200,7 @@ class SteamClient:
     def __exit__(self, *args: object) -> None:
         self.close()
 
-    # -- request ---------------------------------------------------------------
+    # -- public request methods -----------------------------------------------
 
     def get_json(
         self,
@@ -188,17 +208,47 @@ class SteamClient:
         *,
         params: Mapping[str, str | int] | None = None,
         requires_api_key: bool = False,
-        origin: str = STEAM_WEB_API_ORIGIN,
     ) -> dict[str, object]:
-        """Perform a GET request and return the decoded JSON object.
+        """Backward-compatible alias for ``get_web_api_json()``.
 
-        Args:
-            path: Relative API path (must start with '/').
-            params: Optional query parameters.
-            requires_api_key: If True, the configured API key must be present.
-            origin: Base URL origin.  Defaults to the Steam Web API origin;
-                use ``STEAM_STORE_API_ORIGIN`` for store endpoints.
+        Prefer ``get_web_api_json()`` or ``get_store_api_json()``.
         """
+        return self.get_web_api_json(
+            path, params=params, requires_api_key=requires_api_key
+        )
+
+    def get_web_api_json(
+        self,
+        path: str,
+        *,
+        params: Mapping[str, str | int] | None = None,
+        requires_api_key: bool = False,
+    ) -> dict[str, object]:
+        """Perform a GET request to the Steam Web API and return JSON."""
+        return self._get_json(
+            path, SteamEndpointOrigin.WEB_API, params, requires_api_key
+        )
+
+    def get_store_api_json(
+        self,
+        path: str,
+        *,
+        params: Mapping[str, str | int] | None = None,
+    ) -> dict[str, object]:
+        """Perform a GET request to the Steam Store API and return JSON."""
+        return self._get_json(
+            path, SteamEndpointOrigin.STORE_API, params, requires_api_key=False
+        )
+
+    # -- private implementation ------------------------------------------------
+
+    def _get_json(
+        self,
+        path: str,
+        origin: SteamEndpointOrigin,
+        params: Mapping[str, str | int] | None,
+        requires_api_key: bool,
+    ) -> dict[str, object]:
         _validate_path(path)
 
         api_key = self._config.api_key
@@ -212,7 +262,7 @@ class SteamClient:
                 "STEAM_WEB_API_KEY is required for this request."
             )
 
-        url = f"{origin}{path}"
+        url = f"{origin.value}{path}"
 
         headers: dict[str, str] = {}
         if api_key:
@@ -381,4 +431,4 @@ def _parse_retry_after(response: requests.Response) -> int | None:
     return min(seconds, 3600)
 
 
-__all__ = ["SteamClient"]
+__all__ = ["SteamClient", "SteamEndpointOrigin"]

@@ -101,15 +101,17 @@ class DtoImmutabilityTests(SimpleTestCase):
             d.name = "other"  # type: ignore[misc]
 
     def test_steam_game_import_candidate_is_frozen(self):
-        c = SteamGameImportCandidate(
-            app_id="730", name="CS:GO", content_type="game"
-        )
+        c = SteamGameImportCandidate(app_id="730", name="CS:GO", content_type="game")
         with self.assertRaises(FrozenInstanceError):
             c.name = "other"  # type: ignore[misc]
 
     def test_steam_app_lookup_result_is_frozen(self):
         r = SteamAppLookupResult(
-            status=LookupStatus.FOUND, app_id="730", candidate=None
+            status=LookupStatus.FOUND,
+            app_id="730",
+            candidate=SteamGameImportCandidate(
+                app_id="730", name="X", content_type="game"
+            ),
         )
         with self.assertRaises(FrozenInstanceError):
             r.status = LookupStatus.UNAVAILABLE  # type: ignore[misc]

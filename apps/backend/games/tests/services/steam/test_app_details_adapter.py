@@ -1,7 +1,7 @@
 """
 Steam app-details adapter tests — SBGC-53.
 
-Tests against mocked SteamClient.get_json — no live calls.
+Tests against mocked SteamClient.get_store_api_json — no live calls.
 """
 
 from __future__ import annotations
@@ -54,39 +54,51 @@ class SuccessTests(SimpleTestCase):
         self.adapter = SteamAppDetailsAdapter(self.client)
 
     def test_game(self):
-        self.client.get_json.return_value = _valid_response("730", type="game")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "730", type="game"
+        )
         details = self.adapter.fetch(SteamAppId("730"))
         self.assertEqual(details.app_id, "730")
         self.assertEqual(details.name, "Test Game")
         self.assertEqual(details.content_type, "game")
 
     def test_dlc(self):
-        self.client.get_json.return_value = _valid_response("1000", type="dlc")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "1000", type="dlc"
+        )
         details = self.adapter.fetch(SteamAppId("1000"))
         self.assertEqual(details.content_type, "dlc")
 
     def test_demo(self):
-        self.client.get_json.return_value = _valid_response("2000", type="demo")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "2000", type="demo"
+        )
         details = self.adapter.fetch(SteamAppId("2000"))
         self.assertEqual(details.content_type, "demo")
 
     def test_software(self):
-        self.client.get_json.return_value = _valid_response("3000", type="software")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "3000", type="software"
+        )
         details = self.adapter.fetch(SteamAppId("3000"))
         self.assertEqual(details.content_type, "software")
 
     def test_soundtrack(self):
-        self.client.get_json.return_value = _valid_response("4000", type="music")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "4000", type="music"
+        )
         details = self.adapter.fetch(SteamAppId("4000"))
         self.assertEqual(details.content_type, "soundtrack")
 
     def test_unknown_type(self):
-        self.client.get_json.return_value = _valid_response("5000", type="video")
+        self.client.get_store_api_json.return_value = _valid_response(
+            "5000", type="video"
+        )
         details = self.adapter.fetch(SteamAppId("5000"))
         self.assertEqual(details.content_type, "unknown")
 
     def test_optional_fields(self):
-        self.client.get_json.return_value = _valid_response("730")
+        self.client.get_store_api_json.return_value = _valid_response("730")
         details = self.adapter.fetch(SteamAppId("730"))
         self.assertEqual(details.short_description, "A test game.")
         self.assertEqual(details.header_image_url, "https://cdn.example.com/img.jpg")
@@ -96,7 +108,7 @@ class SuccessTests(SimpleTestCase):
         self.assertEqual(details.publishers, ("Pub Co",))
 
     def test_absent_optional_fields(self):
-        self.client.get_json.return_value = _valid_response(
+        self.client.get_store_api_json.return_value = _valid_response(
             "730",
             short_description=None,
             header_image=None,
@@ -114,7 +126,7 @@ class SuccessTests(SimpleTestCase):
         self.assertIsNone(details.publishers)
 
     def test_blank_website_becomes_none(self):
-        self.client.get_json.return_value = _valid_response("730", website="")
+        self.client.get_store_api_json.return_value = _valid_response("730", website="")
         details = self.adapter.fetch(SteamAppId("730"))
         self.assertIsNone(details.website_url)
 
@@ -125,7 +137,7 @@ class UnavailableTests(SimpleTestCase):
         self.adapter = SteamAppDetailsAdapter(self.client)
 
     def test_success_false(self):
-        self.client.get_json.return_value = _unavailable_response("999")
+        self.client.get_store_api_json.return_value = _unavailable_response("999")
         with self.assertRaises(Exception) as cm:
             self.adapter.fetch(SteamAppId("999"))
         exc = cm.exception
@@ -138,53 +150,75 @@ class MalformedTests(SimpleTestCase):
         self.adapter = SteamAppDetailsAdapter(self.client)
 
     def test_root_not_dict(self):
-        self.client.get_json.return_value = ["not", "a", "dict"]
+        self.client.get_store_api_json.return_value = ["not", "a", "dict"]
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_missing_app_id_key(self):
-        self.client.get_json.return_value = {"999": {"success": True, "data": {}}}
+        self.client.get_store_api_json.return_value = {
+            "999": {"success": True, "data": {}}
+        }
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_wrapper_not_dict(self):
-        self.client.get_json.return_value = {"730": "not-a-dict"}
+        self.client.get_store_api_json.return_value = {"730": "not-a-dict"}
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_success_not_bool(self):
-        self.client.get_json.return_value = {"730": {"success": "yes", "data": {}}}
+        self.client.get_store_api_json.return_value = {
+            "730": {"success": "yes", "data": {}}
+        }
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_success_true_without_data(self):
-        self.client.get_json.return_value = {"730": {"success": True}}
+        self.client.get_store_api_json.return_value = {"730": {"success": True}}
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_data_not_dict(self):
-        self.client.get_json.return_value = {"730": {"success": True, "data": []}}
+        self.client.get_store_api_json.return_value = {
+            "730": {"success": True, "data": []}
+        }
         with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_missing_name(self):
-        self.client.get_json.return_value = _valid_response("730", name=None)
+        self.client.get_store_api_json.return_value = _valid_response("730", name=None)
         with self.assertRaises(SteamMissingRequiredFieldError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_blank_name(self):
-        self.client.get_json.return_value = _valid_response("730", name="   ")
+        self.client.get_store_api_json.return_value = _valid_response("730", name="   ")
         with self.assertRaises(SteamMissingRequiredFieldError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_missing_type(self):
-        self.client.get_json.return_value = _valid_response("730", type=None)
+        self.client.get_store_api_json.return_value = _valid_response("730", type=None)
         with self.assertRaises(SteamMissingRequiredFieldError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_blank_type(self):
-        self.client.get_json.return_value = _valid_response("730", type="   ")
+        self.client.get_store_api_json.return_value = _valid_response("730", type="   ")
         with self.assertRaises(SteamMissingRequiredFieldError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    # -- Non-string metadata → malformed -------------------------------------
+
+    def test_non_string_header_image_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(
+            "730", header_image=123
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    def test_non_string_website_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(
+            "730", website=["bad"]
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
             self.adapter.fetch(SteamAppId("730"))
 
 
@@ -196,17 +230,17 @@ class TransportPropagationTests(SimpleTestCase):
         self.adapter = SteamAppDetailsAdapter(self.client)
 
     def test_timeout_propagates(self):
-        self.client.get_json.side_effect = SteamTimeoutError("timed out")
+        self.client.get_store_api_json.side_effect = SteamTimeoutError("timed out")
         with self.assertRaises(SteamTimeoutError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_connection_propagates(self):
-        self.client.get_json.side_effect = SteamConnectionError("conn")
+        self.client.get_store_api_json.side_effect = SteamConnectionError("conn")
         with self.assertRaises(SteamConnectionError):
             self.adapter.fetch(SteamAppId("730"))
 
     def test_upstream_propagates(self):
-        self.client.get_json.side_effect = SteamUpstreamError("500")
+        self.client.get_store_api_json.side_effect = SteamUpstreamError("500")
         with self.assertRaises(SteamUpstreamError):
             self.adapter.fetch(SteamAppId("730"))
 
@@ -216,13 +250,13 @@ class NoDatabaseNetworkTests(SimpleTestCase):
         """SimpleTestCase has no database access."""
         client = MagicMock()
         adapter = SteamAppDetailsAdapter(client)
-        client.get_json.return_value = _valid_response("730")
+        client.get_store_api_json.return_value = _valid_response("730")
         adapter.fetch(SteamAppId("730"))
 
     def test_no_live_network(self):
         """Adapter never instantiates Requests/urllib3 directly."""
         client = MagicMock()
         adapter = SteamAppDetailsAdapter(client)
-        client.get_json.return_value = _valid_response("730")
+        client.get_store_api_json.return_value = _valid_response("730")
         # If adapter called requests directly, this would fail.
         adapter.fetch(SteamAppId("730"))

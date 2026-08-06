@@ -30,33 +30,35 @@ games/services/steam/
 
 Immutable validated value type.  Value is a decimal-digit string only.
 Rejects: blank, whitespace, non-digit, signs, float/exponent, Boolean,
-None, `int`, excessive length, zero.
+None, ``int``, excessive length, zero.
 
 ## Lookup Outcomes
 
 | Status | Meaning |
 |--------|---------|
 | `FOUND` | Valid app details returned, import candidate produced |
-| `UNAVAILABLE` | `success=false` — the App ID exists but is unavailable |
-| `UNSUPPORTED` | Malformed response or unrecognised payload structure |
+| `UNAVAILABLE` | ``success=false`` — the App ID exists but is unavailable |
 
-Transport exceptions (timeout, connection, rate limit, upstream, etc.)
-propagate unchanged — not mapped to lookup statuses.
+Malformed payloads, missing required fields, and transport exceptions
+all propagate to the caller as typed exceptions — they are never
+classified as lookup statuses.
 
 ## Product-Type Mapping
 
-| Steam Type | Normalized |
-|-----------|-----------|
-| `game` | `game` |
-| `dlc` | `dlc` |
-| `demo` | `demo` |
-| `software` | `software` |
-| `music` | `soundtrack` |
-| `soundtrack` | `soundtrack` |
-| unrecognised nonblank | `unknown` |
-| blank / non-string | raises `ValueError` (malformed) |
+``map_steam_product_type()`` returns values from ``ContentType``
+(the canonical ``games.models.ContentType`` enum).  Unknown Steam
+types map to ``ContentType.UNKNOWN`` — never to ``ContentType.GAME``.
 
-Unknown types are never mapped to `game`.
+| Steam Type | Normalized |
+|-----------|------------|
+| ``game`` | ``ContentType.GAME`` |
+| ``dlc`` | ``ContentType.DLC`` |
+| ``demo`` | ``ContentType.DEMO`` |
+| ``software`` | ``ContentType.SOFTWARE`` |
+| ``music`` | ``ContentType.SOUNDTRACK`` |
+| ``soundtrack`` | ``ContentType.SOUNDTRACK`` |
+| unrecognised nonblank | ``ContentType.UNKNOWN`` |
+| blank / non-string | raises ``ValueError`` (malformed) |
 
 ## Response Validation
 
@@ -74,14 +76,29 @@ Violations raise `SteamMalformedPayloadError` or `SteamMissingRequiredFieldError
 
 ## URL Validation
 
-- **Header image:** HTTPS only, no credentials, no IP literals.
-  Null/blank/non-string → `None`.
-- **Website:** HTTP or HTTPS, no credentials. Null/blank/non-string → `None`.
-  Unsafe schemes rejected.
+- **Header image:** Must be a string or null.  Non-string types raise
+  ``SteamMalformedPayloadError``.  HTTPS only, no credentials, no IP
+  literals.  Null/blank → ``None``.
+- **Website:** Must be a string or null.  Non-string types raise
+  ``SteamMalformedPayloadError``.  HTTP or HTTPS, no credentials.
+  Null/blank → ``None``.  Unsafe schemes rejected.
 
 No image download or CDN fetching is performed.
 
-## No Persistence
+## Transport Ownership
+
+All networking, retries, timeouts, response-size limits, and error
+classification are owned by ``SteamClient`` (SBGC-42/168).  The adapters
+never instantiate ``requests.Session``, ``urllib3.Retry``, or make
+direct HTTP calls.
+
+Store endpoint adapters call ``SteamClient.get_store_api_json()``;
+Web API callers use ``SteamClient.get_web_api_json()``.  The origins
+are closed — callers select from the ``SteamEndpointOrigin`` enum;
+arbitrary URL strings are never accepted.
+
+Tests prove no module outside the package ``__init__`` can construct
+a ``SteamClient`` with an arbitrary origin.
 
 The adapter and import foundation do not:
 - Import the `Game` ORM model
@@ -111,8 +128,15 @@ propagate unchanged.
 
 ## Tests
 
-70 isolated tests across 4 modules — all use `SimpleTestCase`, mocked
-`SteamClient.get_json()`, no database, no network.
+78 isolated tests across 4 modules — all use ``SimpleTestCase``, mocked
+``SteamClient``, no database, no network.
+
+| Module | Tests |
+|--------|-------|
+| ``test_dto.py`` | 19 |
+| ``test_mapping.py`` | 16 |
+| ``test_app_details_adapter.py`` | 29 |
+| ``test_import_foundation.py`` | 14 |
 
 ## Limitations
 

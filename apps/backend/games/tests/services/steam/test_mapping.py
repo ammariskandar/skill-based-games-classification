@@ -61,3 +61,29 @@ class ProductTypeMappingTests(SimpleTestCase):
 
     def test_unknown_not_game(self):
         self.assertNotEqual(map_steam_product_type("mod"), "game")
+
+
+class CanonicalDriftTests(SimpleTestCase):
+    """Prove mapping values match canonical ContentType enum."""
+
+    def test_all_mapped_values_exist_in_content_type(self):
+        from games.models import ContentType
+
+        valid = set(ContentType.values)
+        # Every known Steam type maps to a valid ContentType value.
+        for steam_type in ("game", "dlc", "demo", "software", "music", "soundtrack"):
+            mapped = map_steam_product_type(steam_type)
+            self.assertIn(
+                mapped,
+                valid,
+                f"map_steam_product_type({steam_type!r}) = {mapped!r} "
+                f"not in ContentType.values {valid}",
+            )
+
+    def test_unknown_maps_to_unknown_enum(self):
+        from games.models import ContentType
+
+        self.assertEqual(
+            map_steam_product_type("video"),
+            ContentType.UNKNOWN,
+        )

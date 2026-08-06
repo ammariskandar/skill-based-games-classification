@@ -14,7 +14,6 @@ from games.services.steam.adapters import (
     SteamMalformedPayloadError,
     SteamMissingRequiredFieldError,
 )
-from games.services.steam.constants import STEAM_STORE_API_ORIGIN
 from games.services.steam.dto import SteamAppDetails, SteamAppId
 from games.services.steam.mapping import map_steam_product_type
 
@@ -38,10 +37,9 @@ class SteamAppDetailsAdapter:
             SteamAdapterError: Generic adapter-level failure.
             (Transport exceptions from ``SteamClient`` propagate unchanged.)
         """
-        raw = self._client.get_json(
+        raw = self._client.get_store_api_json(
             _APP_DETAILS_PATH,
             params={"appids": app_id.value},
-            origin=STEAM_STORE_API_ORIGIN,
         )
         return self._parse_response(app_id.value, raw)
 
@@ -175,11 +173,16 @@ def _optional_str_list(
 
 
 def _validate_image_url(value: object) -> str | None:
-    """Validate a header image URL.  Returns None for blank/missing."""
+    """Validate a header image URL.  Returns None for None/blank.
+
+    Non-string types raise ``SteamMalformedPayloadError``.
+    """
     if value is None:
         return None
     if not isinstance(value, str):
-        return None
+        raise SteamMalformedPayloadError(
+            f"header_image must be a string or null, got {type(value).__name__}."
+        )
     v = value.strip()
     if not v:
         return None
@@ -190,7 +193,6 @@ def _validate_image_url(value: object) -> str | None:
         return None
     if not parsed.hostname:
         return None
-    # Reject IP literals and numeric-only hosts.
     host = parsed.hostname
     if host.count(".") == 3:
         parts = host.split(".")
@@ -200,11 +202,16 @@ def _validate_image_url(value: object) -> str | None:
 
 
 def _validate_website_url(value: object) -> str | None:
-    """Validate an optional website URL.  Rejects unsafe schemes."""
+    """Validate an optional website URL.  Returns None for None/blank.
+
+    Non-string types raise ``SteamMalformedPayloadError``.
+    """
     if value is None:
         return None
     if not isinstance(value, str):
-        return None
+        raise SteamMalformedPayloadError(
+            f"website must be a string or null, got {type(value).__name__}."
+        )
     v = value.strip()
     if not v:
         return None

@@ -13,6 +13,7 @@ from django.test import SimpleTestCase
 from games.services.steam.adapters import (
     SteamAdapterError,
     SteamMalformedPayloadError,
+    SteamMissingRequiredFieldError,
 )
 from games.services.steam.dto import (
     LookupStatus,
@@ -37,7 +38,7 @@ class PrepareCandidateTests(SimpleTestCase):
         self.assertEqual(result.status, LookupStatus.FOUND)
         self.assertEqual(result.app_id, "730")
         self.assertIsNotNone(result.candidate)
-        self.assertEqual(result.candidate.name, "CS:GO")  # type: ignore[union-attr]
+        self.assertEqual(result.candidate.name, "CS:GO")
         self.assertEqual(result.candidate.content_type, "game")
 
     def test_found_candidate_mirrors_details(self):
@@ -56,9 +57,19 @@ class PrepareCandidateTests(SimpleTestCase):
         self.assertEqual(result.status, LookupStatus.FOUND)
         c = result.candidate
         self.assertIsNotNone(c)
-        self.assertEqual(c.app_id, "440")  # type: ignore[union-attr]
-        self.assertEqual(c.name, "Team Fortress 2")  # type: ignore[union-attr]
-        self.assertTrue(c.is_free)  # type: ignore[union-attr]
+        self.assertEqual(c.app_id, "440")
+        self.assertEqual(c.name, "Team Fortress 2")
+        self.assertTrue(c.is_free)
+
+    def test_unknown_content_type_is_found(self):
+        """Valid response with unrecognised type → FOUND with UNKNOWN content type."""
+        self.adapter.fetch.return_value = SteamAppDetails(
+            app_id="9999", name="Unknown Thing", content_type="unknown"
+        )
+        result = self.foundation.prepare_candidate("9999")
+        self.assertEqual(result.status, LookupStatus.FOUND)
+        self.assertIsNotNone(result.candidate)
+        self.assertEqual(result.candidate.content_type, "unknown")
 
     # -- UNAVAILABLE ---------------------------------------------------------
 
@@ -73,18 +84,24 @@ class PrepareCandidateTests(SimpleTestCase):
         self.assertEqual(result.app_id, "999")
         self.assertIsNone(result.candidate)
 
-    # -- UNSUPPORTED ---------------------------------------------------------
+    # -- Malformed payload propagation ----------------------------------------
 
-    def test_unsupported_on_malformed(self):
-        self.adapter.fetch.side_effect = SteamMalformedPayloadError("bad")
-        result = self.foundation.prepare_candidate("123")
-        self.assertEqual(result.status, LookupStatus.UNSUPPORTED)
-        self.assertIsNone(result.candidate)
+    def test_malformed_payload_propagates(self):
+        """MalformedPayloadError is NOT caught — it propagates to caller."""
+        self.adapter.fetch.side_effect = SteamMalformedPayloadError("bad structure")
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.foundation.prepare_candidate("123")
 
-    def test_unsupported_on_generic_adapter_error(self):
-        self.adapter.fetch.side_effect = SteamAdapterError("unknown")
-        result = self.foundation.prepare_candidate("456")
-        self.assertEqual(result.status, LookupStatus.UNSUPPORTED)
+    def test_missing_required_field_propagates(self):
+        self.adapter.fetch.side_effect = SteamMissingRequiredFieldError("missing name")
+        with self.assertRaises(SteamMissingRequiredFieldError):
+            self.foundation.prepare_candidate("456")
+
+    def test_generic_adapter_error_propagates(self):
+        """Non-UNAVAILABLE adapter errors propagate unchanged."""
+        self.adapter.fetch.side_effect = SteamAdapterError("generic", code="OTHER")
+        with self.assertRaises(SteamAdapterError):
+            self.foundation.prepare_candidate("789")
 
     # -- Transport propagation -----------------------------------------------
 
@@ -120,4 +137,28 @@ class PrepareCandidateTests(SimpleTestCase):
             app_id="730", name="Test", content_type="game"
         )
         self.foundation.prepare_candidate("730")
-        # If foundation called network directly, mock would fail.
+
+
+class DtoInvariantTests(SimpleTestCase):
+    """Prove SteamAppLookupResult enforces candidate invariants."""
+
+    def test_found_without_candidate_rejected(self):
+        with self.assertRaises(ValueError):
+            from games.services.steam.dto import SteamAppLookupResult
+
+            SteamAppLookupResult(status=LookupStatus.FOUND, app_id="730")
+
+    def test_unavailable_with_candidate_rejected(self):
+        with self.assertRaises(ValueError):
+            from games.services.steam.dto import (
+                SteamAppLookupResult,
+                SteamGameImportCandidate,
+            )
+
+            SteamAppLookupResult(
+                status=LookupStatus.UNAVAILABLE,
+                app_id="730",
+                candidate=SteamGameImportCandidate(
+                    app_id="730", name="X", content_type="game"
+                ),
+            )

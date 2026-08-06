@@ -27,10 +27,10 @@ class SteamImportFoundation:
     def prepare_candidate(self, app_id: str) -> SteamAppLookupResult:
         """Validate *app_id* and return a ``SteamAppLookupResult``.
 
-        Transport exceptions propagate unchanged.  Adapter-level
-        ``SteamAdapterError`` with code ``STEAM_APP_UNAVAILABLE``
-        is mapped to ``LookupStatus.UNAVAILABLE``; other adapter
-        errors are mapped to ``UNSUPPORTED``.
+        - Valid app details → ``LookupStatus.FOUND`` with candidate.
+        - ``success=false`` → ``LookupStatus.UNAVAILABLE``.
+        - Malformed payloads → adapter exceptions propagate unchanged.
+        - Transport exceptions (timeout, connection, etc.) propagate unchanged.
         """
         # Validate App ID.
         try:
@@ -49,11 +49,8 @@ class SteamImportFoundation:
                     status=LookupStatus.UNAVAILABLE,
                     app_id=sid.value,
                 )
-            # Malformed payload → unsupported.
-            return SteamAppLookupResult(
-                status=LookupStatus.UNSUPPORTED,
-                app_id=sid.value,
-            )
+            # Malformed payload, missing fields, etc. — propagate.
+            raise
 
         candidate = SteamGameImportCandidate(
             app_id=details.app_id,
