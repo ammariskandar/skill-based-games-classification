@@ -192,10 +192,13 @@ isolation from the developer's `.env`.
 
 ## Future Work
 
-- Concrete Steam API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`)
-- Metadata import workflow and management command
+- ~~Concrete Steam API endpoint adapters (e.g., `GetAppList`, `GetSchemaForGame`)~~ —
+  SBGC-53 delivered `SteamAppDetailsAdapter` for the Store appdetails endpoint.
+- ~~Metadata import workflow and management command~~ — SBGC-53 delivered
+  `SteamImportFoundation.prepare_candidate()` producing normalised
+  `SteamGameImportCandidate` DTOs.
 - CDN host allowlist populated with actual Steam CDN hosts
-- Domain model persistence
+- Domain model persistence (connecting import candidates to the Game ORM)
 - Public Django Ninja routes consuming Steam data
 
 ## Dependency Installation

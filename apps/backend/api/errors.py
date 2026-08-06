@@ -244,10 +244,26 @@ def register_handlers(api: NinjaAPI) -> None:
 
     Call once per NinjaAPI instance after construction.
     """
-    api.add_exception_handler(ApiException, api_exception_handler)
-    api.add_exception_handler(ValidationError, validation_error_handler)
-    api.add_exception_handler(AuthenticationError, authentication_error_handler)
-    api.add_exception_handler(AuthorizationError, authorization_error_handler)
-    api.add_exception_handler(HttpError, http_error_handler)
-    api.add_exception_handler(Http404, http404_handler)
-    api.add_exception_handler(Exception, unexpected_exception_handler)
+    # Django Ninja stubs type add_exception_handler with a restrictive generic
+    # that does not match our handler callbacks.  Use a single registered
+    # helper to own the framework-boundary cast.
+    _register = _ninja_handler(api.add_exception_handler)  # pyright: ignore[reportArgumentType]
+    _register(ApiException, api_exception_handler)
+    _register(ValidationError, validation_error_handler)
+    _register(AuthenticationError, authentication_error_handler)
+    _register(AuthorizationError, authorization_error_handler)
+    _register(HttpError, http_error_handler)
+    _register(Http404, http404_handler)
+    _register(Exception, unexpected_exception_handler)
+
+
+def _ninja_handler(registrar: object):  # noqa: ANN202
+    """Return *registrar* as a callable for handler registration.
+
+    Django Ninja stubs' ``ExcHandler`` generic does not match our handler
+    signatures.  One cast here avoids repeated per-call suppressions.
+    """
+    from collections.abc import Callable
+    from typing import cast
+
+    return cast(Callable[..., None], registrar)

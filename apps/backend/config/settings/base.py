@@ -11,6 +11,7 @@ from pathlib import Path
 import environ
 
 from config.admin import validate_admin_url_path
+from config.env_typing import env_str
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # config/settings/base.py -> config/settings -> config -> apps/backend
@@ -43,7 +44,7 @@ DEBUG = False
 # Fails startup with ImproperlyConfigured for:
 #   missing, blank, slashes, backslashes, dots, query/fragment, URL forms,
 #   and the reserved segment "api".
-_ADMIN_URL_PATH_RAW = env("ADMIN_URL_PATH", default="admin")
+_ADMIN_URL_PATH_RAW = env_str(env, "ADMIN_URL_PATH", default="admin")
 ADMIN_URL_PATH = validate_admin_url_path(_ADMIN_URL_PATH_RAW)
 
 
@@ -102,7 +103,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Raw DATABASE_URL is read here but not connected.
 # Environment-specific modules use config.database.build_database_config
 # to produce the final DATABASES entry with the correct fallback policy.
-DATABASE_URL = env("DATABASE_URL", default="")
+DATABASE_URL = env_str(env, "DATABASE_URL", default="")
 
 
 # Password validation
@@ -184,20 +185,26 @@ NINJA_API_DOCS_ENABLED = False
 # Raw values read from the environment.  Use steam_client_config_from_settings()
 # to build a validated SteamClientConfig — never instantiate it directly from
 # these raw strings.
-STEAM_WEB_API_KEY = env("STEAM_WEB_API_KEY", default="")
-STEAM_CONNECT_TIMEOUT_SECONDS = env("STEAM_CONNECT_TIMEOUT_SECONDS", default="3.05")
-STEAM_READ_TIMEOUT_SECONDS = env("STEAM_READ_TIMEOUT_SECONDS", default="10")
-STEAM_MAX_RETRIES = env("STEAM_MAX_RETRIES", default="2")
-STEAM_RETRY_BACKOFF_SECONDS = env("STEAM_RETRY_BACKOFF_SECONDS", default="0.25")
-STEAM_MAX_RESPONSE_BYTES = env("STEAM_MAX_RESPONSE_BYTES", default="2097152")
-STEAM_CDN_ALLOWED_HOSTS = env("STEAM_CDN_ALLOWED_HOSTS", default="")
-STEAM_RETRY_SLEEP_MAX_SECONDS = env("STEAM_RETRY_SLEEP_MAX_SECONDS", default="5")
+STEAM_WEB_API_KEY = env_str(env, "STEAM_WEB_API_KEY", default="")
+STEAM_CONNECT_TIMEOUT_SECONDS = env_str(
+    env, "STEAM_CONNECT_TIMEOUT_SECONDS", default="3.05"
+)
+STEAM_READ_TIMEOUT_SECONDS = env_str(env, "STEAM_READ_TIMEOUT_SECONDS", default="10")
+STEAM_MAX_RETRIES = env_str(env, "STEAM_MAX_RETRIES", default="2")
+STEAM_RETRY_BACKOFF_SECONDS = env_str(
+    env, "STEAM_RETRY_BACKOFF_SECONDS", default="0.25"
+)
+STEAM_MAX_RESPONSE_BYTES = env_str(env, "STEAM_MAX_RESPONSE_BYTES", default="2097152")
+STEAM_CDN_ALLOWED_HOSTS = env_str(env, "STEAM_CDN_ALLOWED_HOSTS", default="")
+STEAM_RETRY_SLEEP_MAX_SECONDS = env_str(
+    env, "STEAM_RETRY_SLEEP_MAX_SECONDS", default="5"
+)
 
 # Logging — SBGC-43
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.
 # Production default: INFO.  Development may use DEBUG.
 # Valid: DEBUG, INFO, WARNING, ERROR, CRITICAL.
-_LOG_LEVEL_RAW = env("DJANGO_LOG_LEVEL", default="INFO")
+_LOG_LEVEL_RAW = env_str(env, "DJANGO_LOG_LEVEL", default="INFO")
 
 LOGGING = {
     "version": 1,

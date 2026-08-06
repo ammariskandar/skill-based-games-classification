@@ -18,6 +18,7 @@
     "test:backend:shuffle": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput --shuffle",
     "test:backend:warnings": "apps/backend/.venv/bin/python -Wa apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput 2>&1",
     "test:backend:postgresql": "scripts/backend-test-postgresql.sh",
+    "typecheck:backend": "apps/backend/.venv/bin/basedpyright --project .",
     "test": "npm run test:frontend && npm run test:backend",
     "lint": "npm run lint:frontend && npm run lint:backend",
     "lint:frontend": "npm run lint --workspace=apps/frontend",
@@ -32,7 +33,7 @@
     "check:backend:deploy": "scripts/backend-deploy-check.sh",
     "migrate": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py migrate",
     "install:backend": "python3 -m venv apps/backend/.venv && apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt",
-    "ci": "npm run format:check && npm run lint && npm run test:backend:discovery && npm run check:backend:deploy && npm run check && npm run test && npm run check:design-reference && npm run build:frontend",
+    "ci": "npm run format:check && npm run lint && npm run test:backend:discovery && npm run check:backend:deploy && npm run check && npm run test && npm run check:design-reference && npm run typecheck:backend && npm run build:frontend",
     "check:design-reference": "! grep -r --include='*.astro' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.css' -l 'design-reference' apps/frontend/src apps/frontend/astro.config.mjs 2>/dev/null",
     "update:skills-context": "apps/backend/.venv/bin/python scripts/update-skills-context.py"
   }

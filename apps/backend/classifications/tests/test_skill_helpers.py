@@ -67,9 +67,7 @@ class DominantSkillCategoryTests(TestCase):
 
     def test_float_rejected(self):
         with self.assertRaises(ValidationError):
-            dominant_skill_category(
-                micro_score=50.5, mystiko_score=25, macro_score=24.5
-            )
+            dominant_skill_category(micro_score=33, mystiko_score=25, macro_score=33)
 
     def test_out_of_range_rejected(self):
         with self.assertRaises(ValidationError):

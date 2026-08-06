@@ -14,6 +14,7 @@ from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
 from games.models import ContentType, Game, ListingStatus, SourceType
+from games.types import CONTENT_TYPE_CHOICES
 
 # ---------------------------------------------------------------------------
 # Content-type metadata
@@ -23,7 +24,7 @@ from games.models import ContentType, Game, ListingStatus, SourceType
 class ContentTypeMetadataTests(TestCase):
     def test_exact_choices(self):
         self.assertEqual(
-            set(ContentType.choices),
+            set(CONTENT_TYPE_CHOICES),
             {
                 ("game", "Game"),
                 ("dlc", "Downloadable content"),
@@ -35,17 +36,17 @@ class ContentTypeMetadataTests(TestCase):
         )
 
     def test_other_removed(self):
-        self.assertNotIn("other", dict(ContentType.choices))
+        self.assertNotIn("other", dict(CONTENT_TYPE_CHOICES))
         self.assertFalse(hasattr(ContentType, "OTHER"))
 
     def test_default_is_game(self):
         field = Game._meta.get_field("content_type")
-        self.assertEqual(field.default, ContentType.GAME)
+        self.assertEqual(field.default, ContentType.GAME)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_max_length_accommodates_all(self):
         field = Game._meta.get_field("content_type")
-        longest = max(len(v) for v in dict(ContentType.choices))
-        self.assertLessEqual(longest, field.max_length)
+        longest = max(len(v) for v in dict(CONTENT_TYPE_CHOICES))
+        self.assertLessEqual(longest, field.max_length)  # pyright: ignore[reportCallIssue,reportArgumentType,reportAttributeAccessIssue]
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +127,7 @@ class ContentTypePersistenceTests(TestCase):
         self.assertEqual(g.content_type, ContentType.GAME)
 
     def test_source_independent_of_content_type(self):
-        for ct in ContentType.values:
+        for ct in ContentType:
             g = Game.objects.create(
                 source_type=SourceType.MANUAL,
                 name=f"Indep {ct}",
@@ -166,7 +167,10 @@ class PublicListingTests(TestCase):
     def test_only_published_game_returned(self):
         qs = Game.objects.publicly_listable()
         self.assertEqual(qs.count(), 1)
-        self.assertEqual(qs.first().slug, "pub-game")
+        game = qs.first()
+        if game is None:
+            self.fail("Expected a publicly listable game to exist")
+        self.assertEqual(game.slug, "pub-game")
 
     def test_draft_game_excluded(self):
         qs = Game.objects.publicly_listable()
@@ -257,7 +261,7 @@ class ChainabilityTests(TestCase):
         self.assertEqual(qs.count(), 1)
 
     def test_filter_then_publicly_listable(self):
-        qs = Game.objects.filter(name__icontains="Chain").publicly_listable()
+        qs = Game.objects.filter(name__icontains="Chain").publicly_listable()  # pyright: ignore[reportAttributeAccessIssue]
         self.assertEqual(qs.count(), 3)
 
 
@@ -377,7 +381,7 @@ class AdminContentTypeTests(TestCase):
         """The content_type field offers exactly 6 choices."""
         field = Game._meta.get_field("content_type")
         self.assertEqual(
-            set(field.choices),
+            set(field.choices),  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
             {
                 ("game", "Game"),
                 ("dlc", "Downloadable content"),
@@ -410,7 +414,7 @@ class AdminContentTypeTests(TestCase):
 
     def test_save_each_type(self):
         url = reverse("admin:games_game_add")
-        for ct_value, ct_label in ContentType.choices:
+        for ct_value, ct_label in CONTENT_TYPE_CHOICES:
             data = {
                 "source_type": SourceType.MANUAL,
                 "name": f"Save {ct_label}",
@@ -545,7 +549,7 @@ class MigrationDataTests(TransactionTestCase):
             self._migrate_app("games", "0003")
             g.refresh_from_db()
             self.assertEqual(g.content_type, "unknown")
-            self.assertIn(g.content_type, dict(ContentType.choices))
+            self.assertIn(g.content_type, dict(CONTENT_TYPE_CHOICES))
 
             # -- Public listing: migrated "unknown" is NOT listable ---------
             self.assertFalse(Game.objects.publicly_listable().filter(pk=g.pk).exists())
@@ -560,7 +564,7 @@ class MigrationDataTests(TransactionTestCase):
 
         # After restoration: row is at latest state.
         g.refresh_from_db()
-        self.assertIn(g.content_type, dict(ContentType.choices))
+        self.assertIn(g.content_type, dict(CONTENT_TYPE_CHOICES))
 
 
 # ---------------------------------------------------------------------------

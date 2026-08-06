@@ -57,7 +57,7 @@ class ApiRequestSchemaTests(SimpleTestCase):
 
     def test_rejects_unknown_fields(self):
         with self.assertRaises(PydanticValidationError):
-            ApiRequestSchema(unknown_field="value")
+            ApiRequestSchema(unknown_field="value")  # pyright: ignore[reportCallIssue]
 
 
 class ApiRootResponseTests(SimpleTestCase):
@@ -65,9 +65,9 @@ class ApiRootResponseTests(SimpleTestCase):
 
     def test_validates_required_fields(self):
         with self.assertRaises(PydanticValidationError):
-            ApiRootResponse()
+            ApiRootResponse()  # pyright: ignore[reportCallIssue]
         with self.assertRaises(PydanticValidationError):
-            ApiRootResponse(name="Test")
+            ApiRootResponse(name="Test")  # pyright: ignore[reportCallIssue]
 
     def test_valid_instance(self):
         resp = ApiRootResponse(name="Test", version="1.0")
@@ -91,8 +91,8 @@ class ApiErrorDetailTests(SimpleTestCase):
         self.assertIn('"details":[]', json_str)
 
     def test_details_explicit_list(self):
-        e1 = ApiErrorResponse(error={"code": "TEST", "message": "m1", "details": []})
-        e2 = ApiErrorResponse(error={"code": "TEST", "message": "m2", "details": []})
+        e1 = ApiErrorResponse(error={"code": "TEST", "message": "m1", "details": []})  # pyright: ignore[reportArgumentType]
+        e2 = ApiErrorResponse(error={"code": "TEST", "message": "m2", "details": []})  # pyright: ignore[reportArgumentType]
         e1.error.details.append(ApiErrorDetail(location=["a"], message="x", type="t"))
         self.assertEqual(len(e1.error.details), 1)
         self.assertEqual(len(e2.error.details), 0)

@@ -71,6 +71,9 @@ jobs:
       - name: Check formatting (Ruff)
         run: apps/backend/.venv/bin/ruff format --check apps/backend
 
+      - name: Type check (BasedPyright)
+        run: npm run typecheck:backend
+
       - name: System check (Django)
         run: apps/backend/.venv/bin/python apps/backend/manage.py check
 

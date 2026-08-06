@@ -11,19 +11,12 @@ from classifications.skills import EditorialProfile, SkillCategory
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from games.types import CONTENT_TYPE_CHOICES, ContentType
+
 
 class SourceType(models.TextChoices):
     STEAM = "steam", "Steam"
     MANUAL = "manual", "Manual"
-
-
-class ContentType(models.TextChoices):
-    GAME = "game", "Game"
-    DLC = "dlc", "Downloadable content"
-    DEMO = "demo", "Demo"
-    SOFTWARE = "software", "Software"
-    SOUNDTRACK = "soundtrack", "Soundtrack"
-    UNKNOWN = "unknown", "Unknown"
 
 
 class ListingStatus(models.TextChoices):
@@ -285,6 +278,63 @@ def _score_field_path(profile: str, category: str) -> str:
     return path
 
 
+class GameManager(models.Manager["Game"]):
+    """Typed manager exposing ``GameQuerySet`` custom methods."""
+
+    def get_queryset(self) -> GameQuerySet:
+        return GameQuerySet(self.model, using=self._db)
+
+    # Delegate all custom queryset methods so the type checker sees them.
+
+    def publicly_listable(self) -> GameQuerySet:
+        return self.get_queryset().publicly_listable()
+
+    def steam(self) -> GameQuerySet:
+        return self.get_queryset().steam()
+
+    def manual(self) -> GameQuerySet:
+        return self.get_queryset().manual()
+
+    def editorially_classified(self) -> GameQuerySet:
+        return self.get_queryset().editorially_classified()
+
+    def with_editorial_profiles(self) -> GameQuerySet:
+        return self.get_queryset().with_editorial_profiles()
+
+    def with_dominant_skill_categories(self) -> GameQuerySet:
+        return self.get_queryset().with_dominant_skill_categories()
+
+    def filter_by_dominant_skill_category(
+        self, *, profile: str, category: str
+    ) -> GameQuerySet:
+        return self.get_queryset().filter_by_dominant_skill_category(
+            profile=profile, category=category
+        )
+
+    def filter_by_editorial_score(
+        self,
+        *,
+        profile: str,
+        category: str,
+        minimum: int | None = None,
+        maximum: int | None = None,
+    ) -> GameQuerySet:
+        return self.get_queryset().filter_by_editorial_score(
+            profile=profile, category=category, minimum=minimum, maximum=maximum
+        )
+
+    def order_by_editorial_score(
+        self,
+        *,
+        profile: str,
+        category: str,
+        descending: bool = True,
+    ) -> GameQuerySet:
+        return self.get_queryset().order_by_editorial_score(
+            profile=profile, category=category, descending=descending
+        )
+
+
 class Game(models.Model):
     """
     Canonical product identity with editorial state.
@@ -323,7 +373,7 @@ class Game(models.Model):
 
     content_type = models.CharField(
         max_length=16,
-        choices=ContentType,
+        choices=CONTENT_TYPE_CHOICES,
         default=ContentType.GAME,
     )
 
@@ -346,7 +396,7 @@ class Game(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = GameQuerySet.as_manager()
+    objects: GameManager = GameManager()  # type: ignore[assignment]
 
     # -- Meta -------------------------------------------------------------------
 
@@ -426,6 +476,7 @@ class Game(models.Model):
 
 __all__ = [
     "ContentType",
+    "CONTENT_TYPE_CHOICES",
     "Game",
     "ListingStatus",
     "SourceType",

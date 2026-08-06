@@ -8,6 +8,8 @@ Macro integer scores that must sum to exactly 100.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -63,8 +65,12 @@ class EditorialClassification(models.Model):
         ordering = ["game__name", "game__id"]
 
     def __str__(self) -> str:
-        game_name = self.game.name if self.game_id else "(unsaved)"
+        game_name = self.game.name if self.game_id else "(unsaved)"  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
         return f"Editorial classification for {game_name}"
+
+    if TYPE_CHECKING:
+        challenge_profile: ChallengeProfile
+        reward_profile: RewardProfile
 
 
 # ---------------------------------------------------------------------------

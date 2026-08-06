@@ -9,6 +9,7 @@ these values in production.
 """
 
 from config.database import build_database_config
+from config.env_typing import env_str
 from config.settings.base import *  # noqa: F403
 
 DEBUG = True
@@ -24,7 +25,8 @@ DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=
 # ---------------------------------------------------------------------------
 
 # Local development secret — explicitly marked insecure.
-SECRET_KEY = env(  # noqa: F405
+SECRET_KEY = env_str(  # noqa: F405
+    env,  # noqa: F405
     "DJANGO_SECRET_KEY",
     default="django-insecure-dev-key-do-not-use-in-production",
 )
