@@ -1,38 +1,18 @@
 """
 PostgreSQL migration verification — SBGC-52.
 
-Tests forward/reverse migrations, failure handling, and migration-state
-consistency on an isolated PostgreSQL instance.
+Tests forward/reverse migrations, data-migration conversion,
+failure handling, and migration-state consistency on an isolated
+PostgreSQL instance.  Uses ``MigrationExecutor`` for proper
+model-state lifecycle — no stale in-process model instances.
 """
 
 from __future__ import annotations
 
-import subprocess
-import sys
-from pathlib import Path
-
+from django.core.management import call_command
 from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
-
-from config.pg_testing import require_postgres_test_url
-
-
-_MANAGE = Path(__file__).resolve().parent.parent.parent / "manage.py"
-_SETTINGS = "config.settings.postgresql_test"
-
-
-def _manage(*args):
-    """Run manage.py with PostgreSQL test settings."""
-    url = require_postgres_test_url()
-    env = {**__import__("os").environ, "POSTGRES_TEST_DATABASE_URL": url}
-    result = subprocess.run(
-        [sys.executable, str(_MANAGE), *args, f"--settings={_SETTINGS}", "--noinput"],
-        capture_output=True,
-        text=True,
-        env=env,
-        cwd=str(_MANAGE.parent),
-    )
-    return result
 
 
 class MigrationForwardTests(TransactionTestCase):
@@ -42,8 +22,6 @@ class MigrationForwardTests(TransactionTestCase):
     def setUpClass(cls):
         from unittest import SkipTest
 
-        from django.db import connection
-
         if connection.vendor != "postgresql":
             raise SkipTest(
                 "Migration tests require PostgreSQL. "
@@ -51,16 +29,20 @@ class MigrationForwardTests(TransactionTestCase):
             )
         super().setUpClass()
 
+    def tearDown(self):
+        call_command("migrate", verbosity=0, interactive=False)
+
     def test_forward_to_latest(self):
-        result = _manage("migrate")
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"Migration failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}",
-        )
+        executor = MigrationExecutor(connection)
+        plan = executor.migration_plan(executor.loader.graph.leaf_nodes())
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        # If we get here without exception, migration succeeded.
+        self.assertTrue(len(plan) >= 0)
 
     def test_tables_exist_after_forward(self):
-        _manage("migrate")
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
         with connection.cursor() as cursor:
             cursor.execute(
                 """
@@ -89,8 +71,6 @@ class MigrationReverseTests(TransactionTestCase):
     def setUpClass(cls):
         from unittest import SkipTest
 
-        from django.db import connection
-
         if connection.vendor != "postgresql":
             raise SkipTest(
                 "Migration tests require PostgreSQL. "
@@ -98,99 +78,126 @@ class MigrationReverseTests(TransactionTestCase):
             )
         super().setUpClass()
 
+    def tearDown(self):
+        call_command("migrate", verbosity=0, interactive=False)
+
+    # ------------------------------------------------------------------
+    # Simple reverse / re-apply
+    # ------------------------------------------------------------------
+
     def test_reverse_classifications_and_reapply(self):
-        # Forward to latest.
-        _manage("migrate")
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
 
         # Reverse classifications to zero.
-        result = _manage("migrate", "classifications", "zero")
-        self.assertEqual(result.returncode, 0)
-
-        # Re-apply classifications.
-        result = _manage("migrate", "classifications")
-        self.assertEqual(result.returncode, 0)
+        executor.migrate([("classifications", None)])
+        # Re-apply.
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
 
     def test_reverse_games_to_0001_and_reapply(self):
-        _manage("migrate")
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
 
-        # Reverse games to 0001 (before content-type changes).
-        # classifications depends on games, so reverse both.
-        _manage("migrate", "classifications", "zero")
-        result = _manage("migrate", "games", "0001")
-        self.assertEqual(result.returncode, 0)
+        # Reverse classifications + games to games 0001.
+        executor.migrate([("classifications", None)])
+        executor = MigrationExecutor(connection)
+        executor.migrate([("games", "0001_initial")])
 
         # Re-apply all.
-        result = _manage("migrate")
-        self.assertEqual(result.returncode, 0)
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+
+    # ------------------------------------------------------------------
+    # Data migration: other → unknown (forward)
+    # ------------------------------------------------------------------
 
     def test_other_to_unknown_forward(self):
-        """Verify the 0003 data migration converts 'other' to 'unknown'."""
-        _manage("migrate")
+        """Verify 0003 converts 'other' to 'unknown' in the database."""
+        # 1. Migrate to 0002 (the state with 4 content types including "other").
+        executor = MigrationExecutor(connection)
+        executor.migrate([("games", "0002_alter_game_content_type")])
+        # classifications must be at 0001 (or zero) — migrate it now.
+        executor = MigrationExecutor(connection)
+        executor.migrate([("classifications", "0001_initial")])
 
-        # Create row with 'other' at migration 0001 state.
-        _manage("migrate", "games", "0001")
-        _manage("migrate", "classifications", "0001")
+        # 2. Obtain historical model from 0002 project state.
+        executor = MigrationExecutor(connection)
+        state_0002 = executor.loader.project_state(
+            [("games", "0002_alter_game_content_type")]
+        )
+        Game0002 = state_0002.apps.get_model("games", "Game")
 
-        # We need to test the migration programmatically.
-        # Let's use the ORM with historical model.
-        from django.apps import apps
-
-        # Apply 0002 first, then insert 'other', then 0003.
-        _manage("migrate", "games", "0002")
-        _manage("migrate", "classifications", "0001")
-
-        # Insert 'other' row at migration 0002 state.
-        Game = apps.get_model("games", "Game")
-        Game.objects.create(
+        # 3. Create row with content_type="other".
+        pk = Game0002.objects.create(
             source_type="steam",
             external_id="other-test",
             name="Other Test",
             slug="other-test",
             content_type="other",
+        ).pk
+        del Game0002, state_0002
+
+        # 4. Migrate to 0003 (RunPython: other → unknown).
+        executor = MigrationExecutor(connection)
+        executor.migrate([("games", "0003_migrate_other_to_unknown")])
+
+        # 5. Obtain historical model from 0003 project state.
+        executor = MigrationExecutor(connection)
+        state_0003 = executor.loader.project_state(
+            [("games", "0003_migrate_other_to_unknown")]
         )
+        Game0003 = state_0003.apps.get_model("games", "Game")
 
-        # Apply 0003 — should convert to 'unknown'.
-        result = _manage("migrate", "games", "0003")
-        self.assertEqual(result.returncode, 0)
-
-        # Now re-import to get latest model.
-        from games.models import Game as LatestGame
-
-        game = LatestGame.objects.get(slug="other-test")
+        # 6. Re-query by primary key.
+        game = Game0003.objects.get(pk=pk)
         self.assertEqual(game.content_type, "unknown")
 
-        # Restore.
-        _manage("migrate")
+    # ------------------------------------------------------------------
+    # Data migration: unknown → other (reverse)
+    # ------------------------------------------------------------------
 
     def test_unknown_to_other_reverse(self):
-        """Verify the 0003 reverse converts 'unknown' back to 'other'."""
-        _manage("migrate")
+        """Verify 0003 reverse converts 'unknown' back to 'other'."""
+        # 1. Migrate to 0003 (latest).
+        executor = MigrationExecutor(connection)
+        executor.migrate([("games", "0003_migrate_other_to_unknown")])
+        executor = MigrationExecutor(connection)
+        executor.migrate([("classifications", "0001_initial")])
 
-        # Create 'unknown' row at latest.
-        from games.models import Game as LatestGame
+        # 2. Obtain historical model from 0003 project state.
+        executor = MigrationExecutor(connection)
+        state_0003 = executor.loader.project_state(
+            [("games", "0003_migrate_other_to_unknown")]
+        )
+        Game0003 = state_0003.apps.get_model("games", "Game")
 
-        LatestGame.objects.create(
+        # 3. Create row with content_type="unknown".
+        pk = Game0003.objects.create(
             source_type="steam",
             external_id="rev-other",
             name="Rev Other Test",
             slug="rev-other-test",
             content_type="unknown",
+        ).pk
+        del Game0003, state_0003
+
+        # 4. Reverse to 0002 (classifications first due to dependency).
+        executor = MigrationExecutor(connection)
+        executor.migrate([("classifications", None)])
+        executor = MigrationExecutor(connection)
+        executor.migrate([("games", "0002_alter_game_content_type")])
+
+        # 5. Obtain historical model from 0002 project state.
+        executor = MigrationExecutor(connection)
+        state_0002 = executor.loader.project_state(
+            [("games", "0002_alter_game_content_type")]
         )
+        Game0002 = state_0002.apps.get_model("games", "Game")
 
-        # Reverse to 0002.
-        _manage("migrate", "classifications", "zero")
-        result = _manage("migrate", "games", "0002")
-        self.assertEqual(result.returncode, 0)
-
-        # Check at historical state.
-        from django.apps import apps
-
-        Game = apps.get_model("games", "Game")
-        game = Game.objects.get(slug="rev-other-test")
+        # 6. Re-query by primary key.
+        game = Game0002.objects.get(pk=pk)
         self.assertEqual(game.content_type, "other")
-
-        # Restore.
-        _manage("migrate")
 
 
 class MigrationFailureTests(TransactionTestCase):
@@ -200,8 +207,6 @@ class MigrationFailureTests(TransactionTestCase):
     def setUpClass(cls):
         from unittest import SkipTest
 
-        from django.db import connection
-
         if connection.vendor != "postgresql":
             raise SkipTest(
                 "Migration tests require PostgreSQL. "
@@ -209,11 +214,12 @@ class MigrationFailureTests(TransactionTestCase):
             )
         super().setUpClass()
 
+    def tearDown(self):
+        call_command("migrate", verbosity=0, interactive=False)
+
     def test_makemigrations_detects_no_changes(self):
         """No pending schema changes — migration state is clean."""
-        result = _manage("makemigrations", "--check", "--dry-run")
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"Unexpected pending migrations:\n{result.stdout}",
-        )
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        result = call_command("makemigrations", check=True, dry_run=True)
+        self.assertIsNone(result)
