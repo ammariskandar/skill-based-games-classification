@@ -2549,6 +2549,37 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-13 — SBGC-54 Steam game import workflow
+
+- Created `games/services/imports/` — the canonical persistence boundary
+  between SBGC-53 import-foundation DTOs and the `Game` model.
+- `SteamGamePersistenceService.persist()` — no network, transaction-owning;
+  creates or refreshes canonical Steam Games.
+- `SteamGameImportService.import_app()` — orchestrates foundation lookup
+  (network, outside any transaction) then persistence.
+- `SteamGameImportStatus` (CREATED/UPDATED/UNCHANGED/UNAVAILABLE) and
+  immutable `SteamGameImportResult` with enforced status/game_id invariants.
+- Deterministic `build_steam_game_slug()` — preferred `slugify(name)`, then
+  `-steam-<app_id>` suffix, then `steam-<app_id>` fallback; never random,
+  never rewrites existing slugs.
+- Identity: `(source_type=steam, external_id=app_id)` only — manual Games
+  are never merged or converted.  Re-imports update name/content_type only;
+  slug, listing status, manual metadata, and editorial classifications are
+  preserved.  New imports start as draft.
+- Concurrency: `game_unique_source_external_id` is the authority for
+  same-App-ID races — the losing import recovers the winner's row (nested
+  savepoint pattern).  Distinct App IDs with the same name race on the
+  unique slug index instead: the loser recomputes a deterministic
+  suffixed slug and retries once.  Both verified on PostgreSQL 16 via
+  `games/tests/test_import_concurrency.py`.
+- 78 new tests (76 SQLite + 2 PostgreSQL-only).  No schema changes, no
+  migrations, no API/UI.
+- Created `docs/steam-import-workflow.md`; updated steam-integration,
+  steam-endpoint-adapters, backend-architecture, game-model, and
+  database-constraints docs.
+- Steam-owned metadata (description, images, website, developers, publishers)
+  is not persisted — deferred to SBGC-55/56.
+
 ## 2026-07-22 — Dual Challenge/Reward framework adopted
 
 - SBGC-138 created the audit/review epic.

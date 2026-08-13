@@ -142,8 +142,10 @@ propagate unchanged to the caller.
 ## Limitations
 
 - No API endpoints consume these adapters yet
-- No Game persistence
 - No bulk/multi-app lookup
 - No metadata refresh or caching
 - No Steam Web API Key required for the Store appdetails endpoint
 - Image CDN validation not yet applied (CDN allowlist is empty)
+
+Game persistence for import candidates is delivered by SBGC-54 in
+`games/services/imports/` — see `docs/steam-import-workflow.md`.
