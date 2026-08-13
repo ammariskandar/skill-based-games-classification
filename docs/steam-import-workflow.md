@@ -66,7 +66,7 @@ Candidate → `Game` mapping:
 | `external_id` | `candidate.app_id` | untouched |
 | `name` | `candidate.name` | updated when different |
 | `content_type` | `candidate.content_type` (any canonical value, incl. `unknown`) | updated when different |
-| `steam_image_url` | validated `candidate.header_image_url`, else empty | updated only by a validated URL; `None`/invalid preserves (SBGC-55) |
+| `steam_image_url` | validated `candidate.header_image_url`, else empty | updated only by a validated URL; `None`/blank preserves; malformed raises (SBGC-55) |
 | `slug` | deterministic allocation (see below) | **preserved** |
 | `listing_status` | default `draft` — imports never publish | **preserved** |
 | `manual_description` / `manual_image_url` / `manual_website_url` | unset | **preserved** |

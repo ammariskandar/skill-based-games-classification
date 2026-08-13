@@ -60,51 +60,71 @@ class MalformedTypeTests(SimpleTestCase):
             validate_steam_image_url(True)
 
 
-class RejectedUrlTests(SimpleTestCase):
+class MalformedUrlTests(SimpleTestCase):
+    """Nonblank malformed URLs are errors — never normalized to None."""
+
     def test_http_scheme_rejected(self):
-        self.assertIsNone(validate_steam_image_url("http://cdn.example.com/img.jpg"))
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("http://cdn.example.com/img.jpg")
 
     def test_ftp_scheme_rejected(self):
-        self.assertIsNone(validate_steam_image_url("ftp://cdn.example.com/img.jpg"))
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("ftp://cdn.example.com/img.jpg")
 
     def test_file_scheme_rejected(self):
-        self.assertIsNone(validate_steam_image_url("file:///etc/passwd"))
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("file:///etc/passwd")
 
     def test_schemeless_rejected(self):
-        self.assertIsNone(validate_steam_image_url("//cdn.example.com/img.jpg"))
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("//cdn.example.com/img.jpg")
 
     def test_credentials_rejected(self):
-        self.assertIsNone(
+        with self.assertRaises(SteamMalformedPayloadError):
             validate_steam_image_url("https://user:pass@cdn.example.com/img.jpg")
-        )
 
     def test_missing_hostname_rejected(self):
-        self.assertIsNone(validate_steam_image_url("https:///img.jpg"))
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("https:///img.jpg")
+
+    def test_malformed_url_rejected(self):
+        with self.assertRaises(SteamMalformedPayloadError):
+            validate_steam_image_url("not-a-url")
 
     def test_ipv4_literal_rejected(self):
-        self.assertIsNone(validate_steam_image_url("https://127.0.0.1/img.jpg"))
-        self.assertIsNone(validate_steam_image_url("https://192.168.1.10/img.jpg"))
-        self.assertIsNone(validate_steam_image_url("https://10.0.0.1/img.jpg"))
+        for url in (
+            "https://127.0.0.1/img.jpg",
+            "https://192.168.1.10/img.jpg",
+            "https://10.0.0.1/img.jpg",
+        ):
+            with self.assertRaises(SteamMalformedPayloadError):
+                validate_steam_image_url(url)
 
     def test_ipv6_literal_rejected(self):
-        self.assertIsNone(validate_steam_image_url("https://[::1]/img.jpg"))
-        self.assertIsNone(validate_steam_image_url("https://[2001:db8::1]/img.jpg"))
+        for url in ("https://[::1]/img.jpg", "https://[2001:db8::1]/img.jpg"):
+            with self.assertRaises(SteamMalformedPayloadError):
+                validate_steam_image_url(url)
 
     def test_numeric_host_rejected(self):
-        self.assertIsNone(validate_steam_image_url("https://2130706433/img.jpg"))
-        self.assertIsNone(validate_steam_image_url("https://0x7f000001/img.jpg"))
-        self.assertIsNone(validate_steam_image_url("https://017700000001/img.jpg"))
+        for url in (
+            "https://2130706433/img.jpg",
+            "https://0x7f000001/img.jpg",
+            "https://017700000001/img.jpg",
+        ):
+            with self.assertRaises(SteamMalformedPayloadError):
+                validate_steam_image_url(url)
 
     def test_localhost_rejected(self):
-        self.assertIsNone(validate_steam_image_url("https://localhost/img.jpg"))
-        self.assertIsNone(
-            validate_steam_image_url("https://localhost.localdomain/img.jpg")
-        )
+        for url in (
+            "https://localhost/img.jpg",
+            "https://localhost.localdomain/img.jpg",
+        ):
+            with self.assertRaises(SteamMalformedPayloadError):
+                validate_steam_image_url(url)
 
     def test_custom_port_rejected(self):
-        self.assertIsNone(
+        with self.assertRaises(SteamMalformedPayloadError):
             validate_steam_image_url("https://cdn.example.com:8443/img.jpg")
-        )
 
 
 class NoNetworkTests(SimpleTestCase):
@@ -116,4 +136,7 @@ class NoNetworkTests(SimpleTestCase):
             "not-a-url",
             None,
         ):
-            validate_steam_image_url(value)
+            try:
+                validate_steam_image_url(value)
+            except SteamMalformedPayloadError:
+                pass  # malformed values raise — but never contact the network

@@ -225,12 +225,19 @@ class SteamGamePersistenceService:
     ) -> SteamGameImportResult:
         """Update source-owned fields only.  Preserve everything else.
 
-        Missing-image semantics (SBGC-55, reused by SBGC-56): a valid
-        HTTPS URL updates ``steam_image_url``; ``None``/blank/invalid
-        upstream values preserve the existing stored URL — upstream
-        absence is ambiguous (no image vs. malformed payload) and never
-        clears editorial state.
+        Missing-image semantics (SBGC-55, reused by SBGC-56):
+
+        - valid HTTPS URL → updates ``steam_image_url`` when different;
+        - ``None`` (upstream did not provide a usable image field) →
+          preserves the stored URL;
+        - malformed nonblank candidate metadata raises
+          ``SteamMalformedPayloadError`` before any mutation — it is
+          never reclassified as absence.
         """
+        # Validate before mutating anything so a malformed candidate
+        # cannot partially alter in-memory state.
+        image_url = self._normalised_image_url(candidate)
+
         changed = False
 
         if existing.name != candidate.name:
@@ -240,7 +247,6 @@ class SteamGamePersistenceService:
             existing.content_type = candidate.content_type
             changed = True
 
-        image_url = self._normalised_image_url(candidate)
         if image_url is not None and existing.steam_image_url != image_url:
             existing.steam_image_url = image_url
             changed = True
@@ -340,9 +346,13 @@ class SteamGamePersistenceService:
     ) -> str | None:
         """Return the canonical validated image URL for *candidate*.
 
-        ``None`` means "no usable upstream image URL".  Non-string values
-        raise ``SteamMalformedPayloadError``.  Never performs network
-        access — the URL is validated structurally only.
+        ``None`` means exactly one thing: the candidate carried no usable
+        upstream image field (absent/null/blank).  Non-string values and
+        nonblank malformed strings raise ``SteamMalformedPayloadError``
+        — persistence never weakens the adapter's strict contract by
+        reclassifying malformed metadata as absence.
+
+        Never performs network access — structural validation only.
         """
         return validate_steam_image_url(candidate.header_image_url)
 

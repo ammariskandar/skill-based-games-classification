@@ -2560,14 +2560,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Extracted the adapter's private image check into the canonical pure
   `validate_steam_image_url()` in `games/services/steam/cdn.py`; hardened
   to reject IP literals (IPv4/IPv6), numeric hosts, localhost, custom
-  ports, and credentials.  Non-string input still raises
-  `SteamMalformedPayloadError`; absent/blank/invalid normalize to None.
-  Adapter and import persistence share this single validator.
+  ports, and credentials.  Strict SBGC-53 semantics: non-string values
+  and **nonblank malformed strings raise `SteamMalformedPayloadError`**;
+  only absent/null/blank normalize to `None`.  Adapter and import
+  persistence share this single validator.
 - Import behavior: new imports persist the validated URL; re-imports
   update only from a valid URL (→ UPDATED) and **preserve** the stored
-  value on None/blank/invalid upstream values (missing-image semantics
-  documented for SBGC-56 reuse).  Slug, listing status, `manual_*`,
-  and editorial classification remain preserved.
+  value when the candidate carries no usable image field (None/blank).
+  Malformed candidate metadata raises before any write.  Slug, listing
+  status, `manual_*`, and editorial classification remain preserved.
 - Admin: `steam_image_url` readonly for all records; no preview rendering.
 - CDN host allowlist intentionally NOT populated — no repository evidence
   of real Steam CDN hostnames; `validate_steam_cdn_url` (empty allowlist)

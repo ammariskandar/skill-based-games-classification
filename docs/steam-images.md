@@ -51,19 +51,20 @@ persistence layer:
 - no `localhost` / `localhost.localdomain`;
 - **no network access** — structural validation only.
 
-Contract:
+Contract — strict SBGC-53 malformed-metadata semantics:
 
 | Input | Result |
 |-------|--------|
 | `None` | `None` (no upstream image) |
-| non-string | raises `SteamMalformedPayloadError` |
-| blank/whitespace | `None` |
-| structurally invalid string | `None` (never persisted) |
+| blank/whitespace string | `None` (absent-field equivalent) |
 | valid HTTPS URL | returned as-is (outer whitespace stripped) |
+| non-string value | raises `SteamMalformedPayloadError` |
+| nonblank malformed string (HTTP, credentials, missing hostname, custom port, IP literal, numeric host, localhost) | raises `SteamMalformedPayloadError` |
 
-This mirrors the SBGC-53 adapter normalisation contract; the SBGC-55
-hardening added IP-literal, numeric-host, localhost, port, and
-credential rejection.
+`None` means exactly one thing: the upstream payload did not provide a
+usable image field.  Malformed nonblank upstream metadata is an **error**
+and is never silently normalized to absence — this preserves the
+strict external-payload principle established in SBGC-53.
 
 ## Host Policy (CDN Allowlist)
 
@@ -82,13 +83,23 @@ ships, the allowlist must be populated from live verification or
 authoritative Steam documentation, as immutable source-controlled
 constants (no environment override).
 
+### Metadata Validation ≠ Fetch Authorization
+
+`validate_steam_image_url()` authorizes **storage/display metadata**
+only.  A URL acceptable for metadata persistence is **not** automatically
+authorized for backend CDN fetching.  Any future server-side image
+retrieval must additionally pass `validate_steam_cdn_url()` against a
+populated, evidence-based allowlist (SBGC-56 or a live-integration
+ticket).
+
 ## Import Behavior
 
 ### New import
 
 ```text
 candidate.header_image_url (valid) → Game.steam_image_url
-candidate.header_image_url (None/blank/invalid) → "" (empty)
+candidate.header_image_url (None/blank) → "" (empty)
+candidate.header_image_url (malformed) → SteamMalformedPayloadError, no row
 ```
 
 New Games remain `draft` — image presence never publishes.
@@ -98,7 +109,8 @@ New Games remain `draft` — image presence never publishes.
 ```text
 valid URL, different from stored  → update, status UPDATED
 valid URL, equal to stored        → status UNCHANGED
-None / blank / invalid            → preserve stored value, UNCHANGED
+None / blank                      → preserve stored value, UNCHANGED
+malformed nonblank candidate      → SteamMalformedPayloadError, no writes
 ```
 
 Preserved on every re-import: slug, listing status, `manual_*` fields,
@@ -107,15 +119,20 @@ editorial classification (parent + Challenge + Reward + notes +
 
 ## Missing-Image Semantics (Contract for SBGC-56)
 
-Chosen contract — **preserve on ambiguous absence**:
+Chosen contract — **preserve on absence** (refresh-compatible):
 
 - `steam_image_url == ""` means "no validated Steam image URL has ever
   been recorded".
-- Upstream `None` is ambiguous (no image vs. malformed upstream value),
-  so a re-import **never clears** a previously stored URL.
+- Upstream `None`/blank means the upstream payload did not provide a
+  usable image field — a re-import **never clears** a previously stored
+  URL.
+- Malformed nonblank upstream metadata **raises before persistence** —
+  it is not reclassified as absence and never clears or preserves
+  silently.
 
 SBGC-56 (metadata refresh) must reuse this contract: only a validated
-HTTPS URL updates the field; absence preserves it.
+HTTPS URL updates the field; `None`/blank preserves it; malformed
+nonblank metadata raises.
 
 ## Listing Behavior
 

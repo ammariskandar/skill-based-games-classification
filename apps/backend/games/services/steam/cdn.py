@@ -34,16 +34,19 @@ _NUMERIC_HOST_RE = re.compile(r"^(?:0[xX][0-9a-fA-F]+|0[0-7]+|[0-9]+)$")
 def validate_steam_image_url(value: object) -> str | None:
     """Validate a Steam header-image URL from an upstream payload.
 
-    Contract (SBGC-53 adapter normalisation, hardened in SBGC-55):
+    Strict SBGC-53 malformed-metadata semantics:
 
     - ``None`` → ``None`` (no upstream image).
-    - non-string → raises ``SteamMalformedPayloadError``.
-    - blank/whitespace → ``None``.
-    - structurally invalid strings (non-HTTPS scheme, credentials,
-      missing hostname, custom port, IP literal, numeric host,
-      localhost) → ``None`` — an invalid upstream value is not an
-      image URL and is never persisted.
+    - blank/whitespace string → ``None`` (absent field equivalent).
     - valid HTTPS URL → returned as-is (outer whitespace stripped).
+    - **anything else** — non-string values and nonblank malformed
+      strings (non-HTTPS scheme, credentials, missing hostname, custom
+      port, IP literal, numeric host, localhost) — raises
+      ``SteamMalformedPayloadError``.
+
+    ``None`` therefore means exactly one thing: the upstream payload did
+    not provide a usable image field.  Malformed nonblank upstream
+    metadata is an error and is never silently normalized to absence.
 
     Never performs network access — structural validation only.
     """
@@ -62,25 +65,35 @@ def validate_steam_image_url(value: object) -> str | None:
 
     # Scheme — HTTPS only (case-insensitive).
     if parsed.scheme.lower() != "https":
-        return None
+        raise SteamMalformedPayloadError(
+            f"Steam image URL must use HTTPS, got {parsed.scheme!r}."
+        )
 
     # Credentials — userinfo of any kind is rejected.
     if parsed.username or parsed.password or "@" in parsed.netloc:
-        return None
+        raise SteamMalformedPayloadError(
+            "Steam image URL must not contain credentials."
+        )
 
     # Hostname — required, and must be a public non-IP host.
     hostname = (parsed.hostname or "").lower()
     if not hostname:
-        return None
+        raise SteamMalformedPayloadError(
+            "Steam image URL must have a nonempty hostname."
+        )
 
     # Custom ports are not part of the Steam image URL contract.
     if parsed.port is not None:
-        return None
+        raise SteamMalformedPayloadError(
+            "Steam image URL must not contain a custom port."
+        )
 
     try:
         _reject_non_public_host(hostname)
-    except ValueError:
-        return None
+    except ValueError as exc:
+        raise SteamMalformedPayloadError(
+            f"Steam image URL host is not permitted: {exc}"
+        ) from exc
 
     return v
 

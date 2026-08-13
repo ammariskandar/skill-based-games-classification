@@ -130,28 +130,70 @@ class SuccessTests(SimpleTestCase):
         details = self.adapter.fetch(SteamAppId("730"))
         self.assertIsNone(details.website_url)
 
-    # -- Image URL structural rejection (SBGC-55 canonical validator) --------
+    # -- Image URL strict semantics (SBGC-55 canonical validator) ----------
 
-    def test_http_header_image_becomes_none(self):
+    def test_null_header_image_becomes_none(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image=None
+        )
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertIsNone(details.header_image_url)
+
+    def test_blank_header_image_becomes_none(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="   "
+        )
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertIsNone(details.header_image_url)
+
+    def test_http_header_image_raises(self):
         self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
             "730", header_image="http://cdn.example.com/img.jpg"
         )
-        details = self.adapter.fetch(SteamAppId("730"))
-        self.assertIsNone(details.header_image_url)
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
 
-    def test_ip_literal_header_image_becomes_none(self):
+    def test_ip_literal_header_image_raises(self):
         self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
             "730", header_image="https://127.0.0.1/img.jpg"
         )
-        details = self.adapter.fetch(SteamAppId("730"))
-        self.assertIsNone(details.header_image_url)
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
 
-    def test_credentials_header_image_becomes_none(self):
+    def test_ipv6_header_image_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="https://[::1]/img.jpg"
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    def test_localhost_header_image_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="https://localhost/img.jpg"
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    def test_numeric_host_header_image_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="https://2130706433/img.jpg"
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    def test_malformed_header_image_raises(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="not-a-url"
+        )
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
+
+    def test_credentials_header_image_raises(self):
         self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
             "730", header_image="https://user:pass@cdn.example.com/img.jpg"
         )
-        details = self.adapter.fetch(SteamAppId("730"))
-        self.assertIsNone(details.header_image_url)
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.adapter.fetch(SteamAppId("730"))
 
 
 class UnavailableTests(SimpleTestCase):

@@ -553,15 +553,17 @@ class SteamImageTests(TestCase):
         game = Game.objects.get(pk=result.game_id)
         self.assertEqual(game.steam_image_url, "")
 
-    def test_new_import_with_invalid_url_normalises_to_empty(self):
-        result = self.service.persist(
-            _candidate(
-                "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
+    def test_new_import_with_malformed_url_raises_without_row(self):
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.service.persist(
+                _candidate(
+                    "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
+                )
             )
+        steam_rows = Game.objects.filter(
+            source_type=SourceType.STEAM, external_id="620"
         )
-
-        game = Game.objects.get(pk=result.game_id)
-        self.assertEqual(game.steam_image_url, "")
+        self.assertEqual(steam_rows.count(), 0)
 
     def test_new_import_never_populates_manual_image(self):
         image = "https://cdn.example.com/steam/apps/620/header.jpg"
@@ -616,25 +618,30 @@ class SteamImageTests(TestCase):
         image = "https://cdn.example.com/a.jpg"
         self.service.persist(_candidate("620", "Portal 2", header_image_url=image))
 
-        # Upstream absence (None) is ambiguous — never clears a stored URL.
+        # Upstream absence (None) preserves — this is the missing-image
+        # contract, distinct from malformed metadata which raises.
         result = self.service.persist(_candidate("620", "Portal 2"))
 
         self.assertEqual(result.status, SteamGameImportStatus.UNCHANGED)
         game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
         self.assertEqual(game.steam_image_url, image)
 
-    def test_reimport_invalid_image_preserves_existing(self):
+    def test_reimport_malformed_image_raises_and_preserves_existing(self):
         image = "https://cdn.example.com/a.jpg"
-        self.service.persist(_candidate("620", "Portal 2", header_image_url=image))
-
-        result = self.service.persist(
-            _candidate(
-                "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
-            )
+        created = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image)
         )
 
-        self.assertEqual(result.status, SteamGameImportStatus.UNCHANGED)
-        game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
+        # Malformed nonblank candidate metadata is an error — it is never
+        # reclassified as absence, so nothing is written.
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.service.persist(
+                _candidate(
+                    "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
+                )
+            )
+
+        game = Game.objects.get(pk=created.game_id)
         self.assertEqual(game.steam_image_url, image)
 
     def test_image_update_preserves_manual_metadata(self):
