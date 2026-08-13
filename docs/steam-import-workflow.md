@@ -66,6 +66,7 @@ Candidate → `Game` mapping:
 | `external_id` | `candidate.app_id` | untouched |
 | `name` | `candidate.name` | updated when different |
 | `content_type` | `candidate.content_type` (any canonical value, incl. `unknown`) | updated when different |
+| `steam_image_url` | validated `candidate.header_image_url`, else empty | updated only by a validated URL; `None`/invalid preserves (SBGC-55) |
 | `slug` | deterministic allocation (see below) | **preserved** |
 | `listing_status` | default `draft` — imports never publish | **preserved** |
 | `manual_description` / `manual_image_url` / `manual_website_url` | unset | **preserved** |
@@ -73,11 +74,12 @@ Candidate → `Game` mapping:
 | `updated_at` | set | changes only when data changed |
 | editorial classification | absent | **preserved** (parent, Challenge, Reward, notes, `updated_by`) |
 
-**Steam-owned metadata is not persisted.**  `short_description`,
-`header_image_url`, `website_url`, `is_free`, `developers`, and
+**Steam-owned metadata beyond the image URL is not persisted.**
+`short_description`, `website_url`, `is_free`, `developers`, and
 `publishers` have no canonical `Game` fields yet.  They are neither
 written into `manual_*` fields nor silently dropped into new schema —
-image and metadata persistence belong to later tickets (SBGC-55/56).
+metadata persistence belongs to SBGC-56.  Image handling is documented
+in `docs/steam-images.md`.
 
 ## Identity
 

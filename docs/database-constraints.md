@@ -18,6 +18,12 @@ enforcement, and PostgreSQL-verification criteria for SBGC-52.
 | Listing index | `game_listing_name_idx` | `Index` | ✅ | — | ✅ | ✅ |
 | `BigAutoField` PK | Field `auto_created=True` | Implicit PK | ✅ | — | ✅ | ✅ |
 
+`steam_image_url` (SBGC-55) carries **no database constraint** — remote
+URL hostname policy is enforced by the pure `validate_steam_image_url()`
+validator at the application layer (adapter + import persistence).  The
+field is a plain nullable URLField; image presence is never a listing
+criterion.
+
 ### `classifications.EditorialClassification`
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
