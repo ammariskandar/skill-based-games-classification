@@ -232,8 +232,9 @@ class GameMigrationReversibilityTests(TransactionTestCase):
 
     def test_forward_reverse_forward(self):
         from django.db import IntegrityError, connection, transaction
+        from django.db.migrations.executor import MigrationExecutor
 
-        from games.models import Game, SourceType
+        from games.models import SourceType
 
         # Confirm initial state: games table exists.
         tables = connection.introspection.table_names()
@@ -251,7 +252,13 @@ class GameMigrationReversibilityTests(TransactionTestCase):
             self.assertIn("games_game", tables)
 
             # -- (3) Verify constraints by exercising them --------------------
-            Game.objects.create(
+            # Historical model required: the current model includes
+            # steam_image_url (games.0004), absent at this state.
+            executor = MigrationExecutor(connection)
+            state_0001 = executor.loader.project_state([("games", "0001_initial")])
+            game_0001 = state_0001.apps.get_model("games", "Game")
+
+            game_0001.objects.create(
                 source_type=SourceType.STEAM,
                 name="Fwd",
                 slug="fwd",
@@ -259,7 +266,7 @@ class GameMigrationReversibilityTests(TransactionTestCase):
             )
             with transaction.atomic():
                 with self.assertRaises(IntegrityError):
-                    Game.objects.create(
+                    game_0001.objects.create(
                         source_type=SourceType.MANUAL,
                         name="Bad",
                         slug="bad",

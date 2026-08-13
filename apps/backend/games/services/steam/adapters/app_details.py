@@ -14,6 +14,7 @@ from games.services.steam.adapters import (
     SteamMalformedPayloadError,
     SteamMissingRequiredFieldError,
 )
+from games.services.steam.cdn import validate_steam_image_url
 from games.services.steam.dto import SteamAppDetails, SteamAppId
 from games.services.steam.mapping import map_steam_product_type
 
@@ -92,7 +93,7 @@ class SteamAppDetailsAdapter:
         # -- optional fields -----------------------------------------------------
 
         short_description = _optional_str(data, "short_description")
-        header_image_url = _validate_image_url(data.get("header_image"))
+        header_image_url = validate_steam_image_url(data.get("header_image"))
         website_url = _validate_website_url(data.get("website"))
         is_free = _optional_bool(data, "is_free")
         developers = _optional_str_list(data, "developers")
@@ -166,35 +167,6 @@ def _optional_str_list(data: dict[str, object], key: str) -> tuple[str, ...] | N
             if s:
                 items.append(s)
     return tuple(items) if items else None
-
-
-def _validate_image_url(value: object) -> str | None:
-    """Validate a header image URL.  Returns None for None/blank.
-
-    Non-string types raise ``SteamMalformedPayloadError``.
-    """
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise SteamMalformedPayloadError(
-            f"header_image must be a string or null, got {type(value).__name__}."
-        )
-    v = value.strip()
-    if not v:
-        return None
-    parsed = urlparse(v)
-    if parsed.scheme != "https":
-        return None
-    if parsed.username or parsed.password:
-        return None
-    if not parsed.hostname:
-        return None
-    host = parsed.hostname
-    if host.count(".") == 3:
-        parts = host.split(".")
-        if all(p.isdigit() for p in parts):
-            return None
-    return v
 
 
 def _validate_website_url(value: object) -> str | None:

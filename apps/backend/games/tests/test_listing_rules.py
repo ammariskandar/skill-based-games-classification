@@ -528,18 +528,31 @@ class MigrationDataTests(TransactionTestCase):
         )
 
     def test_other_migrates_to_unknown_and_back(self):
+        from django.db import connection
+        from django.db.migrations.executor import MigrationExecutor
+
+        def historical_game(*targets):
+            """Historical Game model at the given migration state(s)."""
+            executor = MigrationExecutor(connection)
+            state = executor.loader.project_state(list(targets))
+            return state.apps.get_model("games", "Game")
 
         # -- Reverse to games.0001 so choices still include "other" ---------
         self._migrate_app("games", "0001")
 
+        # Historical models must be used across migration states — the
+        # current model includes steam_image_url (games.0004), which does
+        # not exist at these older states.
+        game_0001 = historical_game(("games", "0001_initial"))
+
         # Create a row with the historical "other" value via raw update
         # (bypassing model-level choice validation).
-        g = Game.objects.create(
+        g = game_0001.objects.create(
             source_type=SourceType.MANUAL,
             name="Legacy Other",
             slug="legacy-other",
         )
-        Game.objects.filter(pk=g.pk).update(content_type="other")
+        game_0001.objects.filter(pk=g.pk).update(content_type="other")
         g.refresh_from_db()
         self.assertEqual(g.content_type, "other")
 
@@ -547,24 +560,34 @@ class MigrationDataTests(TransactionTestCase):
             # -- Forward to latest (0003) — data migration
             # converts "other" to "unknown"
             self._migrate_app("games", "0003")
-            g.refresh_from_db()
+            game_0003 = historical_game(("games", "0003_migrate_other_to_unknown"))
+            g = game_0003.objects.get(pk=g.pk)
             self.assertEqual(g.content_type, "unknown")
             self.assertIn(g.content_type, dict(CONTENT_TYPE_CHOICES))
 
-            # -- Public listing: migrated "unknown" is NOT listable ---------
-            self.assertFalse(Game.objects.publicly_listable().filter(pk=g.pk).exists())
+            # -- Public listing: migrated "unknown" is NOT listable --------
+            # Historical models carry no custom queryset — the canonical
+            # rule (GAME + PUBLISHED) is expressed inline.
+            self.assertFalse(
+                game_0003.objects.filter(
+                    content_type=ContentType.GAME,
+                    listing_status=ListingStatus.PUBLISHED,
+                    pk=g.pk,
+                ).exists()
+            )
 
             # -- Reverse to 0001: data migration converts "unknown" back to "other" --
             self._migrate_app("games", "0001")
-            g.refresh_from_db()
+            game_0001 = historical_game(("games", "0001_initial"))
+            g = game_0001.objects.get(pk=g.pk)
             self.assertEqual(g.content_type, "other")
 
         finally:
             self._migrate_app("", "")
 
         # After restoration: row is at latest state.
-        g.refresh_from_db()
-        self.assertIn(g.content_type, dict(CONTENT_TYPE_CHOICES))
+        g_current = Game.objects.get(pk=g.pk)
+        self.assertIn(g_current.content_type, dict(CONTENT_TYPE_CHOICES))
 
 
 # ---------------------------------------------------------------------------

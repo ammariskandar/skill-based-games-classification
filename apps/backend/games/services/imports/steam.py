@@ -4,8 +4,9 @@ Steam game import persistence and orchestration — SBGC-54.
 Layers:
 
 - ``SteamGamePersistenceService`` — persists a prepared
-  ``SteamGameImportCandidate`` as a canonical ``Game`` row.  No network,
-  no Steam imports beyond the ORM-free DTO package.
+  ``SteamGameImportCandidate`` as a canonical ``Game`` row.  No network
+  and no transport imports — only the ORM-free DTO package, the pure
+  image-URL validator, and the payload error taxonomy.
 - ``SteamGameImportService`` — orchestrates SBGC-53's
   ``SteamImportFoundation`` (network) with the persistence layer.
 
@@ -28,6 +29,7 @@ from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 
 from games.models import Game, SourceType
+from games.services.steam.cdn import validate_steam_image_url
 from games.services.steam.dto import (
     LookupStatus,
     SteamAppId,
@@ -180,8 +182,10 @@ def build_steam_game_slug(
 class SteamGamePersistenceService:
     """Persist ``SteamGameImportCandidate`` values as canonical ``Game`` rows.
 
-    No network access — this layer never imports the Steam transport,
-    the adapter, or any HTTP machinery.
+    No network access — this layer never imports the Steam transport
+    (``SteamClient``) or any HTTP machinery.  Image URLs are validated
+    structurally by the pure ``validate_steam_image_url`` helper; the
+    URL is never fetched, HEADed, or resolved.
     """
 
     def persist(self, candidate: SteamGameImportCandidate) -> SteamGameImportResult:
@@ -219,7 +223,14 @@ class SteamGamePersistenceService:
         candidate: SteamGameImportCandidate,
         app_id: SteamAppId,
     ) -> SteamGameImportResult:
-        """Update source-owned fields only.  Preserve everything else."""
+        """Update source-owned fields only.  Preserve everything else.
+
+        Missing-image semantics (SBGC-55, reused by SBGC-56): a valid
+        HTTPS URL updates ``steam_image_url``; ``None``/blank/invalid
+        upstream values preserve the existing stored URL — upstream
+        absence is ambiguous (no image vs. malformed payload) and never
+        clears editorial state.
+        """
         changed = False
 
         if existing.name != candidate.name:
@@ -227,6 +238,11 @@ class SteamGamePersistenceService:
             changed = True
         if existing.content_type != candidate.content_type:
             existing.content_type = candidate.content_type
+            changed = True
+
+        image_url = self._normalised_image_url(candidate)
+        if image_url is not None and existing.steam_image_url != image_url:
+            existing.steam_image_url = image_url
             changed = True
 
         if not changed:
@@ -264,6 +280,7 @@ class SteamGamePersistenceService:
             name=candidate.name,
             content_type=candidate.content_type,
             slug=slug,
+            steam_image_url=self._normalised_image_url(candidate) or "",
         )
         # Field and model validation only — deliberately NOT
         # ``validate_constraints()``/``validate_unique()``.  The database
@@ -316,6 +333,18 @@ class SteamGamePersistenceService:
             app_id.value,
             is_occupied=lambda value: Game.objects.filter(slug=value).exists(),
         )
+
+    def _normalised_image_url(
+        self,
+        candidate: SteamGameImportCandidate,
+    ) -> str | None:
+        """Return the canonical validated image URL for *candidate*.
+
+        ``None`` means "no usable upstream image URL".  Non-string values
+        raise ``SteamMalformedPayloadError``.  Never performs network
+        access — the URL is validated structurally only.
+        """
+        return validate_steam_image_url(candidate.header_image_url)
 
 
 # ---------------------------------------------------------------------------

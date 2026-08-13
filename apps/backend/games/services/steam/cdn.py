@@ -1,8 +1,17 @@
 """
-Steam CDN URL validation — SBGC-42.
+Steam image URL validation — SBGC-42 / SBGC-55.
 
-Pure function for validating Steam CDN image URLs against a trusted host allowlist.
-Never downloads, caches, proxies, or persists image binaries.
+Pure functions for validating Steam image URLs.  Never downloads, caches,
+proxies, or persists image binaries.
+
+Two distinct policies:
+
+- ``validate_steam_image_url`` — canonical upstream payload validation
+  for persisting header-image metadata (SBGC-55).  Structural only: HTTPS,
+  no credentials, no IP literals/localhost/numeric hosts.
+- ``validate_steam_cdn_url`` — strict trusted-host gate for any future
+  fetch/proxy/download of image binaries (SBGC-42).  Requires an explicit
+  allowlist; an empty allowlist rejects every URL.
 """
 
 from __future__ import annotations
@@ -12,9 +21,72 @@ import re
 from collections.abc import Collection
 from urllib.parse import urlparse
 
+from games.services.steam.adapters import SteamMalformedPayloadError
+
 # Reject numeric-only host representations (decimal, hex, octal IP forms).
 _NUMERIC_HOST_RE = re.compile(r"^(?:0[xX][0-9a-fA-F]+|0[0-7]+|[0-9]+)$")
 
+# ---------------------------------------------------------------------------
+# Canonical upstream image-URL validation (metadata persistence)
+# ---------------------------------------------------------------------------
+
+
+def validate_steam_image_url(value: object) -> str | None:
+    """Validate a Steam header-image URL from an upstream payload.
+
+    Contract (SBGC-53 adapter normalisation, hardened in SBGC-55):
+
+    - ``None`` → ``None`` (no upstream image).
+    - non-string → raises ``SteamMalformedPayloadError``.
+    - blank/whitespace → ``None``.
+    - structurally invalid strings (non-HTTPS scheme, credentials,
+      missing hostname, custom port, IP literal, numeric host,
+      localhost) → ``None`` — an invalid upstream value is not an
+      image URL and is never persisted.
+    - valid HTTPS URL → returned as-is (outer whitespace stripped).
+
+    Never performs network access — structural validation only.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise SteamMalformedPayloadError(
+            f"Steam image URL must be a string or null, got {type(value).__name__}."
+        )
+
+    v = value.strip()
+    if not v:
+        return None
+
+    parsed = urlparse(v)
+
+    # Scheme — HTTPS only (case-insensitive).
+    if parsed.scheme.lower() != "https":
+        return None
+
+    # Credentials — userinfo of any kind is rejected.
+    if parsed.username or parsed.password or "@" in parsed.netloc:
+        return None
+
+    # Hostname — required, and must be a public non-IP host.
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        return None
+
+    # Custom ports are not part of the Steam image URL contract.
+    if parsed.port is not None:
+        return None
+
+    try:
+        _reject_non_public_host(hostname)
+    except ValueError:
+        return None
+
+    return v
+
+
+# ---------------------------------------------------------------------------
+# Strict trusted-host CDN gate (future binary fetch/proxy work)
 # ---------------------------------------------------------------------------
 
 
@@ -115,4 +187,4 @@ def _reject_non_public_host(hostname: str) -> None:
         raise ValueError("CDN URL must not use an IP literal.")
 
 
-__all__ = ["validate_steam_cdn_url"]
+__all__ = ["validate_steam_image_url", "validate_steam_cdn_url"]

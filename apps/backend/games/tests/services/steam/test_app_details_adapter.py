@@ -130,6 +130,29 @@ class SuccessTests(SimpleTestCase):
         details = self.adapter.fetch(SteamAppId("730"))
         self.assertIsNone(details.website_url)
 
+    # -- Image URL structural rejection (SBGC-55 canonical validator) --------
+
+    def test_http_header_image_becomes_none(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="http://cdn.example.com/img.jpg"
+        )
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertIsNone(details.header_image_url)
+
+    def test_ip_literal_header_image_becomes_none(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="https://127.0.0.1/img.jpg"
+        )
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertIsNone(details.header_image_url)
+
+    def test_credentials_header_image_becomes_none(self):
+        self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
+            "730", header_image="https://user:pass@cdn.example.com/img.jpg"
+        )
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertIsNone(details.header_image_url)
+
 
 class UnavailableTests(SimpleTestCase):
     def setUp(self):
