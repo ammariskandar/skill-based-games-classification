@@ -111,14 +111,34 @@ All Game writes run inside one `transaction.atomic()` block:
 
 ## Concurrency
 
+Two distinct races are handled, both verified on PostgreSQL 16
+(`games/tests/test_import_concurrency.py`):
+
+### Identity race — same App ID
+
 `game_unique_source_external_id` (a partial unique index on PostgreSQL)
 is the authority for `(steam, app_id)` races.  When a concurrent import
 wins, the loser's `IntegrityError` is caught **only when** the identity
-row now exists; the loser then refreshes (or reports `UNCHANGED`) against
-the winner's row.  One canonical Game survives; the caller always
-receives a deterministic result.  Any other integrity failure propagates.
+row now exists; the loser then refreshes (or reports `UNCHANGED`)
+against the winner's row.  One canonical Game survives; the caller
+always receives a deterministic result.
 
-Verified on PostgreSQL 16 (`games/tests/test_import_concurrency.py`).
+### Slug race — distinct App IDs, same name
+
+Two imports with different App IDs and the same name may compute the
+same preferred slug before either INSERTs.  The loser's INSERT fails on
+the unique slug index.  Recovery is attempted **only** when:
+
+1. no identity row exists (not an identity race), and
+2. the computed slug is now occupied (not an unrelated failure).
+
+Then the slug is recomputed deterministically (preferred → suffixed →
+fallback) and the INSERT retried **once**.  Both canonical identities
+persist exactly once, e.g. `A → same-name` and `B → same-name-steam-<B>`
+(or the inverse).
+
+Any other integrity failure — no identity row and no occupied slug —
+propagates unchanged.
 
 ## Unavailable Apps
 

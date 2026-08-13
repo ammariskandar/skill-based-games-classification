@@ -256,11 +256,7 @@ class SteamGamePersistenceService:
         New Games start as ``draft`` — imports never publish.  Manual
         metadata fields are not populated from Steam data.
         """
-        slug = build_steam_game_slug(
-            candidate.name,
-            app_id.value,
-            is_occupied=lambda value: Game.objects.filter(slug=value).exists(),
-        )
+        slug = self._allocate_slug(candidate, app_id)
 
         game = Game(
             source_type=SourceType.STEAM,
@@ -272,7 +268,7 @@ class SteamGamePersistenceService:
         # Field and model validation only — deliberately NOT
         # ``validate_constraints()``/``validate_unique()``.  The database
         # unique constraint is the concurrency authority: a pre-check
-        # would race with a parallel import of the same App ID.
+        # would race with a parallel import.
         game.clean_fields()
         game.clean()
 
@@ -280,19 +276,45 @@ class SteamGamePersistenceService:
             with transaction.atomic():
                 game.save()
         except IntegrityError:
-            # Expected unique-race: a concurrent import of the same App ID
-            # won.  The DB unique constraint is the authority.  Only
-            # recover when the identity row now exists — anything else
-            # propagates unchanged.
+            # Identity race: a concurrent import of the same App ID won.
+            # Adopt the winner's row — one canonical Game survives.
             raced = self._find_existing(app_id.value)
-            if raced is None:
+            if raced is not None:
+                return self._refresh_existing(raced, candidate, app_id)
+
+            # Slug race: an unrelated Game (e.g. a different Steam App ID
+            # with the same name) acquired our allocated slug between
+            # allocation and INSERT.  Recompute deterministically — the
+            # fresh allocation falls through to the suffixed/fallback
+            # candidate — and retry the INSERT once.
+            if not Game.objects.filter(slug=slug).exists():
                 raise
-            return self._refresh_existing(raced, candidate, app_id)
+            game.slug = self._allocate_slug(candidate, app_id)
+            try:
+                with transaction.atomic():
+                    game.save()
+            except IntegrityError:
+                raced = self._find_existing(app_id.value)
+                if raced is not None:
+                    return self._refresh_existing(raced, candidate, app_id)
+                raise
 
         return SteamGameImportResult(
             status=SteamGameImportStatus.CREATED,
             app_id=app_id,
             game_id=game.pk,
+        )
+
+    def _allocate_slug(
+        self,
+        candidate: SteamGameImportCandidate,
+        app_id: SteamAppId,
+    ) -> str:
+        """Allocate a deterministic slug for *candidate*, checking the DB."""
+        return build_steam_game_slug(
+            candidate.name,
+            app_id.value,
+            is_occupied=lambda value: Game.objects.filter(slug=value).exists(),
         )
 
 

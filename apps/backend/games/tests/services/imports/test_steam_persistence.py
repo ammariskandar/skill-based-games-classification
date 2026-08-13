@@ -17,7 +17,7 @@ from classifications.services.editorial import (
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, TransactionTestCase
 
 from games.models import Game, ListingStatus, SourceType
 from games.services.imports.steam import (
@@ -456,6 +456,70 @@ class ValidationAndAtomicityTests(TestCase):
         self.assertEqual(result.status, SteamGameImportStatus.UPDATED)
         raced.refresh_from_db()
         self.assertEqual(raced.name, "Raced — Final")
+
+
+# ---------------------------------------------------------------------------
+# Slug-race recovery (distinct App IDs, same name)
+# ---------------------------------------------------------------------------
+
+
+class SlugRaceTests(TransactionTestCase):
+    """A different Steam App ID stealing the preferred slug is recoverable.
+
+    Simulates the race window deterministically: the first allocation
+    returns the (now stale) preferred slug; the real INSERT fails on the
+    real unique slug constraint; recovery recomputes a deterministic slug
+    and retries once.
+    """
+
+    def test_slug_stolen_between_allocation_and_insert(self):
+        # An unrelated Game already owns the preferred slug.
+        manual = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Same Name",
+            slug="same-name",
+        )
+
+        import games.services.imports.steam as steam_module
+
+        real_allocate = steam_module.build_steam_game_slug
+        calls = {"count": 0}
+
+        def stale_allocation(name, app_id, **kwargs):
+            calls["count"] += 1
+            if calls["count"] == 1:
+                # Simulate the race window: allocation saw the slug free.
+                return "same-name"
+            return real_allocate(name, app_id, **kwargs)
+
+        service = SteamGamePersistenceService()
+        with mock.patch.object(
+            steam_module, "build_steam_game_slug", side_effect=stale_allocation
+        ):
+            result = service.persist(_candidate("777002", "Same Name"))
+
+        self.assertEqual(result.status, SteamGameImportStatus.CREATED)
+
+        steam = Game.objects.get(pk=result.game_id)
+        self.assertEqual(steam.external_id, "777002")
+        # Deterministic policy: preferred slug taken → suffixed candidate.
+        self.assertEqual(steam.slug, "same-name-steam-777002")
+
+        # The unrelated Game is untouched.
+        manual.refresh_from_db()
+        self.assertEqual(manual.slug, "same-name")
+        self.assertEqual(manual.source_type, SourceType.MANUAL)
+
+    def test_unrelated_integrity_error_still_propagates(self):
+        """No occupied slug and no identity row → the error is unrelated."""
+        service = SteamGamePersistenceService()
+        with mock.patch.object(Game, "save", side_effect=IntegrityError("boom")):
+            with self.assertRaises(IntegrityError):
+                service.persist(_candidate("777003", "Unique Name"))
+        steam_rows = Game.objects.filter(
+            source_type=SourceType.STEAM, external_id="777003"
+        )
+        self.assertEqual(steam_rows.count(), 0)
 
 
 # ---------------------------------------------------------------------------

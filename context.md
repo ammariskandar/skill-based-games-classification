@@ -2566,10 +2566,13 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   are never merged or converted.  Re-imports update name/content_type only;
   slug, listing status, manual metadata, and editorial classifications are
   preserved.  New imports start as draft.
-- Concurrency: `game_unique_source_external_id` is the authority; the losing
-  import recovers the winner's row (nested savepoint pattern).  Verified on
-  PostgreSQL 16 via `games/tests/test_import_concurrency.py`.
-- 75 new tests (74 SQLite + 1 PostgreSQL-only).  No schema changes, no
+- Concurrency: `game_unique_source_external_id` is the authority for
+  same-App-ID races — the losing import recovers the winner's row (nested
+  savepoint pattern).  Distinct App IDs with the same name race on the
+  unique slug index instead: the loser recomputes a deterministic
+  suffixed slug and retries once.  Both verified on PostgreSQL 16 via
+  `games/tests/test_import_concurrency.py`.
+- 78 new tests (76 SQLite + 2 PostgreSQL-only).  No schema changes, no
   migrations, no API/UI.
 - Created `docs/steam-import-workflow.md`; updated steam-integration,
   steam-endpoint-adapters, backend-architecture, game-model, and
