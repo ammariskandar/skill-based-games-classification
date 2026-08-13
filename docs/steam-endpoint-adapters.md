@@ -78,7 +78,10 @@ Violations raise `SteamMalformedPayloadError` or `SteamMissingRequiredFieldError
 
 - **Header image:** Must be a string or null.  Non-string types raise
   ``SteamMalformedPayloadError``.  HTTPS only, no credentials, no IP
-  literals.  Null/blank → ``None``.
+  literals, no numeric hosts, no localhost, no custom ports.
+  Null/blank → ``None`` (no upstream image).  **Nonblank malformed
+  strings raise** ``SteamMalformedPayloadError`` — malformed metadata
+  is never silently normalized to absence (SBGC-55 strict semantics).
 - **Website:** Must be a string or null.  Non-string types raise
   ``SteamMalformedPayloadError``.  HTTP or HTTPS, no credentials.
   Null/blank → ``None``.  Unsafe schemes rejected.

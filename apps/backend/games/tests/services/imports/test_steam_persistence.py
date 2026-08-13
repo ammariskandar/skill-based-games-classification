@@ -25,6 +25,7 @@ from games.services.imports.steam import (
     SteamGameImportStatus,
     SteamGamePersistenceService,
 )
+from games.services.steam.adapters import SteamMalformedPayloadError
 from games.services.steam.dto import SteamAppId, SteamGameImportCandidate
 
 
@@ -32,11 +33,13 @@ def _candidate(
     app_id: str = "730",
     name: str = "Counter-Strike",
     content_type: str = "game",
+    header_image_url: str | None = None,
 ) -> SteamGameImportCandidate:
     return SteamGameImportCandidate(
         app_id=app_id,
         name=name,
         content_type=content_type,
+        header_image_url=header_image_url,
     )
 
 
@@ -520,6 +523,212 @@ class SlugRaceTests(TransactionTestCase):
             source_type=SourceType.STEAM, external_id="777003"
         )
         self.assertEqual(steam_rows.count(), 0)
+
+
+# ---------------------------------------------------------------------------
+# Steam image persistence — SBGC-55
+# ---------------------------------------------------------------------------
+
+
+class SteamImageTests(TestCase):
+    """steam_image_url ownership, update, and preservation semantics."""
+
+    def setUp(self):
+        self.service = SteamGamePersistenceService()
+
+    # -- new imports ---------------------------------------------------------
+
+    def test_new_import_stores_image_url(self):
+        image = "https://cdn.example.com/steam/apps/620/header.jpg"
+        result = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image)
+        )
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.steam_image_url, image)
+
+    def test_new_import_without_image_has_empty_url(self):
+        result = self.service.persist(_candidate("620", "Portal 2"))
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.steam_image_url, "")
+
+    def test_new_import_with_malformed_url_raises_without_row(self):
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.service.persist(
+                _candidate(
+                    "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
+                )
+            )
+        steam_rows = Game.objects.filter(
+            source_type=SourceType.STEAM, external_id="620"
+        )
+        self.assertEqual(steam_rows.count(), 0)
+
+    def test_new_import_never_populates_manual_image(self):
+        image = "https://cdn.example.com/steam/apps/620/header.jpg"
+        result = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image)
+        )
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.manual_image_url, "")
+
+    def test_non_string_image_url_raises_without_row(self):
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.service.persist(
+                _candidate(
+                    "620",
+                    "Portal 2",
+                    header_image_url=123,  # type: ignore[arg-type]
+                )
+            )
+        steam_rows = Game.objects.filter(
+            source_type=SourceType.STEAM, external_id="620"
+        )
+        self.assertEqual(steam_rows.count(), 0)
+
+    # -- re-imports ----------------------------------------------------------
+
+    def test_reimport_changed_image_updates(self):
+        first = self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/a.jpg"
+            )
+        )
+        image_b = "https://cdn.example.com/b.jpg"
+        second = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image_b)
+        )
+
+        self.assertEqual(second.status, SteamGameImportStatus.UPDATED)
+        game = Game.objects.get(pk=first.game_id)
+        self.assertEqual(game.steam_image_url, image_b)
+
+    def test_reimport_same_image_unchanged(self):
+        image = "https://cdn.example.com/a.jpg"
+        self.service.persist(_candidate("620", "Portal 2", header_image_url=image))
+        result = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image)
+        )
+
+        self.assertEqual(result.status, SteamGameImportStatus.UNCHANGED)
+
+    def test_reimport_missing_image_preserves_existing(self):
+        image = "https://cdn.example.com/a.jpg"
+        self.service.persist(_candidate("620", "Portal 2", header_image_url=image))
+
+        # Upstream absence (None) preserves — this is the missing-image
+        # contract, distinct from malformed metadata which raises.
+        result = self.service.persist(_candidate("620", "Portal 2"))
+
+        self.assertEqual(result.status, SteamGameImportStatus.UNCHANGED)
+        game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
+        self.assertEqual(game.steam_image_url, image)
+
+    def test_reimport_malformed_image_raises_and_preserves_existing(self):
+        image = "https://cdn.example.com/a.jpg"
+        created = self.service.persist(
+            _candidate("620", "Portal 2", header_image_url=image)
+        )
+
+        # Malformed nonblank candidate metadata is an error — it is never
+        # reclassified as absence, so nothing is written.
+        with self.assertRaises(SteamMalformedPayloadError):
+            self.service.persist(
+                _candidate(
+                    "620", "Portal 2", header_image_url="http://cdn.example.com/x.jpg"
+                )
+            )
+
+        game = Game.objects.get(pk=created.game_id)
+        self.assertEqual(game.steam_image_url, image)
+
+    def test_image_update_preserves_manual_metadata(self):
+        created = self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/a.jpg"
+            )
+        )
+        game = Game.objects.get(pk=created.game_id)
+        game.manual_description = "Editorial description."
+        game.manual_image_url = "https://cdn.example.com/manual.png"
+        game.manual_website_url = "https://example.com"
+        game.save()
+
+        self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/b.jpg"
+            )
+        )
+
+        game.refresh_from_db()
+        self.assertEqual(game.manual_description, "Editorial description.")
+        self.assertEqual(game.manual_image_url, "https://cdn.example.com/manual.png")
+        self.assertEqual(game.manual_website_url, "https://example.com")
+
+    def test_image_update_preserves_listing_status(self):
+        created = self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/a.jpg"
+            )
+        )
+        game = Game.objects.get(pk=created.game_id)
+        game.listing_status = ListingStatus.PUBLISHED
+        game.save()
+
+        self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/b.jpg"
+            )
+        )
+
+        game.refresh_from_db()
+        self.assertEqual(game.listing_status, ListingStatus.PUBLISHED)
+
+    def test_image_update_preserves_classification(self):
+        created = self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/a.jpg"
+            )
+        )
+        game = Game.objects.get(pk=created.game_id)
+        editor = User.objects.create_user(username="image-editor")
+        set_editorial_classification(
+            game=game,
+            updated_by=editor,
+            challenge=ScoreDistribution(50, 20, 30),
+            reward=ScoreDistribution(10, 30, 60),
+            notes="Keep me.",
+        )
+
+        self.service.persist(
+            _candidate(
+                "620", "Portal 2", header_image_url="https://cdn.example.com/b.jpg"
+            )
+        )
+
+        game = Game.objects.get(pk=created.game_id)
+        classification = EditorialClassification.objects.get(game=game)
+        self.assertEqual(classification.notes, "Keep me.")
+        self.assertEqual(classification.challenge_profile.micro_score, 50)
+        self.assertEqual(classification.reward_profile.macro_score, 60)
+
+    # -- no network ----------------------------------------------------------
+
+    def test_image_persistence_makes_no_http_request(self):
+        """URL-only persistence must not fetch, HEAD, or resolve the URL."""
+        image = "https://cdn.example.com/steam/apps/620/header.jpg"
+        with mock.patch(
+            "games.services.steam.client.SteamClient.__init__",
+            side_effect=RuntimeError("Steam transport must not be used"),
+        ):
+            result = self.service.persist(
+                _candidate("620", "Portal 2", header_image_url=image)
+            )
+        self.assertEqual(result.status, SteamGameImportStatus.CREATED)
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.steam_image_url, image)
 
 
 # ---------------------------------------------------------------------------

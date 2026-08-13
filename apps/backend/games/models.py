@@ -391,6 +391,18 @@ class Game(models.Model):
     manual_image_url = models.URLField(max_length=500, blank=True)
     manual_website_url = models.URLField(max_length=500, blank=True)
 
+    # -- Steam-owned metadata ---------------------------------------------------
+
+    steam_image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text=(
+            "Steam header-image URL persisted from import candidates "
+            "(SBGC-55).  Never populated from manual/editorial data; "
+            "use manual_image_url for manual records."
+        ),
+    )
+
     # -- Timestamps -------------------------------------------------------------
 
     created_at = models.DateTimeField(auto_now_add=True)

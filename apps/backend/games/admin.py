@@ -38,4 +38,7 @@ class GameAdmin(admin.ModelAdmin):
         "display_identity",
         "created_at",
         "updated_at",
+        # Steam-owned metadata is source-managed — readonly for all
+        # records.  Manual/editorial imagery stays on manual_image_url.
+        "steam_image_url",
     )

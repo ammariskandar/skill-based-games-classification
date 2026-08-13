@@ -190,7 +190,7 @@ into `SteamClientConfig` — including defaults, overrides, malformed-value
 rejection, blank-key normalisation, CDN-host parsing, and test-settings
 isolation from the developer's `.env`.
 
-## Completed Work (SBGC-53 / SBGC-54)
+## Completed Work (SBGC-53 / SBGC-54 / SBGC-55)
 
 - Steam Store endpoint adapters — `SteamAppDetailsAdapter` for the Store
   appdetails endpoint, validating every structural layer of the response.
@@ -201,10 +201,15 @@ isolation from the developer's `.env`.
 - Steam persistence — `SteamGameImportService` / `SteamGamePersistenceService`
   create and refresh canonical `Game` rows from import candidates (SBGC-54).
   See `docs/steam-import-workflow.md`.
+- Steam image metadata — validated header-image URLs persist to
+  `Game.steam_image_url` (URL-only, no fetch/proxy/download) (SBGC-55).
+  See `docs/steam-images.md`.
 
 ## Future Work
 
-- CDN host allowlist populated with actual Steam CDN hosts
-- Steam image fetching and metadata refresh (SBGC-55/56)
+- CDN host allowlist populated from authoritative evidence of real Steam
+  CDN hostnames (live verification or Steam documentation) — required
+  before any image fetch/proxy feature.
+- Steam metadata refresh (SBGC-56)
 - Public Django Ninja routes consuming Steam data
 - Bulk/multi-app lookup and management commands

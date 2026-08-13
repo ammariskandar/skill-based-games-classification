@@ -2549,6 +2549,39 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-13 — SBGC-55 Steam image metadata
+
+- Architecture decision: **URL-only persistence** — validated remote
+  Steam header-image URLs are stored; no proxy, download, or binary
+  storage (context.md §14.3: never store image binaries).
+- Added `Game.steam_image_url` (`URLField(max_length=500, blank=True)`)
+  via `games.0004_game_steam_image_url` — reversible, no network, no
+  data fetch, existing rows valid.  `manual_image_url` untouched.
+- Extracted the adapter's private image check into the canonical pure
+  `validate_steam_image_url()` in `games/services/steam/cdn.py`; hardened
+  to reject IP literals (IPv4/IPv6), numeric hosts, localhost, custom
+  ports, and credentials.  Strict SBGC-53 semantics: non-string values
+  and **nonblank malformed strings raise `SteamMalformedPayloadError`**;
+  only absent/null/blank normalize to `None`.  Adapter and import
+  persistence share this single validator.
+- Import behavior: new imports persist the validated URL; re-imports
+  update only from a valid URL (→ UPDATED) and **preserve** the stored
+  value when the candidate carries no usable image field (None/blank).
+  Malformed candidate metadata raises before any write.  Slug, listing
+  status, `manual_*`, and editorial classification remain preserved.
+- Admin: `steam_image_url` readonly for all records; no preview rendering.
+- CDN host allowlist intentionally NOT populated — no repository evidence
+  of real Steam CDN hostnames; `validate_steam_cdn_url` (empty allowlist)
+  remains the strict future gate for any fetch/proxy work.  Gap recorded
+  in `docs/steam-images.md`.
+- 39 new tests (validator policy, persistence semantics, adapter
+  regression, no-network proof).  Migration-data tests migrated to the
+  historical project-state pattern.  No schema invention beyond the URL
+  field; no listing coupling; zero image HTTP requests.
+- Created `docs/steam-images.md`; updated steam-integration,
+  steam-import-workflow, game-model, backend-architecture, and
+  database-constraints docs.
+
 ## 2026-08-13 — SBGC-54 Steam game import workflow
 
 - Created `games/services/imports/` — the canonical persistence boundary

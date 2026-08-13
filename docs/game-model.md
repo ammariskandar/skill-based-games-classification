@@ -70,6 +70,14 @@ Optional application-owned editorial fields available for all source types:
 Not restricted to `source_type=manual` — editorial overrides may later
 be useful for Steam records too.
 
+## Steam-owned metadata
+
+- `steam_image_url` — `URLField(max_length=500, blank=True)` — the
+  validated Steam header-image URL persisted from import candidates
+  (SBGC-55).  URL-only metadata: no image bytes, no fetch, no proxy.
+  Never populated from manual/editorial data; `manual_image_url` is
+  never populated from Steam.  See `docs/steam-images.md`.
+
 ## Timestamps
 
 - `created_at` — `DateTimeField(auto_now_add=True)`
