@@ -39,26 +39,34 @@ apps/backend/
 │   ├── admin.py                # GameAdmin registered (SBGC-45)
 │   ├── types.py                # ContentType, CONTENT_TYPE_CHOICES (ORM-free) — SBGC-53
 │   ├── services/
-│   │   └── steam/              # Steam service package — SBGC-42/168/53
+│   │   ├── steam/              # Steam service package — SBGC-42/168/53
+│   │   │   ├── __init__.py     # Public re-exports
+│   │   │   ├── constants.py    # Immutable origins — SBGC-168
+│   │   │   ├── config.py       # SteamClientConfig (immutable dataclass)
+│   │   │   ├── client.py       # SteamClient (synchronous, injectable)
+│   │   │   ├── cdn.py          # validate_steam_cdn_url()
+│   │   │   ├── errors.py       # Service-specific exception taxonomy
+│   │   │   ├── dto.py          # SteamAppId, DTOs, LookupStatus — SBGC-53
+│   │   │   ├── mapping.py      # map_steam_product_type() — SBGC-53
+│   │   │   ├── import_foundation.py  # SteamImportFoundation — SBGC-53
+│   │   │   └── adapters/
+│   │   │       ├── __init__.py      # Adapter error taxonomy
+│   │   │       └── app_details.py   # SteamAppDetailsAdapter
+│   │   └── imports/            # Steam import persistence — SBGC-54
 │   │       ├── __init__.py     # Public re-exports
-│   │       ├── constants.py    # Immutable origins — SBGC-168
-│   │       ├── config.py       # SteamClientConfig (immutable dataclass)
-│   │       ├── client.py       # SteamClient (synchronous, injectable)
-│   │       ├── cdn.py          # validate_steam_cdn_url()
-│   │       ├── errors.py       # Service-specific exception taxonomy
-│   │       ├── dto.py          # SteamAppId, DTOs, LookupStatus — SBGC-53
-│   │       ├── mapping.py      # map_steam_product_type() — SBGC-53
-│   │       ├── import_foundation.py  # SteamImportFoundation — SBGC-53
-│   │       └── adapters/
-│   │           ├── __init__.py      # Adapter error taxonomy
-│   │           └── app_details.py   # SteamAppDetailsAdapter
+│   │       └── steam.py        # Persistence/import services, slug helper, results
 │   ├── tests/
-│   │   └── services/steam/
-│   │       ├── test_steam.py   # Steam transport tests
-│   │       ├── test_dto.py
-│   │       ├── test_mapping.py
-│   │       ├── test_app_details_adapter.py
-│   │       └── test_import_foundation.py
+│   │   ├── services/steam/
+│   │   │   ├── test_steam.py   # Steam transport tests
+│   │   │   ├── test_dto.py
+│   │   │   ├── test_mapping.py
+│   │   │   ├── test_app_details_adapter.py
+│   │   │   └── test_import_foundation.py
+│   │   ├── services/imports/
+│   │   │   ├── test_steam_persistence.py
+│   │   │   └── test_steam_import.py
+│   │   ├── test_steam_slugging.py
+│   │   └── test_import_concurrency.py  # PostgreSQL-only race verification
 │   └── migrations/
 │       ├── 0001_initial.py
 │       ├── 0002_alter_game_content_type.py
@@ -125,7 +133,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts, Steam integration.
 
-**Status (SBGC-45 through SBGC-53):** `Game` model, `GameQuerySet` (11 methods), `GameAdmin`, `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  **Steam persistence** (candidate → canonical `Game` row) and **public import API** are not yet implemented.
+**Status (SBGC-45 through SBGC-54):** `Game` model, `GameQuerySet` (11 methods), `GameAdmin`, `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  SBGC-54 added the persistence boundary (`SteamGameImportService` / `SteamGamePersistenceService`) — see `docs/steam-import-workflow.md`.  Public import API, Steam images, and metadata refresh are not yet implemented.
 
 ### `classifications`
 
@@ -187,9 +195,9 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. SBGC-168 hardened transport boundaries (immutable origins, operation budget ceiling, status-first error processing). SBGC-53 delivered Store endpoint adapters (`SteamAppDetailsAdapter`) and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`). Steam persistence (candidate → canonical `Game` row), public import API, and image/metadata refresh are not yet implemented.
+- **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. SBGC-168 hardened transport boundaries (immutable origins, operation budget ceiling, status-first error processing). SBGC-53 delivered Store endpoint adapters (`SteamAppDetailsAdapter`) and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`). SBGC-54 delivered candidate-to-Game persistence (`games/services/imports/`). Public import API, Steam images, and metadata refresh are not yet implemented.
 - **Backend operations** — SBGC-43 delivered Gunicorn/WhiteNoise, health endpoint, production logging, PostgreSQL-only enforcement, strengthened secret/CSRF validation, Render Blueprint, deployment checks, and operational scripts. See docs/backend-operations.md.
 - **Backend testing** — SBGC-44 established test conventions, discovery audit, subprocess isolation, and canonical testing documentation. See docs/backend-testing.md.
 - **SBGC-4 domain models complete** — SBGC-45 through SBGC-50 implemented the Game model, editorial classification, database constraints, content types, listing rules, query helpers, and development seed data.  SBGC-51 added Admin validation tests.
 - **No API/frontend game endpoints** — Domain endpoints and public pages are deferred to SBGC-9 and SBGC-10.
-- **Steam persistence not implemented** — Endpoint adapters and import-foundation DTOs are complete (SBGC-53).  Candidate-to-Game persistence, public import API, and frontend import flows are deferred to SBGC-54 and later tickets.
+- **Steam persistence exists, public import does not** — Candidate-to-Game persistence is complete (SBGC-54, `games/services/imports/`).  A public import API, Admin import actions, management commands, Steam images, and metadata refresh are deferred to later tickets.

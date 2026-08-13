@@ -102,6 +102,11 @@ Verification scope included:
 - Migration forward/reverse on PostgreSQL
 - Service transaction rollback on PostgreSQL
 - Concurrent uniqueness (serialized connections)
+- Concurrent Steam import identity race (SBGC-54) — two parallel
+  imports of the same App ID produce exactly one canonical row;
+  `game_unique_source_external_id` is the authority and the losing
+  import recovers the winner's row.  Verified in
+  `games/tests/test_import_concurrency.py`.
 
 ## Questionnaire Readiness
 

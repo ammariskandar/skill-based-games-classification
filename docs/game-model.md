@@ -132,9 +132,26 @@ network-dependent module.  Construction, `clean()`, `full_clean()`,
 `display_identity`, `__str__`, and Admin listing all operate without
 external I/O.
 
+## Steam import persistence (SBGC-54)
+
+`games/services/imports/` persists validated `SteamGameImportCandidate`
+DTOs as canonical Games.  See `docs/steam-import-workflow.md`.
+
+- New imports set `source_type=steam`, `external_id=app_id`, `name`,
+  `content_type`, a deterministically allocated `slug`, and the default
+  `listing_status=draft` — imports never publish.
+- Re-imports update only `name` and `content_type`; slug, listing status,
+  manual metadata, timestamps, and editorial classifications are
+  preserved.
+- `manual_*` fields are editorial-only and are **never** populated from
+  Steam data — Steam metadata persistence belongs to later tickets.
+
 ## Limitations
 
 - CheckConstraint enforcement depends on the database engine; SQLite
   enforces it by default (``PRAGMA ignore_check_constraints=0``).
   PostgreSQL-specific constraint and index behaviour is verified by
   SBGC-52.
+- Steam-owned metadata (`short_description`, `header_image_url`,
+  `website_url`, `is_free`, `developers`, `publishers`) has no canonical
+  fields yet — the import workflow does not persist it.

@@ -190,7 +190,7 @@ into `SteamClientConfig` — including defaults, overrides, malformed-value
 rejection, blank-key normalisation, CDN-host parsing, and test-settings
 isolation from the developer's `.env`.
 
-## Completed Work (SBGC-53)
+## Completed Work (SBGC-53 / SBGC-54)
 
 - Steam Store endpoint adapters — `SteamAppDetailsAdapter` for the Store
   appdetails endpoint, validating every structural layer of the response.
@@ -198,11 +198,13 @@ isolation from the developer's `.env`.
   produces normalised `SteamGameImportCandidate` DTOs from app details.
 - Product-type mapping — `map_steam_product_type()` maps raw Steam types
   to canonical `ContentType` values (game/dlc/demo/software/soundtrack/unknown).
+- Steam persistence — `SteamGameImportService` / `SteamGamePersistenceService`
+  create and refresh canonical `Game` rows from import candidates (SBGC-54).
+  See `docs/steam-import-workflow.md`.
 
 ## Future Work
 
-- Steam persistence workflow — candidate → canonical `Game` row (SBGC-54)
 - CDN host allowlist populated with actual Steam CDN hosts
+- Steam image fetching and metadata refresh (SBGC-55/56)
 - Public Django Ninja routes consuming Steam data
-- Image fetching and metadata refresh
 - Bulk/multi-app lookup and management commands
