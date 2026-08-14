@@ -390,11 +390,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is 401', function () {",
-                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "pm.test('status is 403', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
                   "});",
-                  "pm.test('error code is AUTHENTICATION_ERROR', function () {",
-                  "    pm.expect(pm.response.json().error.code).to.eql('AUTHENTICATION_ERROR');",
+                  "pm.test('error code is AUTHORIZATION_ERROR', function () {",
+                  "    pm.expect(pm.response.json().error.code).to.eql('AUTHORIZATION_ERROR');",
                   "});"
                 ]
               }
@@ -425,7 +425,7 @@
                 "import"
               ]
             },
-            "description": "Anonymous import attempt. Run with no session (clear cookies or run before 01 Authentication). Expected 401 AUTHENTICATION_ERROR."
+            "description": "Rejected without CSRF. With session auth + CSRF, Ninja checks CSRF before authentication, so an unauthenticated POST surfaces as 403 (CSRF check failed). The anonymous 401 case is proven in the automated test suite."
           },
           "response": []
         }
@@ -583,11 +583,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is 401', function () {",
-                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "pm.test('status is 403', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
                   "});",
-                  "pm.test('error code is AUTHENTICATION_ERROR', function () {",
-                  "    pm.expect(pm.response.json().error.code).to.eql('AUTHENTICATION_ERROR');",
+                  "pm.test('error code is AUTHORIZATION_ERROR', function () {",
+                  "    pm.expect(pm.response.json().error.code).to.eql('AUTHORIZATION_ERROR');",
                   "});"
                 ]
               }
@@ -610,7 +610,7 @@
                 "refresh"
               ]
             },
-            "description": "Anonymous refresh attempt. Run with no session. Expected 401 AUTHENTICATION_ERROR."
+            "description": "Rejected without CSRF. With session auth + CSRF, Ninja checks CSRF before authentication, so an unauthenticated POST surfaces as 403 (CSRF check failed). The anonymous 401 case is proven in the automated test suite."
           },
           "response": []
         }
