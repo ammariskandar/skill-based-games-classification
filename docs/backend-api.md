@@ -30,10 +30,15 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | Router            | Module                          | Tag              | Status            |
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
-| Games             | `games/api.py`                  | Games            | No operations yet |
+| Games             | `games/api.py`                  | Games            | Steam import + refresh active (SBGC-57) |
 | Classifications   | `classifications/api.py`        | Classifications   | No operations yet |
 
-Routers own domain-specific endpoints.  Domain models and services are implemented (SBGC-45 through SBGC-53), but Games and Classifications API routers currently have no domain operations.  Public API endpoints are deferred to SBGC-9 and SBGC-10.
+Routers own domain-specific endpoints.  Domain models and services are
+implemented (SBGC-45 through SBGC-56).  SBGC-57 added authorized Steam
+import and refresh mutations on the Games router:
+`POST /api/v1/games/steam/import` and
+`POST /api/v1/games/{game_id}/steam/refresh` — see `docs/steam-api.md`.
+Public game/classification read endpoints are deferred to SBGC-9 and SBGC-10.
 
 ## Request Schemas
 
@@ -147,8 +152,10 @@ values, Pydantic context, and documentation URLs are stripped.
 - `AuthenticationError` → 401 `AUTHENTICATION_ERROR`
 - `AuthorizationError` → 403 `AUTHORIZATION_ERROR`
 
-Generic safe messages are returned. No authentication implementation
-exists yet — handlers are wired for forward compatibility.
+Generic safe messages are returned.  No global authentication backend or
+middleware is configured; the SBGC-57 Steam mutation endpoints opt in to
+Django session authentication via Ninja's `auth=django_auth` (session + CSRF)
+and enforce `is_staff` authorization in the handler.
 
 ### Http404
 
@@ -216,15 +223,11 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **No domain API endpoints yet.** Games and Classifications routers exist
-  but contain no operations.  Domain models are implemented (SBGC-45–50),
-  Admin validation is complete (SBGC-51), but public API endpoints are
-  deferred to SBGC-9 and SBGC-10.
-- **Database models exist but are not consumed by API endpoints yet.**
-  Schemas remain pure Pydantic; `ModelSchema` is reserved for when
-  endpoints are implemented.
-- **No authentication.** Handlers are wired but no authentication
-  backend or middleware is configured.
+- **Steam import/refresh endpoints only.** SBGC-57 added authorized Steam
+  mutation endpoints (`docs/steam-api.md`).  Public game/classification read
+  endpoints remain deferred to SBGC-9 and SBGC-10.
+- **No global authentication backend.** Session auth is opt-in per operation
+  via `auth=django_auth`; there is no project-wide auth middleware.
 - **Method-not-allowed returns HTML.** Documented framework limitation
   for Django Ninja 1.6.2.
 - **CORS deny-by-default** — No browser-to-Django CORS configuration

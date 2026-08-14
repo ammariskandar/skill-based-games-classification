@@ -176,7 +176,6 @@ Nothing is written when preparation fails.
 
 ## Not in Scope (SBGC-54)
 
-- No public import API endpoint (Django Ninja)
 - No Admin import action
 - No management command
 - No frontend import UI
@@ -184,3 +183,8 @@ Nothing is written when preparation fails.
 - No metadata refresh
 - No bulk/multi-app lookup
 - No live Steam calls — all tests use mocked foundation/adapters
+
+## SBGC-57 API surface
+
+The authorized HTTP import endpoint (`POST /api/v1/games/steam/import`)
+wraps `SteamGameImportService.import_app` — see `docs/steam-api.md`.

@@ -138,7 +138,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts, Steam integration.
 
-**Status (SBGC-45 through SBGC-56):** `Game` model, `GameQuerySet` (9 custom query methods), `GameAdmin` (with the manual Steam refresh action), `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  SBGC-54 added the persistence boundary (`SteamGameImportService` / `SteamGamePersistenceService`) — see `docs/steam-import-workflow.md`.  SBGC-55 added validated Steam image-URL persistence (`steam_image_url`) — see `docs/steam-images.md`.  SBGC-56 added metadata refresh (`SteamGameRefreshService`, `last_steam_refresh_at`, Admin action) — see `docs/steam-metadata-refresh.md`.  Public import API and periodic/background refresh are not implemented.
+**Status (SBGC-45 through SBGC-57):** `Game` model, `GameQuerySet` (9 custom query methods), `GameAdmin` (with the manual Steam refresh action), `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  SBGC-54 added the persistence boundary (`SteamGameImportService` / `SteamGamePersistenceService`) — see `docs/steam-import-workflow.md`.  SBGC-55 added validated Steam image-URL persistence (`steam_image_url`) — see `docs/steam-images.md`.  SBGC-56 added metadata refresh (`SteamGameRefreshService`, `last_steam_refresh_at`, Admin action) — see `docs/steam-metadata-refresh.md`.  SBGC-57 added authorized HTTP import and refresh endpoints — see `docs/steam-api.md`.  Periodic/background refresh is not implemented.
 
 ### `classifications`
 
@@ -171,10 +171,10 @@ Skill vocabularies and pure helpers live in `classifications/skills.py`
 
 Mounted routers:
 - `""` → System (`GET /api/v1/` — product name and version)
-- `"/games/"` → Games (no operations yet)
+- `"/games/"` → Games (Steam import + refresh mutations — SBGC-57)
 - `"/classifications/"` → Classifications (no operations yet)
 
-See [`docs/backend-api.md`](backend-api.md) for API contracts, error envelope, and exception handling.
+See [`docs/backend-api.md`](backend-api.md) for API contracts, error envelope, and exception handling, and [`docs/steam-api.md`](steam-api.md) for the Steam import/refresh endpoints.
 
 **Reserved prefix:** `/api/v1/` — wired in `config/urls.py`.
 - `GET /api/v1/` — API root (200)
@@ -200,9 +200,9 @@ A `users` application for final-product accounts is planned but not yet created.
 
 ## Current Limitations
 
-- **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. SBGC-168 hardened transport boundaries (immutable origins, operation budget ceiling, status-first error processing). SBGC-53 delivered Store endpoint adapters (`SteamAppDetailsAdapter`) and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`). SBGC-54 delivered candidate-to-Game persistence (`games/services/imports/`). SBGC-55 delivered validated Steam image-URL persistence. SBGC-56 delivered metadata refresh (service + Admin action). Public import API, periodic refresh, and the remaining DTO metadata persistence are not implemented.
+- **Steam service foundation** — SBGC-42 delivered the synchronous Steam HTTP client with immutable configuration, bounded retries, API-key header-only transmission, response-size enforcement, CDN URL validation, and an isolated test suite. SBGC-168 hardened transport boundaries (immutable origins, operation budget ceiling, status-first error processing). SBGC-53 delivered Store endpoint adapters (`SteamAppDetailsAdapter`) and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`). SBGC-54 delivered candidate-to-Game persistence (`games/services/imports/`). SBGC-55 delivered validated Steam image-URL persistence. SBGC-56 delivered metadata refresh (service + Admin action). SBGC-57 delivered authorized HTTP import/refresh endpoints. Public read endpoints, periodic refresh, and the remaining DTO metadata persistence are not implemented.
 - **Backend operations** — SBGC-43 delivered Gunicorn/WhiteNoise, health endpoint, production logging, PostgreSQL-only enforcement, strengthened secret/CSRF validation, Render Blueprint, deployment checks, and operational scripts. See docs/backend-operations.md.
 - **Backend testing** — SBGC-44 established test conventions, discovery audit, subprocess isolation, and canonical testing documentation. See docs/backend-testing.md.
 - **SBGC-4 domain models complete** — SBGC-45 through SBGC-50 implemented the Game model, editorial classification, database constraints, content types, listing rules, query helpers, and development seed data.  SBGC-51 added Admin validation tests.
-- **No API/frontend game endpoints** — Domain endpoints and public pages are deferred to SBGC-9 and SBGC-10.
-- **Steam persistence exists, public import does not** — Candidate-to-Game persistence is complete (SBGC-54, `games/services/imports/`), Steam image URLs persist (SBGC-55), and manual metadata refresh exists as a service + Admin action (SBGC-56).  A public import API, periodic/background refresh, and the remaining DTO metadata persistence are deferred to later tickets.
+- **No public game read endpoints** — Public game/classification read endpoints and pages are deferred to SBGC-9 and SBGC-10.  SBGC-57 added the authorized Steam import/refresh mutation endpoints.
+- **Steam persistence exists, import/refresh API exists** — Candidate-to-Game persistence is complete (SBGC-54, `games/services/imports/`), Steam image URLs persist (SBGC-55), manual metadata refresh exists as a service + Admin action (SBGC-56), and authorized HTTP import/refresh endpoints exist (SBGC-57).  Periodic/background refresh and the remaining DTO metadata persistence are deferred to later tickets.

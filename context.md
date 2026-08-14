@@ -2549,6 +2549,41 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-14 — SBGC-57 Steam import/refresh API + Postman
+
+- Added authorized Django Ninja mutation endpoints on the Games router:
+  `POST /api/v1/games/steam/import` (wraps `SteamGameImportService`) and
+  `POST /api/v1/games/{game_id}/steam/refresh` (wraps
+  `SteamGameRefreshService`) — `games/api.py`.
+- Authorization: Django session auth via Ninja's `auth=django_auth`
+  (session + CSRF) with `is_staff` enforced in the handler.  Anonymous → 401,
+  authenticated non-staff → 403, staff/superuser → authorized.  Service code
+  stays authorization-free.
+- CSRF: Ninja marks its views `csrf_exempt` at Django middleware level, so
+  CSRF is enforced through Ninja's session-auth mechanism (`SessionAuth`,
+  which extends `APIKeyCookie` with `csrf=True`).  No global CSRF disable and
+  no bypass header; Postman uses the `X-CSRFToken` header with the current
+  `csrftoken` cookie.
+- Explicit request/response schemas: `SteamImportRequest` (`app_id: str`),
+  `GameSummary`, `SteamImportResponse`, `SteamRefreshResponse`.  Only
+  persisted, application-owned fields are exposed; unpersisted Steam DTO
+  metadata and manual metadata are excluded.
+- Status mapping: import CREATED → 201, UPDATED/UNCHANGED/UNAVAILABLE → 200;
+  refresh UPDATED/UNCHANGED/UNAVAILABLE → 200.  `unavailable` is a domain
+  outcome, never a 500.
+- Error mapping through `api/errors.py`/`ApiException`: invalid App ID and
+  manual-Game/identity `SteamRefreshError` → 400; rate limit → 429; all other
+  Steam transport/data errors → 503.
+- Postman collection, environment, and README under `postman/` with real
+  session+CSRF flow, import/refresh scenarios, and no committed secrets — see
+  `docs/postman-steam-integration.md`.
+- 29 new API tests (`api/tests/test_steam_import.py`,
+  `test_steam_refresh.py`, `test_steam_authorization.py`) exercising the full
+  route → auth → schema → handler → response stack with the service mocked at
+  its composition factory, plus CSRF enforcement proof.  Created
+  `docs/steam-api.md`; updated backend-api, backend-architecture,
+  steam-integration, steam-import-workflow, steam-metadata-refresh docs.
+
 ## 2026-08-14 — SBGC-56 Steam metadata refresh
 
 - Added `SteamGameRefreshService` in `games/services/imports/steam.py` —
