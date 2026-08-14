@@ -116,6 +116,10 @@ Rules:
 
 All current Steam, settings, and operations tests make no external requests.
 
+Live Steam validation is **not** part of the automated suite. SBGC-58
+performed it as a separate, explicit, manually-driven Postman verification —
+see `docs/steam-live-integration-validation.md`.
+
 ## Mocking Conventions
 
 - Use `unittest.mock.patch` where the symbol is looked up.

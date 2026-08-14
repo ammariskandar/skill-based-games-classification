@@ -2549,6 +2549,24 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-15 — SBGC-58 Steam live integration validation
+
+- Completed controlled live validation of the authorized Steam
+  import/refresh HTTP path against the real Steam Store API (local SQLite;
+  no Neon/Render).
+- Verified via Postman for App ID 620 (Portal 2, `game`): live import
+  (re-import of the seeded row), re-import idempotency, and live refresh.
+- Confirmed preservation of canonical identity, slug, listing status,
+  manual metadata, and editorial classification across live refresh.
+- Observed live payload compatibility (root object, App-ID key, `success`,
+  `data`, `name`, `type`) and a `shared.akamai.steamstatic.com` header-image
+  host (validator accepted, persisted URL matched).
+- Documented limitations: fresh `CREATED` import not observed via HTTP for
+  a non-seeded App ID; no non-Game live App ID tested; `UNAVAILABLE` and
+  artificial failure modes remain covered by deterministic tests; no image
+  fetch/proxy/allowlist change.  Created
+  `docs/steam-live-integration-validation.md`; updated cross-links.
+
 ## 2026-08-14 — SBGC-57 Steam import/refresh API + Postman
 
 - Added authorized Django Ninja mutation endpoints on the Games router:

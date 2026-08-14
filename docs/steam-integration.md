@@ -190,7 +190,7 @@ into `SteamClientConfig` — including defaults, overrides, malformed-value
 rejection, blank-key normalisation, CDN-host parsing, and test-settings
 isolation from the developer's `.env`.
 
-## Completed Work (SBGC-53 / SBGC-54 / SBGC-55 / SBGC-56)
+## Completed Work (SBGC-53 / SBGC-54 / SBGC-55 / SBGC-56 / SBGC-57 / SBGC-58)
 
 - Steam Store endpoint adapters — `SteamAppDetailsAdapter` for the Store
   appdetails endpoint, validating every structural layer of the response.
@@ -210,6 +210,9 @@ isolation from the developer's `.env`.
 - Authorized HTTP import/refresh endpoints — Django Ninja routes exposing
   `SteamGameImportService` and `SteamGameRefreshService` over session auth
   (SBGC-57).  See `docs/steam-api.md` and `docs/postman-steam-integration.md`.
+- Live Steam Store API validation — the authorized HTTP path was exercised
+  end-to-end against live Steam (SBGC-58).
+  See `docs/steam-live-integration-validation.md`.
 
 ## Future Work
 

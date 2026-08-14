@@ -182,3 +182,6 @@ SBGC-58 performs the controlled live Steam end-to-end validation through:
 ```text
 Postman → authorized HTTP API → Steam service → Steam → persistence → API response
 ```
+
+Live validation evidence is recorded in
+`docs/steam-live-integration-validation.md`.
