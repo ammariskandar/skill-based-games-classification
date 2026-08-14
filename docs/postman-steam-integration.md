@@ -80,3 +80,22 @@ Running the import/refresh requests against a local server will reach live
 Steam. This is an **optional local smoke test**, not the formal SBGC-58
 controlled live integration validation. Do not point the collection at
 production Neon or Render.
+
+## Human Postman validation — 2026-08-14
+
+A human completed the full Postman verification flow against the local Django
+development server (local SQLite) and confirmed **all** collection requests
+passed. The exercised scenarios were:
+
+- `00 System` — `Health` (200)
+- `01 Authentication` — `Acquire CSRF token`, `Login (establish staff session)`,
+  then `Acquire CSRF token` again (post-login token refresh)
+- `10 Steam Import` — `Valid import`, `Re-import same app`, `Invalid App ID`,
+  `Missing body`, `Unauthorized import` (rejected)
+- `20 Steam Refresh` — `Refresh captured Game`, `Manual Game rejection`,
+  `Game not found`, `Unauthorized refresh` (rejected)
+
+The import/refresh happy paths reached live Steam as an optional local smoke
+test. No raw traceback was surfaced in any response body.
+
+Formal controlled live Steam integration validation remains **SBGC-58**.
