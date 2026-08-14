@@ -98,4 +98,5 @@ passed. The exercised scenarios were:
 The import/refresh happy paths reached live Steam as an optional local smoke
 test. No raw traceback was surfaced in any response body.
 
-Formal controlled live Steam integration validation remains **SBGC-58**.
+Formal controlled live Steam integration validation was completed in
+**SBGC-58** — see `docs/steam-live-integration-validation.md`.
