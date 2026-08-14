@@ -72,6 +72,13 @@ class FieldMetadataTests(SimpleTestCase):
         self.assertFalse(field.null)
         self.assertEqual(field.max_length, 500)
 
+    def test_last_steam_refresh_at_nullable(self):
+        field = model_field(Game, "last_steam_refresh_at")
+        self.assertTrue(field.null)
+        self.assertTrue(field.blank)
+        self.assertFalse(getattr(field, "auto_now", False))
+        self.assertFalse(getattr(field, "auto_now_add", False))
+
     def test_timestamps_auto(self):
         self.assertTrue(model_field(Game, "created_at").auto_now_add)  # pyright: ignore[reportAttributeAccessIssue] — DateField-specific attribute
         self.assertTrue(model_field(Game, "updated_at").auto_now)  # pyright: ignore[reportAttributeAccessIssue] — DateField-specific attribute
@@ -508,6 +515,7 @@ class AdminRegistrationTests(SimpleTestCase):
         self.assertIn("created_at", GameAdmin.readonly_fields)
         self.assertIn("updated_at", GameAdmin.readonly_fields)
         self.assertIn("steam_image_url", GameAdmin.readonly_fields)
+        self.assertIn("last_steam_refresh_at", GameAdmin.readonly_fields)
 
 
 class AdminFunctionalTests(TestCase):

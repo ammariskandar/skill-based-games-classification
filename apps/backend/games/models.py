@@ -403,6 +403,16 @@ class Game(models.Model):
         ),
     )
 
+    last_steam_refresh_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "When this Steam record's metadata was last successfully "
+            "verified against Steam (SBGC-56).  NULL = never refreshed.  "
+            "Not set when the Steam app is unavailable."
+        ),
+    )
+
     # -- Timestamps -------------------------------------------------------------
 
     created_at = models.DateTimeField(auto_now_add=True)

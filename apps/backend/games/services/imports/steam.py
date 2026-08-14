@@ -1,5 +1,5 @@
 """
-Steam game import persistence and orchestration — SBGC-54.
+Steam game import persistence, orchestration, and refresh — SBGC-54/56.
 
 Layers:
 
@@ -9,6 +9,10 @@ Layers:
   image-URL validator, and the payload error taxonomy.
 - ``SteamGameImportService`` — orchestrates SBGC-53's
   ``SteamImportFoundation`` (network) with the persistence layer.
+- ``SteamGameRefreshService`` — refreshes an existing canonical Steam
+  Game from Steam (SBGC-56): eligibility checks, network lookup outside
+  any transaction, identity verification, then Steam-owned field
+  updates via the shared mapping helper.
 
 Critical boundary: candidate preparation (network) happens *before* any
 database transaction opens.  The persistence service owns the only
@@ -26,6 +30,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from django.utils.text import slugify
 
 from games.models import Game, SourceType
@@ -36,6 +41,45 @@ from games.services.steam.dto import (
     SteamGameImportCandidate,
 )
 from games.services.steam.import_foundation import SteamImportFoundation
+
+# ---------------------------------------------------------------------------
+# Shared Steam-owned field mapping (single owner)
+# ---------------------------------------------------------------------------
+
+#: Steam-owned fields refreshable from a candidate, in deterministic order.
+_REFRESHABLE_FIELDS = ("name", "content_type", "steam_image_url")
+
+
+def _apply_steam_owned_updates(
+    existing: Game,
+    candidate: SteamGameImportCandidate,
+) -> tuple[str, ...]:
+    """Apply Steam-owned field updates from *candidate* onto *existing*.
+
+    The single owner of the field-mapping table for import updates and
+    metadata refresh.  SBGC-55 image semantics apply: a valid HTTPS URL
+    updates ``steam_image_url``; ``None``/blank preserves it; malformed
+    nonblank metadata raises ``SteamMalformedPayloadError`` before any
+    mutation.
+
+    Mutates *existing* in memory only — the caller decides whether to
+    save.  Returns the changed field names in the deterministic
+    ``_REFRESHABLE_FIELDS`` order.
+    """
+    image_url = validate_steam_image_url(candidate.header_image_url)
+
+    changed: list[str] = []
+    if existing.name != candidate.name:
+        existing.name = candidate.name
+        changed.append("name")
+    if existing.content_type != candidate.content_type:
+        existing.content_type = candidate.content_type
+        changed.append("content_type")
+    if image_url is not None and existing.steam_image_url != image_url:
+        existing.steam_image_url = image_url
+        changed.append("steam_image_url")
+    return tuple(changed)
+
 
 # ---------------------------------------------------------------------------
 # Import outcomes
@@ -225,31 +269,10 @@ class SteamGamePersistenceService:
     ) -> SteamGameImportResult:
         """Update source-owned fields only.  Preserve everything else.
 
-        Missing-image semantics (SBGC-55, reused by SBGC-56):
-
-        - valid HTTPS URL → updates ``steam_image_url`` when different;
-        - ``None`` (upstream did not provide a usable image field) →
-          preserves the stored URL;
-        - malformed nonblank candidate metadata raises
-          ``SteamMalformedPayloadError`` before any mutation — it is
-          never reclassified as absence.
+        Delegates to ``_apply_steam_owned_updates`` — the single owner
+        of the field-mapping table shared with ``SteamGameRefreshService``.
         """
-        # Validate before mutating anything so a malformed candidate
-        # cannot partially alter in-memory state.
-        image_url = self._normalised_image_url(candidate)
-
-        changed = False
-
-        if existing.name != candidate.name:
-            existing.name = candidate.name
-            changed = True
-        if existing.content_type != candidate.content_type:
-            existing.content_type = candidate.content_type
-            changed = True
-
-        if image_url is not None and existing.steam_image_url != image_url:
-            existing.steam_image_url = image_url
-            changed = True
+        changed = _apply_steam_owned_updates(existing, candidate)
 
         if not changed:
             return SteamGameImportResult(
@@ -399,10 +422,187 @@ class SteamGameImportService:
         return self._persistence.persist(candidate)
 
 
+# ---------------------------------------------------------------------------
+# Metadata refresh (SBGC-56)
+# ---------------------------------------------------------------------------
+
+
+class SteamRefreshError(Exception):
+    """Domain error for invalid refresh targets or identity violations."""
+
+
+class SteamGameRefreshStatus(StrEnum):
+    """Outcome of refreshing one canonical Steam Game."""
+
+    UPDATED = "updated"
+    UNCHANGED = "unchanged"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True, slots=True)
+class SteamGameRefreshResult:
+    """Result of refreshing one canonical Steam Game from Steam.
+
+    Invariants:
+    - ``UPDATED`` requires a non-empty ``changed_fields``.
+    - ``UNCHANGED`` / ``UNAVAILABLE`` require empty ``changed_fields``.
+    - ``changed_fields`` contains only source-owned field names.
+    """
+
+    status: SteamGameRefreshStatus
+    game_id: int
+    changed_fields: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.status, SteamGameRefreshStatus):
+            raise TypeError(
+                "status must be a SteamGameRefreshStatus, "
+                f"got {type(self.status).__name__}."
+            )
+        if isinstance(self.game_id, bool) or not isinstance(self.game_id, int):
+            raise TypeError("game_id must be an integer.")
+        if not isinstance(self.changed_fields, tuple) or any(
+            not isinstance(field, str) for field in self.changed_fields
+        ):
+            raise TypeError("changed_fields must be a tuple of strings.")
+        unknown = set(self.changed_fields) - set(_REFRESHABLE_FIELDS)
+        if unknown:
+            raise ValueError(
+                "changed_fields must be Steam-owned fields only, "
+                f"got {sorted(unknown)}."
+            )
+        if self.status == SteamGameRefreshStatus.UPDATED:
+            if not self.changed_fields:
+                raise ValueError("UPDATED results require non-empty changed_fields.")
+        elif self.changed_fields:
+            raise ValueError(
+                f"{self.status.value} results require empty changed_fields."
+            )
+
+
+class SteamGameRefreshService:
+    """Refresh one canonical Steam Game from Steam.
+
+    - Eligibility: only ``source_type=steam`` Games; the stored
+      ``external_id`` is the only accepted App ID (validated through
+      ``SteamAppId``) — no replacement App IDs.
+    - Network (``prepare_candidate``) runs strictly before any database
+      transaction opens.
+    - Identity invariant: the lookup and candidate must match
+      ``game.external_id`` — mismatches raise with zero writes.
+    - Steam-owned fields (name, content_type, steam_image_url) update
+      through the shared ``_apply_steam_owned_updates`` helper (single
+      owner).  Slug, listing status, manual metadata, classifications,
+      ``created_at``, and ``source_type``/``external_id``/``id`` are
+      never touched.
+    - ``last_steam_refresh_at`` records successful verifications:
+      ``UPDATED`` via the model save; ``UNCHANGED`` via a queryset
+      update so ``updated_at`` stays untouched.
+    """
+
+    def __init__(
+        self,
+        foundation: SteamImportFoundation,
+        persistence: SteamGamePersistenceService,
+    ) -> None:
+        self._foundation = foundation
+        self._persistence = persistence
+
+    def refresh(self, game: Game) -> SteamGameRefreshResult:
+        """Refresh *game* from Steam and return a typed result.
+
+        Raises:
+            SteamRefreshError: Manual game, unsaved game, invalid stored
+                App ID, identity mismatch, or missing canonical row.
+            SteamMalformedPayloadError / SteamAdapterError / transport
+                errors: propagated unchanged from the foundation.
+        """
+        if not isinstance(game, Game):
+            raise TypeError(f"game must be a Game instance, got {type(game).__name__}.")
+        if game.pk is None:
+            raise SteamRefreshError("game must be saved before refreshing.")
+        if game.source_type != SourceType.STEAM:
+            raise SteamRefreshError(
+                f"Only Steam-sourced games can refresh (game {game.pk} is "
+                f"{game.source_type})."
+            )
+
+        # The stored external ID is the only accepted App ID.
+        try:
+            app_id = SteamAppId(game.external_id)
+        except (TypeError, ValueError) as exc:
+            raise SteamRefreshError(
+                f"Stored Steam external ID {game.external_id!r} is invalid: {exc}"
+            ) from exc
+
+        # -- Network: strictly outside any database transaction ---------------
+        lookup = self._foundation.prepare_candidate(app_id.value)
+
+        if lookup.status == LookupStatus.UNAVAILABLE:
+            # Preserve the Game completely — no writes at all.
+            return SteamGameRefreshResult(
+                status=SteamGameRefreshStatus.UNAVAILABLE,
+                game_id=game.pk,
+            )
+
+        candidate = lookup.candidate
+        if candidate is None:
+            raise ValueError("FOUND lookup must include an import candidate.")
+
+        # -- Identity invariant: zero writes on mismatch -----------------------
+        if lookup.app_id != game.external_id:
+            raise SteamRefreshError(
+                f"Lookup returned App ID {lookup.app_id!r}, expected "
+                f"{game.external_id!r}."
+            )
+        if candidate.app_id != game.external_id:
+            raise SteamRefreshError(
+                f"Candidate carries App ID {candidate.app_id!r}, expected "
+                f"{game.external_id!r}."
+            )
+
+        # Malformed candidate metadata raises before any transaction/write.
+        validate_steam_image_url(candidate.header_image_url)
+
+        # -- DB work: the only transaction in this path -------------------------
+        with transaction.atomic():
+            existing = self._persistence._find_existing(app_id.value)
+            if existing is None:
+                raise SteamRefreshError(
+                    f"Canonical Steam Game row for App ID {app_id.value} no "
+                    "longer exists."
+                )
+
+            changed = _apply_steam_owned_updates(existing, candidate)
+            now = timezone.now()
+
+            if changed:
+                existing.last_steam_refresh_at = now
+                existing.full_clean()
+                existing.save()
+                return SteamGameRefreshResult(
+                    status=SteamGameRefreshStatus.UPDATED,
+                    game_id=existing.pk,
+                    changed_fields=changed,
+                )
+
+            # UNCHANGED: record the successful verification without a model
+            # save so updated_at remains untouched.
+            Game.objects.filter(pk=existing.pk).update(last_steam_refresh_at=now)
+            return SteamGameRefreshResult(
+                status=SteamGameRefreshStatus.UNCHANGED,
+                game_id=existing.pk,
+            )
+
+
 __all__ = [
     "SteamGameImportResult",
     "SteamGameImportService",
     "SteamGameImportStatus",
     "SteamGamePersistenceService",
+    "SteamGameRefreshResult",
+    "SteamGameRefreshService",
+    "SteamGameRefreshStatus",
+    "SteamRefreshError",
     "build_steam_game_slug",
 ]

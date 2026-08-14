@@ -19,6 +19,10 @@ from games.services.imports.steam import (
     SteamGameImportService,
     SteamGameImportStatus,
     SteamGamePersistenceService,
+    SteamGameRefreshResult,
+    SteamGameRefreshService,
+    SteamGameRefreshStatus,
+    SteamRefreshError,
     build_steam_game_slug,
 )
 
@@ -27,5 +31,9 @@ __all__ = [
     "SteamGameImportService",
     "SteamGameImportStatus",
     "SteamGamePersistenceService",
+    "SteamGameRefreshResult",
+    "SteamGameRefreshService",
+    "SteamGameRefreshStatus",
+    "SteamRefreshError",
     "build_steam_game_slug",
 ]
