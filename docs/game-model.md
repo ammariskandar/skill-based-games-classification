@@ -77,6 +77,10 @@ be useful for Steam records too.
   (SBGC-55).  URL-only metadata: no image bytes, no fetch, no proxy.
   Never populated from manual/editorial data; `manual_image_url` is
   never populated from Steam.  See `docs/steam-images.md`.
+- `last_steam_refresh_at` — `DateTimeField(null=True, blank=True)` —
+  when this Steam record's metadata was last successfully verified
+  against Steam (SBGC-56).  `NULL` = never refreshed; not set when the
+  Steam app is unavailable.  See `docs/steam-metadata-refresh.md`.
 
 ## Timestamps
 

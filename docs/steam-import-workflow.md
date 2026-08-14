@@ -21,6 +21,7 @@ Owned layers:
 | Import foundation | `games/services/steam/import_foundation.py` | App-ID validation, fetch, candidate normalisation (SBGC-53) |
 | Import orchestration | `games/services/imports/steam.py` | Lookup → persistence boundary (SBGC-54) |
 | Persistence | `games/services/imports/steam.py` | Candidate → canonical `Game` row (SBGC-54) |
+| Metadata refresh | `games/services/imports/steam.py` | Existing Steam Game → verified metadata update (SBGC-56) |
 
 ## Services
 
@@ -34,6 +35,13 @@ Steam transport, adapters, or HTTP machinery.
 
 Uses `SteamImportFoundation` for the network lookup, then delegates to
 the persistence service.
+
+### `SteamGameRefreshService.refresh(game)` — SBGC-56
+
+Refreshes an existing Steam Game: eligibility, network lookup outside
+any transaction, identity verification, then the shared
+`_apply_steam_owned_updates()` mapping.  See
+`docs/steam-metadata-refresh.md`.
 
 ## Transaction Boundary
 
