@@ -1,0 +1,9 @@
+# Use this workspace to collaborate
+workspace:
+  id: 278c6bdb-a093-4055-8d2d-c22aed03b7ee
+
+localResources:
+  collections:
+    - ../Skill-Based Games Classification.postman_collection.json
+  environments:
+    - ../local.postman_environment.json

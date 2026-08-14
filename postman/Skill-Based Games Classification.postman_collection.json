@@ -30,7 +30,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/health/"
+              "raw": "{{base_url}}/health/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                ""
+              ]
             },
             "description": "Public liveness probe. No authentication, no database, no Steam."
           },
@@ -64,7 +71,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/{{admin_url_path}}/login/"
+              "raw": "{{base_url}}/{{admin_url_path}}/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "{{admin_url_path}}",
+                "login",
+                ""
+              ]
             },
             "description": "Fetches the Django Admin login page to obtain the csrftoken cookie. The cookie value is captured into {{csrf_token}} for the Login request."
           },
@@ -91,18 +106,38 @@
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                { "key": "username", "value": "{{username}}", "type": "text" },
-                { "key": "password", "value": "{{password}}", "type": "text" },
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
                 {
                   "key": "csrfmiddlewaretoken",
                   "value": "{{csrf_token}}",
                   "type": "text"
                 },
-                { "key": "next", "value": "/{{admin_url_path}}/", "type": "text" }
+                {
+                  "key": "next",
+                  "value": "/{{admin_url_path}}/",
+                  "type": "text"
+                }
               ]
             },
             "url": {
-              "raw": "{{base_url}}/{{admin_url_path}}/login/"
+              "raw": "{{base_url}}/{{admin_url_path}}/login/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "{{admin_url_path}}",
+                "login",
+                ""
+              ]
             },
             "description": "Authenticates against Django's existing Admin login to establish a session. Uses {{username}}/{{password}} (local-only, empty in this repo) and the csrftoken acquired in the previous request. After login, Django rotates the CSRF cookie; subsequent mutation requests read the fresh csrftoken from the cookie jar."
           },
@@ -162,10 +197,24 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"{{steam_app_id}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/games/steam/import"
+              "raw": "{{base_url}}/api/v1/games/steam/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "steam",
+                "import"
+              ]
             },
             "description": "Imports (or re-imports) the Steam App ID from {{steam_app_id}}. Captures the resulting canonical game_id into {{game_id}} for the refresh requests. Requires an authenticated staff session (run 01 Authentication first)."
           },
@@ -214,10 +263,24 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"{{steam_app_id}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/games/steam/import"
+              "raw": "{{base_url}}/api/v1/games/steam/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "steam",
+                "import"
+              ]
             },
             "description": "Re-imports the same App ID. Must return the same canonical game_id; status is UNCHANGED (or UPDATED if upstream Steam metadata changed since the first import)."
           },
@@ -259,10 +322,24 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"not-a-number\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/games/steam/import"
+              "raw": "{{base_url}}/api/v1/games/steam/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "steam",
+                "import"
+              ]
             },
             "description": "Domain-level invalid App ID (a non-decimal string). The request schema accepts it as a string, but the Steam service rejects it; the API maps it to 400 BAD_REQUEST."
           },
@@ -304,10 +381,24 @@
             "body": {
               "mode": "raw",
               "raw": "",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/games/steam/import"
+              "raw": "{{base_url}}/api/v1/games/steam/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "steam",
+                "import"
+              ]
             },
             "description": "Missing/empty request body. The import request schema requires app_id, so this returns 422 VALIDATION_ERROR before any service call."
           },
@@ -337,10 +428,24 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"{{steam_app_id}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/games/steam/import"
+              "raw": "{{base_url}}/api/v1/games/steam/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "steam",
+                "import"
+              ]
             },
             "description": "Anonymous import attempt. Run with no session (clear cookies or run before 01 Authentication). Expected 401 AUTHENTICATION_ERROR."
           },
@@ -394,7 +499,18 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/games/{{game_id}}/steam/refresh"
+              "raw": "{{base_url}}/api/v1/games/{{game_id}}/steam/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{game_id}}",
+                "steam",
+                "refresh"
+              ]
             },
             "description": "Refreshes the Steam Game captured by the import requests. The Game is identified by its internal ID ({{game_id}}); the persisted Steam identity is the only App ID used. Requires an authenticated staff session."
           },
@@ -434,7 +550,18 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/games/{{manual_game_id}}/steam/refresh"
+              "raw": "{{base_url}}/api/v1/games/{{manual_game_id}}/steam/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{manual_game_id}}",
+                "steam",
+                "refresh"
+              ]
             },
             "description": "Attempts to refresh a manual (non-Steam) Game. The service rejects it (SteamRefreshError) without any Steam network call; the API maps it to 400 BAD_REQUEST. Set {{manual_game_id}} to an existing manual Game ID."
           },
@@ -474,7 +601,18 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/games/999999/steam/refresh"
+              "raw": "{{base_url}}/api/v1/games/999999/steam/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "999999",
+                "steam",
+                "refresh"
+              ]
             },
             "description": "Nonexistent internal Game ID. Returns 404 NOT_FOUND before any Steam service/network call."
           },
@@ -502,7 +640,18 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/games/{{game_id}}/steam/refresh"
+              "raw": "{{base_url}}/api/v1/games/{{game_id}}/steam/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{game_id}}",
+                "steam",
+                "refresh"
+              ]
             },
             "description": "Anonymous refresh attempt. Run with no session. Expected 401 AUTHENTICATION_ERROR."
           },
