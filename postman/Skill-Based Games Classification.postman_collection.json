@@ -156,7 +156,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -228,7 +232,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -294,7 +302,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -353,7 +365,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -464,7 +480,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -524,7 +544,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
@@ -575,7 +599,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const csrfToken = pm.cookies.get('csrftoken');",
+                  "const cookie = pm.cookies.get('csrftoken');",
+                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "if (!csrfToken && pm.cookies.toObject) {",
+                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
+                  "}",
                   "if (csrfToken) {",
                   "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
                   "}"
