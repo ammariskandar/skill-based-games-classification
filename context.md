@@ -2549,6 +2549,47 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-14 — SBGC-56 Steam metadata refresh
+
+- Added `SteamGameRefreshService` in `games/services/imports/steam.py` —
+  refreshes an existing canonical Steam Game: eligibility (steam-only,
+  stored `external_id` is the only accepted App ID via `SteamAppId`),
+  network lookup strictly outside any DB transaction, identity
+  verification (lookup and candidate must match the stored external ID
+  — mismatch raises `SteamRefreshError` with zero writes), then
+  Steam-owned field updates.
+- Single owner of field mapping: extracted `_apply_steam_owned_updates()`
+  shared by SBGC-54 import updates and SBGC-56 refresh — name,
+  content_type, steam_image_url (SBGC-55 image semantics unchanged:
+  valid updates, None/blank preserves, malformed raises).
+- `Game.last_steam_refresh_at` (`DateTimeField(null=True, blank=True)`,
+  `games.0005` migration) records successful verifications: UPDATED via
+  the model save; UNCHANGED via a queryset update so `updated_at` stays
+  untouched.  Never set on UNAVAILABLE or errors.
+- Immutable `SteamGameRefreshResult` / `SteamGameRefreshStatus`
+  (UPDATED/UNCHANGED/UNAVAILABLE) with invariants: UPDATED requires
+  non-empty `changed_fields`; others require empty; only Steam-owned
+  field names allowed, deterministic order.
+- Unavailable apps preserve the Game completely.  Technical errors
+  propagate unchanged and are never mapped to UNAVAILABLE.  Slug,
+  listing status, manual metadata, classifications, created_at,
+  source_type/external_id/id are never refreshed.  Type transitions
+  (published GAME → DLC/unknown) keep listing_status but leave
+  `publicly_listable()`.
+- Manual Admin action "Refresh Steam metadata from Steam" (SBGC-56
+  registry scope "manual admin refresh"): skips manual games without
+  network calls, counts outcomes, reports per-game known errors, lets
+  unexpected exceptions propagate.  No Ninja endpoint, scheduler, or
+  bulk-refresh job.
+- DTO fields `short_description`, `website_url`, `is_free`,
+  `developers`, `publishers` remain intentionally unpersisted — no
+  Steam-owned schema for them yet (documented).
+- 37 new tests (refresh service, Admin action, result invariants, model
+  metadata).  No concurrency/locking changes — last-write-wins refreshes
+  cannot violate non-refreshed invariants.  Created
+  `docs/steam-metadata-refresh.md`; updated steam-integration,
+  steam-import-workflow, steam-images, game-model, backend-architecture docs.
+
 ## 2026-08-13 — SBGC-55 Steam image metadata
 
 - Architecture decision: **URL-only persistence** — validated remote

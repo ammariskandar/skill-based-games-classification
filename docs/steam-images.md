@@ -130,9 +130,9 @@ Chosen contract — **preserve on absence** (refresh-compatible):
   it is not reclassified as absence and never clears or preserves
   silently.
 
-SBGC-56 (metadata refresh) must reuse this contract: only a validated
+SBGC-56 (metadata refresh) reuses this contract: only a validated
 HTTPS URL updates the field; `None`/blank preserves it; malformed
-nonblank metadata raises.
+nonblank metadata raises.  See `docs/steam-metadata-refresh.md`.
 
 ## Listing Behavior
 
