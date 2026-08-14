@@ -145,5 +145,12 @@ PostgreSQL-specific semantics were introduced.
 
 ## SBGC-57 Handoff
 
-SBGC-57 (Postman/test scripts) may call `SteamGameRefreshService` and
-`SteamGameImportService` directly; no HTTP surface exists for either.
+SBGC-57 added the authorized HTTP surface over both
+`SteamGameRefreshService` and `SteamGameImportService`:
+
+```text
+POST /api/v1/games/steam/import
+POST /api/v1/games/{game_id}/steam/refresh
+```
+
+See `docs/steam-api.md` and `docs/postman-steam-integration.md`.

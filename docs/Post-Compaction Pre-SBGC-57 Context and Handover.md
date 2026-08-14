@@ -995,3 +995,17 @@ Typecheck (`npm run typecheck:backend`) if the environment is healthy. Do not ru
 ---
 
 *End of handover. Repository, code, tests, migrations, Git history, and canonical docs override this document wherever they conflict.*
+
+---
+
+# Post-SBGC-57 Outcome Note (added 2026-08-14)
+
+SBGC-57 has been implemented on branch
+`SBGC-57-configure-postman-api-and-test-scripts`.  The handover's recommended
+HTTP architecture was followed: `POST /api/v1/games/steam/import` and
+`POST /api/v1/games/{game_id}/steam/refresh`, Django session auth via Ninja's
+`auth=django_auth` (session + CSRF) with `is_staff` authorization, thin
+handlers over the existing services, explicit schemas, and centralized error
+mapping.  Postman assets live under `postman/`.  See `docs/steam-api.md`,
+`docs/postman-steam-integration.md`, and the SBGC-57 changelog entry in
+`context.md`.  Formal live Steam validation remains SBGC-58.

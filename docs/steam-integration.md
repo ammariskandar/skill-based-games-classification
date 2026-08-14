@@ -207,6 +207,9 @@ isolation from the developer's `.env`.
 - Metadata refresh — `SteamGameRefreshService`, `Game.last_steam_refresh_at`,
   and a manual Admin refresh action (SBGC-56).
   See `docs/steam-metadata-refresh.md`.
+- Authorized HTTP import/refresh endpoints — Django Ninja routes exposing
+  `SteamGameImportService` and `SteamGameRefreshService` over session auth
+  (SBGC-57).  See `docs/steam-api.md` and `docs/postman-steam-integration.md`.
 
 ## Future Work
 
@@ -215,5 +218,5 @@ isolation from the developer's `.env`.
 - CDN host allowlist populated from authoritative evidence of real Steam
   CDN hostnames (live verification or Steam documentation) — required
   before any image fetch/proxy feature.
-- Public Django Ninja routes consuming Steam data
+- Public Django Ninja read routes consuming Steam data
 - Bulk/multi-app lookup and management commands
