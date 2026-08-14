@@ -58,18 +58,17 @@ session authentication — no API keys or bearer tokens.
 Run the `01 Authentication` group in order:
 
 1. **Acquire CSRF token** — `GET /{{admin_url_path}}/login/` issues the
-   `csrftoken` cookie. The collection captures it into `{{csrf_token}}`.
+   `csrftoken` cookie and captures it into `{{csrf_token}}`.
 2. **Login (establish staff session)** — `POST /{{admin_url_path}}/login/`
-   submits `username`, `password`, and `csrfmiddlewaretoken`, reusing Django's
-   existing Admin login. This establishes the `sessionid` cookie.
+   submits `username`, `password`, and `csrfmiddlewaretoken={{csrf_token}}`,
+   reusing Django's existing Admin login. This establishes the `sessionid`
+   cookie.
+3. **Acquire CSRF token (again)** — Django rotates the CSRF cookie on login,
+   so re-run step 1 to refresh `{{csrf_token}}` with the post-login value.
 
-Django rotates the CSRF cookie on login, so the mutation requests do **not**
-reuse the stale `{{csrf_token}}` value. Instead, each authorized request runs
-a pre-request script that reads the fresh `csrftoken` from the cookie jar and
-sends it as the `X-CSRFToken` header.
-
-CSRF is **not** disabled and there is no bypass header. The pre-request script
-only forwards the real cookie value through the standard `X-CSRFToken` header.
+Authorized mutation requests send `X-CSRFToken: {{csrf_token}}` as a static
+header (no pre-request script). CSRF is **not** disabled and there is no
+bypass header.
 
 ## Expected responses
 

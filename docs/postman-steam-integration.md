@@ -42,13 +42,14 @@ auth). The collection reuses Django's existing Admin login rather than adding a
 new auth endpoint:
 
 1. `Acquire CSRF token` — GET the Admin login page to obtain the `csrftoken`
-   cookie.
+   cookie and capture it into `{{csrf_token}}`.
 2. `Login (establish staff session)` — POST the Admin login form
    (`username`, `password`, `csrfmiddlewaretoken`) to establish `sessionid`.
+3. `Acquire CSRF token` (again) — Django rotates the CSRF cookie on login, so
+   re-run step 1 to refresh `{{csrf_token}}`.
 
-Django rotates the CSRF cookie on login, so each authorized request runs a
-pre-request script that reads the fresh `csrftoken` from the cookie jar and
-sends it as `X-CSRFToken`. CSRF is **not** disabled; no bypass header is used.
+Authorized requests send `X-CSRFToken: {{csrf_token}}` as a static header.
+CSRF is **not** disabled; no bypass header is used.
 
 ## Test scripts
 

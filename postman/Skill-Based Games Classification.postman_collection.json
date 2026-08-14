@@ -56,10 +56,16 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const token = pm.cookies.get('csrftoken');",
-                  "pm.test('csrftoken cookie present', function () {",
-                  "    pm.expect(token).to.be.a('string').and.not.empty;",
-                  "});",
+                  "let token = '';",
+                  "const setCookie = pm.response.headers.get('Set-Cookie');",
+                  "if (setCookie) {",
+                  "    const m = setCookie.match(/csrftoken=([^;]+)/);",
+                  "    if (m) token = m[1];",
+                  "}",
+                  "if (!token) {",
+                  "    const cookie = pm.cookies.get('csrftoken');",
+                  "    token = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
+                  "}",
                   "if (token) {",
                   "    pm.environment.set('csrf_token', token);",
                   "}"
@@ -152,22 +158,6 @@
           "name": "Valid import",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -197,7 +187,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"{{steam_app_id}}\"\n}",
@@ -228,22 +223,6 @@
           "name": "Re-import same app",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -267,7 +246,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"{{steam_app_id}}\"\n}",
@@ -298,22 +282,6 @@
           "name": "Invalid App ID",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -330,7 +298,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"app_id\": \"not-a-number\"\n}",
@@ -361,22 +334,6 @@
           "name": "Missing body",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -393,7 +350,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "",
@@ -476,22 +438,6 @@
           "name": "Refresh captured Game",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -517,7 +463,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/api/v1/games/{{game_id}}/steam/refresh",
               "host": [
@@ -540,22 +491,6 @@
           "name": "Manual Game rejection",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -572,7 +507,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/api/v1/games/{{manual_game_id}}/steam/refresh",
               "host": [
@@ -595,22 +535,6 @@
           "name": "Game not found",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const cookie = pm.cookies.get('csrftoken');",
-                  "let csrfToken = typeof cookie === 'string' ? cookie : (cookie && cookie.value) || '';",
-                  "if (!csrfToken && pm.cookies.toObject) {",
-                  "    csrfToken = pm.cookies.toObject().csrftoken || '';",
-                  "}",
-                  "if (csrfToken) {",
-                  "    pm.request.headers.upsert({ key: 'X-CSRFToken', value: csrfToken });",
-                  "}"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -627,7 +551,12 @@
           ],
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-CSRFToken",
+                "value": "{{csrf_token}}"
+              }
+            ],
             "url": {
               "raw": "{{base_url}}/api/v1/games/999999/steam/refresh",
               "host": [
