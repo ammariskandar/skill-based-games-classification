@@ -128,9 +128,8 @@ is set on successful (`updated`/`unchanged`) verifications.
 |-----------|------|--------------|
 | Missing/null/non-string `app_id` | 422 | `VALIDATION_ERROR` |
 | Invalid Steam App ID string | 400 | `BAD_REQUEST` |
-| Not authenticated | 401 | `AUTHENTICATION_ERROR` |
 | Authenticated non-staff | 403 | `AUTHORIZATION_ERROR` |
-| CSRF failure | 403 | framework mapping |
+| CSRF failure (incl. anonymous POST) | 403 | `AUTHORIZATION_ERROR` (framework mapping) |
 | Game not found | 404 | `NOT_FOUND` |
 | Manual Game refresh | 400 | `BAD_REQUEST` |
 | Steam rate limited | 429 | `RATE_LIMITED` |
@@ -140,16 +139,21 @@ is set on successful (`updated`/`unchanged`) verifications.
 `Steam app unavailable` is a **domain outcome** (import/refresh `status` of
 `unavailable`), never a `500`.
 
+> Anonymous `401` nuance: Ninja checks CSRF before session authentication, so
+> an anonymous/unauthenticated POST in the real flow surfaces as `403`
+> (`CSRF check Failed`), not `401`. The `401` anonymous case is proven in the
+> automated backend tests (which isolate auth from CSRF).
+
 ## Running the happy path
 
-1. Run `01 Authentication` (Acquire CSRF, then Login).
+1. Run `01 Authentication` (Acquire CSRF, then Login, then Acquire CSRF again).
 2. Run `10 Steam Import > Valid import` — it captures `game_id`.
 3. Run `10 Steam Import > Re-import same app` — asserts same identity.
 4. Run `20 Steam Refresh > Refresh captured Game` — uses `{{game_id}}`.
 
-The `Unauthorized import` / `Unauthorized refresh` requests must be run
-**without** an established session (clear cookies first, or run before
-`01 Authentication`).
+The `Unauthorized import` / `Unauthorized refresh` requests are rejected with
+`403` (CSRF is checked first). They may be run with cookies cleared, or simply
+as-is — the result is `403` either way.
 
 ## Live Steam note
 

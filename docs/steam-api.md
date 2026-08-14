@@ -26,12 +26,19 @@ they require an **authenticated staff session**.
 
 | Caller | Result |
 |--------|--------|
-| Anonymous | `401 AUTHENTICATION_ERROR` |
+| Anonymous | `401 AUTHENTICATION_ERROR` (automated tests, CSRF-isolated) |
 | Authenticated non-staff | `403 AUTHORIZATION_ERROR` |
 | Authenticated staff / superuser | authorized |
 
 Service code remains authorization-free — authorization lives only at the HTTP
 boundary.
+
+> CSRF nuance: because Ninja checks CSRF **before** session authentication,
+> an anonymous POST in the real HTTP flow (with CSRF enforced) surfaces as
+> `403` with `CSRF check Failed`, not `401`. The `401` for anonymous is proven
+> in the automated test suite using the Django test client (which bypasses
+> CSRF by default), while a dedicated test proves CSRF → `403`. This is the
+> framework's actual semantics and is preserved deliberately.
 
 ## CSRF
 
