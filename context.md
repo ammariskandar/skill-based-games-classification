@@ -2558,15 +2558,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `external_id=None` are forced; Steam Games are rejected on edit
   (`ManualGameError`); source conversion is not allowed.
 - Editable fields: name, slug, content_type, listing_status,
-  manual_description, manual_image_url, manual_website_url.  Slug is
-  derived from name unless an explicit slug is supplied; name changes
-  preserve the slug.  Steam-owned fields and editorial classification are
-  never touched.
-- Admin: `source_type` is readonly when editing an existing manual Game,
-  preventing manual → Steam conversion (Steam external-ID editing
-  unchanged).
-- 15 new focused service tests.  Created `docs/manual-game-management.md`;
-  updated game-model and backend-architecture docs.
+  release_date, developer, manual_description, manual_image_url,
+  manual_website_url.  Slug is derived from name unless an explicit slug
+  is supplied; name changes preserve the slug.  Steam-owned fields and
+  editorial classification are never touched.
+- Added `Game.release_date` (`DateField`, nullable) and `Game.developer`
+  (`CharField(255)`, blank) as optional manual editorial metadata
+  (`games.0006`).  They are never populated from Steam and never changed
+  by Steam refresh.  Publisher was **not** added — it is not mentioned in
+  the SBGC-59 scope wording.
+- Admin: `source_type` **and** `external_id` are readonly when editing any
+  existing Game, freezing canonical source identity and preventing
+  manual→Steam, Steam→manual, and App-ID-A→App-ID-B conversion.  Creation
+  still permits choosing source/external ID.
+- 25 new focused service/Admin tests (21 manual service + 4 identity).
+  Created `docs/manual-game-management.md`; updated game-model and
+  backend-architecture docs.
 
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 

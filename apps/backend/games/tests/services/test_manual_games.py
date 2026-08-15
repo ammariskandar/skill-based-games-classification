@@ -4,6 +4,7 @@ Manual Game service tests — SBGC-59.
 
 from __future__ import annotations
 
+from datetime import date
 from unittest.mock import patch
 
 from classifications.services.editorial import (
@@ -53,6 +54,22 @@ class CreateManualGameTests(TestCase):
         self.assertEqual(game.manual_image_url, "https://example.com/go.jpg")
         self.assertEqual(game.manual_website_url, "https://example.com")
         self.assertEqual(game.listing_status, ListingStatus.PUBLISHED)
+
+    def test_release_date_and_developer_default_empty(self):
+        game = create_manual_game(name="Go")
+
+        self.assertIsNone(game.release_date)
+        self.assertEqual(game.developer, "")
+
+    def test_persists_release_date_and_developer(self):
+        game = create_manual_game(
+            name="Go",
+            release_date=date(2026, 1, 15),
+            developer="Acme Games",
+        )
+
+        self.assertEqual(game.release_date, date(2026, 1, 15))
+        self.assertEqual(game.developer, "Acme Games")
 
     def test_slug_generated_from_name(self):
         game = create_manual_game(name="  Hello  World  ")
@@ -109,6 +126,48 @@ class UpdateManualGameTests(TestCase):
     def test_explicit_slug_update(self):
         game = update_manual_game(self.game, slug="new-slug")
         self.assertEqual(game.slug, "new-slug")
+
+    def test_updates_release_date_and_developer(self):
+        game = update_manual_game(
+            self.game,
+            release_date=date(2025, 6, 1),
+            developer="Indie Studio",
+        )
+
+        self.assertEqual(game.release_date, date(2025, 6, 1))
+        self.assertEqual(game.developer, "Indie Studio")
+
+    def test_release_date_kept_when_omitted(self):
+        self.game.release_date = date(2024, 1, 1)
+        self.game.save()
+
+        game = update_manual_game(self.game, name="Chess Renamed")
+
+        self.assertEqual(game.release_date, date(2024, 1, 1))
+
+    def test_release_date_cleared_with_none(self):
+        self.game.release_date = date(2024, 1, 1)
+        self.game.save()
+
+        game = update_manual_game(self.game, release_date=None)
+
+        self.assertIsNone(game.release_date)
+
+    def test_developer_kept_when_omitted(self):
+        self.game.developer = "Old Studio"
+        self.game.save()
+
+        game = update_manual_game(self.game, name="Chess Renamed")
+
+        self.assertEqual(game.developer, "Old Studio")
+
+    def test_developer_cleared_with_empty_string(self):
+        self.game.developer = "Old Studio"
+        self.game.save()
+
+        game = update_manual_game(self.game, developer="")
+
+        self.assertEqual(game.developer, "")
 
     def test_steam_identity_and_metadata_untouched(self):
         game = update_manual_game(self.game, manual_description="edited")

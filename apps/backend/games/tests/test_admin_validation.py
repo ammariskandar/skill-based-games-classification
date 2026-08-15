@@ -325,7 +325,7 @@ class DuplicateExternalIdTests(TestCase):
         self.game.refresh_from_db()
         self.assertEqual(self.game.slug, "existing-steam")
 
-    def test_duplicate_steam_external_id_rejected_on_edit(self):
+    def test_steam_external_id_immutable_on_edit(self):
         other = Game.objects.create(
             source_type=SourceType.STEAM,
             external_id="99999",
@@ -334,13 +334,13 @@ class DuplicateExternalIdTests(TestCase):
         )
         url = reverse("admin:games_game_change", args=(other.pk,))
         data = _valid_steam_data(
-            external_id="12345",  # collide with existing
+            external_id="12345",  # attempted App-ID conversion is ignored
         )
         data["_changelist_filters"] = ""
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         other.refresh_from_db()
-        self.assertEqual(other.external_id, "99999")  # unchanged
+        self.assertEqual(other.external_id, "99999")  # immutable on edit
 
     def test_multiple_manual_null_external_allowed(self):
         Game.objects.create(
@@ -355,6 +355,95 @@ class DuplicateExternalIdTests(TestCase):
 # ============================================================================
 # Manual-game validation tests
 # ============================================================================
+
+
+class SourceIdentityImmutableTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_superuser(
+            username="identity_admin", password="testpass"
+        )
+        cls.steam_game = Game.objects.create(
+            source_type=SourceType.STEAM,
+            external_id="730",
+            name="Steam Immutable",
+            slug="steam-immutable",
+        )
+        cls.manual_game = Game.objects.create(
+            source_type=SourceType.MANUAL,
+            name="Manual Immutable",
+            slug="manual-immutable",
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def _change_url(self, game):
+        return reverse("admin:games_game_change", args=(game.pk,))
+
+    def test_manual_source_type_cannot_change(self):
+        url = self._change_url(self.manual_game)
+        data = _valid_manual_data(slug="manual-immutable")
+        data["source_type"] = SourceType.STEAM
+        data["external_id"] = "123"
+        data["_changelist_filters"] = ""
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        self.manual_game.refresh_from_db()
+        self.assertEqual(self.manual_game.source_type, SourceType.MANUAL)
+
+    def test_manual_cannot_acquire_external_id(self):
+        url = self._change_url(self.manual_game)
+        data = _valid_manual_data(slug="manual-immutable")
+        data["source_type"] = SourceType.STEAM
+        data["external_id"] = "123"
+        data["_changelist_filters"] = ""
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        self.manual_game.refresh_from_db()
+        self.assertIsNone(self.manual_game.external_id)
+
+    def test_steam_source_type_cannot_change(self):
+        url = self._change_url(self.steam_game)
+        data = _valid_steam_data(external_id="730")
+        data["source_type"] = SourceType.MANUAL
+        data["external_id"] = ""
+        data["_changelist_filters"] = ""
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        self.steam_game.refresh_from_db()
+        self.assertEqual(self.steam_game.source_type, SourceType.STEAM)
+        self.assertEqual(self.steam_game.external_id, "730")
+
+    def test_steam_external_id_cannot_change(self):
+        url = self._change_url(self.steam_game)
+        data = _valid_steam_data(external_id="620")
+        data["_changelist_filters"] = ""
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        self.steam_game.refresh_from_db()
+        self.assertEqual(self.steam_game.external_id, "730")
+
+    def test_editable_metadata_still_editable(self):
+        url = self._change_url(self.steam_game)
+        data = _valid_steam_data(external_id="730", name="Steam Renamed")
+        data["_changelist_filters"] = ""
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+        self.steam_game.refresh_from_db()
+        self.assertEqual(self.steam_game.name, "Steam Renamed")
+        self.assertEqual(self.steam_game.source_type, SourceType.STEAM)
+        self.assertEqual(self.steam_game.external_id, "730")
 
 
 class ManualValidationTests(TestCase):

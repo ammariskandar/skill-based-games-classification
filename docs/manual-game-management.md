@@ -13,6 +13,8 @@ create_manual_game(
     slug: str | None = None,
     content_type: str = "game",
     listing_status: str = "draft",
+    release_date: date | None = None,
+    developer: str = "",
     manual_description: str = "",
     manual_image_url: str = "",
     manual_website_url: str = "",
@@ -25,14 +27,21 @@ update_manual_game(
     slug: str | None = None,
     content_type: str | None = None,
     listing_status: str | None = None,
+    release_date: date | None | _Unset = _UNSET,
+    developer: str | None = None,
     manual_description: str | None = None,
     manual_image_url: str | None = None,
     manual_website_url: str | None = None,
 ) -> Game
 ```
 
-`None` in `update_manual_game` means "keep the existing value"; an explicit
-value (including `""` for `manual_*`) replaces it.
+`None` in `update_manual_game` means "keep the existing value" for most
+fields (including `manual_*` and `developer`, whose valid empty value can be
+passed explicitly).
+
+`release_date` uses an explicit `_UNSET` sentinel as its default so callers
+can keep it (omit the argument), set a date (pass a `date`), or clear it
+(pass `None`).
 
 ## Manual identity
 
@@ -54,6 +63,8 @@ canonical application identity.
 - `steam_image_url` stays empty and `last_steam_refresh_at` stays `None`.
 - Default `content_type` is `game`; default `listing_status` is `draft`
   (creation never auto-publishes).
+- `release_date` and `developer` are optional manual editorial metadata and
+  default to `None`/`""` respectively.
 - Any existing canonical content type is allowed (`game`, `dlc`, `demo`,
   `software`, `soundtrack`, `unknown`).
 
@@ -63,7 +74,8 @@ Only manual Games may be edited. Calling `update_manual_game` on a Steam
 Game raises `ManualGameError` before any mutation.
 
 Editable fields: `name`, `slug`, `content_type`, `listing_status`,
-`manual_description`, `manual_image_url`, `manual_website_url`.
+`release_date`, `developer`, `manual_description`, `manual_image_url`,
+`manual_website_url`.
 
 Preserved: `id`, `source_type`, `external_id`, `steam_image_url`,
 `last_steam_refresh_at`, `created_at`, and the editorial classification.
@@ -111,9 +123,12 @@ network call.
 
 ## Admin
 
-`GameAdmin` makes `source_type` readonly when editing an existing manual
-Game, preventing manual → Steam conversion. Steam external-ID editing is
-unchanged.
+`GameAdmin` makes both `source_type` and `external_id` readonly when editing
+an existing Game (manual **and** Steam). This freezes the canonical source
+identity tuple (`id`, `source_type`, `external_id`) and prevents manual→Steam,
+Steam→manual, and App-ID-A→App-ID-B conversion. Creation still permits
+choosing source and external ID, so the real Steam import and manual create
+flows are unaffected.
 
 ## Out of scope
 

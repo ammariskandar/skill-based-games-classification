@@ -63,12 +63,20 @@ No overlapping booleans (`is_active`, `is_visible`, `is_published`,
 
 Optional application-owned editorial fields available for all source types:
 
+- `release_date` — `DateField(null=True, blank=True)` — manual editorial
+  release date (SBGC-59).  Never populated from Steam or changed by Steam
+  refresh.
+- `developer` — `CharField(max_length=255, blank=True)` — manual editorial
+  developer name (SBGC-59).  Never populated from Steam or changed by Steam
+  refresh.
 - `manual_description` — `TextField(blank=True)`
 - `manual_image_url` — `URLField(max_length=500, blank=True)`
 - `manual_website_url` — `URLField(max_length=500, blank=True)`
 
 Not restricted to `source_type=manual` — editorial overrides may later
-be useful for Steam records too.
+be useful for Steam records too.  `release_date`/`developer` are manual
+editorial metadata, distinct from unpersisted Steam DTO metadata such as
+Steam `developers`/`publishers`.
 
 ## Steam-owned metadata
 
@@ -133,9 +141,13 @@ Registered at `/admin/games/game/` with:
 - `list_filter`: source_type, content_type, listing_status
 - `search_fields`: name, slug, external_id
 - `prepopulated_fields`: slug ← name (editing convenience)
-- `readonly_fields`: display_identity, created_at, updated_at
+- `readonly_fields`: display_identity, created_at, updated_at,
+  steam_image_url, last_steam_refresh_at
+- editing an existing record also makes `source_type` and `external_id`
+  readonly (SBGC-59), freezing canonical source identity after creation
 
-Manual records are creatable through Admin.
+Manual records are creatable through Admin; existing Steam/manual records
+cannot change source identity through Admin editing.
 
 ## No network calls
 
@@ -174,4 +186,6 @@ touches Steam-owned fields or the editorial classification.  See
   SBGC-52.
 - Steam-owned metadata (`short_description`, `header_image_url`,
   `website_url`, `is_free`, `developers`, `publishers`) has no canonical
-  fields yet — the import workflow does not persist it.
+  fields yet — the import workflow does not persist it.  Manual editorial
+  `release_date`/`developer` fields (SBGC-59) are separate and are never
+  populated from Steam DTO metadata.

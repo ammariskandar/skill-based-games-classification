@@ -12,11 +12,20 @@ The service never contacts Steam and never mutates Steam-owned fields.
 
 from __future__ import annotations
 
+from datetime import date
+
 from django.db import transaction
 from django.utils.text import slugify
 
 from games.models import Game, ListingStatus, SourceType
 from games.types import ContentType
+
+
+class _Unset:
+    """Sentinel for optional update fields where ``None`` means clear."""
+
+
+_UNSET = _Unset()
 
 
 class ManualGameError(Exception):
@@ -29,6 +38,8 @@ def create_manual_game(
     slug: str | None = None,
     content_type: str = ContentType.GAME,
     listing_status: str = ListingStatus.DRAFT,
+    release_date: date | None = None,
+    developer: str = "",
     manual_description: str = "",
     manual_image_url: str = "",
     manual_website_url: str = "",
@@ -53,6 +64,8 @@ def create_manual_game(
         slug=resolved_slug,
         content_type=content_type,
         listing_status=listing_status,
+        release_date=release_date,
+        developer=developer,
         manual_description=manual_description,
         manual_image_url=manual_image_url,
         manual_website_url=manual_website_url,
@@ -71,6 +84,8 @@ def update_manual_game(
     slug: str | None = None,
     content_type: str | None = None,
     listing_status: str | None = None,
+    release_date: date | None | _Unset = _UNSET,
+    developer: str | None = None,
     manual_description: str | None = None,
     manual_image_url: str | None = None,
     manual_website_url: str | None = None,
@@ -78,9 +93,15 @@ def update_manual_game(
     """Edit a canonical manual Game.
 
     Only manual Games may be edited.  ``None`` means "keep the existing
-    value" (including for the ``manual_*`` fields, whose valid empty value
-    can be passed explicitly).  Steam-owned fields, source identity, and the
-    editorial classification are never touched.
+    value" for most fields (including ``manual_*`` fields, whose valid empty
+    value can be passed explicitly).
+
+    ``release_date`` uses a distinct ``_UNSET`` sentinel as its default so
+    callers can keep it (omit the argument), set a date (pass a ``date``), or
+    clear it (pass ``None``).
+
+    Steam-owned fields, source identity, and the editorial classification are
+    never touched.
     """
     if not isinstance(game, Game):
         raise TypeError(f"game must be a Game instance, got {type(game).__name__}.")
@@ -106,6 +127,12 @@ def update_manual_game(
         changed = True
     if listing_status is not None:
         game.listing_status = listing_status
+        changed = True
+    if release_date is not _UNSET:
+        game.release_date = release_date
+        changed = True
+    if developer is not None:
+        game.developer = developer
         changed = True
     if manual_description is not None:
         game.manual_description = manual_description
