@@ -34,6 +34,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from games.models import Game, SourceType
+from games.services.source_policy import can_steam_refresh
 from games.services.steam.cdn import validate_steam_image_url
 from games.services.steam.dto import (
     LookupStatus,
@@ -521,7 +522,7 @@ class SteamGameRefreshService:
             raise TypeError(f"game must be a Game instance, got {type(game).__name__}.")
         if game.pk is None:
             raise SteamRefreshError("game must be saved before refreshing.")
-        if game.source_type != SourceType.STEAM:
+        if not can_steam_refresh(game):
             raise SteamRefreshError(
                 f"Only Steam-sourced games can refresh (game {game.pk} is "
                 f"{game.source_type})."

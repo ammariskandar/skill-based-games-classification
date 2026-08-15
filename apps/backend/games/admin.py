@@ -62,6 +62,16 @@ class GameAdmin(admin.ModelAdmin):
         "slug": ("name",),
     }
 
+    def get_prepopulated_fields(self, request, obj=None):
+        """Disable slug-from-name prepopulation for existing Steam Games.
+
+        ``name`` is readonly on Steam Games, so Admin cannot build the
+        prepopulate dependency on a field that is not in the form.
+        """
+        if obj is not None and obj.is_steam:
+            return {}
+        return self.prepopulated_fields
+
     readonly_fields = (
         "display_identity",
         "created_at",
@@ -73,20 +83,23 @@ class GameAdmin(admin.ModelAdmin):
     )
 
     def get_readonly_fields(self, request, obj=None):
-        """Freeze canonical source identity for existing records (SBGC-59).
+        """Freeze source identity and source-owned metadata (SBGC-59/61).
 
-        ``source_type`` and ``external_id`` are part of the canonical
-        identity tuple (``id``, ``source_type``, ``external_id``).  Once a
-        Game exists they must not be edited through Admin, which prevents
-        manual→steam, steam→manual, and App-ID-A→App-ID-B conversion.
+        Existing records never expose ``source_type`` or ``external_id``.
+        Steam-owned metadata (``name``, ``content_type``) is also readonly
+        for Steam Games — refresh owns those fields, so Admin editing would
+        be overwritten on the next refresh.  Local/editorial fields stay
+        editable for both sources.
 
-        Creation (``obj is None``) still permits choosing the source and
+        Creation (``obj is None``) still permits choosing source and
         external ID so the real Steam import / manual create flows are not
         affected.
         """
         readonly = list(super().get_readonly_fields(request, obj))
         if obj is not None:
             readonly.extend(("source_type", "external_id"))
+            if obj.is_steam:
+                readonly.extend(("name", "content_type"))
         return readonly
 
     actions = ("refresh_from_steam",)

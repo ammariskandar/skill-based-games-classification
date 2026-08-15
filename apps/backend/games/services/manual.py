@@ -18,6 +18,7 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from games.models import Game, ListingStatus, SourceType
+from games.services.source_policy import can_manual_edit
 from games.types import ContentType
 
 
@@ -107,7 +108,7 @@ def update_manual_game(
         raise TypeError(f"game must be a Game instance, got {type(game).__name__}.")
     if game.pk is None:
         raise ManualGameError("game must be saved before updating.")
-    if game.source_type != SourceType.MANUAL:
+    if not can_manual_edit(game):
         raise ManualGameError(
             f"Only manual games can be edited (game {game.pk} is {game.source_type})."
         )

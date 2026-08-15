@@ -138,6 +138,10 @@ Steam→manual, and App-ID-A→App-ID-B conversion. Creation still permits
 choosing source and external ID, so the real Steam import and manual create
 flows are unaffected.
 
+SBGC-61 adds source-specific Admin presentation: Steam Games also have
+`name` and `content_type` readonly (Steam-owned, refreshed by Steam), while
+manual Games keep them editable.  See `docs/source-specific-behaviour.md`.
+
 ## Out of scope
 
 Delete, soft delete, archive/restore, bulk create/edit, and frontend UI are

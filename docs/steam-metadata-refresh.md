@@ -32,7 +32,9 @@ imports and refreshes.
 
 ## Eligibility
 
-- Only `source_type == steam` Games may refresh.
+- Only `source_type == steam` Games may refresh (enforced through the
+  shared `can_steam_refresh()` helper in `games/services/source_policy.py`,
+  SBGC-61).
 - A manual Game raises `SteamRefreshError` — no network call, no writes.
 - The stored `external_id` is the **only** accepted App ID, validated
   through `SteamAppId`.  No replacement App IDs are accepted.

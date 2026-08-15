@@ -127,6 +127,13 @@ def display_image_url(self) -> str:
 Manual override wins; otherwise the Steam-owned URL is used.  No network,
 no extra query.  See `docs/manual-assets.md`.
 
+## Source helpers
+
+`Game.is_manual` / `Game.is_steam` are pure source predicates (SBGC-61).
+`games/services/source_policy.py` exposes `can_manual_edit()` and
+`can_steam_refresh()` for shared capability checks.  See
+`docs/source-specific-behaviour.md`.
+
 ## Constraints
 
 | Constraint | Name | Description |
@@ -161,9 +168,15 @@ Registered at `/admin/games/game/` with:
   steam_image_url, last_steam_refresh_at
 - editing an existing record also makes `source_type` and `external_id`
   readonly (SBGC-59), freezing canonical source identity after creation
+- editing an existing Steam record additionally makes `name` and
+  `content_type` readonly (SBGC-61) — those are Steam-owned and
+  overwritten by refresh
+- slug-from-name prepopulation is disabled for existing Steam records
+  (because `name` is readonly there)
 
 Manual records are creatable through Admin; existing Steam/manual records
-cannot change source identity through Admin editing.
+cannot change source identity through Admin editing.  See
+`docs/source-specific-behaviour.md` for the full editability matrix.
 
 ## No network calls
 

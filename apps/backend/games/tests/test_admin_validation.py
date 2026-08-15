@@ -212,15 +212,14 @@ class EditTests(TestCase):
 
     # -- Name and slug ----------------------------------------------------------
 
-    def test_edit_name(self):
+    def test_steam_name_readonly_on_edit(self):
         url = self._change_url(self.steam_game)
-        data = _valid_steam_data(name="New Name")
+        data = _valid_steam_data(name="New Name", slug="edit-steam")
         data["_changelist_filters"] = ""
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 302)
         self.steam_game.refresh_from_db()
-        self.assertEqual(self.steam_game.name, "New Name")
-        self.assertEqual(self.steam_game.pk, self.steam_game.pk)
+        self.assertEqual(self.steam_game.name, "Original Name")
 
     def test_edit_slug(self):
         url = self._change_url(self.steam_game)
@@ -233,18 +232,19 @@ class EditTests(TestCase):
 
     # -- Content type and listing status independence ---------------------------
 
-    def test_edit_content_type_does_not_change_listing_status(self):
+    def test_steam_content_type_readonly_on_edit(self):
         self.steam_game.listing_status = ListingStatus.PUBLISHED
         self.steam_game.save()
         url = self._change_url(self.steam_game)
         data = _valid_steam_data(
             content_type=ContentType.DLC,
             listing_status=ListingStatus.PUBLISHED,
+            slug="edit-steam",
         )
         data["_changelist_filters"] = ""
         self.client.post(url, data)
         self.steam_game.refresh_from_db()
-        self.assertEqual(self.steam_game.content_type, ContentType.DLC)
+        self.assertEqual(self.steam_game.content_type, ContentType.GAME)
         self.assertEqual(self.steam_game.listing_status, ListingStatus.PUBLISHED)
 
     def test_edit_listing_status_does_not_change_content_type(self):
@@ -277,6 +277,21 @@ class EditTests(TestCase):
         self.assertEqual(
             self.manual_game.manual_website_url, "https://example.invalid/new-site"
         )
+
+    def test_manual_name_and_content_type_editable(self):
+        url = self._change_url(self.manual_game)
+        data = _valid_manual_data(
+            slug="edit-manual",
+            name="Manual Renamed",
+            content_type=ContentType.DLC,
+            listing_status=ListingStatus.DRAFT,
+        )
+        data["_changelist_filters"] = ""
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+        self.manual_game.refresh_from_db()
+        self.assertEqual(self.manual_game.name, "Manual Renamed")
+        self.assertEqual(self.manual_game.content_type, ContentType.DLC)
 
     # -- Source identity preservation -------------------------------------------
 
@@ -432,16 +447,20 @@ class SourceIdentityImmutableTests(TestCase):
         self.steam_game.refresh_from_db()
         self.assertEqual(self.steam_game.external_id, "730")
 
-    def test_editable_metadata_still_editable(self):
+    def test_steam_local_metadata_still_editable(self):
         url = self._change_url(self.steam_game)
-        data = _valid_steam_data(external_id="730", name="Steam Renamed")
+        data = _valid_steam_data(
+            external_id="730",
+            slug="steam-immutable",
+            listing_status=ListingStatus.PUBLISHED,
+        )
         data["_changelist_filters"] = ""
 
         response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, 302)
         self.steam_game.refresh_from_db()
-        self.assertEqual(self.steam_game.name, "Steam Renamed")
+        self.assertEqual(self.steam_game.listing_status, ListingStatus.PUBLISHED)
         self.assertEqual(self.steam_game.source_type, SourceType.STEAM)
         self.assertEqual(self.steam_game.external_id, "730")
 
