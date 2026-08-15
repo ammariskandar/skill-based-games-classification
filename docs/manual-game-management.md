@@ -121,6 +121,14 @@ authoritative for source/external identity and slug uniqueness.
 Manual CRUD never imports or instantiates Steam services and never makes a
 network call.
 
+## Manual assets
+
+`manual_image_url` is a validated editor-supplied HTTPS URL reference
+(SBGC-60).  Validation lives in `games/services/assets.py` and is applied
+through `Game.clean()`, so the service and Admin share one owner.  Blank
+means no image; `update_manual_game(..., manual_image_url="")` clears it.
+See `docs/manual-assets.md`.
+
 ## Admin
 
 `GameAdmin` makes both `source_type` and `external_id` readonly when editing

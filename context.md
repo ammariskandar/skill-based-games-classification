@@ -2575,6 +2575,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   Created `docs/manual-game-management.md`; updated game-model and
   backend-architecture docs.
 
+## 2026-08-15 — SBGC-60 Manual asset handling
+
+- Implemented validated manual asset references (URL-only, no storage)
+  via `games/services/assets.py` — `validate_manual_image_url()` enforces
+  HTTPS-only, no credentials, nonempty hostname, and no control
+  characters; blank means no image.  `Game.clean()` applies it so Admin
+  and the manual service share one validation owner.
+- Added `Game.display_image_url` — manual override first, otherwise
+  `steam_image_url`.  Pure, no network, no extra query.
+- Manual asset changes never touch `steam_image_url` or
+  `last_steam_refresh_at`, and Steam import/refresh never touch
+  `manual_image_url`.
+- 18 new focused asset/effective-image tests plus one Admin rejection
+  test.  Created `docs/manual-assets.md`; updated manual-game-management,
+  game-model, backend-architecture, and steam-images docs.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

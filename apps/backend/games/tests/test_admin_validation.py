@@ -508,6 +508,13 @@ class ManualValidationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Game.objects.filter(slug="same-slug").count(), 1)
 
+    def test_invalid_manual_image_url_rejected(self):
+        data = _valid_manual_data(slug="bad-manual-image")
+        data["manual_image_url"] = "http://example.com/img.jpg"
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Game.objects.filter(slug="bad-manual-image").exists())
+
 
 # ============================================================================
 # DLC / non-game exclusion tests

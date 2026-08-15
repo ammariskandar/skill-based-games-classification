@@ -70,7 +70,9 @@ Optional application-owned editorial fields available for all source types:
   developer name (SBGC-59).  Never populated from Steam or changed by Steam
   refresh.
 - `manual_description` — `TextField(blank=True)`
-- `manual_image_url` — `URLField(max_length=500, blank=True)`
+- `manual_image_url` — `URLField(max_length=500, blank=True)` — validated
+  editor-supplied HTTPS URL reference (SBGC-60).  Blank means no manual
+  image; see `docs/manual-assets.md`.
 - `manual_website_url` — `URLField(max_length=500, blank=True)`
 
 Not restricted to `source_type=manual` — editorial overrides may later
@@ -110,6 +112,20 @@ def display_identity(self) -> str:
 `__str__` returns `f"{self.name} [{self.display_identity}]"`.
 
 Deterministic, no network calls.
+
+## Display image
+
+`display_image_url` (SBGC-60) is the pure presentation-neutral fallback
+helper:
+
+```python
+@property
+def display_image_url(self) -> str:
+    return self.manual_image_url or self.steam_image_url
+```
+
+Manual override wins; otherwise the Steam-owned URL is used.  No network,
+no extra query.  See `docs/manual-assets.md`.
 
 ## Constraints
 

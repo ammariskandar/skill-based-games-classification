@@ -36,6 +36,10 @@ transport controls and **must** go through `validate_steam_cdn_url()`
 `manual_image_url` is **never** populated from Steam.  The two fields are
 independent.
 
+For effective display, `Game.display_image_url` (SBGC-60) returns the manual
+override when present, otherwise `steam_image_url`.  Manual asset validation
+and clear/replace semantics live in `docs/manual-assets.md`.
+
 ## Canonical Validation
 
 `validate_steam_image_url()` in `games/services/steam/cdn.py` — the

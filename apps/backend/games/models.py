@@ -11,6 +11,7 @@ from classifications.skills import EditorialProfile, SkillCategory
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from games.services.assets import ManualAssetError, validate_manual_image_url
 from games.types import CONTENT_TYPE_CHOICES, ContentType
 
 
@@ -484,6 +485,14 @@ class Game(models.Model):
         if self.name is not None and self.name.strip() == "":
             raise ValidationError({"name": "Name must not be whitespace-only."})
 
+        # Manual asset reference — editor-supplied, HTTPS-only, no
+        # credentials, hostname required (SBGC-60).  Blank means none.
+        if self.manual_image_url:
+            try:
+                self.manual_image_url = validate_manual_image_url(self.manual_image_url)
+            except ManualAssetError as exc:
+                raise ValidationError({"manual_image_url": str(exc)}) from exc
+
         # Steam external-ID validation — no network calls.
         if self.source_type == SourceType.STEAM:
             if not self.external_id:
@@ -512,6 +521,16 @@ class Game(models.Model):
         if self.source_type == SourceType.STEAM:
             return f"steam:{self.external_id}"
         return f"manual:{self.slug}"
+
+    @property
+    def display_image_url(self) -> str:
+        """Effective display image (SBGC-60).
+
+        Manual/editorial ``manual_image_url`` is the override when present;
+        otherwise Steam-owned ``steam_image_url`` is used.  Pure — no network
+        and no extra database query.
+        """
+        return self.manual_image_url or self.steam_image_url
 
 
 __all__ = [

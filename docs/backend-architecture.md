@@ -55,7 +55,8 @@ apps/backend/
 │   │   └── imports/            # Steam import persistence + refresh — SBGC-54/56
 │   │       ├── __init__.py     # Public re-exports
 │   │       └── steam.py        # Persistence/import/refresh services, slug helper, results
-│   │   └── manual.py           # Manual Game create/edit service — SBGC-59
+│   │   ├── manual.py           # Manual Game create/edit service — SBGC-59
+│   │   └── assets.py           # Manual asset URL validation — SBGC-60
 │   ├── tests/
 │   │   ├── services/steam/
 │   │   │   ├── test_steam.py   # Steam transport tests
@@ -140,7 +141,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Canonical game identity, source-qualified game records, game metadata, catalogue concepts, Steam integration.
 
-**Status (SBGC-45 through SBGC-59):** `Game` model, `GameQuerySet` (9 custom query methods), `GameAdmin` (with the manual Steam refresh action and source-identity protection), `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  SBGC-54 added the persistence boundary (`SteamGameImportService` / `SteamGamePersistenceService`) — see `docs/steam-import-workflow.md`.  SBGC-55 added validated Steam image-URL persistence (`steam_image_url`) — see `docs/steam-images.md`.  SBGC-56 added metadata refresh (`SteamGameRefreshService`, `last_steam_refresh_at`, Admin action) — see `docs/steam-metadata-refresh.md`.  SBGC-57 added authorized HTTP import and refresh endpoints — see `docs/steam-api.md`.  SBGC-59 added manual Game create/edit (`release_date`, `developer`, source identity protection) — see `docs/manual-game-management.md`.  Periodic/background refresh is not implemented.
+**Status (SBGC-45 through SBGC-60):** `Game` model, `GameQuerySet` (9 custom query methods), `GameAdmin` (with the manual Steam refresh action and source-identity protection), `ContentType` vocabulary, canonical listing rules, and query helpers.  Steam transport (`SteamClient` with hardened retry/CDN/error taxonomy), endpoint adapters (`SteamAppDetailsAdapter`), and import-foundation DTOs (`SteamImportFoundation.prepare_candidate()`) are implemented.  SBGC-54 added the persistence boundary (`SteamGameImportService` / `SteamGamePersistenceService`) — see `docs/steam-import-workflow.md`.  SBGC-55 added validated Steam image-URL persistence (`steam_image_url`) — see `docs/steam-images.md`.  SBGC-56 added metadata refresh (`SteamGameRefreshService`, `last_steam_refresh_at`, Admin action) — see `docs/steam-metadata-refresh.md`.  SBGC-57 added authorized HTTP import and refresh endpoints — see `docs/steam-api.md`.  SBGC-59 added manual Game create/edit (`release_date`, `developer`, source identity protection) — see `docs/manual-game-management.md`.  SBGC-60 added validated manual asset URLs and `display_image_url` fallback — see `docs/manual-assets.md`.  Periodic/background refresh is not implemented.
 
 ### `classifications`
 
