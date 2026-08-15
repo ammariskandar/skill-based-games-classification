@@ -55,6 +55,7 @@ apps/backend/
 │   │   └── imports/            # Steam import persistence + refresh — SBGC-54/56
 │   │       ├── __init__.py     # Public re-exports
 │   │       └── steam.py        # Persistence/import/refresh services, slug helper, results
+│   │   └── manual.py           # Manual Game create/edit service — SBGC-59
 │   ├── tests/
 │   │   ├── services/steam/
 │   │   │   ├── test_steam.py   # Steam transport tests

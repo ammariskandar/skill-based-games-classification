@@ -72,6 +72,17 @@ class GameAdmin(admin.ModelAdmin):
         "last_steam_refresh_at",
     )
 
+    def get_readonly_fields(self, request, obj=None):
+        """Protect manual source identity after creation (SBGC-59).
+
+        A manual Game's ``source_type`` cannot be changed to Steam once it
+        exists.  Steam external-ID editing remains unchanged.
+        """
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj is not None and obj.source_type == SourceType.MANUAL:
+            readonly.append("source_type")
+        return readonly
+
     actions = ("refresh_from_steam",)
 
     @admin.action(description="Refresh Steam metadata from Steam")

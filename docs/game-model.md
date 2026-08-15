@@ -158,6 +158,14 @@ DTOs as canonical Games.  See `docs/steam-import-workflow.md`.
 - `manual_*` fields are editorial-only and are **never** populated from
   Steam data — Steam metadata persistence belongs to later tickets.
 
+## Manual game management (SBGC-59)
+
+`games/services/manual.py` is the canonical create/edit path for manual
+(non-Steam) Games.  It forces `source_type=manual` and `external_id=None`,
+rejects editing Steam Games, preserves slug on name changes, and never
+touches Steam-owned fields or the editorial classification.  See
+`docs/manual-game-management.md`.
+
 ## Limitations
 
 - CheckConstraint enforcement depends on the database engine; SQLite

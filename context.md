@@ -2549,6 +2549,25 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-15 — SBGC-59 Manual Game creation and editing
+
+- Added `games/services/manual.py` with `create_manual_game()` and
+  `update_manual_game()` — the canonical manual (non-Steam) Game CRUD
+  service.
+- Manual identity is owned by the service: `source_type=manual` and
+  `external_id=None` are forced; Steam Games are rejected on edit
+  (`ManualGameError`); source conversion is not allowed.
+- Editable fields: name, slug, content_type, listing_status,
+  manual_description, manual_image_url, manual_website_url.  Slug is
+  derived from name unless an explicit slug is supplied; name changes
+  preserve the slug.  Steam-owned fields and editorial classification are
+  never touched.
+- Admin: `source_type` is readonly when editing an existing manual Game,
+  preventing manual → Steam conversion (Steam external-ID editing
+  unchanged).
+- 15 new focused service tests.  Created `docs/manual-game-management.md`;
+  updated game-model and backend-architecture docs.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
