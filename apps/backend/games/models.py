@@ -517,8 +517,18 @@ class Game(models.Model):
     # -- Identity ---------------------------------------------------------------
 
     @property
+    def is_manual(self) -> bool:
+        """Whether this Game is manual-sourced (SBGC-61)."""
+        return self.source_type == SourceType.MANUAL
+
+    @property
+    def is_steam(self) -> bool:
+        """Whether this Game is Steam-sourced (SBGC-61)."""
+        return self.source_type == SourceType.STEAM
+
+    @property
     def display_identity(self) -> str:
-        if self.source_type == SourceType.STEAM:
+        if self.is_steam:
             return f"steam:{self.external_id}"
         return f"manual:{self.slug}"
 

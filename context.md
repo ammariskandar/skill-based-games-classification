@@ -2591,6 +2591,25 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   test.  Created `docs/manual-assets.md`; updated manual-game-management,
   game-model, backend-architecture, and steam-images docs.
 
+## 2026-08-15 — SBGC-61 Source-specific behaviour
+
+- Added pure source predicates `Game.is_manual` / `Game.is_steam` and a
+  small `games/services/source_policy.py` (`can_manual_edit()`,
+  `can_steam_refresh()`).  The manual service and Steam refresh service
+  now use these shared helpers instead of repeating source comparisons.
+- Made Admin source-specific: existing Steam Games also have `name` and
+  `content_type` readonly (Steam-owned, refreshed by Steam), while manual
+  Games keep them editable.  Slug-from-name prepopulation is disabled for
+  existing Steam records.
+- Source identity (`source_type`/`external_id`) remains readonly for all
+  existing records.
+- Confirmed listing and classification remain source-independent, and
+  `display_image_url` precedence is unchanged.
+- 6 new source-policy tests plus updated Admin matrix tests.  Created
+  `docs/source-specific-behaviour.md`; updated game-model,
+  manual-game-management, steam-metadata-refresh, backend-architecture,
+  admin-domain-validation, and context changelog.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
