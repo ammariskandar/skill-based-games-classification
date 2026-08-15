@@ -72,6 +72,23 @@ class GameAdmin(admin.ModelAdmin):
         "last_steam_refresh_at",
     )
 
+    def get_readonly_fields(self, request, obj=None):
+        """Freeze canonical source identity for existing records (SBGC-59).
+
+        ``source_type`` and ``external_id`` are part of the canonical
+        identity tuple (``id``, ``source_type``, ``external_id``).  Once a
+        Game exists they must not be edited through Admin, which prevents
+        manual→steam, steam→manual, and App-ID-A→App-ID-B conversion.
+
+        Creation (``obj is None``) still permits choosing the source and
+        external ID so the real Steam import / manual create flows are not
+        affected.
+        """
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            readonly.extend(("source_type", "external_id"))
+        return readonly
+
     actions = ("refresh_from_steam",)
 
     @admin.action(description="Refresh Steam metadata from Steam")

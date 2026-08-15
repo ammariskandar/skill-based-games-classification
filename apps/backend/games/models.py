@@ -387,6 +387,24 @@ class Game(models.Model):
 
     # -- Manual metadata --------------------------------------------------------
 
+    release_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Manual release date (SBGC-59).  Owned by manual/editorial data; "
+            "never populated from Steam and never changed by Steam refresh."
+        ),
+    )
+
+    developer = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=(
+            "Manual developer name (SBGC-59).  Owned by manual/editorial data; "
+            "never populated from Steam and never changed by Steam refresh."
+        ),
+    )
+
     manual_description = models.TextField(blank=True)
     manual_image_url = models.URLField(max_length=500, blank=True)
     manual_website_url = models.URLField(max_length=500, blank=True)
