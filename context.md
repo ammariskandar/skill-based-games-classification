@@ -2640,6 +2640,19 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Added `games/tests/test_admin_date_formats.py` (5 tests) covering the
   four formats, unsupported rejection, and user-facing help-text checks.
 
+## 2026-08-16 — SBGC-62 human validation complete
+
+- Human Admin validation completed and passed all 19 checks (see
+  `docs/manual-game-workflow-validation.md`).  Listing and refresh checks
+  were verified through canonical queryset/service/source-policy scripts
+  because they are not directly observable in Admin UI.
+- Deletion was **not** executed in SBGC-62; it is separated into
+  **SBGC-182 — Game Deletion Workflow** (SBGC-6 epic), the remaining task
+  needed to finish SBGC-6.
+- Captured a separate non-blocking future-work gap: **SBGC-183 — Implement
+  Scheduled Steam Metadata Refresh** (SBGC-8 — Django Admin Configuration &
+  Jobs/Schedulers).  Not a blocker to SBGC-62 or SBGC-6.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

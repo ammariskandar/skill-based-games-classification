@@ -8,7 +8,7 @@ SBGC-59/60/61.
 - Automated tests: in-memory SQLite (`config.settings.test`).
 - Local development DB: SQLite (`apps/backend/db.sqlite3`).
 - No Neon, no Render, no production/shared DB, no Steam network.
-- Human Admin validation: pending at the time of writing.
+- Human Admin validation: **complete and passed**.
 
 ## Automated workflow evidence
 
@@ -29,23 +29,33 @@ Admin boundaries:
 | Admin invalid input (blank name, invalid image URL) rejected with no partial persistence | passed |
 | Service create/edit never touches SteamClient | passed |
 
-## Human validation checklist
+## Human validation result
 
-1. Start the local development server against local SQLite.
-2. Log into the configured Django Admin.
-3. Create a temporary manual Game.
-4. Enter name, slug, content type, listing status, release date, developer,
-   description, valid HTTPS image URL, and website URL.
-5. Save and confirm source is Manual and external ID is empty.
-6. Edit name and confirm slug stays unchanged unless explicitly edited.
-7. Replace then clear the manual image URL.
-8. Enter an invalid image URL and confirm a validation error (no traceback).
-9. Confirm source/external ID are readonly.
-10. If a classification exists, edit metadata and confirm scores/notes remain
-    unchanged.
-11. Set a manual GAME to Published and confirm it is publicly listable.
-12. Confirm a Published manual non-Game remains excluded.
-13. Confirm no raw traceback.
+All 19 checks passed.  Listing and refresh checks were **not** directly
+observable through the Admin UI, so they were verified through the canonical
+queryset/service/source-policy scripts — this is valid acceptance evidence.
+
+| # | Check | Method | Result |
+|---|-------|--------|--------|
+| 1 | Create manual Game | Admin UI | pass |
+| 2 | Verify source identity | Admin UI | pass |
+| 3 | Normal manual editing | Admin UI | pass |
+| 4 | Explicit slug editing | Admin UI | pass |
+| 5 | Duplicate slug rejection | Admin UI | pass |
+| 6 | Required name validation | Admin UI | pass |
+| 7 | Manual image URL replacement | Admin UI | pass |
+| 8 | Restore valid manual image | Admin UI | pass |
+| 9 | Invalid asset validation | Admin UI | pass |
+| 10 | Draft manual Game excluded from `publicly_listable()` | Django shell/query script | pass |
+| 11 | Published manual Game included in `publicly_listable()` | Django shell/query script | pass |
+| 12 | Published manual non-Game excluded | Django shell/query script | pass |
+| 13 | Archived manual Game excluded | Django shell/query script | pass |
+| 14 | Temporary editorial classification creation | Admin UI | pass |
+| 15 | Game edit after classification preserves classification | Admin UI | pass |
+| 16 | Source-specific Admin field behavior | Admin UI | pass |
+| 17 | Steam manual-image override/fallback behavior | Admin/query | pass |
+| 18 | Manual Game Steam-refresh rejection | source-policy/service script | pass |
+| 19 | No raw traceback during final workflow validation | Admin UI | pass |
 
 Do not use Neon; do not contact Steam.
 
@@ -87,3 +97,17 @@ now documents accepted date formats; `developer`, `steam_image_url`, and
   Deletion Workflow**.
 - "Hide" is covered by `listing_status` draft/archived semantics, not a
   separate flag.
+
+## Discovered follow-up work (not SBGC-62 blockers)
+
+- **SBGC-182 — Game Deletion Workflow** (SBGC-6 epic): owns deliberate
+  deletion semantics (hard delete vs alternatives, cascade behavior,
+  classification relationships, source behavior, confirmation/safety UX,
+  referential integrity, listing/publication implications, manual/Steam
+  parity).  This is the remaining task needed to close SBGC-6 after
+  SBGC-62.
+- **SBGC-183 — Implement Scheduled Steam Metadata Refresh** (SBGC-8 —
+  Django Admin Configuration & Jobs/Schedulers): discovered future-work gap
+  for a daily scheduled Steam-only refresh with bounded retries, current-run
+  audit artifact, and operator failure notification.  Not a blocker to
+  SBGC-62 or SBGC-6.
