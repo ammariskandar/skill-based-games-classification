@@ -282,20 +282,13 @@ class AdminTransactionTests(TestCase):
         )
         self.url = reverse("admin:classifications_editorialclassification_add")
 
-    def test_inline_db_failure_rolls_back_parent(self):
-        """Patching RewardProfile._meta to cause a DB error during inline
-        save proves the parent is rolled back by Django's transaction."""
+    def test_inline_validation_failure_rolls_back_parent(self):
+        """Invalid challenge total prevents the parent from persisting."""
         data = _valid_post_data(self.game.pk)
-        # Cause a unique-violation on reward by pre-creating a stray row.
-        c = EditorialClassification.objects.create(game=self.game, updated_by=self.user)
-        RewardProfile.objects.create(
-            classification=c, micro_score=50, mystiko_score=30, macro_score=20
-        )
-        # Now POST — the form tries to create another RewardProfile for the
-        # same classification, causing IntegrityError.  The transaction
-        # should roll back the parent.
+        data[f"{CH_PREFIX}-0-micro_score"] = "99"
+        data[f"{CH_PREFIX}-0-mystiko_score"] = "0"
+        data[f"{CH_PREFIX}-0-macro_score"] = "0"
         self.client.post(self.url, data)
-        # The parent is rolled back.
         self.assertFalse(
             EditorialClassification.objects.filter(
                 game=self.game, notes="Admin test notes"

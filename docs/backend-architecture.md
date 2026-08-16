@@ -84,13 +84,20 @@ apps/backend/
 │   ├── __init__.py
 │   ├── apps.py                 # ClassificationsConfig
 │   ├── api.py                  # Classifications API router (no operations yet)
-│   ├── models.py               # EditorialClassification, ChallengeProfile, RewardProfile (SBGC-46)
-│   ├── admin.py                # EditorialClassificationAdmin with inlines (SBGC-46)
+│   ├── models.py               # EditorialClassification submission, ChallengeProfile, RewardProfile, EditorialGroupProfile (SBGC-46/63)
+│   ├── admin.py                # Submission + Group role Admin (SBGC-46/63)
+│   ├── roles.py                # EditorialRole + fixed base weights (SBGC-63)
 │   ├── skills.py               # SkillCategory, EditorialProfile, dominant helper (SBGC-49)
 │   ├── validation.py           # validate_score_distribution (SBGC-46)
-│   ├── tests/                  # Test package with 5 modules
+│   ├── services/
+│   │   ├── editorial.py        # Backward-compatible set_editorial_classification (SBGC-46/63)
+│   │   └── submissions.py      # create/update submission + role resolution (SBGC-63)
+│   ├── tests/                  # Test package with 7 modules
 │   └── migrations/
-│       └── __init__.py
+│       ├── 0001_initial.py
+│       ├── 0002_editorialgroupprofile_and_more.py
+│       ├── 0003_backfill_submissions.py
+│       └── 0004_alter_editorialclassification_submitted_by.py
 ├── api/                        # API routing composition (not a Django app)
 │   ├── __init__.py
 │   ├── urls.py                 # Mounts v1 NinjaAPI + catch-all fallback (SBGC-38)
@@ -148,7 +155,7 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py check
 
 **Ownership:** Separate Challenge and Reward profiles, Micro/Mystiko/Macro classification records, classification-domain concepts.
 
-**Status:** `EditorialClassification`, `ChallengeProfile`, and `RewardProfile` models implemented in SBGC-46 — one editorial classification per Game with independent Challenge/Reward score profiles, Admin with two inlines, and an atomic service layer.  Admin validation completed in SBGC-51.  Community classifications and API endpoints remain unimplemented.
+**Status:** `EditorialClassification`, `ChallengeProfile`, and `RewardProfile` models implemented in SBGC-46 — one editorial classification per Game with independent Challenge/Reward score profiles, Admin with two inlines, and an atomic service layer.  Admin validation completed in SBGC-51.  SBGC-63 changed `EditorialClassification` into a multi-user submission model (`submitted_by`, role/weight snapshot, `(game, submitted_by)` unique), added `EditorialGroupProfile` for Group role metadata, and introduced `create_submission`/`update_submission` + role resolution — see `docs/classification-submissions.md`.  Community classifications, final computed results, and API endpoints remain unimplemented.
 
 **Intended dependency direction:** `classifications` → `games` (classifications reference games; not circular).
 

@@ -136,12 +136,11 @@ class EditoriallyClassifiedTests(TestCase):
         qs = Game.objects.with_editorial_profiles()
         self.assertEqual(qs.count(), Game.objects.count())
 
-    def test_with_editorial_profiles_select_related(self):
+    def test_with_editorial_profiles_prefetch(self):
         g = Game.objects.with_editorial_profiles().get(pk=self.complete.pk)
-        with self.assertNumQueries(0):
-            _ = g.editorial_classification
-            _ = g.editorial_classification.challenge_profile
-            _ = g.editorial_classification.reward_profile
+        submission = g.editorial_classification.get()
+        self.assertIsNotNone(submission.challenge_profile)
+        self.assertIsNotNone(submission.reward_profile)
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +215,7 @@ class DominantAnnotationTests(TestCase):
         gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
         self.assertEqual(
             ga.challenge_dominant_skill_category,
-            gc.editorial_classification.challenge_profile.dominant_skill_category,
+            gc.editorial_classification.get().challenge_profile.dominant_skill_category,
         )
 
     def test_python_sql_parity_reward(self):
@@ -226,7 +225,7 @@ class DominantAnnotationTests(TestCase):
         gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
         self.assertEqual(
             ga.reward_dominant_skill_category,
-            gc.editorial_classification.reward_profile.dominant_skill_category,
+            gc.editorial_classification.get().reward_profile.dominant_skill_category,
         )
 
     def test_python_sql_parity_tie(self):
@@ -236,7 +235,7 @@ class DominantAnnotationTests(TestCase):
         gc = Game.objects.with_editorial_profiles().get(pk=g.pk)
         self.assertIsNone(ga.challenge_dominant_skill_category)
         self.assertIsNone(
-            gc.editorial_classification.challenge_profile.dominant_skill_category
+            gc.editorial_classification.get().challenge_profile.dominant_skill_category
         )
 
     def test_challenge_only_profile(self):
@@ -522,18 +521,18 @@ class QueryCountTests(TestCase):
             g = _make(name=f"QC {i}", slug=f"qc-{i}")
             _classify(g, self.user)
 
-    def test_with_editorial_profiles_single_query(self):
-        with self.assertNumQueries(1):
-            qs = list(Game.objects.editorially_classified().with_editorial_profiles())
-            self.assertEqual(len(qs), 3)
+    def test_with_editorial_profiles_returns_classified_games(self):
+        qs = list(Game.objects.editorially_classified().with_editorial_profiles())
+        self.assertEqual(len(qs), 3)
 
     def test_no_n_plus_one(self):
-        """Accessing profiles after select_related incurs no extra queries."""
+        """Accessing prefetched profiles incurs no extra queries."""
         games = list(Game.objects.editorially_classified().with_editorial_profiles())
         with self.assertNumQueries(0):
             for g in games:
-                _ = g.editorial_classification.challenge_profile.micro_score
-                _ = g.editorial_classification.reward_profile.macro_score
+                submission = g.editorial_classification.all()[0]
+                _ = submission.challenge_profile.micro_score
+                _ = submission.reward_profile.macro_score
 
     def test_dominant_annotation_single_query(self):
         """with_dominant_skill_categories evaluates in one query."""

@@ -94,7 +94,7 @@ class EditorialClassificationTests(TestCase):
         game = _make_game("parent-related")
         user = _make_user("editor7")
         c = EditorialClassification.objects.create(game=game, updated_by=user)
-        self.assertEqual(game.editorial_classification, c)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(list(game.editorial_classification.all()), [c])  # type: ignore[reportAttributeAccessIssue]
 
     def test_str(self):
         game = _make_game("parent-str")

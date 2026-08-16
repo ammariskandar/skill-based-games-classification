@@ -2683,6 +2683,27 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - SBGC-6 is ready to close after SBGC-182 merges.  SBGC-183 remains under
   SBGC-8 and is not a blocker.
 
+## 2026-08-16 — SBGC-63 classification submission workflow
+
+- Changed `EditorialClassification` from one-per-Game into a multi-user
+  submission model: added `submitted_by`, `submitted_role`,
+  `submitted_base_weight`, a `(game, submitted_by)` unique constraint, and
+  made `game` a ForeignKey (many submissions per Game).  Added
+  `EditorialGroupProfile` (OneToOne Group role metadata with mutually
+  exclusive Moderator/Community Leader flags).
+- Added `classifications/roles.py` (`EditorialRole` + fixed base weights),
+  `classifications/services/submissions.py` (`create_submission`,
+  `update_submission`, `resolve_editorial_role`), and updated
+  `set_editorial_classification` as a backward-compatible wrapper.
+- Role snapshot is immutable on edit; submitter (`submitted_by`) is
+  immutable; `updated_by` records the operator and may change.
+- Admin renamed to Editorial Classification Submissions, added Group role
+  inline, and defaulted `submitted_by` to the operator when omitted.
+- 13 new submission/role tests.  Created
+  `docs/classification-submissions.md`; updated backend-architecture,
+  database-constraints, and context changelog.  No final/derived
+  classification mathematics implemented (SBGC-65 owns that).
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

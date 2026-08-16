@@ -389,8 +389,8 @@ class ClassificationMigrationReversibilityTests(TransactionTestCase):
             self.assertIn("games_game", tables)
             self.assertIn("auth_user", tables)
 
-            # -- (2) Forward classifications to 0001 --------------------------
-            self._migrate_app("classifications", "0001")
+            # -- (2) Forward classifications to latest SBGC-63 state --------
+            self._migrate_app("classifications", "0004")
             tables = connection.introspection.table_names()
             self.assertIn("classifications_editorialclassification", tables)
             self.assertIn("classifications_challengeprofile", tables)
