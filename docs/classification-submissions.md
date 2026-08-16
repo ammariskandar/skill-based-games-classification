@@ -85,6 +85,35 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
   messages rather than raw database constraint names.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.
 
+## Validation record
+
+Final human Admin validation passed on local SQLite (2026-08-16).  All prior
+SBGC-63 checks remain green, and the final pass fixed one production crash
+found during human testing.
+
+- **Regression:** an out-of-range score (e.g. `200`) raised
+  `ValueError: 'ChallengeProfileForm' has no field named 'Challenge Mystiko'`.
+  `validate_score_distribution()` was keying `ValidationError` by
+  human-readable labels instead of real field names, so Django inline form
+  validation crashed (HTTP 500).
+- **Fix:** field errors are now keyed by the concrete model/form field names
+  `micro_score` / `mystiko_score` / `macro_score`; human-readable labels stay
+  inside the message text (e.g. `"Challenge Mystiko must be between 0 and 100
+  (got 200)."`).  Total errors remain on `__all__`.
+- `DEBUG=True` only exposed the traceback; it was **not** the cause and was
+  not changed.  With `DEBUG=False` the same input was a 500.
+- Duplicate-submission wording is contextual: self-submission says
+  `"You have already submitted scores for this game."`; privileged on-behalf
+  says `"This user has already submitted scores for this game."`.
+- PostgreSQL cardinality/uniqueness verification was **not** freshly run for
+  this pass (no disposable PostgreSQL 16 image in the sandbox; not Neon).
+  The fix is application-level validation only and changes no DB semantics.
+
+Final human retest (local SQLite): Challenge `20 / 200 / 60` and Reward
+`20 / 200 / 60` showed friendly range errors without traceback; in-range but
+wrong totals showed friendly exact-total errors; duplicate self-submission
+showed the exact friendly wording.  All prior SBGC-63 checks remain passed.
+
 ## Not implemented in SBGC-63
 
 No Method 1/2/3, no confidence, no weights math, no outlier rejection, no

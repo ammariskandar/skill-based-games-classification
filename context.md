@@ -2738,6 +2738,26 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   backend-supplied role map; duplicate/score validation uses friendly
   messages.
 
+## 2026-08-16 — SBGC-63 validation fix + final human validation
+
+- Fixed a production crash found during human validation: out-of-range
+  scores (e.g. `200`) raised `ValueError` because
+  `validate_score_distribution()` keyed `ValidationError` by profile labels
+  (`"Challenge Mystiko"`) instead of real field names.  Field errors now key
+  by `micro_score` / `mystiko_score` / `macro_score`, with labels inside the
+  message text; total errors remain on `__all__`.
+- `DEBUG=True` only exposed the traceback and was **not** the fix (unchanged).
+- Duplicate wording is now contextual: self `"You have already submitted
+  scores for this game."` vs on-behalf `"This user has already submitted
+  scores for this game."`.
+- Added six-field range matrix, below-range, total, and duplicate-wording
+  regression tests.  Full backend 1,415 OK (19 skipped); BasedPyright 0
+  errors; migrations no changes.
+- PostgreSQL was **not** freshly run for this pass (no disposable PostgreSQL
+  16 image; not Neon); the fix is application-level validation and changes
+  no DB semantics.
+- Final human validation passed on local SQLite.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
