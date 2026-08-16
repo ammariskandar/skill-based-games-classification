@@ -38,7 +38,7 @@ Django Admin workflows and automated integration tests.
 |----------|-------------------|--------------------|-------------------|----------|
 | Duplicate Steam identity | — | ✅ (UniqueConstraint) | ✅ | — |
 | Invalid source/external ID | ✅ | ✅ | ✅ (CheckConstraint) | — |
-| Invalid score range (0–100) | ✅ | ✅ (via total) | ✅ (CheckConstraint) | ✅ |
+| Invalid score range (0–100) | ✅ | ✅ | ✅ (CheckConstraint) | ✅ |
 | Invalid score total (≠100) | ✅ | ✅ | ✅ (CheckConstraint) | ✅ |
 | Duplicate profile | — | ✅ (formset) | ✅ (OneToOneField) | ✅ |
 | Missing profile | — | ✅ (formset) | —¹ | ✅ |
@@ -47,25 +47,27 @@ Django Admin workflows and automated integration tests.
 
 ¹ Database does not enforce child existence — service and Admin both prevent it.
 ² Public listing exclusion is a queryset rule, not a database constraint.
-³ Model `clean()` raises with profile-labeled error keys that cause Django internal
-`ValueError` (500) when combined with form-field-level errors.  This is a pre-existing
-edge case (not introduced by SBGC-51).  Tests target total violations which use
-`__all__` key (safe).
+³ Negative scores are rejected by the form field (`PositiveSmallIntegerField`) and
+by model `clean()` range validation.  SBGC-63 resolved the earlier model-clean key
+collision so range errors attach to the real field name (`micro_score` /
+`mystiko_score` / `macro_score`) instead of crashing inline form validation.
 
-## Pre-Existing Edge Case
+## Resolved Edge Case (SBGC-63)
 
-`ChallengeProfile.clean()` and `RewardProfile.clean()` use
+`ChallengeProfile.clean()` and `RewardProfile.clean()` previously used
 `validate_score_distribution()` with profile-labeled error keys
-(e.g. `"Challenge Micro"`, `"Reward Mystiko"`).  When a score violates
+(e.g. `"Challenge Micro"`, `"Reward Mystiko"`).  When a score violated
 both the form-field range (`PositiveSmallIntegerField` rejects negatives)
 and the model `clean()` range check, the model-level `ValidationError`
-keys do not match any form field name, causing Django's inline form
+keys did not match any form field name, causing Django's inline form
 `_update_errors` to raise `ValueError` (500).
 
-Tests in SBGC-51 avoid this edge case by:
-- Testing range violations through total violations (which use `__all__`)
-- Testing negative values through form-field rejection in isolation
-- Documenting the limitation for future resolution
+SBGC-63 resolved this: `validate_score_distribution()` now keys field errors
+by the concrete model/form field names (`micro_score` / `mystiko_score` /
+`macro_score`) with human-readable labels inside the message text.  Total
+errors remain on `__all__`.  `DEBUG=True` only exposed the traceback and was
+not changed.  `classifications/tests/test_admin_ux.py` covers the full
+six-field range matrix and below-range inputs without the earlier workaround.
 
 ## No Network
 
@@ -85,9 +87,6 @@ No schema changes required.  `makemigrations --check --dry-run` reports
   and service both prevent incomplete parents, but direct ORM can bypass.
 - Content-type choices are application-level validation, not a database
   `CHECK` constraint.
-- The model `clean()` edge case (profile-labeled error keys vs form field
-  names) may produce 500 errors when a score is both out of range and
-  the total is also wrong.
 - No API endpoints consume these Admin workflows.
 - No frontend UI integration.
 - No bulk-action or import-action Admin tests.

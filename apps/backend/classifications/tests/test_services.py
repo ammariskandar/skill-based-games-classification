@@ -121,20 +121,24 @@ class ServiceUpdateTests(TestCase):
             notes="Original notes.",
         )
 
-    def test_updates_existing(self):
+    def test_different_user_creates_second_submission(self):
         user2 = _user("svc-update-user2")
         result = set_editorial_classification(
             game=self.game,
             updated_by=user2,
             challenge=_challenge(micro=30, mystiko=40, macro=30),
             reward=_reward(micro=20, mystiko=20, macro=60),
-            notes="Updated notes.",
+            notes="Second submission.",
         )
-        self.assertEqual(result.pk, self.original.pk)
-        self.assertEqual(result.notes, "Updated notes.")
+        self.assertNotEqual(result.pk, self.original.pk)
+        self.assertEqual(result.notes, "Second submission.")
         self.assertEqual(result.updated_by, user2)
+        self.assertEqual(result.submitted_by, user2)
         self.assertEqual(result.challenge_profile.micro_score, 30)
         self.assertEqual(result.reward_profile.micro_score, 20)
+        self.assertEqual(
+            EditorialClassification.objects.filter(game=self.game).count(), 2
+        )
 
     def test_no_duplicate_rows(self):
         set_editorial_classification(

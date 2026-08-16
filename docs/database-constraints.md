@@ -30,6 +30,8 @@ criterion.
 |-----------|-----------|------|----|-----|--------|-----|
 | One per Game | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | ✅ |
 | `updated_by` FK | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
+| `submitted_by` FK (SBGC-63) | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
+| One submission per `(game, submitted_by)` (SBGC-63) | `UniqueConstraint` | Unique constraint | ✅ | — | ✅ | ✅ |
 | `game` CASCADE delete | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 | Exactly one Challenge + one Reward | — | Service/Admin only | — | ✅ | ✅ | ✅ |
 
@@ -55,17 +57,17 @@ criterion.
 
 ## Deletion Cascade (SBGC-182)
 
-`Game` deletion cascades through the classification graph:
+`Game` deletion cascades through **all** submissions and their profiles:
 
 ```text
 Game
-→ EditorialClassification (CASCADE)
-  → ChallengeProfile (CASCADE)
-  → RewardProfile (CASCADE)
+├─ EditorialClassification (CASCADE)  → ChallengeProfile (CASCADE), RewardProfile (CASCADE)
+├─ EditorialClassification (CASCADE)  → ChallengeProfile (CASCADE), RewardProfile (CASCADE)
+└─ ...
 ```
 
-`updated_by` (User) is `PROTECT` and survives.  See
-`docs/game-deletion-workflow.md`.
+`updated_by` and `submitted_by` (User) are `PROTECT` and survive.  See
+`docs/game-deletion-workflow.md` and `docs/classification-submissions.md`.
 
 ## Invalid-State Matrix
 

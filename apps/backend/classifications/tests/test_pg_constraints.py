@@ -51,7 +51,7 @@ class ChallengeConstraintTests(PostgreSQLTestCase):
 
     def _create(self, micro, mystiko, macro):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         return ChallengeProfile.objects.create(
             classification=parent,
@@ -93,7 +93,7 @@ class RewardConstraintTests(PostgreSQLTestCase):
 
     def _create(self, micro, mystiko, macro):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         return RewardProfile.objects.create(
             classification=parent,
@@ -121,7 +121,7 @@ class RewardConstraintTests(PostgreSQLTestCase):
     def test_challenge_reward_independent(self):
         """A valid Reward can exist alongside a valid Challenge — same parent."""
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         ChallengeProfile.objects.create(
             classification=parent, micro_score=50, mystiko_score=20, macro_score=30
@@ -144,14 +144,19 @@ class OneToOneUniquenessTests(PostgreSQLTestCase):
         cls.game = _game("oto-game")
         cls.user = _user("oto-user")
 
-    def test_duplicate_parent_rejected(self):
-        EditorialClassification.objects.create(game=self.game, updated_by=self.user)
+    def test_duplicate_submission_rejected(self):
+        """A second submission by the same user for the same Game is rejected."""
+        EditorialClassification.objects.create(
+            game=self.game, submitted_by=self.user, updated_by=self.user
+        )
         with self.assertRaises(IntegrityError):
-            EditorialClassification.objects.create(game=self.game, updated_by=self.user)
+            EditorialClassification.objects.create(
+                game=self.game, submitted_by=self.user, updated_by=self.user
+            )
 
     def test_duplicate_challenge_rejected(self):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         ChallengeProfile.objects.create(
             classification=parent, micro_score=50, mystiko_score=20, macro_score=30
@@ -163,7 +168,7 @@ class OneToOneUniquenessTests(PostgreSQLTestCase):
 
     def test_duplicate_reward_rejected(self):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         RewardProfile.objects.create(
             classification=parent, micro_score=10, mystiko_score=30, macro_score=60
@@ -185,7 +190,7 @@ class CascadeProtectTests(PostgreSQLTestCase):
         cls.user = _user("fk-user")
         cls.game = _game("fk-game")
         cls.parent = EditorialClassification.objects.create(
-            game=cls.game, updated_by=cls.user
+            game=cls.game, submitted_by=cls.user, updated_by=cls.user
         )
         cls.ch = ChallengeProfile.objects.create(
             classification=cls.parent, micro_score=50, mystiko_score=20, macro_score=30
@@ -196,7 +201,9 @@ class CascadeProtectTests(PostgreSQLTestCase):
 
     def test_cascade_game_delete_removes_classification(self):
         game = _game("cascade-game")
-        parent = EditorialClassification.objects.create(game=game, updated_by=self.user)
+        parent = EditorialClassification.objects.create(
+            game=game, submitted_by=self.user, updated_by=self.user
+        )
         ChallengeProfile.objects.create(
             classification=parent, micro_score=40, mystiko_score=30, macro_score=30
         )
@@ -209,7 +216,9 @@ class CascadeProtectTests(PostgreSQLTestCase):
 
     def test_cascade_parent_delete_removes_profiles(self):
         game = _game("cascade-parent")
-        parent = EditorialClassification.objects.create(game=game, updated_by=self.user)
+        parent = EditorialClassification.objects.create(
+            game=game, submitted_by=self.user, updated_by=self.user
+        )
         ChallengeProfile.objects.create(
             classification=parent, micro_score=33, mystiko_score=33, macro_score=34
         )
@@ -241,7 +250,7 @@ class BulkConstraintTests(PostgreSQLTestCase):
 
     def test_bulk_create_invalid_challenge_rejected(self):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         # 40+40+40=120 — unambiguously violates total=100 constraint.
         with self.assertRaises(IntegrityError):
@@ -262,7 +271,7 @@ class BulkConstraintTests(PostgreSQLTestCase):
 
     def test_bulk_update_invalid_challenge_rejected(self):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         profile = ChallengeProfile.objects.create(
             classification=parent, micro_score=50, mystiko_score=20, macro_score=30
@@ -333,13 +342,15 @@ class ServiceTransactionTests(PostgreSQLTestCase):
         with transaction.atomic():
             # Establish valid outer-transaction state.
             original = EditorialClassification.objects.create(
-                game=game, updated_by=user
+                game=game, submitted_by=user, updated_by=user
             )
 
             # Nested atomic block — IntegrityError rolls back its savepoint.
             with self.assertRaises(IntegrityError):
                 with transaction.atomic():
-                    EditorialClassification.objects.create(game=game, updated_by=user)
+                    EditorialClassification.objects.create(
+                        game=game, submitted_by=user, updated_by=user
+                    )
 
             # Outer transaction still usable.
             self.assertTrue(
@@ -348,7 +359,9 @@ class ServiceTransactionTests(PostgreSQLTestCase):
 
             # Another valid write succeeds.
             game2 = _game("svc-sp-2")
-            second = EditorialClassification.objects.create(game=game2, updated_by=user)
+            second = EditorialClassification.objects.create(
+                game=game2, submitted_by=user, updated_by=user
+            )
             self.assertIsNotNone(second.pk)
 
 

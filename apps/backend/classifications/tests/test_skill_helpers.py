@@ -98,7 +98,7 @@ class ModelPropertyTests(TestCase):
 
         self.user = User.objects.create_user(username="prop_u", password="p")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_challenge_unique_micro(self):

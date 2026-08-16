@@ -17,7 +17,6 @@ from games.models import Game, SourceType
 
 from classifications.models import (
     EditorialClassification,
-    RewardProfile,
 )
 
 # ---------------------------------------------------------------------------
@@ -480,18 +479,13 @@ class TransactionRollbackTests(TestCase):
             EditorialClassification.objects.filter(game=self.game).exists()
         )
 
-    def test_inline_db_failure_rolls_back_parent(self):
-        """Pre-create a RewardProfile to cause unique-violation during save."""
-        parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
-        )
-        RewardProfile.objects.create(
-            classification=parent, micro_score=50, mystiko_score=30, macro_score=20
-        )
-        # Admin POST to create a NEW classification for the same game.
+    def test_reward_validation_failure_rolls_back_parent(self):
+        """Invalid Reward total prevents the parent from persisting."""
         data = _valid_post_data(self.game.pk)
+        data[f"{RW_PREFIX}-0-micro_score"] = "10"
+        data[f"{RW_PREFIX}-0-mystiko_score"] = "10"
+        data[f"{RW_PREFIX}-0-macro_score"] = "10"
         self.client.post(self.add_url, data)
-        # The parent with "Admin test notes" must not exist.
         self.assertFalse(
             EditorialClassification.objects.filter(
                 game=self.game, notes="Admin test notes"

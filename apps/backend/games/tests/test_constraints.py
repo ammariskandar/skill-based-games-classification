@@ -199,7 +199,9 @@ class GameDeletionTests(TestCase):
             slug="del-steam",
             external_id="300",
         )
-        EditorialClassification.objects.create(game=g, updated_by=user)
+        EditorialClassification.objects.create(
+            game=g, submitted_by=user, updated_by=user
+        )
         slug = g.slug
         g.delete()
         self.assertFalse(Game.objects.filter(slug=slug).exists())

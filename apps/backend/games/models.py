@@ -68,13 +68,13 @@ class GameQuerySet(models.QuerySet):
         )
 
     def with_editorial_profiles(self):
-        """``select_related`` all editorial classification rows.
+        """``prefetch_related`` all editorial submission rows.
 
         Does NOT filter — returns every Game regardless of classification.
         """
-        return self.select_related(
-            "editorial_classification",
+        return self.prefetch_related(
             "editorial_classification__updated_by",
+            "editorial_classification__submitted_by",
             "editorial_classification__challenge_profile",
             "editorial_classification__reward_profile",
         )

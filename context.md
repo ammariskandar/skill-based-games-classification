@@ -2683,6 +2683,81 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - SBGC-6 is ready to close after SBGC-182 merges.  SBGC-183 remains under
   SBGC-8 and is not a blocker.
 
+## 2026-08-16 — SBGC-63 classification submission workflow
+
+- Changed `EditorialClassification` from one-per-Game into a multi-user
+  submission model: added `submitted_by`, `submitted_role`,
+  `submitted_base_weight`, a `(game, submitted_by)` unique constraint, and
+  made `game` a ForeignKey (many submissions per Game).  Added
+  `EditorialGroupProfile` (OneToOne Group role metadata with mutually
+  exclusive Moderator/Community Leader flags).
+- Added `classifications/roles.py` (`EditorialRole` + fixed base weights),
+  `classifications/services/submissions.py` (`create_submission`,
+  `update_submission`, `resolve_editorial_role`), and updated
+  `set_editorial_classification` as a backward-compatible wrapper.
+- Role snapshot is immutable on edit; submitter (`submitted_by`) is
+  immutable; `updated_by` records the operator and may change.
+- Admin renamed to Editorial Classification Submissions, added Group role
+  inline, and defaulted `submitted_by` to the operator when omitted.
+- 13 new submission/role tests.  Created
+  `docs/classification-submissions.md`; updated backend-architecture,
+  database-constraints, and context changelog.  No final/derived
+  classification mathematics implemented (SBGC-65 owns that).
+
+## 2026-08-16 — SBGC-63 completion pass (attribution hardening)
+
+- Removed the permanent ORM ``save()`` fallback that inferred
+  ``submitted_by`` from ``updated_by``.  Runtime new submissions now
+  require explicit ``submitted_by``; only the migration backfill maps
+  historical rows from ``updated_by``.
+- Historical backfill is considered safe: pre-SBGC-63 the model had no
+  separate submitter concept and ``updated_by`` was the only author/operator
+  identity; historical role defaults to Community (non-superuser) as a
+  migration default, not an inferred moderator/CL status.
+- Added cross-group conflict creation test (no partial row) and a runtime
+  no-inferred-submitter regression test.
+PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
+  available in the sandbox; not run against Neon.
+- Human Admin validation pending.
+
+## 2026-08-16 — SBGC-63 Admin UX polish
+
+- Ordinary non-superuser operators now have `submitted_by` derived from
+  `request.user` and non-selectable; only superusers may create on behalf of
+  another user.  Role/weight preview is shown before save.
+- Duplicate submissions and score totals now surface friendly operator
+  messages instead of raw `*_ck` / Django uniqueness wording.
+- Added `classifications/tests/test_admin_ux.py` (4 focused tests).
+
+## 2026-08-16 — SBGC-63 role hierarchy visibility
+
+- Superuser now appears as a system-defined, read-only role on the Group
+  admin screen with current superusers listed dynamically; no fake
+  Superuser Group was created.
+- On-behalf role preview follows the selected submitter via a
+  backend-supplied role map; duplicate/score validation uses friendly
+  messages.
+
+## 2026-08-16 — SBGC-63 validation fix + final human validation
+
+- Fixed a production crash found during human validation: out-of-range
+  scores (e.g. `200`) raised `ValueError` because
+  `validate_score_distribution()` keyed `ValidationError` by profile labels
+  (`"Challenge Mystiko"`) instead of real field names.  Field errors now key
+  by `micro_score` / `mystiko_score` / `macro_score`, with labels inside the
+  message text; total errors remain on `__all__`.
+- `DEBUG=True` only exposed the traceback and was **not** the fix (unchanged).
+- Duplicate wording is now contextual: self `"You have already submitted
+  scores for this game."` vs on-behalf `"This user has already submitted
+  scores for this game."`.
+- Added six-field range matrix, below-range, total, and duplicate-wording
+  regression tests.  Full backend 1,415 OK (19 skipped); BasedPyright 0
+  errors; migrations no changes.
+- PostgreSQL was **not** freshly run for this pass (no disposable PostgreSQL
+  16 image; not Neon); the fix is application-level validation and changes
+  no DB semantics.
+- Final human validation passed on local SQLite.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

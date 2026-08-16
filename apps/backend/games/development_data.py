@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import dataclasses
 
+from classifications.models import EditorialClassification
 from classifications.services.editorial import (
     ScoreDistribution,
     set_editorial_classification,
@@ -273,10 +274,9 @@ def _seed_one_game(sg: SeedGame, editor: User, stats: dict) -> dict:
 
     # Optional editorial classification.
     if sg.classify and sg.challenge and sg.reward:
-        _was_new = (
-            not hasattr(game, "editorial_classification")
-            or game.editorial_classification is None  # pyright: ignore[reportAttributeAccessIssue] — reverse OneToOne relation
-        )
+        _was_new = not EditorialClassification.objects.filter(
+            game=game, submitted_by=editor
+        ).exists()
         set_editorial_classification(
             game=game,
             updated_by=editor,
