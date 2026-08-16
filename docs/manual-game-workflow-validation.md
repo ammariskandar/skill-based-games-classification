@@ -6,7 +6,8 @@ SBGC-59/60/61.
 ## Environment
 
 - Automated tests: in-memory SQLite (`config.settings.test`).
-- No Neon, no Render, no Steam network.
+- Local development DB: SQLite (`apps/backend/db.sqlite3`).
+- No Neon, no Render, no production/shared DB, no Steam network.
 - Human Admin validation: pending at the time of writing.
 
 ## Automated workflow evidence
@@ -48,9 +49,41 @@ Admin boundaries:
 
 Do not use Neon; do not contact Steam.
 
+## Blockers resolved
+
+- **Human-validation environment blocker:** local development SQLite schema
+  was stale and had not applied the SBGC-59 Game metadata migration
+  (`games.0006_game_developer_game_release_date`).  This was not a
+  production-code defect.  Resolved by applying existing migrations to the
+  local SQLite database only (`migrate games --settings=config.settings.development`).
+  Verified `release_date` and `developer` columns now exist and `showmigrations`
+  reports `0006` applied.  No Neon/production DB was touched.
+
+## Manual input formats
+
+Manual Game `release_date` accepts exactly:
+
+```text
+YYYY-MM-DD   (2026-08-16)
+DD-MM-YYYY   (16-08-2026)
+DD/MM/YYYY   (16/08/2026)
+YYYY/MM/DD   (2026/08/16)
+```
+
+All four normalize to the same calendar `date`.  Other formats are rejected
+by normal form validation.
+
+## User-facing help text
+
+Jira keys, ticket numbers, branch names, and implementation-history wording
+were removed from manual Game Admin/model help text.  `release_date` help
+now documents accepted date formats; `developer`, `steam_image_url`, and
+`last_steam_refresh_at` use concise domain-facing wording only.
+
 ## Limitations
 
-- Manual delete/soft-delete/archive/restore are not implemented (deferred in
-  SBGC-59), so SBGC-62 does not verify deletion.
+- Manual delete/soft-delete/archive/restore are **not** implemented and are
+  explicitly out of SBGC-62 scope; deletion is owned by **SBGC-182 — Game
+  Deletion Workflow**.
 - "Hide" is covered by `listing_status` draft/archived semantics, not a
   separate flag.

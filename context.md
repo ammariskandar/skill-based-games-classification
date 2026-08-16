@@ -2623,6 +2623,23 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   backend-testing, admin-domain-validation, manual-game-management, and
   context changelog.  Human Admin validation is pending.
 
+## 2026-08-16 — SBGC-62 manual Admin date input + help text cleanup
+
+- Removed Jira ticket keys and implementation-history wording from
+  user-facing Game help text (`release_date`, `developer`,
+  `steam_image_url`, `last_steam_refresh_at`); replaced with concise
+  domain-facing copy.  Added `games.0007` migration for the help-text
+  state change.
+- Added `games/forms.py` (`GameForm`) and wired it into `GameAdmin` so
+  manual `release_date` accepts exactly `YYYY-MM-DD`, `DD-MM-YYYY`,
+  `DD/MM/YYYY`, `YYYY/MM/DD` and normalizes to the same date value.
+- Resolved the human-validation blocker: the local development SQLite
+  schema had not applied the SBGC-59 metadata migration (`games.0006`).
+  Applied existing migrations to local SQLite only — no Neon/production
+  DB touched.
+- Added `games/tests/test_admin_date_formats.py` (5 tests) covering the
+  four formats, unsupported rejection, and user-facing help-text checks.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
