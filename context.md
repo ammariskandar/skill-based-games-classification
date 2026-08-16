@@ -2758,6 +2758,29 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   no DB semantics.
 - Final human validation passed on local SQLite.
 
+## 2026-08-16 — SBGC-64 classification validation hardening
+
+- Added role/weight pair validation: `EditorialClassification.clean()` now
+  requires `submitted_base_weight` to equal the fixed `BASE_WEIGHTS` value
+  for its `submitted_role`, closing the direct-ORM mismatch gap.
+- Model-level duplicate validation now translates the `(game, submitted_by)`
+  uniqueness violation into friendly wording instead of Django's generated
+  "already exists" sentence.
+- `create_submission()` now translates a lost uniqueness race (pre-check
+  passed, DB `UniqueConstraint` fired) into `EditorialSubmissionError`, using
+  a nested atomic block and without swallowing unrelated `IntegrityError`s.
+- Admin `has_change_permission()` now restricts non-superusers to editing
+  only their own submissions; superusers retain full edit access.
+- Cleaned the two stale SBGC-51 workaround comments in
+  `classifications/tests/test_admin_validation.py`; the below-0 Admin tests
+  now submit a negative score directly.
+- Added `classifications/tests/test_validation.py` (role/weight pair,
+  duplicate translation, race handling) and Admin edit-ownership tests.
+  Full backend 1,425 OK (19 skipped); BasedPyright 0 errors; migrations no
+  changes.
+- PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
+  these are application-level invariants that change no DB schema.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

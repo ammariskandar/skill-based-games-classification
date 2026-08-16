@@ -144,10 +144,29 @@ class EditorialClassification(models.Model):
         )
         return f"Editorial classification for {game_name} by {submitter}"
 
-    def validate_unique(self, exclude=None):
-        """Surface friendly submission-duplicate messaging."""
+    def clean(self) -> None:
+        super().clean()
+        expected = BASE_WEIGHTS.get(self.submitted_role)
+        if (
+            expected is not None
+            and self.submitted_base_weight is not None
+            and self.submitted_base_weight != expected
+        ):
+            label = dict(EditorialRole.choices).get(
+                self.submitted_role, self.submitted_role
+            )
+            raise ValidationError(
+                {
+                    "submitted_base_weight": (
+                        f"Base weight for role {label} must be {expected}."
+                    )
+                }
+            )
+
+    def validate_constraints(self, exclude=None):
+        """Translate the known duplicate-submission constraint into friendly wording."""
         try:
-            super().validate_unique(exclude)
+            super().validate_constraints(exclude)
         except ValidationError as exc:
             new_dict = {}
             for field, messages in exc.message_dict.items():
@@ -158,19 +177,6 @@ class EditorialClassification(models.Model):
                     for m in messages
                 ]
             raise ValidationError(new_dict) from exc
-
-    def validate_constraints(self, exclude=None):
-        """Drop raw DB-constraint messages from Admin validation."""
-        try:
-            super().validate_constraints(exclude)
-        except ValidationError as exc:
-            new_dict = {}
-            for field, messages in exc.message_dict.items():
-                filtered = [m for m in messages if not _is_db_constraint_message(m)]
-                if filtered:
-                    new_dict[field] = filtered
-            if new_dict:
-                raise ValidationError(new_dict) from exc
 
     if TYPE_CHECKING:
         challenge_profile: ChallengeProfile

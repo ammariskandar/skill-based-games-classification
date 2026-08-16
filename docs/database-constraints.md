@@ -28,10 +28,10 @@ criterion.
 
 | Invariant | Constraint | Type | DB | App | SQLite | PG |
 |-----------|-----------|------|----|-----|--------|-----|
-| One per Game | `OneToOneField` | Implicit unique FK | ✅ | — | ✅ | ✅ |
 | `updated_by` FK | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
 | `submitted_by` FK (SBGC-63) | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
 | One submission per `(game, submitted_by)` (SBGC-63) | `UniqueConstraint` | Unique constraint | ✅ | — | ✅ | ✅ |
+| Role/weight pair consistency (SBGC-64) | — | Model `clean()` only | — | ✅ | ✅ | ✅ |
 | `game` CASCADE delete | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 | Exactly one Challenge + one Reward | — | Service/Admin only | — | ✅ | ✅ | ✅ |
 
@@ -79,7 +79,7 @@ Game
 | Duplicate Steam identity | ❌ | ❌ | ❌ | ❌ |
 | Duplicate slug | ❌ | ❌ | ❌ | ❌ |
 | Duplicate name | ✅ | ✅ | ✅ | ✅ |
-| Duplicate parent per Game | ❌ | ❌ | ❌ | ❌ |
+| Duplicate submission per (game, user) | ❌ | ❌ | ❌ | ❌ |
 | Duplicate Challenge per parent | ❌ | ❌ | ❌ | ❌ |
 | Duplicate Reward per parent | ❌ | ❌ | ❌ | ❌ |
 | Score < 0 | ❌ | ❌ | ❌ | ❌ |

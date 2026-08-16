@@ -83,6 +83,8 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
   dynamically; no fake Superuser Group is created.
 - Duplicate submissions and score totals surface friendly operator-facing
   messages rather than raw database constraint names.
+- Non-superusers may only edit their own submissions; superusers may edit
+  any submission under standard Django change-permission policy.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.
 
 ## Validation record
@@ -113,6 +115,24 @@ Final human retest (local SQLite): Challenge `20 / 200 / 60` and Reward
 `20 / 200 / 60` showed friendly range errors without traceback; in-range but
 wrong totals showed friendly exact-total errors; duplicate self-submission
 showed the exact friendly wording.  All prior SBGC-63 checks remain passed.
+
+## Validation hardening (SBGC-64)
+
+- `EditorialClassification.clean()` enforces the role/weight pair: a
+  `submitted_base_weight` must equal the fixed `BASE_WEIGHTS` value for its
+  `submitted_role`.  Canonical writes always derive the pair; direct ORM
+  `full_clean()` rejects mismatches.
+- Model-level duplicate validation now translates the
+  `(game, submitted_by)` uniqueness violation into friendly wording instead
+  of Django's generated "already exists" sentence.
+- `create_submission()` translates a lost uniqueness race (pre-check passed,
+  but the DB `UniqueConstraint` fired) into `EditorialSubmissionError`
+  without swallowing unrelated `IntegrityError`s.
+- Admin `has_change_permission()` restricts non-superusers to editing only
+  their own submissions.
+- Score range/total, uniqueness, identity immutability, role conflict, and
+  group mutual exclusion remain enforced at their existing layers (model,
+  service, Admin, DB).
 
 ## Not implemented in SBGC-63
 

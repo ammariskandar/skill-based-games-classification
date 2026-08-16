@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.contrib.auth.models import AbstractBaseUser
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from games.models import Game
 
 from classifications.models import (
@@ -119,7 +119,7 @@ def create_submission(
         game=game, submitted_by=submitted_by
     ).exists():
         raise EditorialSubmissionError(
-            "This user already has an editorial submission for this game."
+            "This user has already submitted scores for this game."
         )
 
     role = resolve_editorial_role(submitted_by)
@@ -136,10 +136,7 @@ def create_submission(
             notes=notes,
         )
         submission.full_clean()
-        submission.save()
-
-        _create_profile(submission, ChallengeProfile, "challenge_profile", challenge)
-        _create_profile(submission, RewardProfile, "reward_profile", reward)
+        _persist_submission(submission, challenge, reward)
 
     return submission
 
@@ -200,6 +197,38 @@ def _validate_participants(
         raise TypeError("submitted_by must be a saved user.")
     if updated_by is None or updated_by.pk is None:
         raise TypeError("updated_by must be a saved user.")
+
+
+def _persist_submission(submission, challenge, reward) -> None:
+    """Save the submission + profiles, translating a lost duplicate race.
+
+    A concurrent request may win the ``(game, submitted_by)`` uniqueness
+    race after the service pre-check.  The nested atomic block keeps the
+    outer transaction usable so the known duplicate can be reported as a
+    domain error instead of a raw IntegrityError.
+    """
+    try:
+        with transaction.atomic():
+            submission.save()
+            _create_profile(
+                submission, ChallengeProfile, "challenge_profile", challenge
+            )
+            _create_profile(submission, RewardProfile, "reward_profile", reward)
+    except IntegrityError as exc:
+        if _is_duplicate_submission_integrity_error(exc):
+            raise EditorialSubmissionError(
+                "This user has already submitted scores for this game."
+            ) from exc
+        raise
+
+
+def _is_duplicate_submission_integrity_error(exc: IntegrityError) -> bool:
+    """Return True when *exc* is the known (game, submitted_by) unique violation."""
+    message = str(exc)
+    return "editorial_submission_game_user_uniq" in message or (
+        "classifications_editorialclassification" in message
+        and "submitted_by_id" in message
+    )
 
 
 def _create_profile(submission, profile_model, related_name, distribution) -> None:

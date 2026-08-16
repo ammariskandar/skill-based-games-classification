@@ -25,10 +25,11 @@ Django Admin workflows and automated integration tests.
 | Area | Tests |
 |------|-------|
 | Valid edit | Notes, Challenge scores, Reward scores, PKs preserved, updated_by preserved, timestamps updated |
-| Invalid scores (add) | Challenge total 99/101/120, Reward total 99/101, score range via total violation |
+| Invalid scores (add) | Challenge total 99/101/120, Reward total 99/101, negative score |
 | Invalid scores (edit) | Failed edit preserves existing Challenge scores; valid opposite profile doesn't mask invalid |
 | Completeness | Missing Challenge, missing Reward, duplicate Challenge, duplicate Reward, forged DELETE (silently ignored) |
 | Transaction rollback | Invalid inline prevents parent save, DB failure rolls back parent, failed edit preserves state, unrelated rows unchanged |
+| Edit ownership (SBGC-64) | Non-superuser edit own submission only; superuser edit any — `test_admin_ux.py` |
 | Changelist | Loads, contains game name, contains username |
 | No-network | Add GET, valid POST, invalid POST, edit GET, changelist |
 

@@ -191,6 +191,14 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             )
         return readonly
 
+    def has_change_permission(self, request, obj=None):
+        """Non-superusers may only edit their own submissions."""
+        if not super().has_change_permission(request, obj):
+            return False
+        if obj is not None and not getattr(request.user, "is_superuser", False):
+            return obj.submitted_by_id == request.user.pk
+        return True
+
     @admin.display(description="Challenge")
     def challenge_summary(self, obj):
         profile = getattr(obj, "challenge_profile", None)
