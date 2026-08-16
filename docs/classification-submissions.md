@@ -118,10 +118,11 @@ showed the exact friendly wording.  All prior SBGC-63 checks remain passed.
 
 ## Validation hardening (SBGC-64)
 
-- `EditorialClassification.clean()` enforces the role/weight pair: a
-  `submitted_base_weight` must equal the fixed `BASE_WEIGHTS` value for its
-  `submitted_role`.  Canonical writes always derive the pair; direct ORM
-  `full_clean()` rejects mismatches.
+- Role/weight snapshot consistency is enforced at three layers: the service
+  always derives the pair, `EditorialClassification.clean()` rejects
+  mismatches, and the `CheckConstraint`
+  `editorial_submission_role_weight_ck` provides last-resort DB protection
+  for raw saves that bypass `full_clean()`.
 - Model-level duplicate validation now translates the
   `(game, submitted_by)` uniqueness violation into friendly wording instead
   of Django's generated "already exists" sentence.

@@ -2781,6 +2781,19 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
 - PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
   these are application-level invariants that change no DB schema.
 
+## 2026-08-16 — SBGC-64 role/weight snapshot integrity (DB)
+
+- Added `editorial_submission_role_weight_ck`, a database `CheckConstraint`
+  enforcing exactly the four valid `(submitted_role, submitted_base_weight)`
+  pairs (SUPERUSER 1.00 / MODERATOR 0.95 / COMMUNITY_LEADER 0.65 /
+  COMMUNITY 0.20) as last-resort protection against raw saves that bypass
+  `full_clean()`.
+- Migration `classifications.0005`.  Added DB-constraint tests (four valid
+  pairs persist; MODERATOR+0.20 and COMMUNITY+0.95 rejected; service path
+  unchanged).
+- PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
+  the CheckConstraint is SQLite-verified.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

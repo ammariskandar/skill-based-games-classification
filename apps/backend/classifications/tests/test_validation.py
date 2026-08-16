@@ -141,3 +141,62 @@ class DuplicateRaceTests(TestCase):
         )
         with self.assertRaises(EditorialSubmissionError):
             _persist_submission(submission, _dist(), _reward())
+
+
+class RoleWeightDbConstraintTests(TestCase):
+    def test_four_valid_pairs_persist_via_raw_save(self):
+        pairs = [
+            (EditorialRole.SUPERUSER, BASE_WEIGHTS[EditorialRole.SUPERUSER]),
+            (EditorialRole.MODERATOR, BASE_WEIGHTS[EditorialRole.MODERATOR]),
+            (
+                EditorialRole.COMMUNITY_LEADER,
+                BASE_WEIGHTS[EditorialRole.COMMUNITY_LEADER],
+            ),
+            (EditorialRole.COMMUNITY, BASE_WEIGHTS[EditorialRole.COMMUNITY]),
+        ]
+        for role, weight in pairs:
+            with self.subTest(role=role):
+                submission = EditorialClassification(
+                    game=_game(f"pair-db-ok-{role}"),
+                    submitted_by=_user(f"pair-db-ok-{role}-sub"),
+                    updated_by=_user(f"pair-db-ok-{role}-op"),
+                    submitted_role=role,
+                    submitted_base_weight=weight,
+                )
+                submission.save()  # bypasses full_clean(); DB accepts valid pair
+                self.assertIsNotNone(submission.pk)
+
+    def test_moderator_with_community_weight_rejected_by_db(self):
+        submission = EditorialClassification(
+            game=_game("pair-db-bad-m"),
+            submitted_by=_user("pair-db-bad-m-sub"),
+            updated_by=_user("pair-db-bad-m-op"),
+            submitted_role=EditorialRole.MODERATOR,
+            submitted_base_weight=BASE_WEIGHTS[EditorialRole.COMMUNITY],
+        )
+        with self.assertRaises(IntegrityError):
+            submission.save()
+
+    def test_community_with_moderator_weight_rejected_by_db(self):
+        submission = EditorialClassification(
+            game=_game("pair-db-bad-c"),
+            submitted_by=_user("pair-db-bad-c-sub"),
+            updated_by=_user("pair-db-bad-c-op"),
+            submitted_role=EditorialRole.COMMUNITY,
+            submitted_base_weight=BASE_WEIGHTS[EditorialRole.MODERATOR],
+        )
+        with self.assertRaises(IntegrityError):
+            submission.save()
+
+    def test_canonical_service_create_still_works(self):
+        submission = create_submission(
+            game=_game("pair-svc-ok"),
+            submitted_by=_user("pair-svc-ok-sub"),
+            updated_by=_user("pair-svc-ok-op"),
+            challenge=_dist(),
+            reward=_reward(),
+        )
+        self.assertEqual(submission.submitted_role, EditorialRole.COMMUNITY)
+        self.assertEqual(
+            submission.submitted_base_weight, BASE_WEIGHTS[EditorialRole.COMMUNITY]
+        )

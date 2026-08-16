@@ -133,6 +133,29 @@ class EditorialClassification(models.Model):
                 fields=["game", "submitted_by"],
                 name="editorial_submission_game_user_uniq",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        submitted_role=EditorialRole.SUPERUSER,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.SUPERUSER],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.MODERATOR,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.MODERATOR],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.COMMUNITY_LEADER,
+                        submitted_base_weight=BASE_WEIGHTS[
+                            EditorialRole.COMMUNITY_LEADER
+                        ],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.COMMUNITY,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.COMMUNITY],
+                    )
+                ),
+                name="editorial_submission_role_weight_ck",
+            ),
         ]
 
     def __str__(self) -> str:

@@ -31,7 +31,7 @@ criterion.
 | `updated_by` FK | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
 | `submitted_by` FK (SBGC-63) | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ✅ |
 | One submission per `(game, submitted_by)` (SBGC-63) | `UniqueConstraint` | Unique constraint | ✅ | — | ✅ | ✅ |
-| Role/weight pair consistency (SBGC-64) | — | Model `clean()` only | — | ✅ | ✅ | ✅ |
+| Role/weight pair consistency (SBGC-64) | `editorial_submission_role_weight_ck` | `CheckConstraint` | ✅ | ✅ | ✅ | ✅ |
 | `game` CASCADE delete | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 | Exactly one Challenge + one Reward | — | Service/Admin only | — | ✅ | ✅ | ✅ |
 
@@ -108,6 +108,9 @@ Game
   (deferred constraint timing, partial-index semantics for conditional
   uniqueness, `CASCADE`/`PROTECT` ordering) remains to be verified by
   SBGC-52.
+- **SBGC-64 role/weight CheckConstraint**
+  (`editorial_submission_role_weight_ck`) is SQLite-verified; fresh
+  PostgreSQL verification is pending a disposable PostgreSQL 16 image.
 
 ## PostgreSQL Verification Matrix (SBGC-52)
 
