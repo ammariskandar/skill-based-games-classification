@@ -2794,6 +2794,23 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
 - PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
   the CheckConstraint is SQLite-verified.
 
+## 2026-08-16 — SBGC-64 conflicting editorial role memberships
+
+- Fixed an HTTP 500 on the submission Add page when a non-superuser operator
+  had both a Moderator and a Community-Leader Group: `get_form()` now
+  resolves the operator role defensively.
+- Added a reusable `group_set_has_role_conflict()` validator and used it in
+  `resolve_editorial_role()` and a new `EditorialUserChangeForm.clean_groups`
+  so User Admin rejects a proposed Group set that would give both roles.
+- The submission Add page denies conflicted operators with a clear message
+  and redirects; a superuser's Add page still loads when conflicted candidates
+  exist and those candidates cannot be selected as submitters.
+- Suppressed the raw `editorial_group_role_exclusive_ck` constraint message in
+  `EditorialGroupProfile` in favour of the friendly per-Group message.
+- Added `classifications/tests/test_role_conflict.py` (11 tests).  Full
+  backend 1,440 OK (19 skipped); BasedPyright 0 errors; migrations no changes.
+- No PostgreSQL rerun (no DB schema/constraint semantics change).
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

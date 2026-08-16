@@ -77,6 +77,19 @@ class EditorialGroupProfile(models.Model):
                 {"__all__": ["A group cannot be both Moderator and Community Leader."]}
             )
 
+    def validate_constraints(self, exclude=None):
+        """Suppress the raw CheckConstraint name in favour of the friendly message."""
+        try:
+            super().validate_constraints(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                filtered = [m for m in messages if not _is_db_constraint_message(m)]
+                if filtered:
+                    new_dict[field] = filtered
+            if new_dict:
+                raise ValidationError(new_dict) from exc
+
 
 def _is_db_constraint_message(message: str) -> bool:
     return "is violated" in message or "Constraint" in message or "_ck" in message

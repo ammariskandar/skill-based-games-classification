@@ -111,6 +111,13 @@ Game
 - **SBGC-64 role/weight CheckConstraint**
   (`editorial_submission_role_weight_ck`) is SQLite-verified; fresh
   PostgreSQL verification is pending a disposable PostgreSQL 16 image.
+- **Per-User editorial role conflict is not DB-enforced.**  A non-superuser
+  resolving to both Moderator and Community Leader through two separate
+  Groups is a many-to-many cross-row invariant, not representable as a
+  per-row `CheckConstraint`.  It is enforced at the User Admin form,
+  `resolve_editorial_role()`, and the submission service.  The per-Group
+  mutual exclusion remains DB-enforced via
+  `editorial_group_role_exclusive_ck`.
 
 ## PostgreSQL Verification Matrix (SBGC-52)
 

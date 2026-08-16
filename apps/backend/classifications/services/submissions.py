@@ -55,6 +55,38 @@ class EditorialSubmissionError(Exception):
     """Raised for invalid submission identity operations."""
 
 
+def _resolve_group_flags(groups) -> tuple[bool, bool]:
+    """Return (has_moderator, has_community_leader) for a Group collection.
+
+    ``groups`` may be ``None`` or an iterable/queryset of Group instances.
+    """
+    if groups is None:
+        profiles = EditorialGroupProfile.objects.none().values_list(
+            "is_moderator", "is_community_leader"
+        )
+    else:
+        profiles = EditorialGroupProfile.objects.filter(group__in=groups).values_list(
+            "is_moderator", "is_community_leader"
+        )
+
+    has_moderator = False
+    has_community_leader = False
+    for is_moderator, is_community_leader in profiles:
+        has_moderator = has_moderator or is_moderator
+        has_community_leader = has_community_leader or is_community_leader
+    return (has_moderator, has_community_leader)
+
+
+def group_set_has_role_conflict(groups) -> bool:
+    """Return True when *groups* resolve to both Moderator and Community Leader.
+
+    This is the reusable editorial-role group-selection validator used by
+    both the User Admin form and the domain role resolver.
+    """
+    has_moderator, has_community_leader = _resolve_group_flags(groups)
+    return has_moderator and has_community_leader
+
+
 def resolve_editorial_role(user) -> str:
     """Return the user's current editorial statistical role.
 
@@ -76,20 +108,9 @@ def resolve_editorial_role(user) -> str:
         return EditorialRole.SUPERUSER
 
     groups = getattr(user, "groups", None)
-    if groups is None:
-        profiles = EditorialGroupProfile.objects.none().values_list(
-            "is_moderator", "is_community_leader"
-        )
-    else:
-        profiles = EditorialGroupProfile.objects.filter(
-            group__in=groups.all()
-        ).values_list("is_moderator", "is_community_leader")
-
-    has_moderator = False
-    has_community_leader = False
-    for is_moderator, is_community_leader in profiles:
-        has_moderator = has_moderator or is_moderator
-        has_community_leader = has_community_leader or is_community_leader
+    has_moderator, has_community_leader = _resolve_group_flags(
+        groups.all() if groups is not None else None
+    )
 
     if has_moderator and has_community_leader:
         raise EditorialRoleError(
@@ -267,6 +288,7 @@ __all__ = [
     "EditorialSubmissionError",
     "ScoreDistribution",
     "create_submission",
+    "group_set_has_role_conflict",
     "resolve_editorial_role",
     "update_submission",
 ]

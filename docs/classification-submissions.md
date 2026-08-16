@@ -53,6 +53,18 @@ Community-Leader-designated Group is a **conflict**: role resolution raises
 and submission creation leaves no partial row.  No "highest role wins"
 fallback is applied.
 
+There are two distinct invariants:
+
+- **Per-Group:** a single `EditorialGroupProfile` cannot itself be both
+  Moderator and Community Leader (model `clean()` + DB CheckConstraint).
+- **Per-User:** a non-superuser cannot obtain both roles through two separate
+  Groups.  This is enforced at the User Admin form
+  (`EditorialUserChangeForm.clean_groups`), `resolve_editorial_role()`, and
+  the submission service — not via a cross-row database constraint.
+
+Ordinary Groups with no editorial-role flag may coexist freely with any
+single elevated role.
+
 ## Service
 
 `classifications/services/submissions.py`:
@@ -85,6 +97,12 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
   messages rather than raw database constraint names.
 - Non-superusers may only edit their own submissions; superusers may edit
   any submission under standard Django change-permission policy.
+- A User Admin form rejects a proposed Group selection that includes both a
+  Moderator and a Community-Leader Group.
+- A conflicted ordinary operator visiting the submission Add page is denied
+  cleanly with a clear message (no HTTP 500); a superuser's Add page still
+  loads when conflicted candidates exist, and those candidates cannot be
+  selected as submitters.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.
 
 ## Validation record
