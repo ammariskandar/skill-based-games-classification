@@ -153,6 +153,19 @@ showed the exact friendly wording.  All prior SBGC-63 checks remain passed.
   group mutual exclusion remain enforced at their existing layers (model,
   service, Admin, DB).
 
+## SBGC-64 validation record
+
+Final human Admin validation passed on local SQLite (2026-08-16).  The
+conflicting-role correction was verified end-to-end: User Admin rejects a
+proposed Moderator + Community Leader Group selection with the friendly
+message and no partial membership; an elevated editorial Group plus an
+ordinary Group saves; a pre-existing conflicted user is denied the submission
+Add page with a clear message (no silent Community fallback); and a superuser's
+Add page loads with conflicted candidates present but cannot submit on their
+behalf.  No Neon, no PostgreSQL, no live Steam.  The remaining SBGC-64 checks
+(score range/total, duplicate self-submission, edit ownership, invalid-update
+preservation) were already validated earlier and remain green.
+
 ## Not implemented in SBGC-63
 
 No Method 1/2/3, no confidence, no weights math, no outlier rejection, no

@@ -2811,6 +2811,18 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   backend 1,440 OK (19 skipped); BasedPyright 0 errors; migrations no changes.
 - No PostgreSQL rerun (no DB schema/constraint semantics change).
 
+## 2026-08-16 — SBGC-64 validation verification (human PASS)
+
+- Final human Admin validation passed on local SQLite (no Neon, no
+  PostgreSQL, no live Steam).  Conflicting Moderator + Community Leader
+  membership is rejected in User Admin with the friendly message and no
+  partial membership; elevated + ordinary Group saves; a pre-existing
+  conflicted user is denied the submission Add page with a clear message (no
+  silent Community fallback); a superuser's Add page loads with conflicted
+  candidates present but cannot submit on their behalf.  All earlier SBGC-64
+  checks (score range/total, duplicate self-submission, edit ownership,
+  invalid-update preservation) remain green.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
