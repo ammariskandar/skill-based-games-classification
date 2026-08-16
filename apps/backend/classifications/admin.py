@@ -8,9 +8,12 @@ import json
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
+from django.shortcuts import redirect
 
 from classifications.models import (
     ChallengeProfile,
@@ -18,9 +21,10 @@ from classifications.models import (
     EditorialGroupProfile,
     RewardProfile,
 )
-from classifications.roles import BASE_WEIGHTS, EditorialRole
+from classifications.roles import BASE_WEIGHTS
 from classifications.services.submissions import (
     EditorialRoleError,
+    group_set_has_role_conflict,
     resolve_editorial_role,
 )
 
@@ -124,6 +128,25 @@ class EditorialClassificationAdminForm(forms.ModelForm):
         if submitted_by is None:
             submitted_by = request_user
 
+        # Reject a submitter whose editorial role is conflicted.
+        if submitted_by is not None and getattr(submitted_by, "pk", None):
+            try:
+                resolve_editorial_role(submitted_by)
+            except EditorialRoleError:
+                if request_user is not None and submitted_by.pk == request_user.pk:
+                    msg = (
+                        "Your account has conflicting classification roles. An "
+                        "administrator must remove either the Moderator or "
+                        "Community Leader role before you can submit scores."
+                    )
+                    self.add_error(None, msg)
+                else:
+                    msg = (
+                        "This user has conflicting classification roles and "
+                        "cannot be selected as a submitter."
+                    )
+                    self.add_error("submitted_by", msg)
+
         if game and submitted_by and getattr(submitted_by, "pk", None):
             qs = EditorialClassification.objects.filter(
                 game=game, submitted_by=submitted_by
@@ -191,6 +214,31 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             )
         return readonly
 
+    def has_change_permission(self, request, obj=None):
+        """Non-superusers may only edit their own submissions."""
+        if not super().has_change_permission(request, obj):
+            return False
+        if obj is not None and not getattr(request.user, "is_superuser", False):
+            return obj.submitted_by_id == request.user.pk
+        return True
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        """Deny the Add page to an operator whose editorial role is conflicted."""
+        if object_id is None:
+            try:
+                resolve_editorial_role(request.user)
+            except EditorialRoleError:
+                messages.error(
+                    request,
+                    "Your account has conflicting classification roles. An "
+                    "administrator must remove either the Moderator or Community "
+                    "Leader role before you can submit scores.",
+                )
+                return redirect(
+                    "admin:classifications_editorialclassification_changelist"
+                )
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
     @admin.display(description="Challenge")
     def challenge_summary(self, obj):
         profile = getattr(obj, "challenge_profile", None)
@@ -213,23 +261,26 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
         form = super().get_form(request, obj, change=change, **kwargs)
         # Django 6.x Admin instantiates the ModelForm without forwarding
         # extra kwargs, so expose the request as a class attribute for the
-        # form's clean() duplicate-wording logic.
+        # form's clean() duplicate/conflict-wording logic.
         form.request = request  # type: ignore[reportAttributeAccessIssue]
         if obj is None:
             is_superuser = getattr(request.user, "is_superuser", False)
             submitter = request.user
-            role = resolve_editorial_role(submitter)
+            try:
+                role = resolve_editorial_role(submitter)
+            except EditorialRoleError:
+                role = None
 
             role_map = {}
             for u in User.objects.filter(is_active=True):
                 try:
                     resolved = resolve_editorial_role(u)
+                    role_map[str(u.pk)] = {
+                        "role": resolved,
+                        "weight": str(BASE_WEIGHTS[resolved]),
+                    }
                 except EditorialRoleError:
-                    resolved = EditorialRole.COMMUNITY
-                role_map[str(u.pk)] = {
-                    "role": resolved,
-                    "weight": str(BASE_WEIGHTS[resolved]),
-                }
+                    role_map[str(u.pk)] = {"role": None, "weight": None}
 
             if "submitted_by" in form.base_fields:
                 form.base_fields["submitted_by"].widget.attrs["data-role-map"] = (
@@ -252,7 +303,9 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
                 )
             if "submitted_base_weight" in form.base_fields:
                 form.base_fields["submitted_base_weight"].disabled = True
-                form.base_fields["submitted_base_weight"].initial = BASE_WEIGHTS[role]
+                form.base_fields["submitted_base_weight"].initial = (
+                    BASE_WEIGHTS[role] if role is not None else None
+                )
         return form
 
     def save_model(self, request, obj, form, change):
@@ -299,3 +352,22 @@ class EditorialGroupAdmin(GroupAdmin):
 
 admin.site.unregister(Group)
 admin.site.register(Group, EditorialGroupAdmin)
+
+
+class EditorialUserChangeForm(BaseUserChangeForm):
+    def clean_groups(self):
+        groups = self.cleaned_data.get("groups")
+        if groups is not None and group_set_has_role_conflict(groups):
+            raise ValidationError(
+                "This user cannot belong to both Moderator and Community "
+                "Leader classification roles."
+            )
+        return groups
+
+
+class EditorialUserAdmin(BaseUserAdmin):
+    form = EditorialUserChangeForm
+
+
+admin.site.unregister(User)
+admin.site.register(User, EditorialUserAdmin)

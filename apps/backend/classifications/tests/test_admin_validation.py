@@ -233,16 +233,10 @@ class InvalidScoreTests(TestCase):
         self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
 
     def test_challenge_score_below_0_rejected(self):
-        """Negative score rejected by PositiveSmallIntegerField form field.
-
-        Note: the model clean() still runs after field-level rejection and may
-        encounter the same value, producing a Django internal ValueError (500)
-        when error keys don't match form field names.  This is a pre-existing
-        edge case documented in SBGC-51.  We test instead via total violation."""
-        game = self._fresh_game("ch-total")
+        """Negative Challenge score is rejected without traceback."""
+        game = self._fresh_game("ch-neg")
         data = _valid_post_data(game.pk)
-        # 60+20+30=110 — rejected by total check
-        data[f"{CH_PREFIX}-0-micro_score"] = "60"
+        data[f"{CH_PREFIX}-0-micro_score"] = "-1"
         response = self.client.post(self.add_url, data)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
@@ -278,14 +272,10 @@ class InvalidScoreTests(TestCase):
         self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
 
     def test_reward_score_below_0_rejected(self):
-        """Negative score rejected by PositiveSmallIntegerField form field.
-
-        Note: same pre-existing edge case as Challenge — tested via total
-        violation instead."""
-        game = self._fresh_game("rw-total")
+        """Negative Reward score is rejected without traceback."""
+        game = self._fresh_game("rw-neg")
         data = _valid_post_data(game.pk)
-        # 10+30+70=110 — rejected by total check
-        data[f"{RW_PREFIX}-0-macro_score"] = "70"
+        data[f"{RW_PREFIX}-0-macro_score"] = "-1"
         response = self.client.post(self.add_url, data)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(EditorialClassification.objects.filter(game=game).exists())

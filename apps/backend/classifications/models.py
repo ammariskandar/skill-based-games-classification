@@ -77,6 +77,19 @@ class EditorialGroupProfile(models.Model):
                 {"__all__": ["A group cannot be both Moderator and Community Leader."]}
             )
 
+    def validate_constraints(self, exclude=None):
+        """Suppress the raw CheckConstraint name in favour of the friendly message."""
+        try:
+            super().validate_constraints(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                filtered = [m for m in messages if not _is_db_constraint_message(m)]
+                if filtered:
+                    new_dict[field] = filtered
+            if new_dict:
+                raise ValidationError(new_dict) from exc
+
 
 def _is_db_constraint_message(message: str) -> bool:
     return "is violated" in message or "Constraint" in message or "_ck" in message
@@ -133,6 +146,29 @@ class EditorialClassification(models.Model):
                 fields=["game", "submitted_by"],
                 name="editorial_submission_game_user_uniq",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        submitted_role=EditorialRole.SUPERUSER,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.SUPERUSER],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.MODERATOR,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.MODERATOR],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.COMMUNITY_LEADER,
+                        submitted_base_weight=BASE_WEIGHTS[
+                            EditorialRole.COMMUNITY_LEADER
+                        ],
+                    )
+                    | models.Q(
+                        submitted_role=EditorialRole.COMMUNITY,
+                        submitted_base_weight=BASE_WEIGHTS[EditorialRole.COMMUNITY],
+                    )
+                ),
+                name="editorial_submission_role_weight_ck",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -144,10 +180,29 @@ class EditorialClassification(models.Model):
         )
         return f"Editorial classification for {game_name} by {submitter}"
 
-    def validate_unique(self, exclude=None):
-        """Surface friendly submission-duplicate messaging."""
+    def clean(self) -> None:
+        super().clean()
+        expected = BASE_WEIGHTS.get(self.submitted_role)
+        if (
+            expected is not None
+            and self.submitted_base_weight is not None
+            and self.submitted_base_weight != expected
+        ):
+            label = dict(EditorialRole.choices).get(
+                self.submitted_role, self.submitted_role
+            )
+            raise ValidationError(
+                {
+                    "submitted_base_weight": (
+                        f"Base weight for role {label} must be {expected}."
+                    )
+                }
+            )
+
+    def validate_constraints(self, exclude=None):
+        """Translate the known duplicate-submission constraint into friendly wording."""
         try:
-            super().validate_unique(exclude)
+            super().validate_constraints(exclude)
         except ValidationError as exc:
             new_dict = {}
             for field, messages in exc.message_dict.items():
@@ -158,19 +213,6 @@ class EditorialClassification(models.Model):
                     for m in messages
                 ]
             raise ValidationError(new_dict) from exc
-
-    def validate_constraints(self, exclude=None):
-        """Drop raw DB-constraint messages from Admin validation."""
-        try:
-            super().validate_constraints(exclude)
-        except ValidationError as exc:
-            new_dict = {}
-            for field, messages in exc.message_dict.items():
-                filtered = [m for m in messages if not _is_db_constraint_message(m)]
-                if filtered:
-                    new_dict[field] = filtered
-            if new_dict:
-                raise ValidationError(new_dict) from exc
 
     if TYPE_CHECKING:
         challenge_profile: ChallengeProfile

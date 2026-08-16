@@ -7,12 +7,14 @@ from __future__ import annotations
 import json
 import uuid
 
+from django.contrib import admin
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from games.models import Game, SourceType
 
+from classifications.admin import EditorialClassificationAdmin
 from classifications.models import (
     ChallengeProfile,
     EditorialClassification,
@@ -279,3 +281,54 @@ class TotalValidationTests(TestCase):
         self.assertContains(response, "Reward scores must total exactly 100 (got 130).")
         self.assertNotContains(response, "reward_scores_total_100_ck")
         self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
+
+
+class EditOwnershipTests(TestCase):
+    def setUp(self):
+        self.game = _game(slug="edit-own")
+        self.admin = EditorialClassificationAdmin(EditorialClassification, admin.site)
+        self.owner = User.objects.create_user(
+            username="ux_edit_owner", password="p", is_staff=True
+        )
+        self.other = User.objects.create_user(
+            username="ux_edit_other", password="p", is_staff=True
+        )
+        ct = ContentType.objects.get_for_model(EditorialClassification)
+        change_perm = Permission.objects.get(
+            codename="change_editorialclassification", content_type=ct
+        )
+        for u in (self.owner, self.other):
+            u.user_permissions.add(change_perm)
+        self.submission = EditorialClassification.objects.create(
+            game=self.game, submitted_by=self.owner, updated_by=self.owner
+        )
+
+    def _request(self, user):
+        request = RequestFactory().get("/")
+        request.user = user
+        return request
+
+    def test_owner_has_change_permission(self):
+        self.assertTrue(
+            self.admin.has_change_permission(self._request(self.owner), self.submission)
+        )
+
+    def test_non_owner_denied_change_permission(self):
+        self.assertFalse(
+            self.admin.has_change_permission(self._request(self.other), self.submission)
+        )
+
+    def test_superuser_has_change_permission(self):
+        su = User.objects.create_superuser(username="ux_edit_su", password="p")
+        self.assertTrue(
+            self.admin.has_change_permission(self._request(su), self.submission)
+        )
+
+    def test_non_owner_change_post_denied(self):
+        self.client.force_login(self.other)
+        url = reverse(
+            "admin:classifications_editorialclassification_change",
+            args=(self.submission.pk,),
+        )
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, 403)

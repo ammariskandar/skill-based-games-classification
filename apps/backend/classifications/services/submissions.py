@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.contrib.auth.models import AbstractBaseUser
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from games.models import Game
 
 from classifications.models import (
@@ -55,6 +55,38 @@ class EditorialSubmissionError(Exception):
     """Raised for invalid submission identity operations."""
 
 
+def _resolve_group_flags(groups) -> tuple[bool, bool]:
+    """Return (has_moderator, has_community_leader) for a Group collection.
+
+    ``groups`` may be ``None`` or an iterable/queryset of Group instances.
+    """
+    if groups is None:
+        profiles = EditorialGroupProfile.objects.none().values_list(
+            "is_moderator", "is_community_leader"
+        )
+    else:
+        profiles = EditorialGroupProfile.objects.filter(group__in=groups).values_list(
+            "is_moderator", "is_community_leader"
+        )
+
+    has_moderator = False
+    has_community_leader = False
+    for is_moderator, is_community_leader in profiles:
+        has_moderator = has_moderator or is_moderator
+        has_community_leader = has_community_leader or is_community_leader
+    return (has_moderator, has_community_leader)
+
+
+def group_set_has_role_conflict(groups) -> bool:
+    """Return True when *groups* resolve to both Moderator and Community Leader.
+
+    This is the reusable editorial-role group-selection validator used by
+    both the User Admin form and the domain role resolver.
+    """
+    has_moderator, has_community_leader = _resolve_group_flags(groups)
+    return has_moderator and has_community_leader
+
+
 def resolve_editorial_role(user) -> str:
     """Return the user's current editorial statistical role.
 
@@ -76,20 +108,9 @@ def resolve_editorial_role(user) -> str:
         return EditorialRole.SUPERUSER
 
     groups = getattr(user, "groups", None)
-    if groups is None:
-        profiles = EditorialGroupProfile.objects.none().values_list(
-            "is_moderator", "is_community_leader"
-        )
-    else:
-        profiles = EditorialGroupProfile.objects.filter(
-            group__in=groups.all()
-        ).values_list("is_moderator", "is_community_leader")
-
-    has_moderator = False
-    has_community_leader = False
-    for is_moderator, is_community_leader in profiles:
-        has_moderator = has_moderator or is_moderator
-        has_community_leader = has_community_leader or is_community_leader
+    has_moderator, has_community_leader = _resolve_group_flags(
+        groups.all() if groups is not None else None
+    )
 
     if has_moderator and has_community_leader:
         raise EditorialRoleError(
@@ -119,7 +140,7 @@ def create_submission(
         game=game, submitted_by=submitted_by
     ).exists():
         raise EditorialSubmissionError(
-            "This user already has an editorial submission for this game."
+            "This user has already submitted scores for this game."
         )
 
     role = resolve_editorial_role(submitted_by)
@@ -136,10 +157,7 @@ def create_submission(
             notes=notes,
         )
         submission.full_clean()
-        submission.save()
-
-        _create_profile(submission, ChallengeProfile, "challenge_profile", challenge)
-        _create_profile(submission, RewardProfile, "reward_profile", reward)
+        _persist_submission(submission, challenge, reward)
 
     return submission
 
@@ -202,6 +220,38 @@ def _validate_participants(
         raise TypeError("updated_by must be a saved user.")
 
 
+def _persist_submission(submission, challenge, reward) -> None:
+    """Save the submission + profiles, translating a lost duplicate race.
+
+    A concurrent request may win the ``(game, submitted_by)`` uniqueness
+    race after the service pre-check.  The nested atomic block keeps the
+    outer transaction usable so the known duplicate can be reported as a
+    domain error instead of a raw IntegrityError.
+    """
+    try:
+        with transaction.atomic():
+            submission.save()
+            _create_profile(
+                submission, ChallengeProfile, "challenge_profile", challenge
+            )
+            _create_profile(submission, RewardProfile, "reward_profile", reward)
+    except IntegrityError as exc:
+        if _is_duplicate_submission_integrity_error(exc):
+            raise EditorialSubmissionError(
+                "This user has already submitted scores for this game."
+            ) from exc
+        raise
+
+
+def _is_duplicate_submission_integrity_error(exc: IntegrityError) -> bool:
+    """Return True when *exc* is the known (game, submitted_by) unique violation."""
+    message = str(exc)
+    return "editorial_submission_game_user_uniq" in message or (
+        "classifications_editorialclassification" in message
+        and "submitted_by_id" in message
+    )
+
+
 def _create_profile(submission, profile_model, related_name, distribution) -> None:
     instance = profile_model(classification=submission)
     _apply_distribution(instance, distribution)
@@ -238,6 +288,7 @@ __all__ = [
     "EditorialSubmissionError",
     "ScoreDistribution",
     "create_submission",
+    "group_set_has_role_conflict",
     "resolve_editorial_role",
     "update_submission",
 ]

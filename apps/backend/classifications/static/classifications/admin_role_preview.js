@@ -21,8 +21,8 @@
       return;
     }
 
-    role.value = data.role;
-    weight.value = data.weight;
+    role.value = data.role || "";
+    weight.value = data.weight || "";
   }
 
   document.addEventListener("DOMContentLoaded", updateRolePreview);

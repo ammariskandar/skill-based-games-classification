@@ -2758,6 +2758,71 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   no DB semantics.
 - Final human validation passed on local SQLite.
 
+## 2026-08-16 — SBGC-64 classification validation hardening
+
+- Added role/weight pair validation: `EditorialClassification.clean()` now
+  requires `submitted_base_weight` to equal the fixed `BASE_WEIGHTS` value
+  for its `submitted_role`, closing the direct-ORM mismatch gap.
+- Model-level duplicate validation now translates the `(game, submitted_by)`
+  uniqueness violation into friendly wording instead of Django's generated
+  "already exists" sentence.
+- `create_submission()` now translates a lost uniqueness race (pre-check
+  passed, DB `UniqueConstraint` fired) into `EditorialSubmissionError`, using
+  a nested atomic block and without swallowing unrelated `IntegrityError`s.
+- Admin `has_change_permission()` now restricts non-superusers to editing
+  only their own submissions; superusers retain full edit access.
+- Cleaned the two stale SBGC-51 workaround comments in
+  `classifications/tests/test_admin_validation.py`; the below-0 Admin tests
+  now submit a negative score directly.
+- Added `classifications/tests/test_validation.py` (role/weight pair,
+  duplicate translation, race handling) and Admin edit-ownership tests.
+  Full backend 1,425 OK (19 skipped); BasedPyright 0 errors; migrations no
+  changes.
+- PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
+  these are application-level invariants that change no DB schema.
+
+## 2026-08-16 — SBGC-64 role/weight snapshot integrity (DB)
+
+- Added `editorial_submission_role_weight_ck`, a database `CheckConstraint`
+  enforcing exactly the four valid `(submitted_role, submitted_base_weight)`
+  pairs (SUPERUSER 1.00 / MODERATOR 0.95 / COMMUNITY_LEADER 0.65 /
+  COMMUNITY 0.20) as last-resort protection against raw saves that bypass
+  `full_clean()`.
+- Migration `classifications.0005`.  Added DB-constraint tests (four valid
+  pairs persist; MODERATOR+0.20 and COMMUNITY+0.95 rejected; service path
+  unchanged).
+- PostgreSQL not freshly run (no disposable PostgreSQL 16 image; not Neon);
+  the CheckConstraint is SQLite-verified.
+
+## 2026-08-16 — SBGC-64 conflicting editorial role memberships
+
+- Fixed an HTTP 500 on the submission Add page when a non-superuser operator
+  had both a Moderator and a Community-Leader Group: `get_form()` now
+  resolves the operator role defensively.
+- Added a reusable `group_set_has_role_conflict()` validator and used it in
+  `resolve_editorial_role()` and a new `EditorialUserChangeForm.clean_groups`
+  so User Admin rejects a proposed Group set that would give both roles.
+- The submission Add page denies conflicted operators with a clear message
+  and redirects; a superuser's Add page still loads when conflicted candidates
+  exist and those candidates cannot be selected as submitters.
+- Suppressed the raw `editorial_group_role_exclusive_ck` constraint message in
+  `EditorialGroupProfile` in favour of the friendly per-Group message.
+- Added `classifications/tests/test_role_conflict.py` (11 tests).  Full
+  backend 1,440 OK (19 skipped); BasedPyright 0 errors; migrations no changes.
+- No PostgreSQL rerun (no DB schema/constraint semantics change).
+
+## 2026-08-16 — SBGC-64 validation verification (human PASS)
+
+- Final human Admin validation passed on local SQLite (no Neon, no
+  PostgreSQL, no live Steam).  Conflicting Moderator + Community Leader
+  membership is rejected in User Admin with the friendly message and no
+  partial membership; elevated + ordinary Group saves; a pre-existing
+  conflicted user is denied the submission Add page with a clear message (no
+  silent Community fallback); a superuser's Add page loads with conflicted
+  candidates present but cannot submit on their behalf.  All earlier SBGC-64
+  checks (score range/total, duplicate self-submission, edit ownership,
+  invalid-update preservation) remain green.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

@@ -53,6 +53,18 @@ Community-Leader-designated Group is a **conflict**: role resolution raises
 and submission creation leaves no partial row.  No "highest role wins"
 fallback is applied.
 
+There are two distinct invariants:
+
+- **Per-Group:** a single `EditorialGroupProfile` cannot itself be both
+  Moderator and Community Leader (model `clean()` + DB CheckConstraint).
+- **Per-User:** a non-superuser cannot obtain both roles through two separate
+  Groups.  This is enforced at the User Admin form
+  (`EditorialUserChangeForm.clean_groups`), `resolve_editorial_role()`, and
+  the submission service — not via a cross-row database constraint.
+
+Ordinary Groups with no editorial-role flag may coexist freely with any
+single elevated role.
+
 ## Service
 
 `classifications/services/submissions.py`:
@@ -83,6 +95,14 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
   dynamically; no fake Superuser Group is created.
 - Duplicate submissions and score totals surface friendly operator-facing
   messages rather than raw database constraint names.
+- Non-superusers may only edit their own submissions; superusers may edit
+  any submission under standard Django change-permission policy.
+- A User Admin form rejects a proposed Group selection that includes both a
+  Moderator and a Community-Leader Group.
+- A conflicted ordinary operator visiting the submission Add page is denied
+  cleanly with a clear message (no HTTP 500); a superuser's Add page still
+  loads when conflicted candidates exist, and those candidates cannot be
+  selected as submitters.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.
 
 ## Validation record
@@ -113,6 +133,38 @@ Final human retest (local SQLite): Challenge `20 / 200 / 60` and Reward
 `20 / 200 / 60` showed friendly range errors without traceback; in-range but
 wrong totals showed friendly exact-total errors; duplicate self-submission
 showed the exact friendly wording.  All prior SBGC-63 checks remain passed.
+
+## Validation hardening (SBGC-64)
+
+- Role/weight snapshot consistency is enforced at three layers: the service
+  always derives the pair, `EditorialClassification.clean()` rejects
+  mismatches, and the `CheckConstraint`
+  `editorial_submission_role_weight_ck` provides last-resort DB protection
+  for raw saves that bypass `full_clean()`.
+- Model-level duplicate validation now translates the
+  `(game, submitted_by)` uniqueness violation into friendly wording instead
+  of Django's generated "already exists" sentence.
+- `create_submission()` translates a lost uniqueness race (pre-check passed,
+  but the DB `UniqueConstraint` fired) into `EditorialSubmissionError`
+  without swallowing unrelated `IntegrityError`s.
+- Admin `has_change_permission()` restricts non-superusers to editing only
+  their own submissions.
+- Score range/total, uniqueness, identity immutability, role conflict, and
+  group mutual exclusion remain enforced at their existing layers (model,
+  service, Admin, DB).
+
+## SBGC-64 validation record
+
+Final human Admin validation passed on local SQLite (2026-08-16).  The
+conflicting-role correction was verified end-to-end: User Admin rejects a
+proposed Moderator + Community Leader Group selection with the friendly
+message and no partial membership; an elevated editorial Group plus an
+ordinary Group saves; a pre-existing conflicted user is denied the submission
+Add page with a clear message (no silent Community fallback); and a superuser's
+Add page loads with conflicted candidates present but cannot submit on their
+behalf.  No Neon, no PostgreSQL, no live Steam.  The remaining SBGC-64 checks
+(score range/total, duplicate self-submission, edit ownership, invalid-update
+preservation) were already validated earlier and remain green.
 
 ## Not implemented in SBGC-63
 
