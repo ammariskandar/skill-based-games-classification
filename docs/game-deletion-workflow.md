@@ -64,3 +64,18 @@ delete                              → permanent local record removal
 ```
 
 These are intentionally distinct.
+
+## Human validation (complete)
+
+Local SQLite only; no Neon; no live Steam.  All checks passed.
+
+- Pre-delete: Target Game ID 12, EditorialClassification ID 8,
+  ChallengeProfile ID 8, RewardProfile ID 8, Control Game ID 13 existed.
+- Post-delete: target Game deleted; classification, Challenge, and Reward
+  profiles cascaded; control Game preserved.
+- Admin single-object confirmation clearly identified the target and its
+  dependents.
+- Bulk "Delete selected games" action was absent.
+- No traceback or integrity error.
+- User account preserved.
+- Deleted slug (`sbgc-182-deletion-test`) was reusable.

@@ -2672,6 +2672,17 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   game-model, admin-domain-validation, database-constraints,
   backend-testing, and context changelog.  Human Admin validation pending.
 
+## 2026-08-16 — SBGC-182 human deletion validation complete
+
+- Human Admin deletion validation passed on local SQLite (no Neon, no live
+  Steam).  Pre-delete target Game ID 12 + EditorialClassification ID 8 +
+  ChallengeProfile ID 8 + RewardProfile ID 8 and control Game ID 13 existed.
+- Post-delete: target Game and all three classification/profile rows
+  deleted; control Game and User preserved; slug reuse succeeded; bulk
+  delete action absent; no traceback.
+- SBGC-6 is ready to close after SBGC-182 merges.  SBGC-183 remains under
+  SBGC-8 and is not a blocker.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
