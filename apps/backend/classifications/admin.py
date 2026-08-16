@@ -94,6 +94,11 @@ class RewardProfileInline(admin.StackedInline):
 
 
 class EditorialClassificationAdminForm(forms.ModelForm):
+    # Set by EditorialClassificationAdmin.get_form() before the form is
+    # instantiated.  Django 6.x Admin no longer forwards extra kwargs to the
+    # ModelForm constructor, so request cannot be injected via get_form_kwargs.
+    request = None
+
     class Media:
         js = ("classifications/admin_role_preview.js",)
 
@@ -108,16 +113,17 @@ class EditorialClassificationAdminForm(forms.ModelForm):
             "updated_by",
         ]
 
-    def __init__(self, *args, request=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.request = request
-
     def clean(self):
         cleaned = super().clean() or {}
         game = cleaned.get("game")
         submitted_by = cleaned.get("submitted_by")
-        if submitted_by is None and self.request is not None:
-            submitted_by = self.request.user
+        request_user = getattr(getattr(self, "request", None), "user", None)
+
+        # Non-superusers cannot choose the submitter (the field is disabled),
+        # so cleaned_data has no submitted_by; fall back to the operator.
+        if submitted_by is None:
+            submitted_by = request_user
+
         if game and submitted_by and getattr(submitted_by, "pk", None):
             qs = EditorialClassification.objects.filter(
                 game=game, submitted_by=submitted_by
@@ -125,7 +131,7 @@ class EditorialClassificationAdminForm(forms.ModelForm):
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
-                if self.request is not None and submitted_by.pk == self.request.user.pk:
+                if request_user is not None and submitted_by.pk == request_user.pk:
                     msg = "You have already submitted scores for this game."
                 else:
                     msg = "This user has already submitted scores for this game."
@@ -203,15 +209,12 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             f"{profile.micro_score} / {profile.mystiko_score} / {profile.macro_score}"
         )
 
-    def get_form_kwargs(self, request, obj=None, **kwargs):
-        form_kwargs = admin.ModelAdmin.get_form_kwargs(  # type: ignore[reportAttributeAccessIssue]
-            self, request, obj, **kwargs
-        )
-        form_kwargs["request"] = request
-        return form_kwargs
-
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj, change=change, **kwargs)
+        # Django 6.x Admin instantiates the ModelForm without forwarding
+        # extra kwargs, so expose the request as a class attribute for the
+        # form's clean() duplicate-wording logic.
+        form.request = request  # type: ignore[reportAttributeAccessIssue]
         if obj is None:
             is_superuser = getattr(request.user, "is_superuser", False)
             submitter = request.user
