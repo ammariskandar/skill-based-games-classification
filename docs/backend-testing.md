@@ -13,6 +13,9 @@ Testing conventions, commands, and architecture for the Django backend.
 - **Workflow tests** combine existing layers (service + Admin) to verify
   realistic state transitions — see `games/tests/test_manual_workflows.py`
   (SBGC-62).
+- **Deletion tests** verify hard-delete cascade, permission, and no-network
+  behavior — see `games/tests/services/test_game_deletion.py` and
+  `games/tests/test_game_deletion_admin.py` (SBGC-182).
 
 ## Commands
 

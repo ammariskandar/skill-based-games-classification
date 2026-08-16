@@ -2653,6 +2653,36 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   Scheduled Steam Metadata Refresh** (SBGC-8 — Django Admin Configuration &
   Jobs/Schedulers).  Not a blocker to SBGC-62 or SBGC-6.
 
+## 2026-08-16 — SBGC-182 Game deletion workflow
+
+- Added `games/services/deletion.py` (`delete_game()` +
+  `GameDeletionResult` + `GameDeletionError`) as the canonical hard-delete
+  entry point.  Deletion is local-only, source-parity (manual and Steam),
+  transactional, and delegates cascade to Django's collector.
+- Confirmed cascade: `Game` → `EditorialClassification` →
+  `ChallengeProfile`/`RewardProfile`; `updated_by` User is PROTECT and
+  survives.
+- Admin: kept the built-in single-object delete confirmation; disabled the
+  default `delete_selected` bulk action for `GameAdmin`; standard
+  `games.delete_game` permission remains authoritative.
+- Slug and Steam `(source_type, external_id)` identity are reusable after a
+  hard delete (no tombstone).
+- Added 12 focused service + Admin deletion tests.  Created
+  `docs/game-deletion-workflow.md`; updated manual-game-management,
+  game-model, admin-domain-validation, database-constraints,
+  backend-testing, and context changelog.  Human Admin validation pending.
+
+## 2026-08-16 — SBGC-182 human deletion validation complete
+
+- Human Admin deletion validation passed on local SQLite (no Neon, no live
+  Steam).  Pre-delete target Game ID 12 + EditorialClassification ID 8 +
+  ChallengeProfile ID 8 + RewardProfile ID 8 and control Game ID 13 existed.
+- Post-delete: target Game and all three classification/profile rows
+  deleted; control Game and User preserved; slug reuse succeeded; bulk
+  delete action absent; no traceback.
+- SBGC-6 is ready to close after SBGC-182 merges.  SBGC-183 remains under
+  SBGC-8 and is not a blocker.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

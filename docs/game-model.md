@@ -178,6 +178,13 @@ Manual records are creatable through Admin; existing Steam/manual records
 cannot change source identity through Admin editing.  See
 `docs/source-specific-behaviour.md` for the full editability matrix.
 
+## Deletion
+
+Games are hard-deleted via `games/services/deletion.py`; Admin uses the
+built-in single-object deletion confirmation.  Deleting a Game cascades its
+editorial classification and Challenge/Reward profiles.  See
+`docs/game-deletion-workflow.md`.
+
 ## No network calls
 
 The `Game` model layer never imports `SteamClient`, `requests`, or any

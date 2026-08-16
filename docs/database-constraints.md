@@ -53,6 +53,20 @@ criterion.
 | Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | ✅ |
 | CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 
+## Deletion Cascade (SBGC-182)
+
+`Game` deletion cascades through the classification graph:
+
+```text
+Game
+→ EditorialClassification (CASCADE)
+  → ChallengeProfile (CASCADE)
+  → RewardProfile (CASCADE)
+```
+
+`updated_by` (User) is `PROTECT` and survives.  See
+`docs/game-deletion-workflow.md`.
+
 ## Invalid-State Matrix
 
 | State | DB | Model | Service | Admin |
