@@ -116,8 +116,6 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "updated_by",
-        "submitted_role",
-        "submitted_base_weight",
     )
 
     list_select_related = (
@@ -129,7 +127,14 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
         if obj is not None:
-            readonly.extend(("game", "submitted_by"))
+            readonly.extend(
+                (
+                    "game",
+                    "submitted_by",
+                    "submitted_role",
+                    "submitted_base_weight",
+                )
+            )
         return readonly
 
     @admin.display(description="Challenge")
@@ -152,14 +157,37 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj, change=change, **kwargs)
-        # submitted_by defaults to the operator when not explicitly chosen.
-        if "submitted_by" in form.base_fields:
-            form.base_fields["submitted_by"].required = False
+        if obj is None:
+            is_superuser = getattr(request.user, "is_superuser", False)
+            submitter = request.user
+            role = resolve_editorial_role(submitter)
+
+            if "submitted_by" in form.base_fields:
+                if not is_superuser:
+                    form.base_fields["submitted_by"].disabled = True
+                    form.base_fields["submitted_by"].required = False
+                    form.base_fields["submitted_by"].initial = submitter
+                else:
+                    form.base_fields["submitted_by"].required = False
+
+            if "submitted_role" in form.base_fields:
+                form.base_fields["submitted_role"].disabled = True
+                form.base_fields["submitted_role"].initial = role
+                form.base_fields[
+                    "submitted_role"
+                ].help_text = (
+                    "The submitter's role at the time this submission is saved."
+                )
+            if "submitted_base_weight" in form.base_fields:
+                form.base_fields["submitted_base_weight"].disabled = True
+                form.base_fields["submitted_base_weight"].initial = BASE_WEIGHTS[role]
         return form
 
     def save_model(self, request, obj, form, change):
         """Record operator, default submitter, and snapshot role provenance."""
         obj.updated_by = request.user
+        if not getattr(request.user, "is_superuser", False):
+            obj.submitted_by = request.user
         if obj.submitted_by_id is None:
             obj.submitted_by = request.user
         if not change:

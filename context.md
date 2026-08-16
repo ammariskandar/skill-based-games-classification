@@ -2716,9 +2716,18 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   migration default, not an inferred moderator/CL status.
 - Added cross-group conflict creation test (no partial row) and a runtime
   no-inferred-submitter regression test.
-- PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
+PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   available in the sandbox; not run against Neon.
 - Human Admin validation pending.
+
+## 2026-08-16 — SBGC-63 Admin UX polish
+
+- Ordinary non-superuser operators now have `submitted_by` derived from
+  `request.user` and non-selectable; only superusers may create on behalf of
+  another user.  Role/weight preview is shown before save.
+- Duplicate submissions and score totals now surface friendly operator
+  messages instead of raw `*_ck` / Django uniqueness wording.
+- Added `classifications/tests/test_admin_ux.py` (4 focused tests).
 
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 

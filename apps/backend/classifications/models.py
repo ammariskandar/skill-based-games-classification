@@ -78,6 +78,10 @@ class EditorialGroupProfile(models.Model):
             )
 
 
+def _is_db_constraint_message(message: str) -> bool:
+    return "is violated" in message or "Constraint" in message or "_ck" in message
+
+
 class EditorialClassification(models.Model):
     """A single human editorial classification submission for one Game.
 
@@ -139,6 +143,41 @@ class EditorialClassification(models.Model):
             else "(unsaved submitter)"
         )
         return f"Editorial classification for {game_name} by {submitter}"
+
+    def validate_unique(self, exclude=None):
+        """Surface friendly submission-duplicate messaging."""
+        try:
+            super().validate_unique(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                new_dict[field] = [
+                    "This user has already submitted scores for this game."
+                    if "already exists" in m
+                    else m
+                    for m in messages
+                ]
+            raise ValidationError(new_dict) from exc
+
+    def validate_constraints(self, exclude=None):
+        """Drop raw DB-constraint messages and make duplicates friendly."""
+        try:
+            super().validate_constraints(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                cleaned = []
+                for m in messages:
+                    if "already exists" in m:
+                        cleaned.append(
+                            "This user has already submitted scores for this game."
+                        )
+                    elif not _is_db_constraint_message(m):
+                        cleaned.append(m)
+                if cleaned:
+                    new_dict[field] = cleaned
+            if new_dict:
+                raise ValidationError(new_dict) from exc
 
     if TYPE_CHECKING:
         challenge_profile: ChallengeProfile
@@ -220,6 +259,18 @@ class ChallengeProfile(models.Model):
             profile_label="Challenge",
         )
 
+    def validate_constraints(self, exclude=None):
+        try:
+            super().validate_constraints(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                filtered = [m for m in messages if not _is_db_constraint_message(m)]
+                if filtered:
+                    new_dict[field] = filtered
+            if new_dict:
+                raise ValidationError(new_dict) from exc
+
 
 # ---------------------------------------------------------------------------
 # Reward profile
@@ -295,6 +346,18 @@ class RewardProfile(models.Model):
             self.macro_score,
             profile_label="Reward",
         )
+
+    def validate_constraints(self, exclude=None):
+        try:
+            super().validate_constraints(exclude)
+        except ValidationError as exc:
+            new_dict = {}
+            for field, messages in exc.message_dict.items():
+                filtered = [m for m in messages if not _is_db_constraint_message(m)]
+                if filtered:
+                    new_dict[field] = filtered
+            if new_dict:
+                raise ValidationError(new_dict) from exc
 
 
 __all__ = [

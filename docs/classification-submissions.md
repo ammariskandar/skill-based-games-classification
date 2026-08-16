@@ -69,7 +69,14 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
 - `EditorialClassificationAdmin` presents submissions with Game, Submitted
   by, role, Challenge/Reward summaries, Updated by, and Updated at.
 - Game / submitted_by are readonly on edit.
-- `submitted_role` / `submitted_base_weight` are readonly.
+- For ordinary (non-superuser) operators, `submitted_by` is derived from
+  `request.user` and not selectable; only superusers may create on behalf of
+  another user.
+- The resolved role/weight preview is shown before save for the operator's
+  own submission; `submitted_role` / `submitted_base_weight` are never
+  operator-editable.
+- Duplicate submissions and score totals surface friendly operator-facing
+  messages rather than raw database constraint names.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.
 
 ## Not implemented in SBGC-63
