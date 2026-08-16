@@ -17,6 +17,7 @@ Django Admin workflows and automated integration tests.
 | DLC exclusion | Published DLC/Demo/Software/Soundtrack/Unknown excluded; Published Game included; Draft Game excluded |
 | Changelist | Steam/manual/draft visible, all content types shown, default manager unfiltered |
 | No-network | Game add GET/POST, edit GET/POST, changelist, DLC scenario |
+| Manual workflows (SBGC-62) | Combined service + Admin create/edit, asset lifecycle, listing, classification preservation, source/refresh rejection — `games/tests/test_manual_workflows.py` |
 
 ### Classification Admin (`classifications/tests/test_admin_validation.py`)
 

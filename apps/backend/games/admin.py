@@ -4,6 +4,7 @@ Django Admin registration for the Game model — SBGC-45 / SBGC-56.
 
 from django.contrib import admin, messages
 
+from games.forms import GameForm
 from games.models import Game, SourceType
 from games.services.imports.steam import (
     SteamGameRefreshStatus,
@@ -37,6 +38,8 @@ def _build_steam_refresh_service():
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
+    form = GameForm
+
     list_display = (
         "name",
         "source_type",

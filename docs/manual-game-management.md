@@ -146,3 +146,8 @@ manual Games keep them editable.  See `docs/source-specific-behaviour.md`.
 
 Delete, soft delete, archive/restore, bulk create/edit, and frontend UI are
 not implemented by SBGC-59.
+
+## Workflow verification
+
+SBGC-62 adds combined service + Admin workflow tests and human validation
+evidence — see `docs/manual-game-workflow-validation.md`.

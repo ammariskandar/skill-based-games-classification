@@ -392,18 +392,15 @@ class Game(models.Model):
         null=True,
         blank=True,
         help_text=(
-            "Manual release date (SBGC-59).  Owned by manual/editorial data; "
-            "never populated from Steam and never changed by Steam refresh."
+            "Release date for manually managed game metadata. Accepted formats: "
+            "YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, or YYYY/MM/DD."
         ),
     )
 
     developer = models.CharField(
         max_length=255,
         blank=True,
-        help_text=(
-            "Manual developer name (SBGC-59).  Owned by manual/editorial data; "
-            "never populated from Steam and never changed by Steam refresh."
-        ),
+        help_text="Developer name for manually managed game metadata.",
     )
 
     manual_description = models.TextField(blank=True)
@@ -416,9 +413,9 @@ class Game(models.Model):
         max_length=500,
         blank=True,
         help_text=(
-            "Steam header-image URL persisted from import candidates "
-            "(SBGC-55).  Never populated from manual/editorial data; "
-            "use manual_image_url for manual records."
+            "Steam header-image URL persisted from import data.  Never "
+            "populated from manual/editorial data; use manual_image_url for "
+            "manual records."
         ),
     )
 
@@ -427,8 +424,8 @@ class Game(models.Model):
         blank=True,
         help_text=(
             "When this Steam record's metadata was last successfully "
-            "verified against Steam (SBGC-56).  NULL = never refreshed.  "
-            "Not set when the Steam app is unavailable."
+            "verified against Steam.  NULL = never refreshed.  Not set when "
+            "the Steam app is unavailable."
         ),
     )
 
