@@ -10,6 +10,9 @@ Testing conventions, commands, and architecture for the Django backend.
 - **`TransactionTestCase`** only for real transaction-boundary behavior.
 - **Subprocess tests** only for settings import, process environment, deployment failure, and command-level behavior that cannot be isolated in-process.
 - **No live network** — all external-service tests use mocks, fakes, or adapter inspection.
+- **Workflow tests** combine existing layers (service + Admin) to verify
+  realistic state transitions — see `games/tests/test_manual_workflows.py`
+  (SBGC-62).
 
 ## Commands
 

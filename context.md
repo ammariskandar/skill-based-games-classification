@@ -2610,6 +2610,19 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   manual-game-management, steam-metadata-refresh, backend-architecture,
   admin-domain-validation, and context changelog.
 
+## 2026-08-15 — SBGC-62 Manual game workflow verification
+
+- Added `games/tests/test_manual_workflows.py` (12 focused tests) that
+  combine the manual service and Admin boundaries: full create/edit, asset
+  replace/clear/invalid, manual Steam-refresh rejection, draft→published
+  listing, published non-Game exclusion, duplicate name/slug behavior,
+  classification preservation, Admin create→edit, and no-network evidence.
+- No production code changes; all workflows passed against existing
+  SBGC-59/60/61 behavior.
+- Created `docs/manual-game-workflow-validation.md`; updated
+  backend-testing, admin-domain-validation, manual-game-management, and
+  context changelog.  Human Admin validation is pending.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
