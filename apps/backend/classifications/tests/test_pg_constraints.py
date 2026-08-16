@@ -51,7 +51,7 @@ class ChallengeConstraintTests(PostgreSQLTestCase):
 
     def _create(self, micro, mystiko, macro):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         return ChallengeProfile.objects.create(
             classification=parent,
@@ -93,7 +93,7 @@ class RewardConstraintTests(PostgreSQLTestCase):
 
     def _create(self, micro, mystiko, macro):
         parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         return RewardProfile.objects.create(
             classification=parent,

@@ -37,7 +37,9 @@ def _make(**kw):
 
 
 def _classify(game, user, ch=(50, 20, 30), rw=(10, 30, 60)):
-    parent = EditorialClassification.objects.create(game=game, updated_by=user)
+    parent = EditorialClassification.objects.create(
+        game=game, submitted_by=user, updated_by=user
+    )
     ChallengeProfile.objects.create(
         classification=parent,
         micro_score=ch[0],
@@ -103,11 +105,11 @@ class EditoriallyClassifiedTests(TestCase):
         self.no_parent = _make(name="No Parent", slug="no-parent")
         self.parent_only = _make(name="Parent Only", slug="parent-only")
         EditorialClassification.objects.create(
-            game=self.parent_only, updated_by=self.user
+            game=self.parent_only, submitted_by=self.user, updated_by=self.user
         )
         self.ch_only = _make(name="CH Only", slug="ch-only")
         pc = EditorialClassification.objects.create(
-            game=self.ch_only, updated_by=self.user
+            game=self.ch_only, submitted_by=self.user, updated_by=self.user
         )
         ChallengeProfile.objects.create(
             classification=pc, micro_score=50, mystiko_score=20, macro_score=30
@@ -241,7 +243,9 @@ class DominantAnnotationTests(TestCase):
     def test_challenge_only_profile(self):
         """Missing Reward → Challenge dominant calculated, Reward NULL."""
         g = _make(name="CH Only", slug="ch-only-ann")
-        parent = EditorialClassification.objects.create(game=g, updated_by=self.user)
+        parent = EditorialClassification.objects.create(
+            game=g, submitted_by=self.user, updated_by=self.user
+        )
         ChallengeProfile.objects.create(
             classification=parent, micro_score=70, mystiko_score=20, macro_score=10
         )
@@ -252,7 +256,9 @@ class DominantAnnotationTests(TestCase):
     def test_reward_only_profile(self):
         """Missing Challenge → Challenge NULL, Reward dominant calculated."""
         g = _make(name="RW Only", slug="rw-only-ann")
-        parent = EditorialClassification.objects.create(game=g, updated_by=self.user)
+        parent = EditorialClassification.objects.create(
+            game=g, submitted_by=self.user, updated_by=self.user
+        )
         RewardProfile.objects.create(
             classification=parent, micro_score=10, mystiko_score=20, macro_score=70
         )

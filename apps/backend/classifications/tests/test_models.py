@@ -48,10 +48,14 @@ class EditorialClassificationTests(TestCase):
     def test_one_per_game(self):
         game = _make_game("parent-test")
         user = _make_user("editor1")
-        EditorialClassification.objects.create(game=game, updated_by=user)
+        EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
-                EditorialClassification.objects.create(game=game, updated_by=user)
+                EditorialClassification.objects.create(
+                    game=game, submitted_by=user, updated_by=user
+                )
 
     def test_game_is_required(self):
         user = _make_user("editor2")
@@ -66,40 +70,52 @@ class EditorialClassificationTests(TestCase):
     def test_notes_blank_by_default(self):
         game = _make_game("parent-notes")
         user = _make_user("editor3")
-        c = EditorialClassification.objects.create(game=game, updated_by=user)
+        c = EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         self.assertEqual(c.notes, "")
 
     def test_timestamps_populated(self):
         game = _make_game("parent-ts")
         user = _make_user("editor4")
-        c = EditorialClassification.objects.create(game=game, updated_by=user)
+        c = EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         self.assertIsNotNone(c.created_at)
         self.assertIsNotNone(c.updated_at)
 
     def test_game_cascade_delete(self):
         game = _make_game("parent-cascade")
         user = _make_user("editor5")
-        EditorialClassification.objects.create(game=game, updated_by=user)
+        EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         game.delete()
         self.assertEqual(EditorialClassification.objects.count(), 0)
 
     def test_user_protect(self):
         game = _make_game("parent-protect")
         user = _make_user("editor6")
-        EditorialClassification.objects.create(game=game, updated_by=user)
+        EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         with self.assertRaises(IntegrityError):
             user.delete()
 
     def test_related_name(self):
         game = _make_game("parent-related")
         user = _make_user("editor7")
-        c = EditorialClassification.objects.create(game=game, updated_by=user)
+        c = EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         self.assertEqual(list(game.editorial_classification.all()), [c])  # type: ignore[reportAttributeAccessIssue]
 
     def test_str(self):
         game = _make_game("parent-str")
         user = _make_user("editor8")
-        c = EditorialClassification.objects.create(game=game, updated_by=user)
+        c = EditorialClassification.objects.create(
+            game=game, submitted_by=user, updated_by=user
+        )
         self.assertIn("parent-str", str(c))
 
 
@@ -113,7 +129,7 @@ class ChallengeProfileValidationTests(TestCase):
         self.game = _make_game("ch-val-game")
         self.user = _make_user("ch-val-editor")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_valid_scores(self):
@@ -200,7 +216,7 @@ class ChallengeProfileDbTotalsTests(TestCase):
         self.game = _make_game("ch-db-game")
         self.user = _make_user("ch-db-user")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_total_99_db_rejected(self):
@@ -266,7 +282,7 @@ class RewardProfileValidationTests(TestCase):
         self.game = _make_game("rw-val-game")
         self.user = _make_user("rw-val-editor")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_valid_scores(self):
@@ -344,7 +360,7 @@ class RewardProfileDbTotalsTests(TestCase):
         self.game = _make_game("rw-db-game")
         self.user = _make_user("rw-db-user")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_total_99_db_rejected(self):
@@ -406,7 +422,7 @@ class PostConstructionBooleanTests(TestCase):
         )
         self.user = User.objects.create_user(username="bool_assign_u", password="test")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
 
     def test_challenge_bool_assigned_after_construction(self):
@@ -466,7 +482,7 @@ class NoNetworkModelTests(TestCase):
         )
         self.user = User.objects.create_user(username="nonet_m_u", password="test")
         self.parent = EditorialClassification.objects.create(
-            game=self.game, updated_by=self.user
+            game=self.game, submitted_by=self.user, updated_by=self.user
         )
         self._guard = patch(
             "games.services.steam.client.SteamClient.__init__",

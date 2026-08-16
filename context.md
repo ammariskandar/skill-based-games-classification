@@ -2704,6 +2704,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   database-constraints, and context changelog.  No final/derived
   classification mathematics implemented (SBGC-65 owns that).
 
+## 2026-08-16 — SBGC-63 completion pass (attribution hardening)
+
+- Removed the permanent ORM ``save()`` fallback that inferred
+  ``submitted_by`` from ``updated_by``.  Runtime new submissions now
+  require explicit ``submitted_by``; only the migration backfill maps
+  historical rows from ``updated_by``.
+- Historical backfill is considered safe: pre-SBGC-63 the model had no
+  separate submitter concept and ``updated_by`` was the only author/operator
+  identity; historical role defaults to Community (non-superuser) as a
+  migration default, not an inferred moderator/CL status.
+- Added cross-group conflict creation test (no partial row) and a runtime
+  no-inferred-submitter regression test.
+- PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
+  available in the sandbox; not run against Neon.
+- Human Admin validation pending.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

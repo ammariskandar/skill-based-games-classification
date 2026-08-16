@@ -28,7 +28,9 @@ def _user(username):
 
 
 def _parent(game, user):
-    return EditorialClassification.objects.create(game=game, updated_by=user)
+    return EditorialClassification.objects.create(
+        game=game, submitted_by=user, updated_by=user
+    )
 
 
 def _challenge(parent, micro=50, mystiko=20, macro=30):
@@ -272,7 +274,7 @@ class RelationshipTests(TestCase):
         with transaction.atomic():
             with self.assertRaises(IntegrityError):
                 EditorialClassification.objects.create(
-                    game=self.game, updated_by=self.user
+                    game=self.game, submitted_by=self.user, updated_by=self.user
                 )
 
     def test_duplicate_challenge_rejected(self):
@@ -328,7 +330,7 @@ class RelationshipTests(TestCase):
         """Direct ORM allows a parent without profiles — documented limitation."""
         g = _game("orphan")
         u = _user("orphan-u")
-        p = EditorialClassification.objects.create(game=g, updated_by=u)
+        p = EditorialClassification.objects.create(game=g, submitted_by=u, updated_by=u)
         self.assertIsNotNone(p.pk)
         self.assertFalse(ChallengeProfile.objects.filter(classification=p).exists())
         self.assertFalse(RewardProfile.objects.filter(classification=p).exists())
@@ -401,7 +403,9 @@ class ClassificationMigrationReversibilityTests(TransactionTestCase):
                 source_type=SourceType.MANUAL, name="Rev", slug="rev"
             )
             u = User.objects.create_user(username="rev_u", password="p")
-            parent = EditorialClassification.objects.create(game=g, updated_by=u)
+            parent = EditorialClassification.objects.create(
+                game=g, submitted_by=u, updated_by=u
+            )
             ChallengeProfile.objects.create(
                 classification=parent,
                 micro_score=50,

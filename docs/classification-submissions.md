@@ -25,6 +25,11 @@ not implemented here.
 - `submitted_by` — whose classification/opinion this is (immutable after creation).
 - `updated_by` — the operator who last changed the record (may differ).
 
+Runtime creation is explicit: `submitted_by` is required for new records
+and is **not** inferred from `updated_by`.  The migration-only backfill maps
+historical rows' `submitted_by` to their existing `updated_by` because the
+pre-SBGC-63 model had no separate submitter concept (see migration `0003`).
+
 ## Roles and snapshot
 
 Editorial statistical roles (fixed product constants):
@@ -42,6 +47,11 @@ creation.  Normal edits never re-resolve or mutate the snapshot.
 Group role metadata lives on `EditorialGroupProfile` (OneToOne to Django
 Group) with mutually exclusive Moderator / Community Leader flags.  Neither
 flag means Community.  Superuser is never a Group flag.
+
+A user belonging to both a Moderator-designated Group and a
+Community-Leader-designated Group is a **conflict**: role resolution raises
+and submission creation leaves no partial row.  No "highest role wins"
+fallback is applied.
 
 ## Service
 

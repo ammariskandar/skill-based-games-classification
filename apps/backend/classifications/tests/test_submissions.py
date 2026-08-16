@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.test import TestCase
 from games.models import Game, SourceType
 
@@ -70,6 +71,24 @@ class RoleResolutionTests(TestCase):
         u.groups.add(m, c)
         with self.assertRaises(EditorialRoleError):
             resolve_editorial_role(u)
+
+    def test_conflicting_groups_create_leaves_no_partial(self):
+        game = _game("conflict-game")
+        u = _user("conflict-create")
+        m = Group.objects.create(name="mc")
+        c = Group.objects.create(name="cc")
+        EditorialGroupProfile.objects.create(group=m, is_moderator=True)
+        EditorialGroupProfile.objects.create(group=c, is_community_leader=True)
+        u.groups.add(m, c)
+        with self.assertRaises(EditorialRoleError):
+            create_submission(
+                game=game,
+                submitted_by=u,
+                updated_by=u,
+                challenge=_dist(),
+                reward=_dist(micro=10, mystiko=30, macro=60),
+            )
+        self.assertFalse(EditorialClassification.objects.filter(game=game).exists())
 
     def test_group_mutual_exclusion_clean(self):
         g = Group.objects.create(name="exclusive")
@@ -183,7 +202,7 @@ class SubmissionWorkflowTests(TestCase):
             reward=_dist(micro=10, mystiko=30, macro=60),
         )
         original_game = s.game_id  # type: ignore[reportAttributeAccessIssue]
-        original_submitter = s.submitted_by_id
+        original_submitter = s.submitted_by_id  # type: ignore[reportAttributeAccessIssue]
         original_role = s.submitted_role
         original_weight = s.submitted_base_weight
 
@@ -197,7 +216,7 @@ class SubmissionWorkflowTests(TestCase):
 
         s.refresh_from_db()
         self.assertEqual(s.game_id, original_game)  # type: ignore[reportAttributeAccessIssue]
-        self.assertEqual(s.submitted_by_id, original_submitter)
+        self.assertEqual(s.submitted_by_id, original_submitter)  # type: ignore[reportAttributeAccessIssue]
         self.assertEqual(s.submitted_role, original_role)
         self.assertEqual(s.submitted_base_weight, original_weight)
         self.assertEqual(s.updated_by_id, self.user2.pk)  # type: ignore[reportAttributeAccessIssue]
@@ -216,3 +235,10 @@ class SubmissionWorkflowTests(TestCase):
         )
         self.assertFalse(ChallengeProfile.objects.exists())
         self.assertFalse(RewardProfile.objects.exists())
+
+    def test_direct_create_requires_explicit_submitter(self):
+        """Runtime ORM creation must not infer submitted_by from updated_by."""
+        with self.assertRaises(IntegrityError):
+            EditorialClassification.objects.create(
+                game=self.game, updated_by=self.user1
+            )

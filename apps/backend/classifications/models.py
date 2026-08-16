@@ -135,31 +135,10 @@ class EditorialClassification(models.Model):
         game_name = self.game.name if self.game_id else "(unsaved)"  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
         submitter = (
             self.submitted_by.username
-            if self.submitted_by_id
+            if self.submitted_by_id  # type: ignore[reportAttributeAccessIssue]
             else "(unsaved submitter)"
         )
         return f"Editorial classification for {game_name} by {submitter}"
-
-    def save(self, *args, **kwargs) -> None:
-        """Legacy direct-ORM compatibility fallback.
-
-        The canonical create/update path is
-        ``classifications.services.submissions``.  Direct ORM creates from
-        older tests/migrations may omit ``submitted_by``; for those, derive
-        it from ``updated_by`` and snapshot the Community/Superuser role.
-        """
-        if self.submitted_by_id is None and self.updated_by_id is not None:  # type: ignore[reportAttributeAccessIssue]
-            self.submitted_by_id = self.updated_by_id  # type: ignore[reportAttributeAccessIssue]
-
-        if self.submitted_role == "":
-            if self.submitted_by_id is not None and self.submitted_by.is_superuser:
-                self.submitted_role = EditorialRole.SUPERUSER
-                self.submitted_base_weight = BASE_WEIGHTS[EditorialRole.SUPERUSER]
-            else:
-                self.submitted_role = EditorialRole.COMMUNITY
-                self.submitted_base_weight = BASE_WEIGHTS[EditorialRole.COMMUNITY]
-
-        super().save(*args, **kwargs)
 
     if TYPE_CHECKING:
         challenge_profile: ChallengeProfile
