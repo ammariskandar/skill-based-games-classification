@@ -160,22 +160,15 @@ class EditorialClassification(models.Model):
             raise ValidationError(new_dict) from exc
 
     def validate_constraints(self, exclude=None):
-        """Drop raw DB-constraint messages and make duplicates friendly."""
+        """Drop raw DB-constraint messages from Admin validation."""
         try:
             super().validate_constraints(exclude)
         except ValidationError as exc:
             new_dict = {}
             for field, messages in exc.message_dict.items():
-                cleaned = []
-                for m in messages:
-                    if "already exists" in m:
-                        cleaned.append(
-                            "This user has already submitted scores for this game."
-                        )
-                    elif not _is_db_constraint_message(m):
-                        cleaned.append(m)
-                if cleaned:
-                    new_dict[field] = cleaned
+                filtered = [m for m in messages if not _is_db_constraint_message(m)]
+                if filtered:
+                    new_dict[field] = filtered
             if new_dict:
                 raise ValidationError(new_dict) from exc
 

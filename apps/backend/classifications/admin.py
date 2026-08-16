@@ -3,9 +3,12 @@ Django Admin registration for editorial classification submissions and
 editorial Group role metadata — SBGC-46 / SBGC-63.
 """
 
-from django.contrib import admin
+import json
+
+from django import forms
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 
@@ -15,8 +18,11 @@ from classifications.models import (
     EditorialGroupProfile,
     RewardProfile,
 )
-from classifications.roles import BASE_WEIGHTS
-from classifications.services.submissions import resolve_editorial_role
+from classifications.roles import BASE_WEIGHTS, EditorialRole
+from classifications.services.submissions import (
+    EditorialRoleError,
+    resolve_editorial_role,
+)
 
 
 class _RequiredSingleProfileFormSet(BaseInlineFormSet):
@@ -87,8 +93,50 @@ class RewardProfileInline(admin.StackedInline):
     verbose_name_plural = "Reward Profile"
 
 
+class EditorialClassificationAdminForm(forms.ModelForm):
+    class Media:
+        js = ("classifications/admin_role_preview.js",)
+
+    class Meta:
+        model = EditorialClassification
+        fields = [
+            "game",
+            "submitted_by",
+            "submitted_role",
+            "submitted_base_weight",
+            "notes",
+            "updated_by",
+        ]
+
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.request = request
+
+    def clean(self):
+        cleaned = super().clean() or {}
+        game = cleaned.get("game")
+        submitted_by = cleaned.get("submitted_by")
+        if submitted_by is None and self.request is not None:
+            submitted_by = self.request.user
+        if game and submitted_by and getattr(submitted_by, "pk", None):
+            qs = EditorialClassification.objects.filter(
+                game=game, submitted_by=submitted_by
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                if self.request is not None and submitted_by.pk == self.request.user.pk:
+                    msg = "You have already submitted scores for this game."
+                else:
+                    msg = "This user has already submitted scores for this game."
+                self.add_error("submitted_by", msg)
+        return cleaned
+
+
 @admin.register(EditorialClassification)
 class EditorialClassificationAdmin(admin.ModelAdmin):
+    form = EditorialClassificationAdminForm
+
     inlines = [
         ChallengeProfileInline,
         RewardProfileInline,
@@ -155,6 +203,13 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             f"{profile.micro_score} / {profile.mystiko_score} / {profile.macro_score}"
         )
 
+    def get_form_kwargs(self, request, obj=None, **kwargs):
+        form_kwargs = admin.ModelAdmin.get_form_kwargs(  # type: ignore[reportAttributeAccessIssue]
+            self, request, obj, **kwargs
+        )
+        form_kwargs["request"] = request
+        return form_kwargs
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj, change=change, **kwargs)
         if obj is None:
@@ -162,7 +217,21 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             submitter = request.user
             role = resolve_editorial_role(submitter)
 
+            role_map = {}
+            for u in User.objects.filter(is_active=True):
+                try:
+                    resolved = resolve_editorial_role(u)
+                except EditorialRoleError:
+                    resolved = EditorialRole.COMMUNITY
+                role_map[str(u.pk)] = {
+                    "role": resolved,
+                    "weight": str(BASE_WEIGHTS[resolved]),
+                }
+
             if "submitted_by" in form.base_fields:
+                form.base_fields["submitted_by"].widget.attrs["data-role-map"] = (
+                    json.dumps(role_map)
+                )
                 if not is_superuser:
                     form.base_fields["submitted_by"].disabled = True
                     form.base_fields["submitted_by"].required = False
@@ -207,6 +276,22 @@ class EditorialGroupProfileInline(admin.StackedInline):
 
 class EditorialGroupAdmin(GroupAdmin):
     inlines = [EditorialGroupProfileInline]
+
+    def changelist_view(self, request, extra_context=None):
+        superusers = list(
+            User.objects.filter(is_superuser=True, is_active=True)
+            .order_by("username")
+            .values_list("username", flat=True)
+        )
+        names = ", ".join(superusers) if superusers else "none"
+        self.message_user(
+            request,
+            f"Superuser — system-defined, read-only. Current superusers: {names}. "
+            "Moderator / Community Leader / Community roles are managed through "
+            "the Groups below.",
+            level=messages.INFO,
+        )
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 admin.site.unregister(Group)

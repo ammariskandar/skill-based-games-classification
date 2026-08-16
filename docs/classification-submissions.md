@@ -75,6 +75,12 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
 - The resolved role/weight preview is shown before save for the operator's
   own submission; `submitted_role` / `submitted_base_weight` are never
   operator-editable.
+- For superuser on-behalf creation, the preview follows the selected
+  `submitted_by` via a backend-supplied role map (no operator-editable
+  role/weight fields).
+- Superuser is shown on the Group/editorial-role management screen as a
+  system-defined, read-only role with the current superusers listed
+  dynamically; no fake Superuser Group is created.
 - Duplicate submissions and score totals surface friendly operator-facing
   messages rather than raw database constraint names.
 - Group Admin exposes the Moderator / Community Leader flags via an inline.

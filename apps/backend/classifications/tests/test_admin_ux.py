@@ -4,13 +4,15 @@ Editorial classification Admin UX tests — SBGC-63 polish.
 
 from __future__ import annotations
 
-from django.contrib.auth.models import Permission, User
+import json
+
+from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
 from games.models import Game, SourceType
 
-from classifications.models import EditorialClassification
+from classifications.models import EditorialClassification, EditorialGroupProfile
 from classifications.roles import EditorialRole
 
 CH = "challenge_profile"
@@ -83,6 +85,30 @@ class SubmittedByOwnershipTests(TestCase):
         form = response.context["adminform"].form
         self.assertTrue(form.fields["submitted_by"].disabled)
         self.assertEqual(form.fields["submitted_role"].initial, EditorialRole.COMMUNITY)
+
+    def test_superuser_role_display_lists_current_superusers(self):
+        self.client.force_login(self.superuser)
+        response = self.client.get(reverse("admin:auth_group_changelist"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Superuser — system-defined")
+        self.assertContains(response, "ux_su")
+
+    def test_no_fake_superuser_group_exists(self):
+        self.assertFalse(Group.objects.filter(name="Superuser").exists())
+
+    def test_on_behalf_role_map_reflects_selected_submitter(self):
+        group = Group.objects.create(name="leaders")
+        EditorialGroupProfile.objects.create(group=group, is_community_leader=True)
+        leader = User.objects.create_user(username="cl_user", password="p")
+        leader.groups.add(group)
+
+        self.client.force_login(self.superuser)
+        response = self.client.get(self.add_url)
+        form = response.context["adminform"].form
+        role_map = json.loads(form.fields["submitted_by"].widget.attrs["data-role-map"])
+        entry = role_map[str(leader.pk)]
+        self.assertEqual(entry["role"], EditorialRole.COMMUNITY_LEADER)
+        self.assertEqual(entry["weight"], "0.65")
 
 
 class FriendlyValidationTests(TestCase):

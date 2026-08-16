@@ -2729,6 +2729,15 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   messages instead of raw `*_ck` / Django uniqueness wording.
 - Added `classifications/tests/test_admin_ux.py` (4 focused tests).
 
+## 2026-08-16 — SBGC-63 role hierarchy visibility
+
+- Superuser now appears as a system-defined, read-only role on the Group
+  admin screen with current superusers listed dynamically; no fake
+  Superuser Group was created.
+- On-behalf role preview follows the selected submitter via a
+  backend-supplied role map; duplicate/score validation uses friendly
+  messages.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
