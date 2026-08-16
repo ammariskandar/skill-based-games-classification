@@ -142,10 +142,17 @@ SBGC-61 adds source-specific Admin presentation: Steam Games also have
 `name` and `content_type` readonly (Steam-owned, refreshed by Steam), while
 manual Games keep them editable.  See `docs/source-specific-behaviour.md`.
 
+## Deletion
+
+Manual (and Steam) Games are hard-deletable through the canonical service
+and Django Admin (SBGC-182).  Archive is separate from deletion.  See
+`docs/game-deletion-workflow.md`.
+
 ## Out of scope
 
-Delete, soft delete, archive/restore, bulk create/edit, and frontend UI are
-not implemented by SBGC-59.
+Soft delete, archive/restore-as-delete, bulk create/edit, and frontend UI
+are not implemented.  Bulk Admin deletion is deliberately disabled; use the
+single-object delete flow.
 
 ## Workflow verification
 

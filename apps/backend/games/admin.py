@@ -107,6 +107,17 @@ class GameAdmin(admin.ModelAdmin):
 
     actions = ("refresh_from_steam",)
 
+    def get_actions(self, request):
+        """Keep only deliberate, source-safe actions for Games (SBGC-182).
+
+        The default ``delete_selected`` bulk action is disabled so canonical
+        Game deletion is a deliberate single-object operation with its
+        confirmation and cascade summary.  ``refresh_from_steam`` remains.
+        """
+        actions = super().get_actions(request)
+        actions.pop("delete_selected", None)
+        return actions
+
     @admin.action(description="Refresh Steam metadata from Steam")
     def refresh_from_steam(self, request, queryset):
         """Manually refresh selected Steam Games (SBGC-56).

@@ -18,6 +18,7 @@ Django Admin workflows and automated integration tests.
 | Changelist | Steam/manual/draft visible, all content types shown, default manager unfiltered |
 | No-network | Game add GET/POST, edit GET/POST, changelist, DLC scenario |
 | Manual workflows (SBGC-62) | Combined service + Admin create/edit, asset lifecycle, listing, classification preservation, source/refresh rejection — `games/tests/test_manual_workflows.py` |
+| Deletion (SBGC-182) | Single-object delete confirmation/cascade, bulk `delete_selected` disabled, permission denial, no traceback — `games/tests/test_game_deletion_admin.py` and `games/tests/services/test_game_deletion.py` |
 
 ### Classification Admin (`classifications/tests/test_admin_validation.py`)
 
