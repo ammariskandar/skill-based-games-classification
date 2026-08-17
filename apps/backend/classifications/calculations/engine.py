@@ -43,6 +43,7 @@ from classifications.calculations.results import (
     CALCULATION_ERROR,
     NO_SUBMISSIONS,
     READY,
+    REGIME_NONE,
     REGIME_PROVISIONAL,
     REGIME_UNIFIED,
     ConfidenceResult,
@@ -96,7 +97,7 @@ def calculate_game(
 
     if n == 0:
         return GameCalculationResult(
-            regime=REGIME_UNIFIED,
+            regime=REGIME_NONE,
             status=NO_SUBMISSIONS,
             raw_n=0,
             diagnostics={"input_population_hash": population.population_hash},

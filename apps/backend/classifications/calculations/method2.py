@@ -138,33 +138,68 @@ def _dimension_scores(
     rng = random.Random((IFOREST_SEED * 31) + dim_index)
     path_sums = [0.0] * n
     for _ in range(IFOREST_TREES):
-        sample = rng.sample(values, psi)
-        tree = _build_tree(sample, rng, depth=0, height_limit=height_limit)
+        # Sorting the subsample is order-irrelevant to the tree (splits are
+        # chosen from min/max and partitions by value), so this produces the
+        # identical tree while enabling O(psi log psi) construction below.
+        sample = sorted(rng.sample(values, psi))
+        tree = _build_tree(
+            sample, 0, len(sample), rng, depth=0, height_limit=height_limit
+        )
         for i, value in enumerate(values):
             path_sums[i] += _path_length(tree, value)
     return [2.0 ** (-path_sum / IFOREST_TREES / reference) for path_sum in path_sums]
 
 
-def _build_tree(values: list[float], rng: random.Random, depth: int, height_limit: int):
-    """One 1-D isolation tree; returns a nested tuple."""
-    if depth >= height_limit or len(values) <= 1 or all(v == values[0] for v in values):
-        return ("leaf", depth, len(values))
+def _build_tree(
+    sorted_values: list[float],
+    lo: int,
+    hi: int,
+    rng: random.Random,
+    depth: int,
+    height_limit: int,
+):
+    """One 1-D isolation tree over ``sorted_values[lo:hi]``.
 
-    z_min = min(values)
-    z_max = max(values)
+    The frozen randomization schedule is consumed in exactly the same
+    depth-first order as the specification's recursive partition: one
+    ``rng.uniform(z_min, z_max)`` per internal node.  ``bisect_left`` is the
+    identity-equivalent of the ``value < split`` partition, so the resulting
+    tree (split values, leaf sizes, nesting) is byte-for-byte identical to a
+    linear-scan implementation while avoiding repeated list slicing.
+    """
+    count = hi - lo
+    if (
+        depth >= height_limit
+        or count <= 1
+        or sorted_values[lo] == sorted_values[hi - 1]
+    ):
+        return ("leaf", depth, count)
+
+    z_min = sorted_values[lo]
+    z_max = sorted_values[hi - 1]
     split = rng.uniform(z_min, z_max)
     if split == z_min:
         # Both children must be non-empty (Part XV.68); this guards the
         # measure-zero uniform edge without changing the distribution.
         split = (z_min + z_max) / 2.0
-    left = [v for v in values if v < split]
-    right = [v for v in values if v >= split]
+    mid = _bisect_left(sorted_values, split, lo, hi)
     return (
         "node",
         split,
-        _build_tree(left, rng, depth + 1, height_limit),
-        _build_tree(right, rng, depth + 1, height_limit),
+        _build_tree(sorted_values, lo, mid, rng, depth + 1, height_limit),
+        _build_tree(sorted_values, mid, hi, rng, depth + 1, height_limit),
     )
+
+
+def _bisect_left(values: list[float], target: float, lo: int, hi: int) -> int:
+    """Inlined ``bisect_left`` for the local import surface."""
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if values[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo
 
 
 def _path_length(tree, value: float) -> float:

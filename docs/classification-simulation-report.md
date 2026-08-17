@@ -1,15 +1,18 @@
 # SBGC-65 Classification Simulation Report
 
-Generated: 2026-08-17T13:36:41.109845+00:00
+Generated: 2026-08-17T15:04:37.086170+00:00
 
-Simulation configuration (scenario matrix): bootstrap=12, governance_draws=2; large-N bootstrap=4. Frozen production settings (B=10,000, S=20) are exercised by the dedicated BHPCM acceptance test.
+This report contains two distinct evidence tiers:
+
+- **Reduced-compute structural simulation** (Sections 1-5): branch/invariant/pathological behavior across a fast scenario matrix (bootstrap=12, governance_draws=2, large-N bootstrap=12).
+- **Production-fidelity reference simulation** (Section 6, included only with `--production-fidelity`): frozen B=10,000 and S=20, exercising the actual production mathematical semantics.
 
 
 ## 1. Frozen N boundaries
 
 | N | status | regime | m1 | m2 | m3 | elapsed_s |
 |---|---|---|---|---|---|---|
-| 0 | NO_SUBMISSIONS | unified | - | - | - | 0.0 |
+| 0 | NO_SUBMISSIONS | none | - | - | - | 0.0 |
 | 1 | READY | provisional | READY | - | - | 0.0 |
 | 2 | READY | provisional | READY | - | - | 0.0 |
 | 5 | READY | provisional | READY | - | - | 0.0 |
@@ -20,19 +23,16 @@ Simulation configuration (scenario matrix): bootstrap=12, governance_draws=2; la
 | 15 | READY | provisional | READY | - | - | 0.0 |
 | 18 | READY | provisional | READY | - | - | 0.0 |
 | 19 | READY | provisional | READY | - | - | 0.0 |
-| 20 | READY | unified | READY | READY | READY | 3.7 |
-| 21 | READY | unified | READY | READY | READY | 3.8 |
-| 25 | READY | unified | READY | READY | READY | 4.4 |
-| 26 | READY | unified | READY | READY | READY | 4.5 |
-| 50 | READY | unified | READY | READY | READY | 9.0 |
-| 51 | READY | unified | READY | READY | READY | 9.0 |
-| 100 | READY | unified | READY | READY | READY | 7.2 |
-| 250 | READY | unified | READY | READY | READY | 18.8 |
-| 400 | READY | unified | READY | READY | READY | 26.0 |
-| 401 | READY | unified | READY | READY | READY | 26.0 |
-| 500 | READY | unified | READY | READY | READY | 31.0 |
-| 1000 | READY | unified | READY | READY | READY | 65.3 |
-| 1001 | READY | unified | READY | READY | READY | 65.2 |
+| 20 | READY | unified | READY | READY | READY | 2.4 |
+| 21 | READY | unified | READY | READY | READY | 2.6 |
+| 25 | READY | unified | READY | READY | READY | 2.9 |
+| 26 | READY | unified | READY | READY | READY | 3.1 |
+| 50 | READY | unified | READY | READY | READY | 5.8 |
+| 51 | READY | unified | READY | READY | READY | 6.0 |
+| 100 | READY | unified | READY | READY | READY | 12.1 |
+| 250 | READY | unified | READY | READY | READY | 32.2 |
+| 400 | READY | unified | READY | READY | READY | 50.1 |
+| 401 | READY | unified | READY | READY | READY | 50.5 |
 
 ## 2. Required population scenarios
 
@@ -332,7 +332,7 @@ Simulation configuration (scenario matrix): bootstrap=12, governance_draws=2; la
 - Method statuses: M1=READY (anchor=SUPERUSER), M2=READY, M3=READY
 - Integer Challenge profiles: M1=(45, 30, 25), M2=(45, 30, 25), M3=(45, 30, 25)
 - Rejections: M1A/M1B=(0, 0), M2=5, M3=1
-- BHPCM: status=READY, unified=(45, 30, 25), conflict=Low conflict, bootstrap(valid/invalid)=(4, 0)
+- BHPCM: status=READY, unified=(45, 30, 25), conflict=Low conflict, bootstrap(valid/invalid)=(12, 0)
 - Confidence: {'base': 83.56, 'resilience': 83.56}
 - Invariant result: PASS
 

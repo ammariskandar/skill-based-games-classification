@@ -104,6 +104,9 @@ substitute.
   `INSUFFICIENT_SAMPLE_*`, `NO_SURVIVING_SUBMISSIONS`,
   `INSUFFICIENT_METHOD_*`, `UNIFIED_CALCULATION_UNSTABLE`) are
   mathematical results, not infrastructure failures, and are not retried.
+  A legitimate non-ready domain result becomes the **current** published
+  state (replacing a stale READY); only engine/system failure retains the
+  previous current snapshot as a stale fallback.
 - After the final failed attempt the
   `CalculationFailureNotifier` scaffold is invoked with the Game id/name,
   epoch id, version, attempt count, failure category, safe error summary,
@@ -131,20 +134,31 @@ computes a SHA-256 `input_population_hash`.  Invalid submissions
 (missing profile, out-of-range, non-100 total) are excluded **before** N is
 established; received/invalid/validated counts are recorded.
 
-## 7. Simulation and performance evidence
+## 7. Bootstrap selection and performance evidence
+
+The production bootstrap count ``B`` is selected empirically by the
+bootstrap convergence/stability study
+(`manage.py bootstrap_stability_study`,
+`docs/classification-bootstrap-stability.md`), not by a predetermined
+gold-standard value.  The invalid-bootstrap rule is: a replicate is invalid
+when any method returns a non-ready result; `UNIFIED_CALCULATION_UNSTABLE`
+is returned exactly when more than 1% of replicates are invalid
+(`invalid * 100 > B`, integer-safe).  The selected production value is
+**B = 500** (with `S = 20` governance draws per valid replicate).
 
 `manage.py run_classification_simulation` runs the required Part F program
 (N boundaries, 30 population scenarios, role structures, 19→20 boundary
 study, resilience pathological study, random invariants) and writes
-`docs/classification-simulation-report.md` with seeds and provenance.
+`docs/classification-simulation-report.md` with seeds and provenance.  The
+reduced-compute structural simulation is distinct from any production-
+fidelity reference run.
 
-Representative single-run timing (measured on local hardware, bootstrap =
-simulation configuration, see report): at N=20 a full unified calculation
-with the frozen production B=10,000 bootstrap takes on the order of an
-hour; at N=1000 the same frozen run is on the order of two days of CPU.
-The engine is intentionally asynchronous daily computation; interactive
-latency is not the target, and the mathematics is not weakened for
-benchmark numbers.
+Production-timing evidence (measured on local hardware, post Method 2
+optimization): B=10,000 was recorded as operationally impractical and
+withdrawn.  At the selected B=500 a single Game calculation is on the order
+of ~90 s at N=20, ~4 min at N=50, ~8 min at N=100, and ~100 min at N=1000.
+The engine remains asynchronous daily computation; the selected ``B`` makes
+the daily batch operationally plausible without weakening any formula.
 
 ## 8. Out of scope
 

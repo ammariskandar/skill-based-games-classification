@@ -121,7 +121,7 @@ class RunGameCalculationTests(TestCase):
         self.assertEqual(attempt.status, CalculationAttempt.Status.SUCCEEDED)
         snapshot = ClassificationSnapshot.objects.get(game=game, epoch=epoch)
         self.assertEqual(snapshot.status, "NO_SUBMISSIONS")
-        self.assertFalse(snapshot.is_current)
+        self.assertTrue(snapshot.is_current)
         published = get_published_classification(game)
         self.assertFalse(published.available)
         self.assertEqual(published.status, "NO_SUBMISSIONS")
@@ -189,7 +189,8 @@ class RunGameCalculationTests(TestCase):
         self.assertIn("bhpcm", snapshot.provenance)
         self.assertIsNotNone(snapshot.confidence_final)
 
-    def test_previous_success_survives_failed_run(self):
+    def test_ready_to_no_submissions_replaces_current(self):
+        """A legitimate NO_SUBMISSIONS outcome replaces a stale READY score."""
         game = _game()
         superuser = User.objects.create_superuser(
             "root", email="root@example.com", password="pw"
@@ -205,10 +206,8 @@ class RunGameCalculationTests(TestCase):
             attempt_number=1,
             cutoff_at=timezone.now(),
         )
-        published = get_published_classification(game)
-        self.assertTrue(published.available)
+        self.assertTrue(get_published_classification(game).available)
 
-        # Second epoch: delete all submissions -> NO_SUBMISSIONS outcome.
         from classifications.models import EditorialClassification
 
         EditorialClassification.objects.filter(game=game).delete()
@@ -222,12 +221,105 @@ class RunGameCalculationTests(TestCase):
         current = ClassificationSnapshot.objects.filter(
             game=game, is_current=True
         ).get()
-        epoch_id = current.epoch_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
-        self.assertEqual(epoch_id, first_epoch.pk)
+        self.assertEqual(current.status, "NO_SUBMISSIONS")
+        self.assertFalse(current.is_stale)
+        published = get_published_classification(game)
+        self.assertFalse(published.available)
+        self.assertEqual(published.status, "NO_SUBMISSIONS")
+        # The old READY remains historical, never current.
+        old = ClassificationSnapshot.objects.get(game=game, epoch=first_epoch)
+        self.assertFalse(old.is_current)
+        self.assertTrue(old.is_stale)
+
+    def test_ready_to_insufficient_anchor_replaces_current(self):
+        """A legitimate INSUFFICIENT_ANCHOR outcome replaces a stale READY."""
+        game = _game()
+        superuser = User.objects.create_superuser(
+            "root", email="root@example.com", password="pw"
+        )
+        _submission(game, superuser)
+        for index in range(10):
+            _submission(game, User.objects.create_user(f"member-{index}"))
+
+        first_epoch = self._epoch("epoch-1")
+        run_game_calculation(
+            game=game,
+            epoch=first_epoch,
+            attempt_number=1,
+            cutoff_at=timezone.now(),
+        )
+        self.assertTrue(get_published_classification(game).available)
+
+        # Remove the superuser (anchor) and fall below the anchor threshold.
+        from classifications.models import EditorialClassification
+
+        EditorialClassification.objects.filter(game=game).delete()
+        ordinary = User.objects.create_user("ordinary")
+        _submission(game, ordinary)
+        _submission(game, User.objects.create_user("ordinary-2"))
+        second_epoch = self._epoch("epoch-2")
+        run_game_calculation(
+            game=game,
+            epoch=second_epoch,
+            attempt_number=1,
+            cutoff_at=timezone.now(),
+        )
+        current = ClassificationSnapshot.objects.filter(
+            game=game, is_current=True
+        ).get()
+        self.assertEqual(current.status, "INSUFFICIENT_ANCHOR")
+        published = get_published_classification(game)
+        self.assertFalse(published.available)
+        self.assertEqual(published.status, "INSUFFICIENT_ANCHOR")
+
+    def test_engine_failure_retains_stale_fallback(self):
+        """Only an engine failure retains the prior current snapshot as stale."""
+        game = _game()
+        superuser = User.objects.create_superuser(
+            "root", email="root@example.com", password="pw"
+        )
+        _submission(game, superuser)
+        for index in range(10):
+            _submission(game, User.objects.create_user(f"member-{index}"))
+
+        first_epoch = self._epoch("epoch-1")
+        run_game_calculation(
+            game=game,
+            epoch=first_epoch,
+            attempt_number=1,
+            cutoff_at=timezone.now(),
+        )
+        self.assertTrue(get_published_classification(game).available)
+
+        import classifications.services.calculations as service_module
+
+        original = service_module.calculate_game
+
+        def broken(population, **kwargs):
+            raise RuntimeError("simulated engine failure")
+
+        service_module.calculate_game = broken
+        second_epoch = self._epoch("epoch-2")
+        try:
+            with self.assertRaises(RuntimeError):
+                run_game_calculation(
+                    game=game,
+                    epoch=second_epoch,
+                    attempt_number=1,
+                    cutoff_at=timezone.now(),
+                )
+        finally:
+            service_module.calculate_game = original
+
+        current = ClassificationSnapshot.objects.filter(
+            game=game, is_current=True
+        ).get()
+        self.assertEqual(current.status, "READY")
         self.assertTrue(current.is_stale)
-        published_after = get_published_classification(game)
-        self.assertTrue(published_after.available)
-        self.assertEqual(published_after.calculated_at, current.calculated_at)
+        published = get_published_classification(game)
+        self.assertTrue(published.available)
+        self.assertEqual(published.status, "READY")
+        self.assertEqual(published.calculated_at, current.calculated_at)
 
     def test_single_current_constraint(self):
         game = _game()
@@ -237,8 +329,10 @@ class RunGameCalculationTests(TestCase):
         _submission(game, superuser)
         for index in range(10):
             _submission(game, User.objects.create_user(f"member-{index}"))
+        epochs = []
         for day in range(2):
             epoch = self._epoch(f"epoch-{day}")
+            epochs.append(epoch)
             run_game_calculation(
                 game=game,
                 epoch=epoch,
@@ -249,6 +343,14 @@ class RunGameCalculationTests(TestCase):
             ClassificationSnapshot.objects.filter(game=game, is_current=True).count(),
             1,
         )
+        # The second READY is current; the first is demoted historical.
+        current = ClassificationSnapshot.objects.filter(
+            game=game, is_current=True
+        ).get()
+        self.assertEqual(current.epoch_id, epochs[1].pk)  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        first = ClassificationSnapshot.objects.get(game=game, epoch=epochs[0])
+        self.assertFalse(first.is_current)
+        self.assertTrue(first.is_stale)
 
     def test_engine_failure_records_attempt_and_raises(self):
         game = _game()
@@ -268,6 +370,47 @@ class RunGameCalculationTests(TestCase):
             raise RuntimeError("simulated engine failure")
 
         service_module.calculate_game = broken
+        try:
+            with self.assertRaises(RuntimeError):
+                run_game_calculation(
+                    game=game,
+                    epoch=epoch,
+                    attempt_number=1,
+                    cutoff_at=timezone.now(),
+                    bootstrap_replicates=8,
+                    governance_draws=1,
+                )
+        finally:
+            service_module.calculate_game = original
+
+        attempt = CalculationAttempt.objects.get(game=game, epoch=epoch)
+        self.assertEqual(attempt.status, CalculationAttempt.Status.FAILED)
+        self.assertEqual(attempt.failure_category, "engine_failure")
+        self.assertFalse(ClassificationSnapshot.objects.filter(game=game).exists())
+
+    def test_calculation_error_follows_failure_retry_not_domain_publication(self):
+        """CALCULATION_ERROR is an engine failure, never a current domain state."""
+        game = _game()
+        superuser = User.objects.create_superuser(
+            "root", email="root@example.com", password="pw"
+        )
+        _submission(game, superuser)
+        for index in range(19):
+            _submission(game, User.objects.create_user(f"member-{index}"))
+        epoch = self._epoch()
+
+        import classifications.services.calculations as service_module
+        from classifications.calculations.engine import GameCalculationResult
+        from classifications.calculations.results import CALCULATION_ERROR
+
+        original = service_module.calculate_game
+
+        def error_result(population, **kwargs):
+            return GameCalculationResult(
+                regime="unified", status=CALCULATION_ERROR, raw_n=population.raw_n
+            )
+
+        service_module.calculate_game = error_result
         try:
             with self.assertRaises(RuntimeError):
                 run_game_calculation(

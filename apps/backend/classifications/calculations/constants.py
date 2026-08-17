@@ -107,6 +107,10 @@ IFOREST_TREES = 512
 IFOREST_SUBSAMPLE_MAX = 256
 IFOREST_TAU = 0.60
 IFOREST_SEED = 42
+# The frozen master seed (42) is expanded into six independent per-dimension
+# streams via ``(IFOREST_SEED * 31) + dim_index`` where dim_index is the
+# 0-based position in PROFILE_ANALYSIS_ORDER.  This deterministic derivation
+# is part of the reproducibility contract: changing it is a version change.
 
 # ---------------------------------------------------------------------------
 # Method 3 — LoOP (Part XVI-XVIII)
@@ -122,7 +126,12 @@ LOOP_TAU = 0.75
 # ---------------------------------------------------------------------------
 
 BHPCM_ZERO_DELTA = 1e-6
-BHPCM_BOOTSTRAP_REPLICATES = 10_000
+# Production bootstrap count selected by the SBGC-65 bootstrap-stability
+# study (docs/classification-bootstrap-stability.md).  Selected empirically
+# as the lowest value that stabilizes the converged scenarios across
+# multiple deterministic streams; see the study for the near-tie limitation
+# on pathological divergence scenarios.
+BHPCM_BOOTSTRAP_REPLICATES = 500
 BHPCM_GOVERNANCE_DRAWS = 20
 BHPCM_LAMBDA_ALPHA = 10.0
 BHPCM_LAMBDA_BETA = 10.0
@@ -133,7 +142,6 @@ BHPCM_OMEGA_MAX = 0.50
 BHPCM_DISAGREEMENT_HALF_LIFE = 0.25
 BHPCM_KAPPA_E = 40.0
 BHPCM_MAX_INVALID_BOOTSTRAP_RATE = 0.01
-BHPCM_MIN_VALID_BOOTSTRAP = 9_000
 BHPCM_CI_LEVEL = 0.90
 
 # ---------------------------------------------------------------------------

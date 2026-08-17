@@ -163,9 +163,16 @@ def run_game_calculation(
     """Execute one calculation attempt for one Game inside an epoch.
 
     Freezes inputs, computes outside any database transaction, then persists
-    the complete snapshot in a short atomic block.  Raises nothing for
-    domain outcomes; unexpected engine failures are recorded on the attempt
-    and re-raised so the retry coordinator can act.
+    the complete snapshot in a short atomic block.
+
+    A legitimate mathematical/domain result — READY or a valid non-error
+    status such as NO_SUBMISSIONS, INSUFFICIENT_ANCHOR, or
+    INSUFFICIENT_METHOD_1 — becomes the current published domain state,
+    replacing any prior READY state (which remains historical only).
+
+    Only an unexpected engine/system failure (unhandled exception,
+    CALCULATION_ERROR, or UNIFIED_CALCULATION_ERROR) retains the previous
+    current snapshot as a stale fallback and is re-raised for retry.
     """
     attempt = CalculationAttempt.objects.create(
         game=game,
@@ -204,25 +211,10 @@ def run_game_calculation(
         _maybe_notify_exhaustion(notifier, game, epoch, attempt_number, summary)
         raise
 
-    if result.status in DOMAIN_STATUSES:
-        attempt.status = CalculationAttempt.Status.SUCCEEDED
-        attempt.completed_at = timezone.now()
-        attempt.save(update_fields=["status", "completed_at"])
-        _mark_current_stale(game)
-        _persist_snapshot(
-            game=game,
-            epoch=epoch,
-            result=result,
-            received=received,
-            invalid=invalid,
-            cutoff_at=cutoff_at,
-            attempt_count=attempt_number,
-            failure_category=DOMAIN_OUTCOME_CATEGORY,
-        )
-        return attempt
-
-    if result.status != READY:
-        # Engine-level calculation defect (e.g. CALCULATION_ERROR).
+    if result.status != READY and result.status not in DOMAIN_STATUSES:
+        # Engine-level calculation defect (e.g. CALCULATION_ERROR or
+        # UNIFIED_CALCULATION_ERROR): a retryable operational failure, not a
+        # legitimate domain outcome.
         summary = f"calculation status {result.status}"
         attempt.failure_category = ENGINE_FAILURE_CATEGORY
         attempt.error_summary = summary
@@ -240,6 +232,7 @@ def run_game_calculation(
         _maybe_notify_exhaustion(notifier, game, epoch, attempt_number, summary)
         raise RuntimeError(summary)
 
+    # Legitimate domain outcome -> becomes the current published state.
     attempt.status = CalculationAttempt.Status.SUCCEEDED
     attempt.completed_at = timezone.now()
     attempt.save(update_fields=["status", "completed_at"])
@@ -251,9 +244,10 @@ def run_game_calculation(
         invalid=invalid,
         cutoff_at=cutoff_at,
         attempt_count=attempt_number,
-        failure_category="",
+        failure_category="" if result.status == READY else DOMAIN_OUTCOME_CATEGORY,
     )
-    _persist_boundary(game, result)
+    if result.status == READY:
+        _persist_boundary(game, result)
     return attempt
 
 
@@ -288,7 +282,12 @@ def _safe_summary(exc: Exception) -> str:
 
 @transaction.atomic
 def _mark_current_stale(game: Game) -> None:
-    """Mark the previous published snapshot stale after a non-READY outcome."""
+    """Mark the retained current snapshot stale after an engine failure.
+
+    Unlike promotion, this keeps ``is_current=True``: the previous published
+    result remains the fallback, but is flagged stale because a newer epoch
+    attempted (and failed) to produce a fresh result.
+    """
     ClassificationSnapshot.objects.select_for_update().filter(
         game=game, is_current=True
     ).update(is_stale=True)
@@ -346,8 +345,9 @@ def _persist_snapshot(
             }
     snapshot.save()
 
-    if result.is_ready:
-        _promote(snapshot)
+    # Every legitimate domain outcome — READY or a valid non-error status —
+    # becomes the current published state.
+    _promote(snapshot)
     return snapshot
 
 
@@ -448,10 +448,11 @@ class PublishedClassification:
 def get_published_classification(game: Game) -> PublishedClassification:
     """Return the product-facing published result for one Game.
 
-    A failed current epoch never replaces the previous successful snapshot;
-    the published result stays available and is marked stale (Part E.3).
-    Games without any successful snapshot return an explicit unavailable
-    state — never 0/0/0 or an invented substitute.
+    The current snapshot — whether READY or a legitimate non-ready domain
+    status (e.g. NO_SUBMISSIONS, INSUFFICIENT_ANCHOR) — is returned.  A
+    non-READY current snapshot reports ``available=False`` with its exact
+    status, never an obsolete READY score.  Only an engine/system failure
+    retains the previous current snapshot (marked stale) as fallback.
     """
     current = (
         ClassificationSnapshot.objects.filter(game=game, is_current=True)
@@ -459,7 +460,7 @@ def get_published_classification(game: Game) -> PublishedClassification:
         .first()
     )
     if current is not None:
-        return _published_from_snapshot(current, available=True)
+        return _published_from_snapshot(current)
 
     latest = (
         ClassificationSnapshot.objects.filter(game=game)
@@ -481,11 +482,11 @@ def get_published_classification(game: Game) -> PublishedClassification:
 
 
 def _published_from_snapshot(
-    snapshot: ClassificationSnapshot, *, available: bool
+    snapshot: ClassificationSnapshot,
 ) -> PublishedClassification:
     game_id = snapshot.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
     return PublishedClassification(
-        available=available,
+        available=snapshot.status == READY,
         status=snapshot.status,
         game_id=game_id,
         calculated_at=snapshot.calculated_at,

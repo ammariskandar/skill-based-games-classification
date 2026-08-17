@@ -313,6 +313,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip the N=500/1000/1001 boundary runs.",
         )
+        parser.add_argument(
+            "--production-fidelity",
+            action="store_true",
+            help="Also run the production-fidelity reference set (B=10,000, S=20).",
+        )
 
     def handle(self, *args, **options):
         runner = SimulationRunner(
@@ -324,11 +329,15 @@ class Command(BaseCommand):
         sections.append(
             "# SBGC-65 Classification Simulation Report\n\n"
             f"Generated: {timezone.now().isoformat()}\n\n"
-            "Simulation configuration (scenario matrix): "
-            f"bootstrap={options['bootstrap']}, governance_draws={options['draws']}; "
-            f"large-N bootstrap={options['large_bootstrap']}. "
-            "Frozen production settings "
-            "(B=10,000, S=20) are exercised by the dedicated BHPCM acceptance test.\n"
+            "This report contains two distinct evidence tiers:\n\n"
+            "- **Reduced-compute structural simulation** (Sections 1-5): "
+            "branch/invariant/pathological behavior across a fast scenario "
+            f"matrix (bootstrap={options['bootstrap']}, "
+            f"governance_draws={options['draws']}, large-N "
+            f"bootstrap={options['large_bootstrap']}).\n"
+            "- **Production-fidelity reference simulation** (Section 6, "
+            "included only with `--production-fidelity`): frozen B=10,000 and "
+            "S=20, exercising the actual production mathematical semantics.\n"
         )
 
         sections.append(self._n_boundaries(runner, options))
@@ -336,12 +345,116 @@ class Command(BaseCommand):
         sections.append(self._boundary_study(runner))
         sections.append(self._resilience_study(runner))
         sections.append(self._random_invariants(runner))
+        if options["production_fidelity"]:
+            sections.append(self._production_fidelity())
 
         with open(options["output"], "w", encoding="utf-8") as handle:
             handle.write("\n\n".join(sections))
         self.stdout.write(
             self.style.SUCCESS(f"Simulation report written to {options['output']}")
         )
+
+    def _production_fidelity(self) -> str:
+        """A small production-fidelity reference set at frozen B=10,000, S=20."""
+        from classifications.calculations.bhpcm import bhpcm_calculate
+
+        lines = [
+            "## 6. Production-fidelity reference simulation (B=10,000, S=20)",
+            "",
+        ]
+        rows = [
+            [
+                "scenario",
+                "N",
+                "unified_challenge",
+                "confidence",
+                "conflict",
+                "bootstrap_valid",
+                "posterior_draws",
+            ],
+        ]
+        cases = [
+            ("perfect agreement", _identical(20, role_map={0: "superuser"})),
+            (
+                "moderate disagreement",
+                _scattered(20, seed=701, role_map={0: "superuser"}, spread=6.0),
+            ),
+            (
+                "severe expert/population conflict",
+                _scattered(18, seed=702, spread=4.0)
+                + [
+                    _sub(
+                        "expert",
+                        _p(90.0, 5.0, 5.0),
+                        _p(90.0, 5.0, 5.0),
+                        "superuser",
+                    )
+                ],
+            ),
+            (
+                "Method 2/3 divergence",
+                _scattered(15, seed=703, role_map={0: "superuser"}, spread=3.0)
+                + [
+                    _sub(f"o{i}", _p(2.0, 3.0, 95.0), _p(2.0, 3.0, 95.0))
+                    for i in range(5)
+                ],
+            ),
+            (
+                "zero-heavy profile",
+                _identical(
+                    20,
+                    role_map={0: "superuser"},
+                    challenge=_p(100.0, 0.0, 0.0),
+                    reward=_p(100.0, 0.0, 0.0),
+                ),
+            ),
+            (
+                "N=20 boundary",
+                _scattered(20, seed=704, role_map={0: "superuser"}, spread=2.0),
+            ),
+        ]
+        for label, subs in cases:
+            pop = _snap(subs)
+            m1 = method1_calculate(pop)
+            m2 = method2_calculate(pop)
+            m3 = method3_calculate(pop)
+            result = bhpcm_calculate(pop, (m1, m2, m3))
+            if result.is_ready:
+                base = confidence_base_calculate(
+                    pop,
+                    m2.raw_challenge,
+                    m2.raw_reward,
+                    m3.raw_challenge,
+                    m3.raw_reward,
+                )
+                resilience = (
+                    resilience_apply(base.level_raw, pop.raw_n)
+                    if base.level_raw is not None
+                    else None
+                )
+                confidence = round(resilience.level, 2) if resilience else None
+            else:
+                confidence = None
+            rows.append(
+                [
+                    label,
+                    str(pop.raw_n),
+                    str(result.integer_challenge),
+                    str(confidence),
+                    result.diagnostics.get("conflict_classification", ""),
+                    str(result.diagnostics.get("bootstrap_valid_count", "")),
+                    str(result.diagnostics.get("posterior_draw_count", "")),
+                ]
+            )
+        lines.append(_md_table(rows))
+        lines.append("")
+        lines.append(
+            "Each row above executed at the frozen B=10,000 and S=20 production "
+            "settings and records the actual production unified result, "
+            "confidence-after-resilience, conflict classification, and posterior "
+            "draw count."
+        )
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
 

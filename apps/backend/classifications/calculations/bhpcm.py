@@ -29,8 +29,6 @@ from classifications.calculations.constants import (
     BHPCM_LAMBDA_BETA,
     BHPCM_LAMBDA_MAX,
     BHPCM_LAMBDA_MIN,
-    BHPCM_MAX_INVALID_BOOTSTRAP_RATE,
-    BHPCM_MIN_VALID_BOOTSTRAP,
     BHPCM_OMEGA_MAX,
     BHPCM_OMEGA_MIN,
     BHPCM_VERSION,
@@ -300,8 +298,15 @@ def bhpcm_calculate(
     *,
     bootstrap_replicates: int | None = None,
     governance_draws: int | None = None,
+    stream_variant: int = 0,
 ) -> BHPCMResult:
-    """Run ``BHPCM_V1`` over the three method perspectives."""
+    """Run ``BHPCM_V1`` over the three method perspectives.
+
+    ``stream_variant`` selects the deterministic random stream.  ``0`` is the
+    canonical production stream (derived only from the population hash);
+    nonzero variants are used exclusively by the bootstrap-stability study
+    to confirm a chosen ``B`` is not passing because of one lucky sequence.
+    """
     replicates = (
         BHPCM_BOOTSTRAP_REPLICATES
         if bootstrap_replicates is None
@@ -356,8 +361,11 @@ def bhpcm_calculate(
     d0 = math.sqrt((d_c0 * d_c0 + d_r0 * d_r0) / 2.0)
     conflict = _conflict_classification(d0)
 
-    # Frozen reproducible random stream (Part B.22.1).
+    # Frozen reproducible random stream (Part B.22.1).  Variant 0 is the
+    # canonical production stream; nonzero variants are study-only.
     stream_identifier = f"BHPCM_V1:{MASTER_VERSION}:{population.population_hash}"
+    if stream_variant:
+        stream_identifier += f":{stream_variant}"
     rng = random.Random(stream_identifier)
 
     # Role-stratified index pools.
@@ -390,16 +398,12 @@ def bhpcm_calculate(
         z3s.append(joint_ilr(r3.raw_challenge, r3.raw_reward))
 
     valid = replicates - invalid
-    # Frozen production rule: >1% invalid or <9,000 jointly valid -> UNSTABLE.
-    # With injected reduced replicate counts the same rule scales: >1% invalid
-    # or <90% jointly valid of the injected count.
-    invalid_limit = BHPCM_MAX_INVALID_BOOTSTRAP_RATE * replicates
-    min_valid = (
-        BHPCM_MIN_VALID_BOOTSTRAP
-        if replicates == BHPCM_BOOTSTRAP_REPLICATES
-        else math.ceil(0.90 * replicates)
-    )
-    if invalid > invalid_limit or valid < min_valid:
+    # Bootstrap-invalid rule (frozen): a bootstrap replicate is invalid when
+    # any method returns a non-ready result for it.  UNIFIED_CALCULATION_UNSTABLE
+    # is returned exactly when more than 1% of replicates are invalid:
+    #   invalid * 100 > replicates
+    # (integer-safe; exactly 1% invalid is allowed, more than 1% is not).
+    if invalid * 100 > replicates:
         return BHPCMResult(
             status=UNIFIED_CALCULATION_UNSTABLE,
             diagnostics={

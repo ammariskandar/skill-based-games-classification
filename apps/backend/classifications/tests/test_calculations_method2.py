@@ -4,12 +4,15 @@ Method 2 (Isolation Forest) tests — SBGC-65.
 
 from __future__ import annotations
 
+import math
+
 from django.test import SimpleTestCase
 
 from classifications.calculations.method2 import (
     expected_path_adjustment,
     method2_calculate,
 )
+from classifications.calculations.profiles import analysis_values
 from classifications.calculations.results import (
     INSUFFICIENT_SAMPLE_FOR_IFOREST,
     NO_SUBMISSIONS,
@@ -152,3 +155,78 @@ class Method2BehaviorTests(SimpleTestCase):
         self.assertAlmostEqual(result.raw_reward.total(), 100.0, places=6)
         self.assertEqual(sum(result.integer_challenge), 100)
         self.assertEqual(sum(result.integer_reward), 100)
+
+
+class Method2SortedBisectEquivalenceTests(SimpleTestCase):
+    """Prove the sorted+bisect Isolation Forest is identical to the
+    specification's linear-scan partition on identical RNG streams."""
+
+    def _reference_scores(self, values, psi, height_limit, reference, dim_index):
+        """Reference linear-scan implementation (as originally specified)."""
+        import random as random_module
+
+        from classifications.calculations.constants import IFOREST_SEED
+        from classifications.calculations.method2 import expected_path_adjustment
+
+        def build(values, rng, depth):
+            if (
+                depth >= height_limit
+                or len(values) <= 1
+                or all(v == values[0] for v in values)
+            ):
+                return ("leaf", depth, len(values))
+            z_min = min(values)
+            z_max = max(values)
+            split = rng.uniform(z_min, z_max)
+            if split == z_min:
+                split = (z_min + z_max) / 2.0
+            left = [v for v in values if v < split]
+            right = [v for v in values if v >= split]
+            return (
+                "node",
+                split,
+                build(left, rng, depth + 1),
+                build(right, rng, depth + 1),
+            )
+
+        def path(tree, value):
+            node = tree
+            while True:
+                kind = node[0]
+                if kind == "leaf":
+                    return node[1] + expected_path_adjustment(node[2])
+                _, split, left, right = node
+                node = left if value < split else right
+
+        rng = random_module.Random((IFOREST_SEED * 31) + dim_index)
+        path_sums = [0.0] * len(values)
+        for _ in range(512):
+            tree = build(rng.sample(values, psi), rng, 0)
+            for i, value in enumerate(values):
+                path_sums[i] += path(tree, value)
+        return [2.0 ** (-s / 512 / reference) for s in path_sums]
+
+    def test_identical_scores_across_populations(self):
+        from classifications.calculations.constants import (
+            IFOREST_SUBSAMPLE_MAX,
+        )
+        from classifications.calculations.method2 import (
+            _dimension_scores,
+            expected_path_adjustment,
+        )
+
+        for seed in (101, 202, 303):
+            subs = scattered_submissions(30, seed=seed)
+            for dim_index in range(6):
+                values = [analysis_values(sub)[dim_index] for sub in subs]
+                psi = min(IFOREST_SUBSAMPLE_MAX, len(values))
+                height_limit = int(math.ceil(math.log2(psi)))
+                reference = expected_path_adjustment(psi)
+                fast = _dimension_scores(
+                    values, psi, height_limit, reference, dim_index
+                )
+                slow = self._reference_scores(
+                    values, psi, height_limit, reference, dim_index
+                )
+                for a, b in zip(fast, slow, strict=False):
+                    self.assertAlmostEqual(a, b, places=12)

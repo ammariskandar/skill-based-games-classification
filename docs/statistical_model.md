@@ -5508,8 +5508,17 @@ Although the judgments are subjective, the calculated method outputs depend on w
 Use a stratified nonparametric bootstrap with fixed replicate count:
 
 \[
-B=10{,}000.
+B=500.
 \]
+
+The production replicate count was selected empirically by the bootstrap
+convergence/stability study (see the SBGC-65 bootstrap-stability record)
+rather than by a predetermined gold-standard value.  ``B`` is the smallest
+value that stabilizes the displayed integer classification across the
+converged scenarios under multiple deterministic streams; a pathological
+divergence scenario whose posterior mean sits at a largest-remainder tie
+remains one-point-ambiguous at any practical ``B`` (documented, not a
+bootstrap-count deficiency).
 
 Let the role set be:
 
@@ -5564,7 +5573,7 @@ If more than 1% of bootstrap replicates are invalid for any method, the complete
 
 No unified six-point score may be published under that status.
 
-If at most 1% are invalid, discard every replicate in which at least one method is non-ready and continue with the remaining jointly valid replicates. At least 9,000 jointly valid replicates are required.
+If at most 1% are invalid, discard every replicate in which at least one method is non-ready and continue with the remaining jointly valid replicates.
 
 ## 7.5 Preservation of cross-method dependence
 
@@ -5938,7 +5947,7 @@ independent governance draws.
 The total target number of unified posterior draws is therefore:
 
 \[
-B\times S=200{,}000.
+B\times S=10{,}000.
 \]
 
 If bootstrap replicates are discarded under the invalid-replicate rule, the actual total is:
@@ -6353,7 +6362,7 @@ The following constants are frozen for this calculation version:
 | Parameter | Symbol | Value |
 |---|---:|---:|
 | Zero replacement mass | \(\delta\) | \(10^{-6}\) |
-| Bootstrap replicates | \(B\) | 10,000 |
+| Bootstrap replicates | \(B\) | 500 |
 | Governance draws per bootstrap replicate | \(S\) | 20 |
 | Method 2 population-balance Beta shape | \(a_\lambda\) | 10 |
 | Method 3 population-balance Beta shape | \(b_\lambda\) | 10 |
@@ -6365,7 +6374,6 @@ The following constants are frozen for this calculation version:
 | Expertise-weight concentration | \(\kappa_E\) | 40 |
 | Credible interval level |  | 90% |
 | Maximum invalid bootstrap rate |  | 1% |
-| Minimum valid bootstrap count |  | 9,000 |
 | Sum tolerance |  | \(10^{-9}\) |
 | Remainder-tie tolerance |  | \(10^{-12}\) |
 | Integer remainder priority |  | Micro, Macro, Mystiko |
@@ -6383,7 +6391,7 @@ The unified calculation must return exactly one status.
 Return `READY` only if:
 
 - the validated dataset permits all three methods to return ready continuous outputs;
-- at least 9,000 bootstrap replicates are jointly valid;
+- at least one jointly valid bootstrap replicate remains;
 - invalid bootstrap replicates do not exceed 1%;
 - all posterior draws are finite;
 - all back-transformed profiles are valid compositions;
@@ -6410,7 +6418,7 @@ Scores must be null.
 
 ## 21.5 `UNIFIED_CALCULATION_UNSTABLE`
 
-Return when more than 1% of bootstrap replicates fail to produce all three method outputs or when fewer than 9,000 jointly valid replicates remain.
+Return when more than 1% of bootstrap replicates fail to produce all three method outputs.
 
 Scores must be null.
 
@@ -6733,7 +6741,7 @@ Given validated dataset \(D\):
 
 2. Transform each Challenge and Reward composition using the fixed ilr basis.
 
-3. Create 10,000 role-stratified bootstrap datasets.
+3. Create 500 role-stratified bootstrap datasets.
 
 4. For each bootstrap dataset, calculate all three continuous method outputs and transform them to four-dimensional ilr vectors.
 
@@ -8940,7 +8948,7 @@ Method 3 original-data continuous output
 
 before boundary correction.
 
-The full 10,000-replicate BHPCM posterior bootstrap is **not** rerun merely to calibrate each 20-submission boundary subset. `CONFIDENCE_BASE_V1` is defined from the original-data Method 2/3 population center plus authoritative evidence and therefore can be evaluated from the three deterministic original-data method calculations. The parent Game's normal unified snapshot still requires BHPCM_V1 to be READY before a unified score/confidence is published.
+The full-production-count BHPCM posterior bootstrap is **not** rerun merely to calibrate each 20-submission boundary subset. `CONFIDENCE_BASE_V1` is defined from the original-data Method 2/3 population center plus authoritative evidence and therefore can be evaluated from the three deterministic original-data method calculations. The parent Game's normal unified snapshot still requires BHPCM_V1 to be READY before a unified score/confidence is published.
 
 For each submission \(j\in S_{20}\), define:
 
