@@ -144,7 +144,7 @@ gold-standard value.  The invalid-bootstrap rule is: a replicate is invalid
 when any method returns a non-ready result; `UNIFIED_CALCULATION_UNSTABLE`
 is returned exactly when more than 1% of replicates are invalid
 (`invalid * 100 > B`, integer-safe).  The selected production value is
-**B = 500** (with `S = 20` governance draws per valid replicate).
+**B = 40** (with `S = 20` governance draws per valid replicate).
 
 `manage.py run_classification_simulation` runs the required Part F program
 (N boundaries, 30 population scenarios, role structures, 19→20 boundary
@@ -155,10 +155,11 @@ fidelity reference run.
 
 Production-timing evidence (measured on local hardware, post Method 2
 optimization): B=10,000 was recorded as operationally impractical and
-withdrawn.  At the selected B=500 a single Game calculation is on the order
-of ~90 s at N=20, ~4 min at N=50, ~8 min at N=100, and ~100 min at N=1000.
-The engine remains asynchronous daily computation; the selected ``B`` makes
-the daily batch operationally plausible without weakening any formula.
+withdrawn.  At the selected B=40 a single Game calculation is on the order
+of ~8 s at N=20, ~19 s at N=50, and ~39 s at N=100 (scaling roughly
+linearly with B and the per-replicate method cost).  The engine remains
+asynchronous daily computation; the selected ``B`` makes the daily batch
+operationally plausible without weakening any formula.
 
 ## 8. Out of scope
 

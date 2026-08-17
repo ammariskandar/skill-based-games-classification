@@ -12,9 +12,12 @@ Requires POSTGRES_TEST_DATABASE_URL and
 
 from __future__ import annotations
 
+import threading
+
 from config.pg_testing import PostgreSQLTestCase
 from django.contrib.auth.models import User
 from django.db import IntegrityError, connection, transaction
+from django.test import TransactionTestCase
 from django.utils import timezone
 from games.models import Game, SourceType
 
@@ -198,3 +201,67 @@ class ConstraintTests(PostgreSQLTestCase):
         _snapshot(game, epoch)
         with self.assertRaises(IntegrityError):
             epoch.delete()
+
+
+class ConcurrentPromotionTests(TransactionTestCase):
+    """True two-connection/thread promotion race on PostgreSQL.
+
+    ``TransactionTestCase`` does not wrap tests in a transaction, so each
+    thread uses its own database connection and can see the other thread's
+    committed rows.  The partial-unique single-current index is the
+    last-resort guarantee: regardless of interleaving, the final state must
+    contain exactly one current snapshot.
+    """
+
+    def test_concurrent_promotion_leaves_exactly_one_current(self):
+        from django.db import connection as django_connection
+
+        if django_connection.vendor != "postgresql":
+            self.skipTest("PostgreSQL only")
+
+        game = _game("concurrent-promotion")
+        epoch = _epoch("concurrent-epoch")
+        initial = _snapshot(game, epoch)
+        initial.is_current = True
+        initial.save(update_fields=["is_current"])
+        snap_a = _snapshot(game, epoch)
+        snap_b = _snapshot(game, epoch)
+
+        barrier = threading.Barrier(2)
+        outcomes: list[str] = []
+
+        def promote(snapshot_id: int, label: str) -> None:
+            try:
+                barrier.wait(timeout=10)
+                django_connection.close()  # fresh thread-local connection
+                try:
+                    with transaction.atomic():
+                        ClassificationSnapshot.objects.select_for_update().filter(
+                            game=game, is_current=True
+                        ).update(is_current=False, is_stale=True)
+                        snap = ClassificationSnapshot.objects.get(pk=snapshot_id)
+                        snap.is_current = True
+                        snap.became_current_at = timezone.now()
+                        snap.save(update_fields=["is_current", "became_current_at"])
+                    outcomes.append(f"{label}-ok")
+                except IntegrityError:
+                    outcomes.append(f"{label}-integrity")
+            finally:
+                django_connection.close()
+
+        thread_a = threading.Thread(target=promote, args=(snap_a.pk, "a"))
+        thread_b = threading.Thread(target=promote, args=(snap_b.pk, "b"))
+        thread_a.start()
+        thread_b.start()
+        thread_a.join(timeout=30)
+        thread_b.join(timeout=30)
+
+        self.assertFalse(thread_a.is_alive())
+        self.assertFalse(thread_b.is_alive())
+        self.assertEqual(
+            ClassificationSnapshot.objects.filter(game=game, is_current=True).count(),
+            1,
+        )
+        # Exactly one current winner; the loser either serialized behind it
+        # (promoting it away) or was rejected by the unique index.
+        self.assertGreaterEqual(len(outcomes), 1)

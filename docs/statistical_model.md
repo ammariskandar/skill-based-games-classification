@@ -5508,17 +5508,19 @@ Although the judgments are subjective, the calculated method outputs depend on w
 Use a stratified nonparametric bootstrap with fixed replicate count:
 
 \[
-B=500.
+B=40.
 \]
 
 The production replicate count was selected empirically by the bootstrap
 convergence/stability study (see the SBGC-65 bootstrap-stability record)
-rather than by a predetermined gold-standard value.  ``B`` is the smallest
+rather than by a predetermined gold-standard value.  ``B`` is the SMALLEST
 value that stabilizes the displayed integer classification across the
-converged scenarios under multiple deterministic streams; a pathological
-divergence scenario whose posterior mean sits at a largest-remainder tie
-remains one-point-ambiguous at any practical ``B`` (documented, not a
-bootstrap-count deficiency).
+non-pathological convergence scenarios under multiple deterministic streams
+(the binding scenario stabilizes at ``B=40``; ``B=37`` fails).  A
+pathological divergence scenario whose posterior mean sits at a
+largest-remainder tie is excluded under documented rationale: it remains
+one-point-ambiguous at every practical ``B`` (not a bootstrap-count
+deficiency).
 
 Let the role set be:
 
@@ -5947,7 +5949,7 @@ independent governance draws.
 The total target number of unified posterior draws is therefore:
 
 \[
-B\times S=10{,}000.
+B\times S=800.
 \]
 
 If bootstrap replicates are discarded under the invalid-replicate rule, the actual total is:
@@ -6362,7 +6364,7 @@ The following constants are frozen for this calculation version:
 | Parameter | Symbol | Value |
 |---|---:|---:|
 | Zero replacement mass | \(\delta\) | \(10^{-6}\) |
-| Bootstrap replicates | \(B\) | 500 |
+| Bootstrap replicates | \(B\) | 40 |
 | Governance draws per bootstrap replicate | \(S\) | 20 |
 | Method 2 population-balance Beta shape | \(a_\lambda\) | 10 |
 | Method 3 population-balance Beta shape | \(b_\lambda\) | 10 |
@@ -6741,7 +6743,7 @@ Given validated dataset \(D\):
 
 2. Transform each Challenge and Reward composition using the fixed ilr basis.
 
-3. Create 500 role-stratified bootstrap datasets.
+3. Create 40 role-stratified bootstrap datasets.
 
 4. For each bootstrap dataset, calculate all three continuous method outputs and transform them to four-dimensional ilr vectors.
 

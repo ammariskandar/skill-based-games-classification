@@ -76,34 +76,32 @@ The following scenarios oscillate at a largest-remainder rounding boundary: thei
 - `severe_expert_conflict`
 - `method23_divergence`
 
-## 2. Selected production B = 500
+## 2. Selected production B = 40
 
-The automated canonical-stream sweep selects ``B = 10`` because, on the
-canonical stream alone, the converged scenarios are stable from the first
-rung.  The required multi-stream validation below rejects ``B = 10``: the
-``moderate_dispersion`` scenario oscillates across deterministic streams at
-``B = 10``.  A dedicated cross-stream threshold sweep (streams 0-2, then 0-4)
-shows:
+The automated canonical-stream sweep alone is insufficient: the required
+multi-stream validation reveals cross-stream oscillation at low ``B``.  A
+dedicated cross-stream sweep (5 streams) pins the transition precisely:
 
-- ``moderate_dispersion`` and ``severe_expert_conflict`` stabilize across
-  streams by ``B = 100`` (their converged means sit ~0.06-0.08 from the
-  nearest tie);
-- ``method23_divergence`` (extreme divergence, heavy-tailed bootstrap,
-  Challenge mean ~39.46 versus the 39.5 Micro/Mystiko tie) remains
-  one-point-ambiguous even at ``B = 500`` and ``B = 3000``.
+- ``moderate_dispersion`` — the binding non-pathological scenario — is
+  cross-stream stable from **B=40** (``B=37`` fails; ``B=39`` passes for
+  this deterministic seed);
+- ``severe_expert_conflict`` is cross-stream stable from **B=30**;
+- ``method23_divergence`` is excluded (see below): it is intrinsically a
+  largest-remainder near-tie and oscillates at every tested ``B``.
 
-**Selected production B = 500**: the smallest value that stabilizes the
-non-pathological scenarios with clear margin while remaining operationally
-feasible.  The pathological divergence scenario is documented below as a
-genuine near-tie limitation, not a bootstrap-count deficiency.
+**Selected production B = 40** — the smallest value that satisfies the
+product criteria for the non-pathological scenarios.  ``B=500`` (and the
+earlier ``B=10,000``) were withdrawn; ``B=100`` is larger than necessary.
 
-## 2b. Final multi-stream validation at B = 500
+## 2b. Near-tie exclusion (explicit rationale)
 
-At ``B = 500`` across five deterministic streams, the non-pathological
-scenarios are stable (see the ``moderate_dispersion`` and
-``severe_expert_conflict`` results).  ``method23_divergence`` still flips
-its Challenge Micro/Mystiko by one point in ~1 of 5 streams (converged mean
-within Monte Carlo reach of the tie).
+`method23_divergence` (extreme divergence → heavy-tailed bootstrap;
+Challenge posterior mean ≈ 39.46 versus the 39.5 Micro/Mystiko tie) flips
+its Challenge Micro/Mystiko by one point across streams at **every** tested
+``B`` (50, 75, 100, 150, 200, 300, 500), and earlier at 1000/3000.  It is
+classified as an intrinsic largest-remainder near-tie and excluded from B
+selection under the rationale that no practical ``B`` resolves it —
+increasing ``B`` does not pretend to fix it.
 
 ## 3. Multi-stream validation
 

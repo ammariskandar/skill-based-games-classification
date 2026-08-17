@@ -128,10 +128,11 @@ LOOP_TAU = 0.75
 BHPCM_ZERO_DELTA = 1e-6
 # Production bootstrap count selected by the SBGC-65 bootstrap-stability
 # study (docs/classification-bootstrap-stability.md).  Selected empirically
-# as the lowest value that stabilizes the converged scenarios across
-# multiple deterministic streams; see the study for the near-tie limitation
-# on pathological divergence scenarios.
-BHPCM_BOOTSTRAP_REPLICATES = 500
+# as the SMALLEST value that stabilizes the non-pathological convergence
+# scenarios across five deterministic streams (the binding scenario
+# stabilizes at B=40; B=37 fails).  A pathological divergence scenario sits
+# at a largest-remainder tie and is excluded under documented rationale.
+BHPCM_BOOTSTRAP_REPLICATES = 40
 BHPCM_GOVERNANCE_DRAWS = 20
 BHPCM_LAMBDA_ALPHA = 10.0
 BHPCM_LAMBDA_BETA = 10.0

@@ -2868,16 +2868,20 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   CALCULATION_ERROR, UNIFIED_CALCULATION_ERROR) retains the previous current
   snapshot as a stale fallback.
 - Ran targeted PostgreSQL 16 verification on a disposable Podman container:
-  9 new PG tests pass (migration 0006 applied, partial-unique single-current
+  10 new PG tests pass (migration 0006 applied, partial-unique single-current
   index, atomic promotion/demotion, failed-promotion rollback, uniqueness
-  constraints, epoch PROTECT); migration 0006 reverse/re-apply verified.
+  constraints, epoch PROTECT, and a two-thread concurrent-promotion test
+  proving exactly one current remains); migration 0006 reverse/re-apply
+  verified.
 - Optimized Method 2 via sorted-array + bisect tree construction (exact
   RNG/partition equivalence proven against a reference linear-scan
   implementation), ~2.9-4x faster.
 - Replaced the fixed B=10,000 gold standard with an empirical bootstrap
   convergence/stability study (docs/classification-bootstrap-stability.md):
   removed the absolute <9,000-valid rule (now only `invalid*100>B` →
-  UNSTABLE); selected production B=500 with S=20; documented the
+  UNSTABLE); selected production B=40 with S=20 — the smallest value
+  stabilizing the non-pathological scenarios across five deterministic
+  streams (binding scenario stabilizes at B=40; B=37 fails); documented the
   method23_divergence near-tie one-point ambiguity as an inherent
   limitation, not a bootstrap-count deficiency.
 - Fixed N=0 regime label to "none"; distinguished reduced structural vs

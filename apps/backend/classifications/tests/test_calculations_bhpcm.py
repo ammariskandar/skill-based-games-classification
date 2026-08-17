@@ -208,7 +208,7 @@ class BHPCMFrozenProductionSettingsTests(SimpleTestCase):
         pop = population(subs)
         result = bhpcm_calculate(pop, _methods(pop))
         self.assertEqual(result.status, READY)
-        self.assertEqual(result.diagnostics["bootstrap_target_count"], 500)
+        self.assertEqual(result.diagnostics["bootstrap_target_count"], 40)
         self.assertEqual(result.diagnostics["governance_draws_per_bootstrap"], 20)
         self.assertEqual(
             result.diagnostics["posterior_draw_count"],
