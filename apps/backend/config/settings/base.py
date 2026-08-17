@@ -200,6 +200,13 @@ STEAM_RETRY_SLEEP_MAX_SECONDS = env_str(
     env, "STEAM_RETRY_SLEEP_MAX_SECONDS", default="5"
 )
 
+# SBGC-65 — derived-classification retry coordination.
+# Seconds between retry waves for engine-failed Games inside a daily epoch.
+# Operational timing only; the mathematical engine never reads this.
+CLASSIFICATION_RETRY_DELAY_SECONDS = env_str(
+    env, "CLASSIFICATION_RETRY_DELAY_SECONDS", default="60"
+)
+
 # Logging — SBGC-43
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.
 # Production default: INFO.  Development may use DEBUG.

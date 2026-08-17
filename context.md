@@ -1868,7 +1868,7 @@ The following registry preserves every issue key/title and defines its intended 
 
 ### `SBGC-65` — Implement classification-derived values (Task)
 
-**Intended scope:** Calculate separate dominant/tied Challenge and Reward dimensions and consistent formatted/vector values for APIs and rankings.
+**Intended scope:** Implement the complete derived-classification engine governed by `docs/statistical_model.md` (STATISTICAL_MODEL_V1.0.0): Method 1 (role-aware anchored), Method 2 (Isolation Forest), Method 3 (LoOP), BHPCM_V1 unified Final Classification, provisional/full/resilience/boundary confidence, daily-epoch asynchronous calculation, versioned provenance-bearing persistence, retry coordination, notifier scaffold, read contract, and the required simulation harness. No Method 1/2/3 averaging; no manual editing of derived values.
 
 ### `SBGC-66` — Test classification rules (Task)
 
@@ -2822,6 +2822,42 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   candidates present but cannot submit on their behalf.  All earlier SBGC-64
   checks (score range/total, duplicate self-submission, edit ownership,
   invalid-update preservation) remain green.
+
+## 2026-08-17 — SBGC-65 derived-classification engine
+
+- Copied the approved master mathematical specification to
+  `docs/statistical_model.md` (byte-identical to the source,
+  `STATISTICAL_MODEL_V1.0.0`) — it is normative law for all derived
+  mathematics.
+- Implemented the pure calculation engine under
+  `classifications/calculations/`: profiles/population hashing,
+  largest-remainder reconciliation (Micro > Macro > Mystiko ties), ilr
+  composition utilities, Method 1 (anchors, 1A/1B detectors, high-N
+  redistribution), Method 2 (6 independent 1-D Isolation Forests, seed 42),
+  Method 3 (6 independent 1-D LoOP, λ=3), BHPCM_V1 (stratified bootstrap,
+  truncated-Beta governance, ilr-space posterior, conflict/sensitivity
+  disclosures), and the confidence stack (base/resilience/provisional/
+  boundary).  Engine is deterministic from the input-population hash.
+- Added versioned persistence: `CalculationEpoch`, `ClassificationSnapshot`
+  (four score sets + confidence + provenance; partial-unique one-current
+  per Game), `BoundaryCalibration`, `CalculationAttempt` (migration
+  `classifications.0006`).  Atomic promotion; previous-success fallback;
+  derived values are readonly (Admin inspection-only).
+- Added `run_daily_classification` (daily epoch, retry-only-failures,
+  max 4 attempts/Game/epoch, config-driven retry delay), the
+  `CalculationFailureNotifier` scaffold (email delivery deferred), and the
+  `get_published_classification` read contract for future AstroJS.
+- Added `run_classification_simulation` and generated
+  `docs/classification-simulation-report.md` covering the frozen N
+  boundaries, all 30 required scenarios, the 19→20 boundary study, the
+  resilience pathological study, and random-population invariants.
+- `update_submission` now bumps `updated_at` (include in update_fields) so
+  the effective submission state participates in daily-epoch cutoff
+  semantics.
+- PostgreSQL lane not freshly run for this ticket (no disposable PG 16
+  image available; not Neon) — new constraints are SQLite-verified.
+- SBGC-66 (classification-rule tests) and any calculation-version changes
+  remain out of scope.
 
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 

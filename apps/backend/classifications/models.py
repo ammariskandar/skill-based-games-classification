@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from classifications.roles import BASE_WEIGHTS, EditorialRole
 from classifications.validation import validate_score_distribution
@@ -395,8 +396,225 @@ class RewardProfile(models.Model):
                 raise ValidationError(new_dict) from exc
 
 
+# ---------------------------------------------------------------------------
+# Derived-classification persistence — SBGC-65
+#
+# Derived statistics are mathematical outputs, never editable editorial
+# inputs.  Snapshots carry full provenance; the DB is the last-resort
+# integrity layer for one-current-per-Game promotion.
+# ---------------------------------------------------------------------------
+
+
+class CalculationEpoch(models.Model):
+    """One daily calculation batch.
+
+    A scheduler (platform cron or equivalent) normally starts one epoch per
+    calendar day around 00:00 system time.  Scheduler behavior is operational;
+    the cutoff semantics are normative (Part E.1).
+    """
+
+    class Status(models.TextChoices):
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        PARTIAL = "partial", "Partial"
+
+    epoch_id = models.CharField(max_length=64, unique=True)
+    cutoff_at = models.DateTimeField()
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    master_version = models.CharField(max_length=64)
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.RUNNING
+    )
+    games_attempted = models.PositiveIntegerField(default=0)
+    games_succeeded = models.PositiveIntegerField(default=0)
+    games_failed = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-cutoff_at"]
+
+    def __str__(self) -> str:
+        return f"Calculation epoch {self.epoch_id}"
+
+
+class ClassificationSnapshot(models.Model):
+    """One immutable versioned derived-result snapshot for one Game/epoch.
+
+    Exactly one snapshot per Game is current.  A failed run never becomes
+    current; the previous successful snapshot remains the published fallback
+    and is marked stale internally (Part E.3).
+    """
+
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="classification_snapshots",
+    )
+
+    epoch = models.ForeignKey(
+        CalculationEpoch,
+        on_delete=models.PROTECT,
+        related_name="snapshots",
+    )
+
+    regime = models.CharField(max_length=16)
+    status = models.CharField(max_length=48)
+
+    input_population_hash = models.CharField(max_length=64, blank=True)
+    received_count = models.PositiveIntegerField(default=0)
+    invalid_count = models.PositiveIntegerField(default=0)
+    validated_count = models.PositiveIntegerField(default=0)
+    cutoff_at = models.DateTimeField()
+    calculated_at = models.DateTimeField(default=timezone.now)
+
+    master_version = models.CharField(max_length=64, blank=True)
+    methods_version = models.CharField(max_length=64, blank=True)
+    bhpcm_version = models.CharField(max_length=64, blank=True)
+    confidence_final_version = models.CharField(max_length=64, blank=True)
+
+    method_1_status = models.CharField(max_length=48, blank=True)
+    method_2_status = models.CharField(max_length=48, blank=True)
+    method_3_status = models.CharField(max_length=48, blank=True)
+
+    method_1_raw_challenge = models.JSONField(null=True, blank=True)
+    method_1_raw_reward = models.JSONField(null=True, blank=True)
+    method_1_integer_challenge = models.JSONField(null=True, blank=True)
+    method_1_integer_reward = models.JSONField(null=True, blank=True)
+
+    method_2_raw_challenge = models.JSONField(null=True, blank=True)
+    method_2_raw_reward = models.JSONField(null=True, blank=True)
+    method_2_integer_challenge = models.JSONField(null=True, blank=True)
+    method_2_integer_reward = models.JSONField(null=True, blank=True)
+
+    method_3_raw_challenge = models.JSONField(null=True, blank=True)
+    method_3_raw_reward = models.JSONField(null=True, blank=True)
+    method_3_integer_challenge = models.JSONField(null=True, blank=True)
+    method_3_integer_reward = models.JSONField(null=True, blank=True)
+
+    unified_raw_challenge = models.JSONField(null=True, blank=True)
+    unified_raw_reward = models.JSONField(null=True, blank=True)
+    unified_integer_challenge = models.JSONField(null=True, blank=True)
+    unified_integer_reward = models.JSONField(null=True, blank=True)
+
+    confidence_final = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
+    )
+    confidence_label = models.CharField(max_length=16, blank=True)
+    confidence_provenance = models.JSONField(default=dict, blank=True)
+    conflict_classification = models.CharField(max_length=32, blank=True)
+
+    provenance = models.JSONField(default=dict, blank=True)
+
+    is_current = models.BooleanField(default=False)
+    became_current_at = models.DateTimeField(null=True, blank=True)
+    is_stale = models.BooleanField(default=False)
+
+    attempt_count = models.PositiveIntegerField(default=1)
+    failure_category = models.CharField(max_length=48, blank=True)
+    error_summary = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["game__id", "-calculated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["game"],
+                condition=models.Q(is_current=True),
+                name="classification_snapshot_single_current_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return f"Classification snapshot for {game_id} @ {self.cutoff_at}"
+
+
+class BoundaryCalibration(models.Model):
+    """Static per-Game/per-version boundary-continuity constant (Part D3.3).
+
+    Calibrated once at the calibration moment; never silently recomputed by
+    ordinary submission activity within the same calculation version.
+    """
+
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="boundary_calibrations",
+    )
+
+    master_version = models.CharField(max_length=64)
+    status = models.CharField(max_length=48, blank=True)
+    delta = models.FloatField(default=0.0)
+    calibration_population_hash = models.CharField(max_length=64, blank=True)
+    population_size = models.PositiveIntegerField(default=0)
+    subset_count_attempted = models.PositiveIntegerField(default=0)
+    subset_count_ready = models.PositiveIntegerField(default=0)
+    sampler_version = models.CharField(max_length=64, blank=True)
+    seed_or_stream = models.CharField(max_length=256, blank=True)
+    calibrated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["game", "master_version"],
+                name="boundary_calibration_game_version_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return f"Boundary calibration for {game_id} v{self.master_version}"
+
+
+class CalculationAttempt(models.Model):
+    """One attempt (initial or retry) at calculating a Game inside an epoch.
+
+    Maximum four attempts per Game per epoch: attempt 1 = initial scheduled
+    attempt, attempts 2-4 = retries 1-3 (ticket section 9).
+    """
+
+    class Status(models.TextChoices):
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="calculation_attempts",
+    )
+
+    epoch = models.ForeignKey(
+        CalculationEpoch,
+        on_delete=models.CASCADE,
+        related_name="attempts",
+    )
+
+    attempt_number = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=16, choices=Status.choices)
+    failure_category = models.CharField(max_length=48, blank=True)
+    error_summary = models.TextField(blank=True)
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["game", "epoch", "attempt_number"],
+                name="calculation_attempt_game_epoch_number_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        epoch_id = self.epoch_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return f"Attempt {self.attempt_number} for {game_id} in epoch {epoch_id}"
+
+
 __all__ = [
+    "BoundaryCalibration",
+    "CalculationAttempt",
+    "CalculationEpoch",
     "ChallengeProfile",
+    "ClassificationSnapshot",
     "EditorialClassification",
     "EditorialGroupProfile",
     "RewardProfile",
