@@ -189,7 +189,9 @@ def update_submission(
         if updated_by is not None:
             submission.updated_by = updated_by
         submission.full_clean()
-        submission.save(update_fields=["notes", "updated_by"])
+        # ``updated_at`` must be bumped so the effective submission state
+        # participates in daily-epoch cutoff semantics (SBGC-65, Part E.2).
+        submission.save(update_fields=["notes", "updated_by", "updated_at"])
 
         if challenge is not None:
             _set_profile(submission, ChallengeProfile, "challenge_profile", challenge)

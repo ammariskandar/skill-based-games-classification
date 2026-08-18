@@ -55,6 +55,29 @@ criterion.
 | Boolean rejection | `clean_fields()` | Application only | — | ✅ | ✅ | ✅ |
 | CASCADE delete from parent | `on_delete=CASCADE` | FK constraint | ✅ | — | ✅ | ✅ |
 
+### `classifications.ClassificationSnapshot` (SBGC-65)
+
+| Invariant | Constraint | Type | DB | App | SQLite | PG |
+|-----------|-----------|------|----|-----|--------|-----|
+| At most one current snapshot per Game | `classification_snapshot_single_current_uniq` | Partial unique | ✅ | ✅ | ✅ | ⬜ |
+| `epoch` survives snapshot deletion | `ForeignKey(PROTECT)` | FK constraint | ✅ | — | ✅ | ⬜ |
+
+### `classifications.BoundaryCalibration` (SBGC-65)
+
+| Invariant | Constraint | Type | DB | App | SQLite | PG |
+|-----------|-----------|------|----|-----|--------|-----|
+| One calibration per `(game, master_version)` | `boundary_calibration_game_version_uniq` | Unique constraint | ✅ | — | ✅ | ⬜ |
+
+### `classifications.CalculationAttempt` (SBGC-65)
+
+| Invariant | Constraint | Type | DB | App | SQLite | PG |
+|-----------|-----------|------|----|-----|--------|-----|
+| One attempt per `(game, epoch, number)` | `calculation_attempt_game_epoch_number_uniq` | Unique constraint | ✅ | — | ✅ | ⬜ |
+
+SBGC-65 rows are SQLite-verified; the PostgreSQL lane was not rerun for
+this ticket (no disposable PG 16 image available; not Neon).  See
+`docs/classification-derived-calculation.md`.
+
 ## Deletion Cascade (SBGC-182)
 
 `Game` deletion cascades through **all** submissions and their profiles:
@@ -68,6 +91,9 @@ Game
 
 `updated_by` and `submitted_by` (User) are `PROTECT` and survive.  See
 `docs/game-deletion-workflow.md` and `docs/classification-submissions.md`.
+
+SBGC-65 derived snapshots, boundary calibrations, and attempts also
+cascade from `Game` (CASCADE); epochs are `PROTECT` from snapshots.
 
 ## Invalid-State Matrix
 

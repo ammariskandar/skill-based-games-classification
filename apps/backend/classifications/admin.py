@@ -16,7 +16,10 @@ from django.forms.models import BaseInlineFormSet
 from django.shortcuts import redirect
 
 from classifications.models import (
+    BoundaryCalibration,
+    CalculationEpoch,
     ChallengeProfile,
+    ClassificationSnapshot,
     EditorialClassification,
     EditorialGroupProfile,
     RewardProfile,
@@ -371,3 +374,85 @@ class EditorialUserAdmin(BaseUserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, EditorialUserAdmin)
+
+
+# ---------------------------------------------------------------------------
+# Derived-classification read-only inspection — SBGC-65
+#
+# Calculated scores, confidence, and provenance are mathematical outputs.
+# They are readonly: no admin, superuser, or form may edit them.
+# ---------------------------------------------------------------------------
+
+
+@admin.register(ClassificationSnapshot)
+class ClassificationSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        "game",
+        "regime",
+        "status",
+        "validated_count",
+        "confidence_final",
+        "confidence_label",
+        "calculated_at",
+        "is_current",
+        "is_stale",
+    )
+    list_filter = ("regime", "status", "is_current", "is_stale")
+    search_fields = ("game__name",)
+    readonly_fields = [field.name for field in ClassificationSnapshot._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CalculationEpoch)
+class CalculationEpochAdmin(admin.ModelAdmin):
+    list_display = (
+        "epoch_id",
+        "cutoff_at",
+        "status",
+        "games_attempted",
+        "games_succeeded",
+        "games_failed",
+        "completed_at",
+    )
+    list_filter = ("status",)
+    readonly_fields = [field.name for field in CalculationEpoch._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BoundaryCalibration)
+class BoundaryCalibrationAdmin(admin.ModelAdmin):
+    list_display = (
+        "game",
+        "master_version",
+        "status",
+        "delta",
+        "population_size",
+        "calibrated_at",
+    )
+    list_filter = ("status",)
+    readonly_fields = [field.name for field in BoundaryCalibration._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
