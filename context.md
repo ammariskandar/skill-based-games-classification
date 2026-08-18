@@ -2889,6 +2889,31 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   documented the deterministic per-dimension Method 2 seed derivation.
 - PostgreSQL evidence now present; SBGC-65 merge-ready pending review.
 
+## 2026-08-18 — SBGC-66 classification-rules verification
+
+- Added focused, independently derived test fixtures under
+  `classifications/tests/`: `test_method1_isolated.py` (26 — Bessel-corrected
+  sample SD, `Sn` scale, 2-of-6 whole-submission rule, population-influence
+  boundaries, anchor hierarchy, N boundaries 0/1/8/9/19/20/49/50/51/400/401,
+  high-N coefficient normalization, determinism), `test_method_independence.py`
+  (4 — role-only change affects Method 1 alone; Methods 2/3 role-insensitive;
+  all methods see full raw N; three method results + unified persist on distinct
+  fields), `test_method_divergence.py` (2 — locked a real Method 2 vs Method 3
+  divergence on a dense 3-member minority cluster, `(45,30,25)` vs `(41,28,31)`),
+  `test_n1_superuser_e2e.py` (1 — true N=1 Superuser `thenamesammaris`
+  submission → provisional READY → read contract → Admin read-only, confidence
+  ≈ 5.98), `test_admin_readonly.py` (4 — derived models fully read-only),
+  `test_validation_extremes.py` (7 — invalid source rejection + valid 100/0/0
+  extremes), `test_recalculation_status.py` (3 — hash-driven replacement,
+  engine-failure stale fallback, `NO_SUBMISSIONS` becomes current).
+- Fixed a production defect found by the tests:
+  `classifications/calculations/profiles.py::_validate_submission` crashed with
+  a `TypeError` before its `isinstance` check on non-numeric components (it
+  summed the profile before validating each component).  Now the per-component
+  numeric/finite/range checks run before the total.  No mathematics changed.
+- Documented evidence in `docs/classification-verification.md`.  No change to
+  `docs/statistical_model.md`, and B=40 remains locked.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
