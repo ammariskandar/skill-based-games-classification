@@ -133,10 +133,19 @@ Opening any classification Admin page (submission changelist, change form, or
 derived snapshot pages) reads only persisted data. It never invokes Method
 1/2/3, BHPCM, bootstrap, Confidence, the simulation, or the scheduler.
 
+## Recalculate action (SBGC-69)
+
+`EditorialClassificationAdmin` exposes a **Recalculate classifications** action.
+Selecting submission rows deduplicates to the distinct affected Games and runs
+the canonical `run_game_calculation` service exactly once per Game (a single
+manual attempt — it does not replicate the scheduled-job retry framework).
+
+Results are summarized as `ready`, `non-ready`, and `failed`. Legitimate domain
+outcomes (e.g. `NO_SUBMISSIONS`, `INSUFFICIENT_ANCHOR`) are `non-ready`, not
+failures. Derived values are never edited directly by the action.
+
 ## Out of scope
 
-- **SBGC-69** owns additional Admin actions (including any future
-  recalculation action). SBGC-68 adds no new actions.
 - **SBGC-70** owns broader Admin safety/usability (destructive confirmations,
   system-field protection, audit-visible timestamps/updaters).
 

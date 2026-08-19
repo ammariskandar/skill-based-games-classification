@@ -1,13 +1,14 @@
 """
-Django Admin registration for the Game model — SBGC-45 / SBGC-56 / SBGC-67.
+Django Admin registration for the Game model — SBGC-45 / SBGC-56 / SBGC-67 / SBGC-69.
 """
 
 from classifications.models import ClassificationSnapshot
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Prefetch
 
 from games.forms import GameForm
-from games.models import Game, SourceType
+from games.models import Game, ListingStatus, SourceType
 from games.services.imports.steam import (
     SteamGameRefreshStatus,
     SteamRefreshError,
@@ -36,6 +37,39 @@ def _build_steam_refresh_service():
     client = SteamClient(steam_client_config_from_settings())
     foundation = SteamImportFoundation(SteamAppDetailsAdapter(client))
     return SteamGameRefreshService(foundation, SteamGamePersistenceService())
+
+
+def _apply_listing_status(
+    modeladmin, request, queryset, target: str, verb: str
+) -> None:
+    """Transition selected Games to *target* listing status via full validation.
+
+    Only changes the editorial ``listing_status``; it never touches source
+    identity, content type, classifications, or other metadata.  Games already
+    in the target state are skipped, and a Game that fails ``full_clean()`` is
+    skipped without partial mutation.
+    """
+    updated = 0
+    skipped = 0
+    for game in queryset:
+        if game.listing_status == target:
+            skipped += 1
+            continue
+        try:
+            game.listing_status = target
+            game.full_clean()
+            game.save()
+        except ValidationError:
+            skipped += 1
+            continue
+        updated += 1
+
+    level = messages.SUCCESS if updated else messages.WARNING
+    modeladmin.message_user(
+        request,
+        f"{updated} Games {verb}; {skipped} skipped.",
+        level=level,
+    )
 
 
 @admin.register(Game)
@@ -188,14 +222,39 @@ class GameAdmin(admin.ModelAdmin):
             return f"Ready · {label}"
         return snapshot.status
 
-    actions = ("refresh_from_steam",)
+    actions = (
+        "publish_selected",
+        "hide_selected",
+        "archive_selected",
+        "refresh_from_steam",
+    )
+
+    @admin.action(description="Publish selected Games")
+    def publish_selected(self, request, queryset):
+        """Publish eligible selected Games (listing_status → published)."""
+        _apply_listing_status(
+            self, request, queryset, ListingStatus.PUBLISHED, "published"
+        )
+
+    @admin.action(description="Hide selected Games")
+    def hide_selected(self, request, queryset):
+        """Hide selected Games (listing_status → draft)."""
+        _apply_listing_status(self, request, queryset, ListingStatus.DRAFT, "hidden")
+
+    @admin.action(description="Archive selected Games")
+    def archive_selected(self, request, queryset):
+        """Archive selected Games (listing_status → archived)."""
+        _apply_listing_status(
+            self, request, queryset, ListingStatus.ARCHIVED, "archived"
+        )
 
     def get_actions(self, request):
         """Keep only deliberate, source-safe actions for Games (SBGC-182).
 
         The default ``delete_selected`` bulk action is disabled so canonical
         Game deletion is a deliberate single-object operation with its
-        confirmation and cascade summary.  ``refresh_from_steam`` remains.
+        confirmation and cascade summary.  Publish/hide/archive and
+        ``refresh_from_steam`` remain.
         """
         actions = super().get_actions(request)
         actions.pop("delete_selected", None)

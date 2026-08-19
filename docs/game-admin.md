@@ -126,9 +126,22 @@ Classification **administration** (forms, diagnostics, actions) is owned by
 
 ## Additional Admin actions
 
-New bulk actions (bulk publish/archive, batch refresh, batch calculate) are
-**out of scope** and deferred to **SBGC-69**. Only the existing
-`refresh_from_steam` action remains.
+`GameAdmin` exposes four bulk actions:
+
+| Action | Effect | Eligibility |
+|--------|--------|-------------|
+| Publish selected Games | `listing_status → published` | skips already-published records |
+| Hide selected Games | `listing_status → draft` | skips already-draft records |
+| Archive selected Games | `listing_status → archived` | skips already-archived records |
+| Refresh Steam metadata | calls the canonical `SteamGameRefreshService` | Steam only; Manual records skipped |
+
+Publish/hide/archive only change the editorial `listing_status`; they never
+mutate source identity, content type, classifications, or other metadata.
+Each transition runs `full_clean()` before `save()`, so an invalid Game is
+skipped without partial mutation.
+
+`delete_selected` bulk deletion remains disabled (single-object cascade delete
+is the canonical deletion path).
 
 ## Human verification
 

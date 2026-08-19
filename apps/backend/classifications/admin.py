@@ -1,6 +1,6 @@
 """
 Django Admin registration for editorial classification submissions and
-editorial Group role metadata — SBGC-46 / SBGC-63.
+editorial Group role metadata — SBGC-46 / SBGC-63 / SBGC-69.
 """
 
 import json
@@ -14,7 +14,10 @@ from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
 from django.shortcuts import redirect
+from django.utils import timezone
+from games.models import Game
 
+from classifications.calculations.constants import MASTER_VERSION
 from classifications.models import (
     BoundaryCalibration,
     CalculationEpoch,
@@ -376,6 +379,77 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
             obj.submitted_role = role
             obj.submitted_base_weight = BASE_WEIGHTS[role]
         super().save_model(request, obj, form, change)
+
+    actions = ("recalculate_classifications",)
+
+    @admin.action(description="Recalculate classifications")
+    def recalculate_classifications(self, request, queryset):
+        """Recalculate the selected Games once each via the canonical engine.
+
+        Duplicate selected submissions for the same Game are deduplicated so
+        each affected Game is calculated exactly once.  This is an
+        operator-triggered single attempt — it does not replicate the
+        scheduled-job retry framework.
+        """
+        from classifications.services.calculations import run_game_calculation
+
+        game_ids = list(queryset.values_list("game_id", flat=True).distinct())
+        if not game_ids:
+            self.message_user(request, "No games selected.", level=messages.WARNING)
+            return
+
+        cutoff = timezone.now()
+        epoch = CalculationEpoch.objects.create(
+            epoch_id=f"manual-{cutoff:%Y%m%d-%H%M%S-%f}",
+            cutoff_at=cutoff,
+            master_version=MASTER_VERSION,
+            status=CalculationEpoch.Status.RUNNING,
+        )
+
+        ready = non_ready = failed = 0
+        for game in Game.objects.filter(pk__in=game_ids):
+            try:
+                run_game_calculation(
+                    game=game,
+                    epoch=epoch,
+                    attempt_number=1,
+                    cutoff_at=cutoff,
+                )
+            except Exception:
+                failed += 1
+                continue
+            snapshot = ClassificationSnapshot.objects.filter(
+                game=game, epoch=epoch, is_current=True
+            ).first()
+            if snapshot is not None and snapshot.status == "READY":
+                ready += 1
+            else:
+                non_ready += 1
+
+        epoch.status = CalculationEpoch.Status.COMPLETED
+        epoch.games_attempted = len(game_ids)
+        epoch.games_succeeded = ready + non_ready
+        epoch.games_failed = failed
+        epoch.completed_at = timezone.now()
+        epoch.save(
+            update_fields=[
+                "status",
+                "games_attempted",
+                "games_succeeded",
+                "games_failed",
+                "completed_at",
+            ]
+        )
+
+        parts = [f"{ready} ready", f"{non_ready} non-ready"]
+        if failed:
+            parts.append(f"{failed} failed")
+        level = messages.SUCCESS if not failed else messages.WARNING
+        self.message_user(
+            request,
+            f"Recalculation complete: {', '.join(parts)}.",
+            level=level,
+        )
 
 
 class EditorialGroupProfileInline(admin.StackedInline):
