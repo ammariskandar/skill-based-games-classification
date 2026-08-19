@@ -1,8 +1,10 @@
 """
-Django Admin registration for the Game model — SBGC-45 / SBGC-56.
+Django Admin registration for the Game model — SBGC-45 / SBGC-56 / SBGC-67.
 """
 
+from classifications.models import ClassificationSnapshot
 from django.contrib import admin, messages
+from django.db.models import Count, Prefetch
 
 from games.forms import GameForm
 from games.models import Game, SourceType
@@ -46,6 +48,9 @@ class GameAdmin(admin.ModelAdmin):
         "external_id",
         "content_type",
         "listing_status",
+        "developer",
+        "submission_count",
+        "classification_status",
         "updated_at",
     )
 
@@ -59,6 +64,45 @@ class GameAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "external_id",
+        "developer",
+    )
+
+    ordering = ("name", "id")
+
+    fieldsets = (
+        (
+            "Identity",
+            {
+                "fields": (
+                    "name",
+                    "slug",
+                    "source_type",
+                    "external_id",
+                    "content_type",
+                ),
+            },
+        ),
+        ("Publication", {"fields": ("listing_status",)}),
+        (
+            "Manual / editorial metadata",
+            {
+                "fields": (
+                    "release_date",
+                    "developer",
+                    "manual_description",
+                    "manual_image_url",
+                    "manual_website_url",
+                ),
+            },
+        ),
+        ("Steam metadata", {"fields": ("steam_image_url", "last_steam_refresh_at")}),
+        (
+            "System",
+            {
+                "fields": ("display_identity", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
     prepopulated_fields = {
@@ -104,6 +148,45 @@ class GameAdmin(admin.ModelAdmin):
             if obj.is_steam:
                 readonly.extend(("name", "content_type"))
         return readonly
+
+    def get_queryset(self, request):
+        """Precompute the two derived changelist columns.
+
+        ``_submission_count`` is a reverse-count of editorial submissions;
+        ``_current_snapshot`` prefetches the single current classification
+        snapshot (if any) so the changelist does not issue N+1 queries.
+        """
+        queryset = super().get_queryset(request)
+        return queryset.annotate(
+            _submission_count=Count("editorial_classification"),
+        ).prefetch_related(
+            Prefetch(
+                "classification_snapshots",
+                queryset=ClassificationSnapshot.objects.filter(is_current=True),
+                to_attr="_current_snapshot",
+            ),
+        )
+
+    @admin.display(description="Submissions", ordering="_submission_count")
+    def submission_count(self, obj):
+        return obj._submission_count
+
+    @admin.display(description="Classification")
+    def classification_status(self, obj):
+        """Readonly current Final Classification status.
+
+        This is a persisted read — it never triggers a statistical
+        calculation.  Classification administration itself is owned by
+        SBGC-68; this only surfaces the current published status.
+        """
+        snapshots = getattr(obj, "_current_snapshot", None) or []
+        snapshot = snapshots[0] if snapshots else None
+        if snapshot is None:
+            return "—"
+        if snapshot.status == "READY":
+            label = snapshot.confidence_label or "Ready"
+            return f"Ready · {label}"
+        return snapshot.status
 
     actions = ("refresh_from_steam",)
 

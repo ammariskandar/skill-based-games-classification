@@ -2942,6 +2942,33 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   `docs/agents/issue-tracker.md`; this repo's spec source is `context.md` +
   Jira references).  Agent-configuration only.
 
+## 2026-08-19 — SBGC-67 Game administration
+
+- Refactored `GameAdmin` into coherent fieldsets (Identity / Publication /
+  Manual & editorial metadata / Steam metadata / System-collapsed); expanded
+  search to include `developer`; added deterministic `ordering` and focused
+  filters; enriched the changelist with `developer`, `submission_count`, and a
+  read-only `classification_status` (current Final Classification status +
+  Confidence Level via a prefetch — no recalculation, no N+1).
+- Preserved all established domain rules: source identity immutability,
+  Steam-owned `name`/`content_type` readonly, manual/editorial metadata
+  editable for both sources, `steam_image_url`/`last_steam_refresh_at`
+  readonly, single-object delete with cascade summary and `delete_selected`
+  disabled, and `refresh_from_steam` as the only action.
+- No model/schema changes, no migrations.  Added focused tests
+  (`games/tests/test_admin_config.py`, 14 tests) for changelist columns,
+  search, filters, ordering, and fieldsets; existing admin validation/delete
+  tests remain green.  Documented in `docs/game-admin.md`.  SBGC-68
+  (classification administration) and SBGC-69 (additional Admin actions)
+  remain out of scope.
+
+## 2026-08-19 — SBGC-67 Game administration (human validation PASS)
+
+- Human Admin verification completed on local SQLite: all five checks passed
+  (changelist columns/search/filters; Manual edit matrix; Steam edit matrix;
+  clean operator copy + validation; single-object delete with cascade summary
+  and no bulk delete).  No production code changed during closure.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
