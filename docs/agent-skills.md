@@ -123,7 +123,11 @@ note:
 | `writing-for-agents` | `skills/productivity/writing-for-agents/` | `.agents/skills/writing-for-agents/` | `SKILL-MECHANICS.md` |
 | `wizard` | `skills/engineering/wizard/` | `.agents/skills/wizard/` | `template.sh` |
 
-- Modified locally: **No** (byte-identical to upstream).
+- Modified locally: **Yes** — `code-review/SKILL.md` only. Its upstream
+  frontmatter used an unquoted `description` containing `axes: Standards` (a
+  colon followed by a space), which is invalid YAML and broke skill discovery.
+  The description was re-encoded as a folded block scalar (`>-`); the text is
+  unchanged. All other seven skills remain byte-identical to upstream.
 - The per-skill `agents/openai.yaml` files were **omitted** — they are OpenAI
   platform metadata (`display_name` / `short_description`) not referenced by
   any `SKILL.md` and not part of the Zed Agent Skills format.
