@@ -2999,6 +2999,31 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
 - `BoundaryCalibration` is empty for the current low-N test population —
   expected/not applicable, not a defect.  No production code changed.
 
+## 2026-08-19 — SBGC-69 Admin actions
+
+- Added GameAdmin bulk actions: Publish / Hide / Archive selected Games
+  (thin `listing_status` transitions via `full_clean()` + `save()`, never
+  touching source identity/content type/classifications).  `refresh_from_steam`
+  reused as-is (already correct from SBGC-56); `delete_selected` stays
+  disabled.
+- Added `EditorialClassificationAdmin` **Recalculate classifications** action:
+  deduplicates selected submissions to distinct Games, creates a manual epoch,
+  and runs the canonical `run_game_calculation` service once per Game (no
+  retry/scheduler logic).  Summarizes ready / non-ready / failed; legitimate
+  domain outcomes are non-ready, not failures.
+- Added focused tests (`games/tests/test_admin_actions.py` 6,
+  `classifications/tests/test_admin_actions.py` 6); affected Admin/service
+  neighborhood 189 tests green.  Documented in `docs/game-admin.md` and
+  `docs/classification-admin.md`.  No migrations, no schema change.
+
+## 2026-08-19 — SBGC-69 Admin actions (human validation PASS)
+
+- Human Admin verification completed on local SQLite: all four checks passed
+  (Publish/Hide/Archive transitions + messages; Steam refresh processes Steam
+  and skips Manual; classification recalculation updates the current snapshot
+  with no duplicate run; bulk delete still absent and derived Final fields
+  still read-only).  No production code changed.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
