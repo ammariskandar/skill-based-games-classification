@@ -121,7 +121,7 @@ def _validate_submission(submission: SubmissionRecord) -> None:
         ("challenge", submission.challenge),
         ("reward", submission.reward),
     ):
-        total = profile.total()
+        components = (profile.micro, profile.macro, profile.mystiko)
         for name, value in (
             ("micro", profile.micro),
             ("macro", profile.macro),
@@ -133,6 +133,7 @@ def _validate_submission(submission: SubmissionRecord) -> None:
                 raise CalculationInvariantError(f"{label} {name} is not finite")
             if value < 0 or value > 100:
                 raise CalculationInvariantError(f"{label} {name} out of range")
+        total = sum(components)
         if total != total or total in (float("inf"), float("-inf")):
             raise CalculationInvariantError(f"{label} total is not finite")
         if abs(total - 100) > 1e-9:
