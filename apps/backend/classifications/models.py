@@ -282,6 +282,34 @@ class ChallengeProfile(models.Model):
             macro_score=self.macro_score,
         )
 
+    @property
+    def total(self) -> int | None:
+        """Sum of the three component scores (must be exactly 100)."""
+        if None in (self.micro_score, self.mystiko_score, self.macro_score):
+            return None
+        return self.micro_score + self.mystiko_score + self.macro_score
+
+    @property
+    def dominant_display(self) -> str:
+        """Human-readable dominant dimension, including tie display.
+
+        Computed directly (no validation) so it never raises while an inline
+        form is being edited.  The authoritative, validating helper is
+        ``dominant_skill_category``.
+        """
+        labels = {
+            "Micro": self.micro_score,
+            "Mystiko": self.mystiko_score,
+            "Macro": self.macro_score,
+        }
+        if None in labels.values():
+            return "—"
+        highest = max(labels.values())
+        tied = [name for name, value in labels.items() if value == highest]
+        if len(tied) == 1:
+            return tied[0]
+        return " / ".join(tied) + " tie"
+
     def clean_fields(self, exclude=None):
         _reject_boolean_scores(self, "Challenge")
         super().clean_fields(exclude=exclude)
@@ -369,6 +397,34 @@ class RewardProfile(models.Model):
             mystiko_score=self.mystiko_score,
             macro_score=self.macro_score,
         )
+
+    @property
+    def total(self) -> int | None:
+        """Sum of the three component scores (must be exactly 100)."""
+        if None in (self.micro_score, self.mystiko_score, self.macro_score):
+            return None
+        return self.micro_score + self.mystiko_score + self.macro_score
+
+    @property
+    def dominant_display(self) -> str:
+        """Human-readable dominant dimension, including tie display.
+
+        Computed directly (no validation) so it never raises while an inline
+        form is being edited.  The authoritative, validating helper is
+        ``dominant_skill_category``.
+        """
+        labels = {
+            "Micro": self.micro_score,
+            "Mystiko": self.mystiko_score,
+            "Macro": self.macro_score,
+        }
+        if None in labels.values():
+            return "—"
+        highest = max(labels.values())
+        tied = [name for name, value in labels.items() if value == highest]
+        if len(tied) == 1:
+            return tied[0]
+        return " / ".join(tied) + " tie"
 
     def clean_fields(self, exclude=None):
         _reject_boolean_scores(self, "Reward")

@@ -32,6 +32,24 @@ from classifications.services.submissions import (
 )
 
 
+def _format_integer_profile(value) -> str:
+    """Format a ``[micro, macro, mystiko]`` JSON profile for display."""
+    if not value or len(value) != 3:
+        return "—"
+    micro, macro, mystiko = value
+    return f"{micro} / {macro} / {mystiko}"
+
+
+def _method_summary(obj, prefix: str) -> str:
+    """Format one method's status plus Challenge/Reward integer profiles."""
+    status = getattr(obj, f"{prefix}_status")
+    if not status:
+        return "—"
+    challenge = _format_integer_profile(getattr(obj, f"{prefix}_integer_challenge"))
+    reward = _format_integer_profile(getattr(obj, f"{prefix}_integer_reward"))
+    return f"{status} · C {challenge} · R {reward}"
+
+
 class _RequiredSingleProfileFormSet(BaseInlineFormSet):
     """Base formset enforcing exactly one active (non-deleted, non-empty) form."""
 
@@ -87,6 +105,14 @@ class ChallengeProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name = "Challenge Profile"
     verbose_name_plural = "Challenge Profile"
+    readonly_fields = ("total", "dominant_display")
+    fields = (
+        "micro_score",
+        "mystiko_score",
+        "macro_score",
+        "total",
+        "dominant_display",
+    )
 
 
 class RewardProfileInline(admin.StackedInline):
@@ -98,6 +124,14 @@ class RewardProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name = "Reward Profile"
     verbose_name_plural = "Reward Profile"
+    readonly_fields = ("total", "dominant_display")
+    fields = (
+        "micro_score",
+        "mystiko_score",
+        "macro_score",
+        "total",
+        "dominant_display",
+    )
 
 
 class EditorialClassificationAdminForm(forms.ModelForm):
@@ -178,10 +212,17 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
         "game",
         "submitted_by",
         "submitted_role",
-        "challenge_summary",
-        "reward_summary",
-        "updated_by",
+        "challenge_dominant",
+        "challenge_total",
+        "reward_dominant",
+        "reward_total",
         "updated_at",
+    )
+
+    list_filter = (
+        "submitted_role",
+        "game__source_type",
+        "game__content_type",
     )
 
     search_fields = (
@@ -202,6 +243,8 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
         "game",
         "submitted_by",
         "updated_by",
+        "challenge_profile",
+        "reward_profile",
     )
 
     def get_readonly_fields(self, request, obj=None):
@@ -242,23 +285,33 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
                 )
         return super().changeform_view(request, object_id, form_url, extra_context)
 
-    @admin.display(description="Challenge")
-    def challenge_summary(self, obj):
+    @admin.display(description="Challenge dominant")
+    def challenge_dominant(self, obj):
         profile = getattr(obj, "challenge_profile", None)
         if profile is None:
             return "—"
-        return (
-            f"{profile.micro_score} / {profile.mystiko_score} / {profile.macro_score}"
-        )
+        return profile.dominant_display
 
-    @admin.display(description="Reward")
-    def reward_summary(self, obj):
+    @admin.display(description="Challenge total")
+    def challenge_total(self, obj):
+        profile = getattr(obj, "challenge_profile", None)
+        if profile is None:
+            return "—"
+        return profile.total
+
+    @admin.display(description="Reward dominant")
+    def reward_dominant(self, obj):
         profile = getattr(obj, "reward_profile", None)
         if profile is None:
             return "—"
-        return (
-            f"{profile.micro_score} / {profile.mystiko_score} / {profile.macro_score}"
-        )
+        return profile.dominant_display
+
+    @admin.display(description="Reward total")
+    def reward_total(self, obj):
+        profile = getattr(obj, "reward_profile", None)
+        if profile is None:
+            return "—"
+        return profile.total
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj, change=change, **kwargs)
@@ -388,18 +441,92 @@ admin.site.register(User, EditorialUserAdmin)
 class ClassificationSnapshotAdmin(admin.ModelAdmin):
     list_display = (
         "game",
-        "regime",
         "status",
+        "regime",
         "validated_count",
+        "final_challenge",
+        "final_reward",
         "confidence_final",
         "confidence_label",
         "calculated_at",
         "is_current",
-        "is_stale",
     )
     list_filter = ("regime", "status", "is_current", "is_stale")
     search_fields = ("game__name",)
-    readonly_fields = [field.name for field in ClassificationSnapshot._meta.fields]
+    list_select_related = ("game",)
+    readonly_fields = [field.name for field in ClassificationSnapshot._meta.fields] + [
+        "final_challenge",
+        "final_reward",
+        "method_1_summary",
+        "method_2_summary",
+        "method_3_summary",
+    ]
+
+    fieldsets = (
+        (
+            "Final Classification",
+            {
+                "fields": (
+                    "game",
+                    "status",
+                    "regime",
+                    "validated_count",
+                    "final_challenge",
+                    "final_reward",
+                    "confidence_final",
+                    "confidence_label",
+                ),
+            },
+        ),
+        (
+            "Method diagnostics",
+            {
+                "fields": (
+                    "method_1_summary",
+                    "method_2_summary",
+                    "method_3_summary",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Timing & provenance",
+            {
+                "fields": (
+                    "calculated_at",
+                    "cutoff_at",
+                    "is_current",
+                    "is_stale",
+                    "master_version",
+                    "methods_version",
+                    "bhpcm_version",
+                    "confidence_final_version",
+                    "input_population_hash",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    @admin.display(description="Final Challenge")
+    def final_challenge(self, obj):
+        return _format_integer_profile(obj.unified_integer_challenge)
+
+    @admin.display(description="Final Reward")
+    def final_reward(self, obj):
+        return _format_integer_profile(obj.unified_integer_reward)
+
+    @admin.display(description="Method 1")
+    def method_1_summary(self, obj):
+        return _method_summary(obj, "method_1")
+
+    @admin.display(description="Method 2")
+    def method_2_summary(self, obj):
+        return _method_summary(obj, "method_2")
+
+    @admin.display(description="Method 3")
+    def method_3_summary(self, obj):
+        return _method_summary(obj, "method_3")
 
     def has_add_permission(self, request):
         return False
