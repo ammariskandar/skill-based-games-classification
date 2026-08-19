@@ -139,3 +139,23 @@ derived snapshot pages) reads only persisted data. It never invokes Method
   recalculation action). SBGC-68 adds no new actions.
 - **SBGC-70** owns broader Admin safety/usability (destructive confirmations,
   system-field protection, audit-visible timestamps/updaters).
+
+## Human verification
+
+Completed on local SQLite. All five checks passed (5/5):
+
+1. Classification changelist — columns, search, and role/source/content
+   filters correct.
+2. Existing submission — Challenge/Reward profiles grouped, three scores,
+   total = 100, and dominant dimension correct.
+3. Validation — invalid total 99 rejected cleanly with the exact-100 error;
+   no invalid persistence; valid value restores.
+4. Provenance — `submitted_by`, `submitted_role`, and `submitted_base_weight`
+   readonly on existing submissions.
+5. Final Classification — derived result visible after the real calculation
+   path; Final Challenge/Reward/Confidence clear; Method outputs
+   distinguishable; all derived fields read-only.
+
+`BoundaryCalibration` rows are empty for the current low-N human-test
+population. This is expected and not applicable (no boundary calibration is
+required for the current case), not a defect.

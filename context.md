@@ -2990,6 +2990,15 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   `docs/classification-admin.md`.  SBGC-69 (actions) and SBGC-70 (safety)
   remain out of scope.  No model/schema changes, no migrations.
 
+## 2026-08-19 — SBGC-68 Classification administration (human validation PASS)
+
+- Human Admin verification completed on local SQLite: all five checks passed
+  (changelist columns/search/filters; submission profile grouping + total +
+  dominant; invalid total 99 cleanly rejected; provenance readonly; Final
+  Classification read-only with distinguishable Method outputs).
+- `BoundaryCalibration` is empty for the current low-N test population —
+  expected/not applicable, not a defect.  No production code changed.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
