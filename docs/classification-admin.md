@@ -144,6 +144,10 @@ Results are summarized as `ready`, `non-ready`, and `failed`. Legitimate domain
 outcomes (e.g. `NO_SUBMISSIONS`, `INSUFFICIENT_ANCHOR`) are `non-ready`, not
 failures. Derived values are never edited directly by the action.
 
+Human verification confirmed the action: selecting a submission triggers
+exactly one recalculation for the affected Game, the current snapshot updates,
+and no duplicate recalculation occurs.
+
 ## Out of scope
 
 - **SBGC-70** owns broader Admin safety/usability (destructive confirmations,

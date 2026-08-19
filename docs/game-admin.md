@@ -143,6 +143,19 @@ skipped without partial mutation.
 `delete_selected` bulk deletion remains disabled (single-object cascade delete
 is the canonical deletion path).
 
+### Action validation
+
+Human verification completed on local SQLite. The four SBGC-69 checks passed:
+
+1. Publish / Hide / Archive — disposable Games transitioned correctly with
+   correct summary messages.
+2. Steam refresh — Steam processed, Manual skipped, no source/manual metadata
+   regression.
+3. Classification recalculation — affected Game recalculated, current
+   snapshot updated, no duplicate recalculation.
+4. Safety regression — bulk delete still absent; derived Final Classification
+   fields still read-only.
+
 ## Human verification
 
 Completed on local SQLite. All five checks passed (5/5):

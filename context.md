@@ -3016,6 +3016,14 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   neighborhood 189 tests green.  Documented in `docs/game-admin.md` and
   `docs/classification-admin.md`.  No migrations, no schema change.
 
+## 2026-08-19 — SBGC-69 Admin actions (human validation PASS)
+
+- Human Admin verification completed on local SQLite: all four checks passed
+  (Publish/Hide/Archive transitions + messages; Steam refresh processes Steam
+  and skips Manual; classification recalculation updates the current snapshot
+  with no duplicate run; bulk delete still absent and derived Final fields
+  still read-only).  No production code changed.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
