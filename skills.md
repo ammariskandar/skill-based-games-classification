@@ -24,9 +24,11 @@ applies_to:
 
 ## On-demand agent skills
 
-This repository ships two on-demand skills under `.agents/skills/` (discovered
+This repository ships on-demand skills under `.agents/skills/` (discovered
 automatically by Zed).  Load them only when their trigger applies; do not copy
 their bodies into always-loaded context.
+
+Core hygiene:
 
 - For large tool/file-reading, search, Git inspection, or command-output
   operations, load the **token-efficiency** skill
@@ -36,6 +38,23 @@ their bodies into always-loaded context.
   (`.agents/skills/unslop/SKILL.md`).  Unslop must not rewrite source code,
   mathematical formulas, test fixtures, machine contracts, migrations, exact
   command output, quotations, or canonical statistical constants.
+
+Engineering / reasoning:
+
+- bug/failure investigation → **diagnosing-bugs**;
+- pre-merge/audit review → **code-review**;
+- domain concept/model design → **domain-modeling**;
+- module/service architecture → **codebase-design**;
+- external technical uncertainty → **research**.
+
+Continuity / documentation:
+
+- context-compaction/work transfer → **handoff**;
+- large agent-facing docs → **writing-for-agents**;
+- manual human operational verification → **wizard**.
+
+Each skill lives at `.agents/skills/<name>/SKILL.md`.  This list is a pointer
+only; full instructions load when the skill is invoked.
 
 ## 1. Purpose
 

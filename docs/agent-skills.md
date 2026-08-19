@@ -1,31 +1,82 @@
 # Agent Skills — Vendored Skill Registry
 
-This repository ships two **on-demand** agent skills under `.agents/skills/`.
-They are project-local and version-controlled, so any collaborator gets them
+This repository ships **on-demand** agent skills under `.agents/skills/`. They
+are project-local and version-controlled, so any collaborator gets them
 automatically. Zed discovers skills in `.agents/skills/<name>/SKILL.md`
 automatically; the bodies are **not** copied into always-loaded context.
 
 This file records provenance and maintenance instructions only. It
 intentionally does **not** duplicate the skill bodies.
 
-## Skills
+## Installed inventory
+
+### Core agent hygiene
 
 | Skill | Path | Purpose |
 |-------|------|---------|
 | `token-efficiency` | `.agents/skills/token-efficiency/SKILL.md` | Reduce token/tool-output waste during search, file reads, Git inspection, and command output. |
 | `unslop` | `.agents/skills/unslop/SKILL.md` | Remove AI-writing patterns from human-facing prose (docs, Jira/PR summaries, handovers, README, Admin/user copy). |
 
+### Engineering / reasoning
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| `diagnosing-bugs` | `.agents/skills/diagnosing-bugs/SKILL.md` | Diagnosis loop for hard bugs and performance regressions. |
+| `code-review` | `.agents/skills/code-review/SKILL.md` | Review changes since a fixed point along Standards and Spec axes. |
+| `domain-modeling` | `.agents/skills/domain-modeling/SKILL.md` | Build/sharpen the project's domain model and ADR/context records. |
+| `codebase-design` | `.agents/skills/codebase-design/SKILL.md` | Deep-module design vocabulary: interfaces, seams, dependency direction. |
+| `research` | `.agents/skills/research/SKILL.md` | Investigate a question against primary sources; write source-backed notes. |
+
+### Continuity / documentation
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| `handoff` | `.agents/skills/handoff/SKILL.md` | Compact a conversation into a handoff document for another agent. |
+| `writing-for-agents` | `.agents/skills/writing-for-agents/SKILL.md` | Writing skills / AGENTS.md / agent-facing docs with progressive disclosure. |
+| `wizard` | `.agents/skills/wizard/SKILL.md` | Generate an interactive bash wizard for human-only manual steps. |
+
 ## Routing (when to load each)
 
-- **`token-efficiency`** — for large tool/file-reading operations, search,
-  Git summary-first inspection, and command-output filtering.
-- **`unslop`** — for substantial human-facing prose/documentation, when
-  producing or substantially editing copy that should read as human.
+- **`token-efficiency`** — large tool/file-reading, search, Git summary-first
+  inspection, command-output filtering.
+- **`unslop`** — substantial human-facing prose/documentation.
+- **`diagnosing-bugs`** — reproducing defects, failing tests, unexpected
+  runtime behavior, symptom-vs-cause.
+- **`code-review`** — pre-merge/audit review of a branch, PR, or ticket.
+- **`domain-modeling`** — introducing/changing domain concepts, models,
+  statuses, terminology, ownership.
+- **`codebase-design`** — substantial new modules/services, dependency
+  direction, seams, interface design.
+- **`research`** — external/upstream documentation or semantics are uncertain.
+- **`handoff`** — context compaction or transferring work between agents.
+- **`writing-for-agents`** — agent-facing docs, handovers, AGENTS.md guidance.
+- **`wizard`** — concise manual human operational verification (Admin,
+  Postman, local checks, one-off setup).
 
-Neither skill is unconditionally loaded. `unslop` is explicitly **not**
-applied to source code, mathematical formulas, test fixtures, JSON/YAML
-machine contracts, migrations, exact command output, quotations, or canonical
+None are unconditionally loaded. `unslop` is explicitly **not** applied to
+source code, mathematical formulas, test fixtures, JSON/YAML machine
+contracts, migrations, exact command output, quotations, or canonical
 statistical constants.
+
+## Local overrides / precedence
+
+Project rules always take precedence. In particular:
+
+- **Repository evidence wins** over upstream skill assumptions.
+- `docs/statistical_model.md` governs classification mathematics.
+- Purposeful testing philosophy; no ceremonial full-suite runs.
+- PostgreSQL only when technically implicated; no live Neon for dev checks.
+- No automatic frontend work when out of scope.
+- No Jira/Git internals in user-facing Admin copy.
+
+The selected skills do not conflict heavily with these rules. One concrete
+note:
+
+- `code-review/SKILL.md` refers to `docs/agents/issue-tracker.md`, an artifact
+  of the full upstream `mattpocock/skills` setup (which was **not** installed).
+  In this repository, the originating spec source is `context.md` plus the
+  Jira ticket references in commit/branch history — treat
+  `docs/agents/issue-tracker.md` as absent and fall back to those sources.
 
 ## Provenance
 
@@ -49,41 +100,63 @@ statistical constants.
 - Imported paths:
   - `.agents/skills/unslop/SKILL.md`
   - `.agents/skills/unslop/references/` (core contract, command flows, taboo
-    phrases, fact-preservation, rewrite examples, rubric, packs, and voice
-    references)
+    phrases, fact-preservation, rewrite examples, rubric, packs, voice)
   - `.agents/skills/unslop/presets/` (crisp, warm, expert, story)
-  - `.agents/skills/unslop/scripts/` (Python helper scripts; 5 retain their
+  - `.agents/skills/unslop/scripts/` (Python helpers; 5 retain their
     executable bit)
 - Modified locally: **No** (byte-identical to upstream).
 
-### Intentionally omitted
+### mattpocock/skills (eight selected skills)
 
-- `.git/`, upstream GitHub Actions, issue/PR templates, and `.gitignore`.
-- Upstream `evals/` (benchmark/eval infrastructure), `plans/`, `assets/`,
-  `docs/`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`,
-  `ruff.toml`, and upstream package/plugin install machinery.
-- Note: `unslop/references/core-contract.md` references
-  `evals/run_structure_climb.py` for the rare "remaining structure damage"
-  multi-agent climb, and the maintenance/contribute references point into
-  `evals/`. These are the upstream skill's own eval/maintenance machinery, not
-  normal de-slop operation, and are therefore not vendored. The primary
-  rewrite-validation scripts referenced by the core contract
-  (`scripts/validate_preservation.py`, `scripts/banned_phrase_scan.py`,
-  `scripts/structure_scan.py`, `scripts/silhouette_scan.py`,
-  `scripts/readability_metrics.py`, `scripts/diff_check.py`) are all present.
+- Upstream: <https://github.com/mattpocock/skills>
+- Pinned commit: `1bb95954ef0d06ba4d64a9c267fb75f57c614a1f`
+- License: MIT (Copyright (c) 2026 Matt Pocock)
+
+| Skill | Upstream path | Local path | Supporting files imported |
+|-------|---------------|------------|---------------------------|
+| `diagnosing-bugs` | `skills/engineering/diagnosing-bugs/` | `.agents/skills/diagnosing-bugs/` | `scripts/hitl-loop.template.sh` |
+| `code-review` | `skills/engineering/code-review/` | `.agents/skills/code-review/` | — |
+| `domain-modeling` | `skills/engineering/domain-modeling/` | `.agents/skills/domain-modeling/` | `ADR-FORMAT.md`, `CONTEXT-FORMAT.md` |
+| `codebase-design` | `skills/engineering/codebase-design/` | `.agents/skills/codebase-design/` | `DEEPENING.md`, `DESIGN-IT-TWICE.md` |
+| `research` | `skills/engineering/research/` | `.agents/skills/research/` | — |
+| `handoff` | `skills/productivity/handoff/` | `.agents/skills/handoff/` | — |
+| `writing-for-agents` | `skills/productivity/writing-for-agents/` | `.agents/skills/writing-for-agents/` | `SKILL-MECHANICS.md` |
+| `wizard` | `skills/engineering/wizard/` | `.agents/skills/wizard/` | `template.sh` |
+
+- Modified locally: **No** (byte-identical to upstream).
+- The per-skill `agents/openai.yaml` files were **omitted** — they are OpenAI
+  platform metadata (`display_name` / `short_description`) not referenced by
+  any `SKILL.md` and not part of the Zed Agent Skills format.
+- All other `mattpocock/skills` skills (e.g. `tdd`, `implement`, `to-spec`,
+  `to-tickets`, `prototype`, `grill-with-docs`, `wayfinder`,
+  `improve-codebase-architecture`, `resolving-merge-conflicts`, `ask-matt`,
+  `triage`, `teach`, `to-questionnaire`, `wait-what`, generic grilling and
+  in-progress/deprecated skills) were **not** imported.
+
+## Intentionally omitted (all sources)
+
+- `.git/`, upstream GitHub Actions, issue/PR templates, `.gitignore`, and
+  package/release metadata (`package.json`, lockfiles, changesets).
+- Upstream repo-level docs and agent files not required by a selected skill
+  (`AGENTS.md`, `CLAUDE.md`, `CONTEXT.md`, `README.md`, `CONTRIBUTING.md`,
+  `CHANGELOG.md`, `docs/`, `scripts/` at the repo root).
+- `unslop` `evals/`, `plans/`, `assets/`, and `docs/` (eval/maintenance
+  machinery).
+- `mattpocock/skills` unrelated skills and the OpenAI `agents/openai.yaml`
+  metadata.
 
 ## Security / supply-chain note
 
-- All imported Python scripts were inspected before commit.
+- All imported scripts/templates were inspected before commit.
 - No credential harvesting, no secrets, and no executable binary blobs.
-- Normal rewrite/cleanup scripts are pure text-processing with **no network
-  access**.
-- `scripts/wiki_sync.py` does make an outbound call to
-  `https://en.wikipedia.org/w/api.php`, but only when explicitly invoked for
-  the maintenance "sync with Wikipedia" task — it is **not** part of normal
-  de-slop operation and is not auto-enabled.
-- `scripts/contribute.py` and `scripts/refresh_status.py` invoke `git` /
-  scanner subprocesses as part of the explicit maintenance/contribution flows.
+- `unslop/scripts/wiki_sync.py` is the only network-calling helper
+  (`https://en.wikipedia.org/w/api.php`), and only for the explicit
+  maintenance "wiki sync" task — not normal operation and not auto-enabled.
+- `wizard/template.sh` writes `.env` and invokes `gh secret`/`gh variable` and
+  a browser opener, but only as an explicitly authored, human-driven wizard —
+  no automatic mutation, and no network beyond those user-initiated actions.
+- `diagnosing-bugs/scripts/hitl-loop.template.sh` is a passive prompt/capture
+  loop (no network, no writes beyond reading terminal input).
 - No upstream automatic mutation or internet-sync behavior is enabled.
 
 ## How to update
@@ -95,5 +168,5 @@ statistical constants.
 4. Diff against the vendored copy and review before replacing.
 5. Update this file's pinned commit SHA.
 
-Do **not** run an upstream maintenance/sync command (e.g. `wiki_sync.py`)
-merely because it exists. Updating is a deliberate, reviewed action.
+Do **not** run an upstream maintenance/sync command (e.g. `wiki_sync.py`) or a
+wizard merely because it exists. Updating is a deliberate, reviewed action.

@@ -2928,6 +2928,20 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   doc `docs/agent-skills.md`.  Agent-configuration only; no application,
   database, statistical, API, deployment, or test behavior changed.
 
+## 2026-08-18 — Agent skills (Matt Pocock set)
+
+- Extended `.agents/skills/` with eight skills from `mattpocock/skills`
+  @ `1bb95954ef0d06ba4d64a9c267fb75f57c614a1f` (MIT): `diagnosing-bugs`,
+  `code-review`, `domain-modeling`, `codebase-design`, `research`, `handoff`,
+  `writing-for-agents`, and `wizard`.  All byte-identical to upstream; each
+  skill-local supporting file imported (`scripts/hitl-loop.template.sh`,
+  `ADR-FORMAT.md` + `CONTEXT-FORMAT.md`, `DEEPENING.md` + `DESIGN-IT-TWICE.md`,
+  `SKILL-MECHANICS.md`, `template.sh`).
+- Omitted the OpenAI `agents/openai.yaml` metadata and all non-selected Matt
+  Pocock skills.  Added a local override note for `code-review` (the absent
+  `docs/agents/issue-tracker.md`; this repo's spec source is `context.md` +
+  Jira references).  Agent-configuration only.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
