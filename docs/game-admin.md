@@ -129,3 +129,19 @@ Classification **administration** (forms, diagnostics, actions) is owned by
 New bulk actions (bulk publish/archive, batch refresh, batch calculate) are
 **out of scope** and deferred to **SBGC-69**. Only the existing
 `refresh_from_steam` action remains.
+
+## Human verification
+
+Completed on local SQLite. All five checks passed (5/5):
+
+1. Game changelist — useful columns, search (name/slug/external_id/developer),
+   and source/content/listing filters behave correctly.
+2. Manual Game edit — source identity readonly; name/slug/content/listing and
+   manual metadata editable; grouping clear.
+3. Steam Game edit — `source_type`, `external_id`, `name`, `content_type`, and
+   Steam-owned metadata readonly; `slug`, `listing_status`, and local/editorial
+   metadata remain editable.
+4. Copy / validation — no SBGC/Git/branch/internal jargon; representative
+   validation error is clean.
+5. Deletion confirmation — single-object cascade confirmation correct; bulk
+   `delete_selected` absent.
