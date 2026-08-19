@@ -22,6 +22,21 @@ applies_to:
 
 # Djazztro Full-Stack Engineering Skill
 
+## On-demand agent skills
+
+This repository ships two on-demand skills under `.agents/skills/` (discovered
+automatically by Zed).  Load them only when their trigger applies; do not copy
+their bodies into always-loaded context.
+
+- For large tool/file-reading, search, Git inspection, or command-output
+  operations, load the **token-efficiency** skill
+  (`.agents/skills/token-efficiency/SKILL.md`).
+- For substantial human-facing prose and documentation (Jira/PR summaries,
+  handovers, README/docs, Admin/user copy), load the **unslop** skill
+  (`.agents/skills/unslop/SKILL.md`).  Unslop must not rewrite source code,
+  mathematical formulas, test fixtures, machine contracts, migrations, exact
+  command output, quotations, or canonical statistical constants.
+
 ## 1. Purpose
 
 This skill governs coding-agent behaviour for the **Project Skill-Based Games Classification** repository.

@@ -2914,6 +2914,20 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
 - Documented evidence in `docs/classification-verification.md`.  No change to
   `docs/statistical_model.md`, and B=40 remains locked.
 
+## 2026-08-18 — Agent skills (repo-local)
+
+- Vendored two on-demand agent skills into `.agents/skills/`:
+  `token-efficiency` (upstream `undefdev/token-efficiency`
+  @ `fdbff4e1fd4a2a70ea505a20f82da7bd73653b35`, MIT — `SKILL.md` + `LICENSE`)
+  and `unslop` (upstream `theclaymethod/unslop`
+  @ `d81f5196167ded24f46fced04958c0c12d681798`, MIT — `SKILL.md` +
+  `references/` + `presets/` + `scripts/`).  Byte-identical; executable helper
+  scripts preserved; upstream `.git`/`.github`/`evals`/`plans`/`assets`/`docs`
+  and package/plugin machinery omitted.
+- Added concise routing pointers to `skills.md` and a provenance/maintenance
+  doc `docs/agent-skills.md`.  Agent-configuration only; no application,
+  database, statistical, API, deployment, or test behavior changed.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
