@@ -2969,6 +2969,27 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   clean operator copy + validation; single-object delete with cascade summary
   and no bulk delete).  No production code changed during closure.
 
+## 2026-08-19 — SBGC-68 Classification administration
+
+- Added pure `total` and `dominant_display` properties to `ChallengeProfile` /
+  `RewardProfile` (no schema change).  `dominant_display` computes directly and
+  never validates, so it does not raise while an inline form is mid-edit; the
+  authoritative validating `dominant_skill_category` is unchanged.
+- Refactored the submission changelist to show Game / submitter / submitted
+  role / Challenge dominant + total / Reward dominant + total / updated_at;
+  added `submitted_role` + `game__source_type` + `game__content_type` filters;
+  inlines now display readonly total and dominant alongside the three scores.
+- Enhanced `ClassificationSnapshotAdmin` with a readable Final Classification
+  fieldset (Final Challenge/Reward + Confidence), a collapsed Method 1/2/3
+  diagnostics fieldset, and a collapsed timing/provenance fieldset; the
+  changelist shows the unified Final scores.  Derived admins remain fully
+  readonly (add/change/delete disabled).  No calculation runs on render.
+- Added focused tests (`classifications/tests/test_admin_config.py`, 17 tests)
+  for totals/dominance/ties, changelist, search, filters, validation UX, and
+  provenance/Final read-only behavior.  Documented in
+  `docs/classification-admin.md`.  SBGC-69 (actions) and SBGC-70 (safety)
+  remain out of scope.  No model/schema changes, no migrations.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam
