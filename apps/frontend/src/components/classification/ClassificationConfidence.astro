@@ -1,0 +1,45 @@
+---
+interface Props {
+  level: number;
+  label: string | null;
+}
+
+const { level, label } = Astro.props;
+const descriptor = label ? `${label} confidence` : null;
+---
+
+<section class="confidence" aria-labelledby="confidence-heading">
+  <h3 id="confidence-heading" class="confidence__label">
+    Classification confidence
+  </h3>
+
+  <p class="confidence__value">{level}%</p>
+
+  {descriptor && <p class="confidence__descriptor">{descriptor}</p>}
+</section>
+
+<style>
+  .confidence__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .confidence__value {
+    margin-top: 0.5rem;
+    font-size: 2.25rem;
+    line-height: 1.1;
+    font-weight: 600;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .confidence__descriptor {
+    margin-top: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+</style>

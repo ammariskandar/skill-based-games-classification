@@ -2577,6 +2577,20 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - **Notes reconciliation:** historical SBGC-73 "notes" has no canonical Final
   Classification note — notes are not aggregated or invented here.
 
+## 2026-08-21 — SBGC-73 visual hierarchy refinement (post functional validation)
+
+- Refined the classification metadata hierarchy after functional human review:
+  extracted `ClassificationConfidence.astro` (section label → primary 2.25rem
+  percentage → semantic `High confidence` descriptor) and
+  `ClassificationStatus.astro` (reusable dot status for provisional/stale).
+- Increased spacing/grouping: profiles vs confidence vs status vs provenance are
+  now visually separated; the classification section is constrained to a
+  56rem max width; Challenge/Reward titles slightly stronger than legend.
+- Confidence percentage is now clearly primary; status is distinct and not
+  error-styled; `Based on N submissions` is tertiary but readable.  No backend/
+  domain change, no radar/D3, zero hydration retained.  Frontend suite 112
+  green; build/lint/format clean.
+
 ## 2026-08-21 — SBGC-72 Astro game-detail route
 
 - Wired the existing `/games/[slug].astro` route to Django: it now fetches the

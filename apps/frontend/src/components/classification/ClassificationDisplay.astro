@@ -1,7 +1,9 @@
 ---
 import type { GameFinalClassification } from "../../lib/server/api/games";
 import { presentClassification } from "../../lib/classification-presentation";
+import ClassificationConfidence from "./ClassificationConfidence.astro";
 import ClassificationProfile from "./ClassificationProfile.astro";
+import ClassificationStatus from "./ClassificationStatus.astro";
 
 interface Props {
   classification: GameFinalClassification | null;
@@ -36,31 +38,20 @@ const presentation = presentClassification(classification);
         </div>
 
         {presentation.confidence !== null && (
-          <p class="classification__confidence">
-            <span class="classification__confidence-label">
-              Classification confidence
-            </span>
-            <strong>{presentation.confidence}%</strong>
-            {presentation.confidenceLabel && (
-              <span class="classification__confidence-name">
-                {presentation.confidenceLabel}
-              </span>
-            )}
-          </p>
+          <div class="classification__confidence">
+            <ClassificationConfidence
+              level={presentation.confidence}
+              label={presentation.confidenceLabel}
+            />
+          </div>
         )}
 
         {(presentation.regime === "provisional" || presentation.isStale) && (
           <div class="classification__state">
             {presentation.regime === "provisional" && (
-              <p class="classification__state-item">
-                Provisional classification
-              </p>
+              <ClassificationStatus kind="provisional" />
             )}
-            {presentation.isStale && (
-              <p class="classification__state-item classification__state-item--stale">
-                Using the most recent successful classification
-              </p>
-            )}
+            {presentation.isStale && <ClassificationStatus kind="stale" />}
           </div>
         )}
 
@@ -76,6 +67,10 @@ const presentation = presentClassification(classification);
 </section>
 
 <style>
+  .classification {
+    max-width: 56rem;
+  }
+
   .classification__heading {
     font-size: 1.25rem;
     line-height: 1.75rem;
@@ -84,57 +79,42 @@ const presentation = presentClassification(classification);
   }
 
   .classification__empty {
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     color: var(--color-muted);
   }
 
   .classification__body {
-    margin-top: 1rem;
+    margin-top: 1.25rem;
   }
 
   .classification__profiles {
     display: grid;
-    gap: 1.5rem;
+    gap: 1.75rem;
   }
 
   @media (width >= 48rem) {
     .classification__profiles {
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      gap: 2.5rem;
     }
   }
 
   .classification__confidence {
-    margin-top: 1.25rem;
-    font-size: 0.875rem;
-    color: var(--color-muted);
-  }
-
-  .classification__confidence strong {
-    color: var(--color-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .classification__confidence-name {
-    margin-left: 0.25rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
   }
 
   .classification__state {
-    margin-top: 0.75rem;
+    margin-top: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--color-muted);
-  }
-
-  .classification__state-item--stale {
-    color: var(--color-orange);
+    gap: 0.5rem;
   }
 
   .classification__meta {
-    margin-top: 0.75rem;
+    margin-top: 1rem;
     font-size: 0.75rem;
-    color: var(--color-dim);
+    color: var(--color-muted);
   }
 </style>

@@ -1,0 +1,54 @@
+---
+type Kind = "provisional" | "stale";
+
+interface Props {
+  kind: Kind;
+}
+
+const LABELS: Record<Kind, string> = {
+  provisional: "Provisional classification",
+  stale: "Using the most recent successful classification",
+};
+
+const { kind } = Astro.props;
+const label = LABELS[kind];
+---
+
+<p class={`status status--${kind}`}>
+  <span class="status__dot" aria-hidden="true"></span>
+  {label}
+</p>
+
+<style>
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+
+  .status__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+
+  .status--provisional {
+    color: var(--color-muted);
+  }
+
+  .status--provisional .status__dot {
+    background: var(--color-muted);
+  }
+
+  .status--stale {
+    color: var(--color-orange);
+  }
+
+  .status--stale .status__dot {
+    background: var(--color-orange);
+  }
+</style>

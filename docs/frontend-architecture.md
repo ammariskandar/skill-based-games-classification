@@ -73,6 +73,8 @@ The public Game-detail classification is rendered by `src/components/classificat
 
 - `ClassificationDisplay.astro` — receives the SBGC-71 `classification` DTO and branches unavailable (null/non-ready) vs ready.
 - `ClassificationProfile.astro` — the single shared Challenge/Reward profile component (100% stacked bar + exact Micro/Macro/Mystiko values).
+- `ClassificationConfidence.astro` — confidence hierarchy: section label, primary percentage, semantic descriptor (`High confidence`).
+- `ClassificationStatus.astro` — reusable dot status for provisional/stale.
 
 Rendering is **static/zero-hydration**: no chart library, no `client:*` directive, no client JavaScript. The locked dimension order is `Micro, Macro, Mystiko` (single source in `src/lib/classification-presentation.ts`). Category colours reuse the site tokens `--color-micro`/`--color-macro`/`--color-mystiko`. Exact values are always visible (never colour-only).
 
