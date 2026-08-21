@@ -4,6 +4,7 @@ Scheduled Steam metadata refresh orchestration tests — SBGC-183.
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -220,6 +221,23 @@ class ScheduledSteamRefreshTests(TestCase):
         self.assertIsNone(run)
         self.assertEqual(SteamRefreshRun.objects.count(), 1)
         self.assertEqual(fake.call_counts, {})
+
+    def test_stale_previous_day_running_run_is_recovered(self):
+        c = self._steam("C", "3")
+        SteamRefreshRun.objects.create(
+            scheduled_at=timezone.now() - timedelta(days=1),
+            status=SteamRefreshRun.Status.RUNNING,
+        )
+        fake = _FakeRefreshService(
+            results_by_pk={c.pk: SteamGameRefreshStatus.UNCHANGED}
+        )
+
+        run = self._run(fake, _FakeWait())
+
+        self.assertEqual(run.status, SteamRefreshRun.Status.COMPLETED)
+        self.assertEqual(SteamRefreshRun.objects.count(), 1)
+        self.assertEqual(SteamRefreshRun.objects.get().pk, run.pk)
+        self.assertEqual(fake.call_counts, {c.pk: 1})
 
     def test_email_failure_preserves_failed_audit(self):
         c = self._steam("C", "3")

@@ -2580,6 +2580,26 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `docs/scheduled-steam-refresh.md`.  Production Render Cron is
   application-implemented but **not provisioned**.
 
+## 2026-08-21 — SBGC-183 correction pass (stale-run recovery + PostgreSQL concurrency)
+
+- Fixed a real production-semantic gap: a `running` run left behind by an
+  abnormally-terminated command would permanently block every future daily run.
+  `_establish_run` now treats a `running` run from a **previous day** as stale
+  (retired to terminal `failed` before establishing today's run), while a
+  same-day `running` run still blocks a duplicate invocation.  No schema change;
+  day-boundary policy documented in `docs/scheduled-steam-refresh.md`.
+- Added a stale-run SQLite regression test (`games/tests/test_scheduled_refresh.py`,
+  now 15 tests).
+- Added PostgreSQL concurrency verification (`games/tests/test_scheduled_refresh_pg.py`,
+  4 tests): simultaneous acquisition (exactly one winner), genuine active-run
+  blocking with audit preservation, subsequent run after finalization, and
+  stale-run recovery.  Verified on PostgreSQL 16 via a disposable Podman
+  container; `config.tests.test_pg_migrations` (7 tests) confirms migration
+  `games.0008` applies and reverses cleanly.  No Neon used.
+- Reviewed `games/services/imports/factory.py`: **kept** — it is the single
+  canonical composition root for `SteamGameRefreshService`, shared by the Admin
+  refresh action and the scheduler (removes duplicated wiring, not test-only).
+
 ## 2026-08-15 — SBGC-59 Manual Game creation and editing
 
 - Added `games/services/manual.py` with `create_manual_game()` and

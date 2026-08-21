@@ -126,10 +126,24 @@ class ScheduledSteamRefreshService:
     # -- run lifecycle ---------------------------------------------------------
 
     def _establish_run(self, scheduled_at) -> SteamRefreshRun | None:
-        """Create today's run and retire the previous run atomically."""
+        """Create today's run and retire the previous run atomically.
+
+        A ``running`` run from a previous day is stale (the process died
+        before finalization) and is retired so today's run is never
+        permanently blocked.  A same-day ``running`` run is a genuine active
+        run and blocks a duplicate invocation.
+        """
         with transaction.atomic():
-            if SteamRefreshRun.objects.filter(status=_RunStatus.RUNNING).exists():
-                return None
+            active = SteamRefreshRun.objects.filter(status=_RunStatus.RUNNING).first()
+            if active is not None:
+                if _same_local_day(active.scheduled_at, scheduled_at):
+                    return None
+                # Stale previous-day run: retire it before creating today's
+                # run so the single-active unique index is freed.
+                active.status = _RunStatus.FAILED
+                active.finished_at = timezone.now()
+                active.save(update_fields=["status", "finished_at"])
+
             try:
                 run = SteamRefreshRun.objects.create(
                     scheduled_at=scheduled_at,
@@ -239,6 +253,11 @@ def _safe_summary(exc: Exception) -> str:
     """A short, secret-free error summary (no traceback, no raw payload)."""
     text = str(exc) or exc.__class__.__name__
     return text[:255]
+
+
+def _same_local_day(a, b) -> bool:
+    """Whether two datetimes fall on the same local (settings TIME_ZONE) day."""
+    return timezone.localtime(a).date() == timezone.localtime(b).date()
 
 
 def _is_valid_email(value: str) -> bool:

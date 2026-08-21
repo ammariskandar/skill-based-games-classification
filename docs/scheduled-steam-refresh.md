@@ -145,11 +145,40 @@ unique constraint (`steam_refresh_run_single_active_uniq`) plus an
 cron trigger, manual run during an active run) exits cleanly without processing
 the population twice.
 
+A `running` run counts as **active only for its own local day**. A `running`
+run whose `scheduled_at` falls on an earlier day is treated as stale (see
+below) and does not block today's invocation.
+
+### Stale run recovery
+
+A run can remain `running` if the command is terminated before finalization
+(Render cancelling/restarting the Cron job, a crash, host/service termination,
+or a SIGTERM during a wait or a Steam request).  Without recovery, that row
+would make every future run believe another scheduler process is still alive.
+
+To keep the design operationally boring, a deterministic day-boundary policy is
+used:
+
+- A `running` run from a **previous day** is **stale** — the process that
+  created it is no longer legitimately running today.  When today's scheduled
+  invocation starts, the stale run is retired to a terminal `failed` state and
+  then removed by the normal "only the current run is retained" replacement.
+- A `running` run from **today** is a genuinely active run — a second
+  invocation exits cleanly and processes nothing.
+
+This guarantees tomorrow's ordinary daily run is always possible after an
+abnormal termination.  Same-day recovery of an interrupted run is deliberately
+not attempted automatically: if the process dies mid-day, a manual same-day
+re-run is blocked until the next day (a documented limitation, not speculative
+machinery).
+
 ### Transaction boundaries
 
 No transaction is held open across Steam requests, waits, or email delivery.
-Short transactions are used only for creating/updating run state and attempt
-audit writes.
+Short transactions are used only for creating/updating run state, retiring a
+stale run, and attempt audit writes.  A failed creation never erases the
+previous audit because the retire-then-create-then-delete sequence runs inside
+a single `transaction.atomic()` block.
 
 ## Final alert condition
 
@@ -244,6 +273,7 @@ Steam):
 - same-day attempt retention;
 - next-day atomic replacement;
 - concurrent-run skip;
+- stale previous-day `running` run recovery;
 - email-failure audit preservation;
 - recipient resolution (active/inactive/blank/invalid/duplicates/fallback);
 - management-command delegation.
@@ -251,3 +281,21 @@ Steam):
 The wait abstraction records requested delays and returns immediately; the
 scripted refresh fake drives per-Game per-attempt outcomes. No `time.sleep`
 runs in tests.
+
+### PostgreSQL concurrency verification
+
+`games/tests/test_scheduled_refresh_pg.py` proves the current-run acquisition
+path on a real PostgreSQL instance (the partial unique index and
+`IntegrityError` recovery are the production concurrency guard):
+
+- simultaneous acquisition — two contenders race on `SteamRefreshRun.objects.create`;
+  exactly one wins, the loser returns cleanly and refreshes nothing;
+- genuine active run — a same-day `running` run blocks a duplicate invocation
+  and preserves the retained previous audit;
+- subsequent run — after normal finalization, a later run establishes cleanly;
+- stale recovery — a previous-day `running` run is retired and today's run
+  establishes without being blocked.
+
+Verified on PostgreSQL 16 (disposable Podman container), plus
+`config.tests.test_pg_migrations` confirms migration `games.0008` applies and
+reverses cleanly. No Neon is used.
