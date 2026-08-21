@@ -299,3 +299,23 @@ path on a real PostgreSQL instance (the partial unique index and
 Verified on PostgreSQL 16 (disposable Podman container), plus
 `config.tests.test_pg_migrations` confirms migration `games.0008` applies and
 reverses cleanly. No Neon is used.
+
+## Human verification
+
+Completed on local SQLite (no Neon, no live Steam, no real 6m/6m/3h waits).
+All four checks passed (4/4):
+
+1. **Successful command run** — `run_scheduled_steam_refresh` ran against a
+   dev DB with no Steam games; it exited cleanly, created a `SteamRefreshRun`
+   with `Completed` status and `selected_count == 0`, and Manual games were
+   never selected.
+2. **Retry orchestration** — the deterministic scheduler module
+   (`games.tests.test_scheduled_refresh`, 15 tests) proved success-stop,
+   failure-only retries (`A=1, B=2, C=3`), and exact waits `[360, 360, 10800]`
+   without real waiting.
+3. **Read-only Admin** — `SteamRefreshRun` and `SteamRefreshGameAttempt` are
+   view-only (no add/change/delete/rerun, no secrets).
+4. **Final fourth-failure email** — via the console email backend and a
+   deterministic failing fake, exactly one alert was produced after the fourth
+   failure (no alert after attempts 1–3), with Superuser-first recipient
+   resolution, `failed` status, `alert_sent=True`, and 4 attempt rows.

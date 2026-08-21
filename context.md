@@ -2600,6 +2600,17 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   canonical composition root for `SteamGameRefreshService`, shared by the Admin
   refresh action and the scheduler (removes duplicated wiring, not test-only).
 
+## 2026-08-21 — SBGC-183 human validation PASS
+
+- Human verification completed on local SQLite (no Neon, no live Steam, no real
+  waits): all four checks passed — safe command run with audit created and
+  Manual exclusion; deterministic retry orchestration (success-stop,
+  failure-only retries, `[360,360,10800]`); read-only scheduler Admin (no
+  add/change/delete/rerun); final fourth-failure email via console backend with
+  Superuser-first recipients, `failed` status, `alert_sent=True`, and 4 attempt
+  rows.  Documentation-only closure; no production code changed.  SBGC-183
+  ready to merge.
+
 ## 2026-08-15 — SBGC-59 Manual Game creation and editing
 
 - Added `games/services/manual.py` with `create_manual_game()` and
