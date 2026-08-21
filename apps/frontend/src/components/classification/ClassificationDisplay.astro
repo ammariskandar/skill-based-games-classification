@@ -1,0 +1,140 @@
+---
+import type { GameFinalClassification } from "../../lib/server/api/games";
+import { presentClassification } from "../../lib/classification-presentation";
+import ClassificationProfile from "./ClassificationProfile.astro";
+
+interface Props {
+  classification: GameFinalClassification | null;
+}
+
+const { classification } = Astro.props;
+const presentation = presentClassification(classification);
+---
+
+<section class="classification" aria-labelledby="classification-heading">
+  <h2 id="classification-heading" class="classification__heading">
+    Skill Classification
+  </h2>
+
+  {
+    presentation.kind === "unavailable" && (
+      <p class="classification__empty">
+        Classification is not available for this game yet.
+      </p>
+    )
+  }
+
+  {
+    presentation.kind === "ready" && (
+      <div class="classification__body">
+        <div class="classification__profiles">
+          <ClassificationProfile
+            title="Challenge"
+            profile={presentation.challenge}
+          />
+          <ClassificationProfile title="Reward" profile={presentation.reward} />
+        </div>
+
+        {presentation.confidence !== null && (
+          <p class="classification__confidence">
+            <span class="classification__confidence-label">
+              Classification confidence
+            </span>
+            <strong>{presentation.confidence}%</strong>
+            {presentation.confidenceLabel && (
+              <span class="classification__confidence-name">
+                {presentation.confidenceLabel}
+              </span>
+            )}
+          </p>
+        )}
+
+        {(presentation.regime === "provisional" || presentation.isStale) && (
+          <div class="classification__state">
+            {presentation.regime === "provisional" && (
+              <p class="classification__state-item">
+                Provisional classification
+              </p>
+            )}
+            {presentation.isStale && (
+              <p class="classification__state-item classification__state-item--stale">
+                Using the most recent successful classification
+              </p>
+            )}
+          </div>
+        )}
+
+        {presentation.submissionCount !== null &&
+          presentation.submissionCount > 0 && (
+            <p class="classification__meta">
+              Based on {presentation.submissionCount} submissions
+            </p>
+          )}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .classification__heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .classification__empty {
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+  }
+
+  .classification__body {
+    margin-top: 1rem;
+  }
+
+  .classification__profiles {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (width >= 48rem) {
+    .classification__profiles {
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+  }
+
+  .classification__confidence {
+    margin-top: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .classification__confidence strong {
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .classification__confidence-name {
+    margin-left: 0.25rem;
+  }
+
+  .classification__state {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .classification__state-item--stale {
+    color: var(--color-orange);
+  }
+
+  .classification__meta {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--color-dim);
+  }
+</style>

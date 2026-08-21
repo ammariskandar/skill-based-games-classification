@@ -2554,6 +2554,29 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-21 — SBGC-73 Classification display
+
+- Built the public Game-page classification display from the SBGC-71 DTO:
+  `src/components/classification/ClassificationDisplay.astro` (unavailable vs
+  ready branch) and `ClassificationProfile.astro` (the single shared
+  Challenge/Reward profile: 100% stacked bar + exact values).
+- Locked the canonical display order `Micro, Macro, Mystiko` in
+  `src/lib/classification-presentation.ts` (`presentClassification`,
+  `profileDimensions`); reuses the site tokens `--color-micro/macro/mystiko`.
+- Zero hydration, no chart/framework dependency; scoped CSS; exact textual
+  values always visible (not colour-only).  Null/non-ready → unavailable state
+  (no bars/confidence/fake zeros); READY → profiles + confidence +
+  provisional/stale indicator + submission count.  Unified regime renders as
+  the ordinary state; calculation version/timestamp are deliberately not
+  prominent.
+- Added 6 focused presentation tests (order/asymmetric mapping, null/non-ready/
+  ready/stale narrowing); frontend suite 112 green; production build
+  (`astro check && astro build`) green; lint + format clean.  No backend
+  change, no new dependency, no migration.  Documented the standing frontend
+  engineering defaults in `docs/frontend-architecture.md`.
+- **Notes reconciliation:** historical SBGC-73 "notes" has no canonical Final
+  Classification note — notes are not aggregated or invented here.
+
 ## 2026-08-21 — SBGC-72 Astro game-detail route
 
 - Wired the existing `/games/[slug].astro` route to Django: it now fetches the

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import ClassificationDisplay from "../../components/classification/ClassificationDisplay.astro";
 import {
   GameNotFoundError,
   getGameDetail,
@@ -96,18 +97,7 @@ const description = game.description.trim();
     }
 
     <section class="mt-8">
-      <h2 class="text-xl font-semibold">Skill Classification</h2>
-      {
-        classification ? (
-          <p class="mt-2 text-sm text-muted">
-            Classification data is available for this game.
-          </p>
-        ) : (
-          <p class="mt-2 text-sm text-muted">
-            Classification is not yet available for this game.
-          </p>
-        )
-      }
+      <ClassificationDisplay classification={classification} />
     </section>
   </article>
 </BaseLayout>
