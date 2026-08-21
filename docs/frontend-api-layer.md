@@ -22,6 +22,7 @@ apps/frontend/src/lib/server/api/
 ├── client.ts    # fetch-based transport, getJSON, postJSON
 ├── errors.ts    # Normalized error factory
 ├── types.ts     # ApiResult<T>, ApiError, request options
+├── games.ts     # getGameDetail + game-detail DTO types + error classes
 └── index.ts     # Public re-exports
 ```
 
@@ -118,15 +119,23 @@ TypeScript types describe expected shapes at compile time. They do **not** valid
 
 ## Endpoint-Specific Types
 
-No domain types (`Game`, `Classification`, `User`, `Ranking`) are defined yet. These will be added when real Django API contracts exist.
+`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure).
 
 ## Route Integration
 
-No Astro route currently imports the API layer. When routes do integrate:
-- Call `getJSON<T>` or `postJSON<T>` from Astro frontmatter.
-- Use `result.ok` to branch between data rendering and error states.
+The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
+- Call it from Astro frontmatter (server-side).
+- Catch `GameNotFoundError` to render a real 404; let `BackendApiError` and other failures propagate as a server error.
 - Never display raw `ApiError` content that may contain backend context directly in public UI.
 
 ## Behavioural Tests
 
 Transport hardening is complete (SBGC-160). Behavioural proof is provided by the Vitest transport test suite (SBGC-161) in `src/lib/server/api/__tests__/`. Tests use Vitest in Node environment with mocked `globalThis.fetch` — no real network requests are made. Covered behaviours: configuration validation, URL and path handling, redirect rejection, request serialization, headers, successful responses, 204 No Content, non-success HTTP statuses, media type handling, malformed JSON, timeout, caller cancellation, and no-retry guarantees. Run with `npm run test:frontend`.
+
+## Human verification (SBGC-72)
+
+Completed on the local dev servers (Django `runserver` + Astro `dev`). All three
+checks passed: `/games/portal-2` returned a server-rendered 200 with the correct
+Game and image; `/games/chess` (Manual, no classification) returned a valid 200
+with no fabricated scores; and `/games/definitely-not-a-game` returned a real 404
+via the custom not-found page with no backend JSON exposed.

@@ -95,7 +95,7 @@ Future dynamic routes **must not be prerendered** unless an explicit product dec
 
 ### Dynamic-route rules
 
-- `/games/[slug]` uses `Astro.params.slug` as display text only — no backend query, no `getStaticPaths`. Django will supply all game data later.
+- `/games/[slug]` is an **on-demand** route that reads `Astro.params.slug`, fetches the SBGC-71 public game-detail DTO server-side via `getGameDetail()`, and renders the normalized Game + persisted classification. No `getStaticPaths`. A Django `404 GAME_NOT_FOUND` rewrites to the custom `404.astro`; backend/service failures propagate as a server error (never a 404).
 - `/search` reads `?q=` from `Astro.url.searchParams`. A semantic GET form updates the URL. No backend search is executed.
 - `/profile` is SSR and will require authentication in a future phase.
 - `/login` is prerendered as an informational placeholder — no credential form, no auth package.
@@ -115,7 +115,7 @@ Client-side JavaScript is limited to **bounded Astro islands**. Components that 
 
 ## API Layer
 
-Astro server routes consume Django through a shared server-side API client at `src/lib/server/api/`. The API layer owns base URL (`DJANGO_API_URL`), timeout (8s default), transport, and normalized error handling (`ApiResult<T>` with discriminated ok/failure). Ordinary browser code does not call Django directly by default. Domain endpoints and response types remain separate future work. See [`docs/frontend-api-layer.md`](frontend-api-layer.md).
+Astro server routes consume Django through a shared server-side API client at `src/lib/server/api/`. The API layer owns base URL (`DJANGO_API_URL`), timeout (8s default), transport, and normalized error handling (`ApiResult<T>` with discriminated ok/failure). Ordinary browser code does not call Django directly by default. SBGC-72 added the game-detail boundary (`getGameDetail`, typed DTOs, `GameNotFoundError`/`BackendApiError`). See [`docs/frontend-api-layer.md`](frontend-api-layer.md).
 
 ## Vercel Adapter
 

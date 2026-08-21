@@ -2554,6 +2554,36 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-21 — SBGC-72 Astro game-detail route
+
+- Wired the existing `/games/[slug].astro` route to Django: it now fetches the
+  SBGC-71 public game-detail DTO server-side and renders the normalized Game
+  (name, source, developer, release date, canonical display image, description)
+  plus a minimal classification handoff.  No `getStaticPaths`; on-demand via
+  `output: "server"`.
+- Added `src/lib/server/api/games.ts` — `getGameDetail()`, typed DTOs, and
+  `GameNotFoundError` (Django 404) / `BackendApiError` (other failures).  Reuses
+  the existing `DJANGO_API_URL` server-only env and the shared transport.
+- Django `404 GAME_NOT_FOUND` rewrites to the custom `404.astro` with a real
+  404 status; backend/network failures propagate as a server error (never 404).
+  `classification: null` renders a valid page with no fake scores.  Initial
+  fetch is server-side; no page-specific client hydration.
+- Added 5 focused Vitest tests for `getGameDetail` (success, slug encoding,
+  404, 500, network failure); full frontend suite 106 green; production build
+  (`astro check && astro build`) green; lint + format clean.  Documented in
+  `docs/frontend-architecture.md` + `docs/frontend-api-layer.md`.  No new
+  dependency, no new env var, no backend change.
+
+## 2026-08-21 — SBGC-72 human validation PASS
+
+- Human verification completed on the local dev servers (Django `runserver` +
+  Astro `dev`): all three checks passed — `/games/portal-2` server-rendered 200
+  with the correct Game + image; `/games/chess` (Manual, no classification)
+  valid 200 with no fabricated scores; `/games/definitely-not-a-game` real 404
+  via the custom not-found page with no backend JSON exposed.
+  Documentation-only closure; no production code changed.  SBGC-72 ready to
+  merge.
+
 ## 2026-08-21 — SBGC-71 Public game-detail API endpoint
 
 - Added the public read endpoint `GET /api/v1/games/{slug}` on the Games
