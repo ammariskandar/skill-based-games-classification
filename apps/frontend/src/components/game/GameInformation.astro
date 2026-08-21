@@ -123,6 +123,10 @@ const description = game.description.trim();
   }
 
   .game-info__dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
     width: min(92vw, 40rem);
     max-height: 85dvh;
     padding: 1.5rem;
@@ -133,7 +137,7 @@ const description = game.description.trim();
   }
 
   .game-info__dialog::backdrop {
-    background: rgb(0 0 0 / 0.6);
+    background: rgb(0 0 0 / 0.8);
   }
 
   .game-info__header {
