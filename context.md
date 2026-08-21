@@ -2574,6 +2574,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `docs/frontend-architecture.md` + `docs/frontend-api-layer.md`.  No new
   dependency, no new env var, no backend change.
 
+## 2026-08-21 — SBGC-72 human validation PASS
+
+- Human verification completed on the local dev servers (Django `runserver` +
+  Astro `dev`): all three checks passed — `/games/portal-2` server-rendered 200
+  with the correct Game + image; `/games/chess` (Manual, no classification)
+  valid 200 with no fabricated scores; `/games/definitely-not-a-game` real 404
+  via the custom not-found page with no backend JSON exposed.
+  Documentation-only closure; no production code changed.  SBGC-72 ready to
+  merge.
+
 ## 2026-08-21 — SBGC-71 Public game-detail API endpoint
 
 - Added the public read endpoint `GET /api/v1/games/{slug}` on the Games

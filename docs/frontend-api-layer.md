@@ -131,3 +131,11 @@ The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
 ## Behavioural Tests
 
 Transport hardening is complete (SBGC-160). Behavioural proof is provided by the Vitest transport test suite (SBGC-161) in `src/lib/server/api/__tests__/`. Tests use Vitest in Node environment with mocked `globalThis.fetch` — no real network requests are made. Covered behaviours: configuration validation, URL and path handling, redirect rejection, request serialization, headers, successful responses, 204 No Content, non-success HTTP statuses, media type handling, malformed JSON, timeout, caller cancellation, and no-retry guarantees. Run with `npm run test:frontend`.
+
+## Human verification (SBGC-72)
+
+Completed on the local dev servers (Django `runserver` + Astro `dev`). All three
+checks passed: `/games/portal-2` returned a server-rendered 200 with the correct
+Game and image; `/games/chess` (Manual, no classification) returned a valid 200
+with no fabricated scores; and `/games/definitely-not-a-game` returned a real 404
+via the custom not-found page with no backend JSON exposed.
