@@ -3024,6 +3024,19 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   with no duplicate run; bulk delete still absent and derived Final fields
   still read-only).  No production code changed.
 
+## 2026-08-19 — SBGC-70 Admin safety/usability pass
+
+- Audited the merged Game + Classification Admin.  Existing identity/provenance
+  readonly rules, derived-record read-only protection, single-object deletion,
+  and `delete_selected` absence were already correct — no change needed.
+- Added standard Django Admin `LogEntry` (change) audit entries to the
+  SBGC-69 custom actions: Publish/Hide/Archive and Steam refresh (on actual
+  update) on `GameAdmin`; classification recalculation on
+  `EditorialClassificationAdmin` (per affected Game).  No custom audit model.
+- Locked `delete_selected` absence for the submission changelist and LogEntry
+  creation with focused tests (3 new).  Affected Admin/service neighborhood
+  192 tests green.  No migrations, no schema change.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

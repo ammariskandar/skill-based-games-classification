@@ -62,6 +62,7 @@ def _apply_listing_status(
         except ValidationError:
             skipped += 1
             continue
+        modeladmin.log_change(request, game, f"Listing status set to {target}")
         updated += 1
 
     level = messages.SUCCESS if updated else messages.WARNING
@@ -300,6 +301,7 @@ class GameAdmin(admin.ModelAdmin):
 
             if result.status == SteamGameRefreshStatus.UPDATED:
                 updated += 1
+                self.log_change(request, game, "Steam metadata refreshed")
             elif result.status == SteamGameRefreshStatus.UNCHANGED:
                 unchanged += 1
             else:

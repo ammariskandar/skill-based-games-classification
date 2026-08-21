@@ -425,6 +425,7 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
                 ready += 1
             else:
                 non_ready += 1
+            self.log_change(request, game, "Classification recalculated")
 
         epoch.status = CalculationEpoch.Status.COMPLETED
         epoch.games_attempted = len(game_ids)

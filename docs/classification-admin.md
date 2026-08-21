@@ -144,6 +144,11 @@ Results are summarized as `ready`, `non-ready`, and `failed`. Legitimate domain
 outcomes (e.g. `NO_SUBMISSIONS`, `INSUFFICIENT_ANCHOR`) are `non-ready`, not
 failures. Derived values are never edited directly by the action.
 
+Each successfully recalculated Game also gets a standard Django Admin
+`LogEntry` (change) so operator attribution and timestamp are auditable.
+Bulk `delete_selected` is absent on the submission changelist (defining the
+`recalculate` action replaces the default actions).
+
 Human verification confirmed the action: selecting a submission triggers
 exactly one recalculation for the affected Game, the current snapshot updates,
 and no duplicate recalculation occurs.

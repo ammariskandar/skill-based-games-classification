@@ -143,6 +143,12 @@ skipped without partial mutation.
 `delete_selected` bulk deletion remains disabled (single-object cascade delete
 is the canonical deletion path).
 
+### Audit logging
+
+Publish / Hide / Archive and Steam refresh (when it actually updates a Game)
+write a standard Django Admin `LogEntry` (change) per affected object, so the
+operator, object, action, and timestamp are visible in the Admin history.
+
 ### Action validation
 
 Human verification completed on local SQLite. The four SBGC-69 checks passed:
