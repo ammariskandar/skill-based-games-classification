@@ -80,6 +80,10 @@ Rendering is **static/zero-hydration**: no chart library, no `client:*` directiv
 
 State handling: `classification: null` and legitimate non-ready statuses both render an unavailable state with no bars/confidence/zeros; READY renders profiles + confidence + provisional/stale indicators + submission count. Historical SBGC-73 "notes" has **no canonical Final Classification note** — notes are not aggregated or invented.
 
+### Game Detail Layout (SBGC-73)
+
+The desktop Game page is a two-column grid: artwork (left) and a right panel (Game Information control above the always-visible Skill Classification). On mobile the panel stacks below the artwork. Game Information opens a native `<dialog>` (no refetch — it consumes the already-loaded SBGC-71 Game DTO); secondary metadata (developer, release date, source, Steam App ID, description) lives in that modal, while Skill Classification remains permanently visible and is **not** collapsible. The interaction is a tiny vanilla `<script>` (no framework island, no `client:*` directive). The future D3 radar visualization will inherit the classification region without a page-layout redesign.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.

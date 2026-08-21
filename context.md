@@ -2591,6 +2591,23 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   domain change, no radar/D3, zero hydration retained.  Frontend suite 112
   green; build/lint/format clean.
 
+## 2026-08-21 — SBGC-73 page information architecture (final presentation pass)
+
+- Reworked the desktop Game-detail page into a two-column grid: artwork left,
+  and a right panel with a `Game information` control above the always-visible
+  Skill Classification.  Mobile stacks below the artwork.
+- Added `src/components/game/GameInformation.astro` — a real button trigger +
+  native `<dialog>` (dark backdrop, Escape, explicit Close) with a tiny vanilla
+  `<script>` (no framework island, no `client:*`); consumes the already-loaded
+  SBGC-71 Game DTO (no refetch).  Secondary metadata (developer, release date,
+  source, Steam App ID, description) moved into the modal; Source no longer
+  occupies a standalone page region.
+- Added `src/lib/game-information.ts` (`gameInformationRows`, `formatReleaseDate`)
+  — user-relevant rows only, optional fields omitted, Steam App ID only for
+  Steam, internal ID/slug/content type excluded.  Challenge/Reward now stack
+  in the narrower right column.  5 focused tests; frontend suite 117 green;
+  build/lint/format clean.  No backend change, no new dependency, no D3/radar.
+
 ## 2026-08-21 — SBGC-72 Astro game-detail route
 
 - Wired the existing `/games/[slug].astro` route to Django: it now fetches the
