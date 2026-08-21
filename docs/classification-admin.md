@@ -177,3 +177,13 @@ Completed on local SQLite. All five checks passed (5/5):
 `BoundaryCalibration` rows are empty for the current low-N human-test
 population. This is expected and not applicable (no boundary calibration is
 required for the current case), not a defect.
+
+## Safety validation (SBGC-70)
+
+Human verification completed on local SQLite. All five safety checks passed:
+classification provenance (`submitted_by`/`submitted_role`/`submitted_base_weight`/
+timestamps) protected while source scores/notes remain editable; single-object
+deletion with cascade and no bulk `delete_selected`; `ClassificationSnapshot`
+view-only with no add/change/delete and no manual statistical override; and a
+safe Admin action is reflected in the standard Admin history with operator
+attribution and timestamp.

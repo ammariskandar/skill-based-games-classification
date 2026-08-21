@@ -3037,6 +3037,14 @@ PostgreSQL verification skipped: no disposable PostgreSQL 16 image was
   creation with focused tests (3 new).  Affected Admin/service neighborhood
   192 tests green.  No migrations, no schema change.
 
+## 2026-08-19 — SBGC-70 Admin safety/usability (human validation PASS)
+
+- Human Admin verification completed on local SQLite: all five safety checks
+  passed (Game identity/system protection; classification provenance
+  protection; single-object deletion with cascade and no bulk delete;
+  `ClassificationSnapshot` view-only; standard Admin history shows operator
+  attribution and timestamp for a safe action).  No production code changed.
+
 ## 2026-08-15 — SBGC-58 Steam live integration validation
 
 - Completed controlled live validation of the authorized Steam

@@ -177,3 +177,11 @@ Completed on local SQLite. All five checks passed (5/5):
    validation error is clean.
 5. Deletion confirmation — single-object cascade confirmation correct; bulk
    `delete_selected` absent.
+
+## Safety validation (SBGC-70)
+
+Human verification completed on local SQLite. All five safety checks passed:
+identity/system fields protected (Manual and Steam), classification provenance
+protected, single-object deletion with cascade and no bulk delete, derived
+records view-only, and standard Admin history shows operator attribution and
+timestamp for a safe Admin action.
