@@ -1,40 +1,113 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  GameNotFoundError,
+  getGameDetail,
+  type GameDetailResponse,
+} from "../../lib/server/api/games";
 
-const slug = Astro.params.slug ?? "unknown";
+const slug = Astro.params.slug;
+
+if (!slug) {
+  Astro.response.status = 404;
+  return Astro.rewrite("/404");
+}
+
+let detail: GameDetailResponse;
+try {
+  detail = await getGameDetail(slug);
+} catch (error: unknown) {
+  if (error instanceof GameNotFoundError) {
+    Astro.response.status = 404;
+    return Astro.rewrite("/404");
+  }
+  throw error;
+}
+
+const { game, classification } = detail;
+const description = game.description.trim();
 ---
 
 <BaseLayout
-  title="Game Detail"
-  description="Game detail page. Skill classifications will be available once the backend is connected."
-  canonicalPath={`/games/${slug}`}
+  title={game.name}
+  description={description || undefined}
+  canonicalPath={`/games/${game.slug}`}
 >
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Game Detail</h1>
-
-  <p class="mt-2 text-sm text-muted">
-    Requested game identifier: <code class="text-text">{slug}</code>
-  </p>
-
-  <div class="mt-8">
-    <div class="rounded-lg border border-border bg-surface p-8 text-center">
+  <article>
+    <header>
       <p class="text-sm font-semibold uppercase tracking-wider text-muted">
-        Awaiting Backend
+        {game.source === "steam" ? "Steam" : "Manual"}
       </p>
-      <h2 class="mt-2 text-xl font-semibold text-text">
-        Game details coming soon
-      </h2>
-      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
-        Metadata, Challenge and Reward profiles, and editorial classifications
-        for this game will be loaded from the Django API once the data layer is
-        connected. Each profile will show independent Micro, Mystiko, and Macro
-        percentages totalling 100.
-      </p>
-      <a
-        href="/catalogue"
-        class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
-      >
-        Back to Catalogue →
-      </a>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+        {game.name}
+      </h1>
+      {
+        game.developer && (
+          <p class="mt-2 text-sm text-muted">By {game.developer}</p>
+        )
+      }
+    </header>
+
+    <div class="mt-8 grid gap-8 sm:grid-cols-2">
+      {
+        game.image_url && (
+          <div class="overflow-hidden rounded-lg border border-border bg-surface">
+            <img
+              src={game.image_url}
+              alt={`${game.name} cover image`}
+              class="aspect-video h-auto w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )
+      }
+
+      <dl class="space-y-4 text-sm">
+        <div>
+          <dt class="font-semibold text-muted">Source</dt>
+          <dd class="mt-1">
+            {
+              game.source === "steam"
+                ? `Steam (App ID ${game.external_id})`
+                : "Manual"
+            }
+          </dd>
+        </div>
+        {
+          game.release_date && (
+            <div>
+              <dt class="font-semibold text-muted">Release date</dt>
+              <dd class="mt-1">
+                <time datetime={game.release_date}>{game.release_date}</time>
+              </dd>
+            </div>
+          )
+        }
+      </dl>
     </div>
-  </div>
+
+    {
+      description && (
+        <section class="mt-8">
+          <h2 class="text-xl font-semibold">About</h2>
+          <p class="mt-2 max-w-3xl text-muted">{description}</p>
+        </section>
+      )
+    }
+
+    <section class="mt-8">
+      <h2 class="text-xl font-semibold">Skill Classification</h2>
+      {
+        classification ? (
+          <p class="mt-2 text-sm text-muted">
+            Classification data is available for this game.
+          </p>
+        ) : (
+          <p class="mt-2 text-sm text-muted">
+            Classification is not yet available for this game.
+          </p>
+        )
+      }
+    </section>
+  </article>
 </BaseLayout>

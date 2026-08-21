@@ -22,6 +22,7 @@ apps/frontend/src/lib/server/api/
 ├── client.ts    # fetch-based transport, getJSON, postJSON
 ├── errors.ts    # Normalized error factory
 ├── types.ts     # ApiResult<T>, ApiError, request options
+├── games.ts     # getGameDetail + game-detail DTO types + error classes
 └── index.ts     # Public re-exports
 ```
 
@@ -118,13 +119,13 @@ TypeScript types describe expected shapes at compile time. They do **not** valid
 
 ## Endpoint-Specific Types
 
-No domain types (`Game`, `Classification`, `User`, `Ranking`) are defined yet. These will be added when real Django API contracts exist.
+`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure).
 
 ## Route Integration
 
-No Astro route currently imports the API layer. When routes do integrate:
-- Call `getJSON<T>` or `postJSON<T>` from Astro frontmatter.
-- Use `result.ok` to branch between data rendering and error states.
+The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
+- Call it from Astro frontmatter (server-side).
+- Catch `GameNotFoundError` to render a real 404; let `BackendApiError` and other failures propagate as a server error.
 - Never display raw `ApiError` content that may contain backend context directly in public UI.
 
 ## Behavioural Tests
