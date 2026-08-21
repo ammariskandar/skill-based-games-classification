@@ -2608,6 +2608,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   in the narrower right column.  5 focused tests; frontend suite 117 green;
   build/lint/format clean.  No backend change, no new dependency, no D3/radar.
 
+## 2026-08-22 — SBGC-73 human validation PASS
+
+- Human verification (visual + interaction) passed on the local dev servers:
+  desktop two-column architecture; Game Information native modal (open, Close,
+  Escape, focus); Manual/sparse metadata omitted cleanly; responsive mobile
+  layout.  During review the modal was centered (was top-left) and the backdrop
+  darkened.  Documentation-only closure; no production code changed beyond the
+  review feedback.  SBGC-73 ready to merge.
+
 ## 2026-08-21 — SBGC-72 Astro game-detail route
 
 - Wired the existing `/games/[slug].astro` route to Django: it now fetches the
