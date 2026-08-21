@@ -2554,6 +2554,31 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-21 — SBGC-71 Public game-detail API endpoint
+
+- Added the public read endpoint `GET /api/v1/games/{slug}` on the Games
+  router, returning normalized Game identity + persisted metadata and the
+  canonical current persisted Final Classification (`GameDetailResponse` /
+  `PublicGameDetail` / `PublicFinalClassification` / `PublicClassificationProfile`).
+- Slug lookup against `Game.objects.publicly_listable()` (content_type=game +
+  listing_status=published); hidden/draft/archived/non-game/unknown all return
+  `404 GAME_NOT_FOUND` identically (no hidden-record disclosure).
+- Classification is sourced from `get_published_classification()` — the
+  canonical read boundary — never from an arbitrary submission or method; no
+  calculation runs on GET.  No classification → `classification: null`;
+  non-ready → status preserved with null scores (no fake zeros).
+- Reads persisted state only: no Steam call, no metadata refresh, no
+  recalculation.  Component order is canonical Micro/Macro/Mystiko, mapped
+  explicitly from the persisted integer profile list.
+- Added `api/tests/test_game_detail.py` (14 tests) covering Steam/manual,
+  404 matrix, no-classification, provisional/unified/non-ready, component
+  mapping, image fallback, side-effect-free reads, and OpenAPI.  API suite
+  101 green; affected query-policy neighborhood 96 green.  Documented in
+  `docs/backend-api.md`.  No migrations, no schema change.
+- **Future product note:** historical SBGC-73 "show notes" needs later
+  reconciliation — no canonical Final Classification note/explanation field
+  exists; multi-submission notes are not aggregated here.
+
 ## 2026-08-21 — SBGC-183 Scheduled Steam metadata refresh
 
 - Added `ScheduledSteamRefreshService` (`games/services/scheduled_refresh.py`)

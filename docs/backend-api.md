@@ -30,7 +30,7 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | Router            | Module                          | Tag              | Status            |
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
-| Games             | `games/api.py`                  | Games            | Steam import + refresh active (SBGC-57) |
+| Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71) |
 | Classifications   | `classifications/api.py`        | Classifications   | No operations yet |
 
 Routers own domain-specific endpoints.  Domain models and services are
@@ -38,7 +38,8 @@ implemented (SBGC-45 through SBGC-56).  SBGC-57 added authorized Steam
 import and refresh mutations on the Games router:
 `POST /api/v1/games/steam/import` and
 `POST /api/v1/games/{game_id}/steam/refresh` — see `docs/steam-api.md`.
-Public game/classification read endpoints are deferred to SBGC-9 and SBGC-10.
+SBGC-71 added the public read endpoint `GET /api/v1/games/{slug}` — see the
+Game detail section below.
 
 ## Request Schemas
 
@@ -91,7 +92,59 @@ on the operation response declaration.
 Use `Status(status, body)` from `ninja` for explicit non-default statuses.
 Do not use the deprecated `(status, body)` tuple syntax.
 
-## Error Envelope
+## Public Game Detail — `GET /api/v1/games/{slug}`
+
+Returns the normalized public identity and persisted metadata for one
+publicly-listed base Game, plus its currently persisted Final Classification
+(if any).  It is a **read-only** endpoint: it never contacts Steam, never
+refreshes metadata, and never recalculates classification.
+
+### Public eligibility
+
+A Game resolves only when it is **publicly listable** — the canonical
+`Game.objects.publicly_listable()` policy:
+
+```text
+content_type == game AND listing_status == published
+```
+
+Steam and Manual Games are both canonical Games and share this endpoint.
+Slug is the lookup key (`Game.slug` is globally unique).
+
+### 404 behavior
+
+Unknown slug, hidden/draft, archived, and non-game content (dlc, demo,
+software, soundtrack, unknown) all return identically:
+
+```json
+404 GAME_NOT_FOUND
+```
+
+A hidden record is indistinguishable from a missing one publicly.
+
+### Game payload
+
+The `game` object exposes the public subset: `id`, `slug`, `name`, `source`
+(`steam` / `manual`), `external_id` (Steam App ID, or `null` for Manual),
+`content_type`, `description` (manual/editorial description), `release_date`,
+`developer`, `image_url` (canonical `display_image_url`), and
+`metadata_updated_at`.
+
+### Classification payload
+
+`classification` is `null` when no Final Classification record exists.
+Otherwise it exposes the persisted current published result:
+
+- `status` — the canonical calculation status (`READY`, `NO_SUBMISSIONS`,
+  `INSUFFICIENT_ANCHOR`, …);
+- `regime` — `provisional`, `unified`, or `none`;
+- `challenge` / `reward` — `{micro, macro, mystiko}` when published, `null`
+  when the status is a legitimate non-ready domain outcome;
+- `confidence_level` / `confidence_label`;
+- `submission_count`, `calculation_version`, `calculated_at`, `is_stale`.
+
+No scores are fabricated for non-ready statuses, and a non-ready result is
+returned as-is (never converted to `404` and never replaced by a stale score).
 
 Every error response follows this structure:
 
@@ -125,6 +178,7 @@ Every error response follows this structure:
 | `AUTHENTICATION_ERROR`  | 401  | Missing or invalid credentials            |
 | `AUTHORIZATION_ERROR`   | 403  | Insufficient permissions                  |
 | `NOT_FOUND`             | 404  | Resource not found                        |
+| `GAME_NOT_FOUND`        | 404  | Public game not found (hidden/non-game/unknown) |
 | `BAD_REQUEST`           | 400  | Generic client error                      |
 | `METHOD_NOT_ALLOWED`    | 405  | HTTP method not supported                 |
 | `CONFLICT`              | 409  | Resource conflict                         |
@@ -223,9 +277,9 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **Steam import/refresh endpoints only.** SBGC-57 added authorized Steam
-  mutation endpoints (`docs/steam-api.md`).  Public game/classification read
-  endpoints remain deferred to SBGC-9 and SBGC-10.
+- **Game detail delivered; catalogue/search/ranking reads deferred.** SBGC-71
+  added `GET /api/v1/games/{slug}`.  Catalogue, search, and ranking read
+  endpoints remain deferred to SBGC-10/SBGC-11.
 - **No global authentication backend.** Session auth is opt-in per operation
   via `auth=django_auth`; there is no project-wide auth middleware.
 - **Method-not-allowed returns HTML.** Documented framework limitation
