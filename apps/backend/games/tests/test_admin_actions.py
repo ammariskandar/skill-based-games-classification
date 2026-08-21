@@ -1,14 +1,16 @@
 """
-Game Admin action tests — SBGC-69.
+Game Admin action tests — SBGC-69 / SBGC-70.
 
-Covers publish / hide / archive bulk actions and the continuing absence of
-``delete_selected``.  The existing Steam refresh action is already covered by
-``test_admin_refresh.py``.
+Covers publish / hide / archive bulk actions, the continuing absence of
+``delete_selected``, and Admin audit-log entry creation.  The existing Steam
+refresh action is already covered by ``test_admin_refresh.py``.
 """
 
 from __future__ import annotations
 
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
 
@@ -87,3 +89,15 @@ class GameStateActionTests(TestCase):
     def test_delete_selected_still_absent(self):
         response = self.client.get(self.url)
         self.assertNotContains(response, "delete_selected")
+
+    def test_publish_action_creates_log_entry(self):
+        game = self._manual("Audited Publish")
+        self._post_action("publish_selected", [game.pk])
+        entry = LogEntry.objects.filter(
+            content_type=ContentType.objects.get_for_model(Game),
+            object_id=str(game.pk),
+            action_flag=CHANGE,
+        ).first()
+        assert entry is not None
+        self.assertEqual(entry.user, self.superuser)
+        self.assertIn("published", entry.change_message)

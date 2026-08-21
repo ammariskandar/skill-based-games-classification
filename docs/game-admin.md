@@ -143,6 +143,12 @@ skipped without partial mutation.
 `delete_selected` bulk deletion remains disabled (single-object cascade delete
 is the canonical deletion path).
 
+### Audit logging
+
+Publish / Hide / Archive and Steam refresh (when it actually updates a Game)
+write a standard Django Admin `LogEntry` (change) per affected object, so the
+operator, object, action, and timestamp are visible in the Admin history.
+
 ### Action validation
 
 Human verification completed on local SQLite. The four SBGC-69 checks passed:
@@ -171,3 +177,11 @@ Completed on local SQLite. All five checks passed (5/5):
    validation error is clean.
 5. Deletion confirmation — single-object cascade confirmation correct; bulk
    `delete_selected` absent.
+
+## Safety validation (SBGC-70)
+
+Human verification completed on local SQLite. All five safety checks passed:
+identity/system fields protected (Manual and Steam), classification provenance
+protected, single-object deletion with cascade and no bulk delete, derived
+records view-only, and standard Admin history shows operator attribution and
+timestamp for a safe Admin action.

@@ -144,6 +144,11 @@ Results are summarized as `ready`, `non-ready`, and `failed`. Legitimate domain
 outcomes (e.g. `NO_SUBMISSIONS`, `INSUFFICIENT_ANCHOR`) are `non-ready`, not
 failures. Derived values are never edited directly by the action.
 
+Each successfully recalculated Game also gets a standard Django Admin
+`LogEntry` (change) so operator attribution and timestamp are auditable.
+Bulk `delete_selected` is absent on the submission changelist (defining the
+`recalculate` action replaces the default actions).
+
 Human verification confirmed the action: selecting a submission triggers
 exactly one recalculation for the affected Game, the current snapshot updates,
 and no duplicate recalculation occurs.
@@ -172,3 +177,13 @@ Completed on local SQLite. All five checks passed (5/5):
 `BoundaryCalibration` rows are empty for the current low-N human-test
 population. This is expected and not applicable (no boundary calibration is
 required for the current case), not a defect.
+
+## Safety validation (SBGC-70)
+
+Human verification completed on local SQLite. All five safety checks passed:
+classification provenance (`submitted_by`/`submitted_role`/`submitted_base_weight`/
+timestamps) protected while source scores/notes remain editable; single-object
+deletion with cascade and no bulk `delete_selected`; `ClassificationSnapshot`
+view-only with no add/change/delete and no manual statistical override; and a
+safe Admin action is reflected in the standard Admin history with operator
+attribution and timestamp.

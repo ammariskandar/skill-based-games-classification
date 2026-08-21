@@ -1,12 +1,14 @@
 """
-Classification Admin recalculate action tests — SBGC-69.
+Classification Admin recalculate action tests — SBGC-69 / SBGC-70.
 """
 
 from __future__ import annotations
 
 from unittest import mock
 
+from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
 from games.models import Game, SourceType
@@ -136,3 +138,26 @@ class RecalculateActionTests(TestCase):
         submission.refresh_from_db()
         self.assertIsNotNone(submission.pk)
         self.assertEqual(submission.submitted_by.username, "recalc-admin")
+
+    def test_delete_selected_absent(self):
+        response = self.client.get(self.url)
+        self.assertNotContains(response, "delete_selected")
+
+    def test_recalculate_action_creates_log_entry(self):
+        game = self._game("Audited Recalculate")
+        submission = self._submit(game)
+
+        with mock.patch(
+            "classifications.services.calculations.run_game_calculation",
+            return_value=mock.MagicMock(),
+        ):
+            self._post_action([submission.pk])
+
+        entry = LogEntry.objects.filter(
+            content_type=ContentType.objects.get_for_model(Game),
+            object_id=str(game.pk),
+            action_flag=CHANGE,
+        ).first()
+        assert entry is not None
+        self.assertEqual(entry.user, self.superuser)
+        self.assertIn("recalculated", entry.change_message)
