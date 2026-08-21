@@ -1,0 +1,228 @@
+---
+import type { GameDetailGame } from "../../lib/server/api/games";
+import { gameInformationRows } from "../../lib/game-information";
+
+interface Props {
+  game: GameDetailGame;
+}
+
+const { game } = Astro.props;
+const rows = gameInformationRows(game);
+const description = game.description.trim();
+---
+
+<div class="game-info">
+  <button
+    type="button"
+    class="game-info__trigger"
+    data-game-info-trigger
+    aria-haspopup="dialog"
+    aria-controls="game-info-dialog"
+  >
+    <span class="game-info__trigger-text">
+      <span class="game-info__trigger-title">Game information</span>
+    </span>
+    <span class="game-info__trigger-arrow" aria-hidden="true">→</span>
+  </button>
+
+  <dialog id="game-info-dialog" class="game-info__dialog">
+    <header class="game-info__header">
+      <h2 class="game-info__heading">Game information</h2>
+      <button
+        type="button"
+        class="game-info__close"
+        data-game-info-close
+        aria-label="Close game information"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="game-info__body">
+      <dl class="game-info__list">
+        {
+          rows.map((row) => (
+            <div class="game-info__row">
+              <dt class="game-info__term">{row.label}</dt>
+              <dd class="game-info__value">{row.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      {
+        description && (
+          <section class="game-info__description">
+            <h3 class="game-info__description-title">Description</h3>
+            <p class="game-info__description-text">{description}</p>
+          </section>
+        )
+      }
+    </div>
+  </dialog>
+</div>
+
+<script>
+  const trigger = document.querySelector<HTMLButtonElement>(
+    "[data-game-info-trigger]",
+  );
+  const dialog = document.querySelector<HTMLDialogElement>("#game-info-dialog");
+  const close = document.querySelector<HTMLButtonElement>(
+    "[data-game-info-close]",
+  );
+
+  trigger?.addEventListener("click", () => dialog?.showModal());
+  close?.addEventListener("click", () => dialog?.close());
+</script>
+
+<style>
+  .game-info__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .game-info__trigger:hover {
+    border-color: var(--color-border-2);
+    background: var(--color-surface-2);
+  }
+
+  .game-info__trigger:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .game-info__trigger-title {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .game-info__trigger-arrow {
+    font-size: 1.25rem;
+    color: var(--color-muted);
+    transition: transform 0.15s ease;
+  }
+
+  .game-info__trigger:hover .game-info__trigger-arrow {
+    transform: translateX(2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .game-info__trigger-arrow {
+      transition: none;
+    }
+  }
+
+  .game-info__dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+    width: min(92vw, 40rem);
+    max-height: 85dvh;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .game-info__dialog::backdrop {
+    background: rgb(0 0 0 / 0.8);
+  }
+
+  .game-info__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .game-info__heading {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .game-info__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .game-info__close:hover {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
+  .game-info__close:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .game-info__body {
+    margin-top: 1rem;
+    overflow-y: auto;
+  }
+
+  .game-info__list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem 1.5rem;
+    margin: 0;
+  }
+
+  .game-info__row {
+    display: contents;
+  }
+
+  .game-info__term {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  .game-info__value {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-text);
+  }
+
+  .game-info__description {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .game-info__description-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .game-info__description-text {
+    margin-top: 0.5rem;
+    max-width: 40rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-muted);
+  }
+</style>

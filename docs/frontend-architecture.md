@@ -67,6 +67,25 @@ Reusable Astro components are in `src/components/ui/`. See [`docs/ui-foundations
 
 Micro/Mystiko/Macro visualisation uses Observable Plot (bars) and D3 (radar). Canonical dimension order, labels, symbols, and colour tokens are defined in `src/lib/skill-dimensions.ts`. See [`docs/skill-visual-system.md`](skill-visual-system.md). Django owns authoritative scores; Astro owns presentation only. The bar-versus-radar product decision belongs to Ammar Iskandar.
 
+### Classification Display (SBGC-73)
+
+The public Game-detail classification is rendered by `src/components/classification/`:
+
+- `ClassificationDisplay.astro` — receives the SBGC-71 `classification` DTO and branches unavailable (null/non-ready) vs ready.
+- `ClassificationProfile.astro` — the single shared Challenge/Reward profile component (100% stacked bar + exact Micro/Macro/Mystiko values).
+- `ClassificationConfidence.astro` — confidence hierarchy: section label, primary percentage, semantic descriptor (`High confidence`).
+- `ClassificationStatus.astro` — reusable dot status for provisional/stale.
+
+Rendering is **static/zero-hydration**: no chart library, no `client:*` directive, no client JavaScript. The locked dimension order is `Micro, Macro, Mystiko` (single source in `src/lib/classification-presentation.ts`). Category colours reuse the site tokens `--color-micro`/`--color-macro`/`--color-mystiko`. Exact values are always visible (never colour-only).
+
+State handling: `classification: null` and legitimate non-ready statuses both render an unavailable state with no bars/confidence/zeros; READY renders profiles + confidence + provisional/stale indicators + submission count. Historical SBGC-73 "notes" has **no canonical Final Classification note** — notes are not aggregated or invented.
+
+### Game Detail Layout (SBGC-73)
+
+The desktop Game page is a two-column grid: artwork (left) and a right panel (Game Information control above the always-visible Skill Classification). On mobile the panel stacks below the artwork. Game Information opens a native `<dialog>` (no refetch — it consumes the already-loaded SBGC-71 Game DTO); secondary metadata (developer, release date, source, Steam App ID, description) lives in that modal, while Skill Classification remains permanently visible and is **not** collapsible. The interaction is a tiny vanilla `<script>` (no framework island, no `client:*` directive). The future D3 radar visualization will inherit the classification region without a page-layout redesign.
+
+Human verification (visual + interaction) passed on the local dev servers: desktop two-column architecture, Game Information modal (open/Close/Escape), Manual/sparse metadata, and responsive mobile layout all reviewed and accepted; the modal was centered and the backdrop darkened during review.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
@@ -112,6 +131,21 @@ Client-side JavaScript is limited to **bounded Astro islands**. Components that 
 - **Django** owns authoritative data, business logic, classification rules, search indexing, and the admin interface.
 - **Astro** owns routing, page rendering, presentation, asset delivery, server-side API consumption, and SEO metadata.
 - The frontend never holds business logic; it consumes the Django API and renders the result.
+
+## Frontend Engineering Defaults
+
+Standing MyGameDNA frontend rules (SBGC-73 onwards):
+
+- **DRY** — extract genuinely repeated UI. Challenge and Reward share one profile component.
+- **KISS** — prefer Astro components + TypeScript + semantic HTML + scoped CSS. No framework library for static content.
+- **Performance-first** — server-render/static HTML first; zero unnecessary client JavaScript; optimize assets through Astro; hydrate only interactive islands.
+- **Islands** — `.astro` components render without a client runtime by default. Hydrate only with a concrete interactive reason (`client:load` for immediate, `client:idle`/`client:visible` for lower priority). Never hydrate merely because it is available.
+- **Scoped styling** — component-local `<style>` blocks; reuse design tokens; no CSS-in-JS.
+- **Assets** — prefer `astro:assets` `Image`/`Picture` where remote domains can be safely authorized; otherwise a plain `<img>` is acceptable. Do not build manual image optimization.
+- **Structure** — `src/pages` (routes), `src/layouts` (shells), `src/components` (reusable UI), `src/lib` (non-UI helpers/API/types).
+- **TypeScript** — strict; no `any`/`as any`/`@ts-ignore` unless objectively unavoidable and documented.
+- **Slots** — named/default slots for genuinely flexible wrappers only; prefer typed props otherwise.
+- **Environment safety** — server-only env vars stay server-only; never leak backend/env settings into client JS; do not add env vars unless required.
 
 ## API Layer
 

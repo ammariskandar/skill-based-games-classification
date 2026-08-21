@@ -1,0 +1,115 @@
+/**
+ * Presentation-only classification tests (SBGC-73).
+ *
+ * These prove the locked Micro/Macro/Mystiko order and the null/non-ready/
+ * ready state narrowing. No Django arithmetic is invoked.
+ */
+
+import { describe, expect, it } from "vitest";
+
+import {
+  CLASSIFICATION_DIMENSION_ORDER,
+  presentClassification,
+  profileDimensions,
+} from "./classification-presentation";
+import type { GameFinalClassification } from "./server/api/games";
+
+describe("profileDimensions", () => {
+  it("returns the locked Micro/Macro/Mystiko order", () => {
+    expect(CLASSIFICATION_DIMENSION_ORDER).toEqual([
+      "micro",
+      "macro",
+      "mystiko",
+    ]);
+  });
+
+  it("maps asymmetric values to the correct dimensions", () => {
+    const dimensions = profileDimensions({ micro: 51, macro: 31, mystiko: 18 });
+
+    expect(dimensions).toEqual([
+      { key: "micro", label: "Micro", value: 51 },
+      { key: "macro", label: "Macro", value: 31 },
+      { key: "mystiko", label: "Mystiko", value: 18 },
+    ]);
+  });
+});
+
+describe("presentClassification", () => {
+  it("treats a null classification as unavailable", () => {
+    expect(presentClassification(null)).toEqual({ kind: "unavailable" });
+  });
+
+  it("treats a missing profile as unavailable (non-ready)", () => {
+    const classification: GameFinalClassification = {
+      status: "NO_SUBMISSIONS",
+      regime: "none",
+      challenge: null,
+      reward: null,
+      confidence_level: null,
+      confidence_label: null,
+      submission_count: 0,
+      calculation_version: null,
+      calculated_at: null,
+      is_stale: false,
+    };
+    expect(presentClassification(classification)).toEqual({
+      kind: "unavailable",
+    });
+  });
+
+  it("returns a ready state with scores, confidence, regime, and stale flag", () => {
+    const classification: GameFinalClassification = {
+      status: "READY",
+      regime: "provisional",
+      challenge: { micro: 51, macro: 31, mystiko: 18 },
+      reward: { micro: 13, macro: 27, mystiko: 60 },
+      confidence_level: 82,
+      confidence_label: "High",
+      submission_count: 42,
+      calculation_version: "STATISTICAL_MODEL_V1.0.0",
+      calculated_at: "2026-08-21T00:00:00Z",
+      is_stale: false,
+    };
+
+    const presentation = presentClassification(classification);
+
+    expect(presentation.kind).toBe("ready");
+    if (presentation.kind === "ready") {
+      expect(presentation.challenge.micro).toBe(51);
+      expect(presentation.challenge.macro).toBe(31);
+      expect(presentation.challenge.mystiko).toBe(18);
+      expect(presentation.reward.micro).toBe(13);
+      expect(presentation.reward.macro).toBe(27);
+      expect(presentation.reward.mystiko).toBe(60);
+      expect(presentation.confidence).toBe(82);
+      expect(presentation.confidenceLabel).toBe("High");
+      expect(presentation.regime).toBe("provisional");
+      expect(presentation.isStale).toBe(false);
+      expect(presentation.submissionCount).toBe(42);
+    }
+  });
+
+  it("preserves a stale flag alongside valid scores", () => {
+    const classification: GameFinalClassification = {
+      status: "READY",
+      regime: "unified",
+      challenge: { micro: 40, macro: 35, mystiko: 25 },
+      reward: { micro: 20, macro: 30, mystiko: 50 },
+      confidence_level: 72.1,
+      confidence_label: "Medium",
+      submission_count: 30,
+      calculation_version: "STATISTICAL_MODEL_V1.0.0",
+      calculated_at: "2026-08-20T00:00:00Z",
+      is_stale: true,
+    };
+
+    const presentation = presentClassification(classification);
+
+    expect(presentation.kind).toBe("ready");
+    if (presentation.kind === "ready") {
+      expect(presentation.regime).toBe("unified");
+      expect(presentation.isStale).toBe(true);
+      expect(presentation.challenge.micro).toBe(40);
+    }
+  });
+});

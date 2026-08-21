@@ -1,0 +1,113 @@
+---
+import type { GameFinalClassification } from "../../lib/server/api/games";
+import { presentClassification } from "../../lib/classification-presentation";
+import ClassificationConfidence from "./ClassificationConfidence.astro";
+import ClassificationProfile from "./ClassificationProfile.astro";
+import ClassificationStatus from "./ClassificationStatus.astro";
+
+interface Props {
+  classification: GameFinalClassification | null;
+}
+
+const { classification } = Astro.props;
+const presentation = presentClassification(classification);
+---
+
+<section class="classification" aria-labelledby="classification-heading">
+  <h2 id="classification-heading" class="classification__heading">
+    Skill Classification
+  </h2>
+
+  {
+    presentation.kind === "unavailable" && (
+      <p class="classification__empty">
+        Classification is not available for this game yet.
+      </p>
+    )
+  }
+
+  {
+    presentation.kind === "ready" && (
+      <div class="classification__body">
+        <div class="classification__profiles">
+          <ClassificationProfile
+            title="Challenge"
+            profile={presentation.challenge}
+          />
+          <ClassificationProfile title="Reward" profile={presentation.reward} />
+        </div>
+
+        {presentation.confidence !== null && (
+          <div class="classification__confidence">
+            <ClassificationConfidence
+              level={presentation.confidence}
+              label={presentation.confidenceLabel}
+            />
+          </div>
+        )}
+
+        {(presentation.regime === "provisional" || presentation.isStale) && (
+          <div class="classification__state">
+            {presentation.regime === "provisional" && (
+              <ClassificationStatus kind="provisional" />
+            )}
+            {presentation.isStale && <ClassificationStatus kind="stale" />}
+          </div>
+        )}
+
+        {presentation.submissionCount !== null &&
+          presentation.submissionCount > 0 && (
+            <p class="classification__meta">
+              Based on {presentation.submissionCount} submissions
+            </p>
+          )}
+      </div>
+    )
+  }
+</section>
+
+<style>
+  .classification {
+    max-width: 56rem;
+  }
+
+  .classification__heading {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .classification__empty {
+    margin-top: 0.75rem;
+    color: var(--color-muted);
+  }
+
+  .classification__body {
+    margin-top: 1.25rem;
+  }
+
+  .classification__profiles {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .classification__confidence {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .classification__state {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .classification__meta {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+</style>

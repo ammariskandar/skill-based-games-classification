@@ -2554,6 +2554,69 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-21 — SBGC-73 Classification display
+
+- Built the public Game-page classification display from the SBGC-71 DTO:
+  `src/components/classification/ClassificationDisplay.astro` (unavailable vs
+  ready branch) and `ClassificationProfile.astro` (the single shared
+  Challenge/Reward profile: 100% stacked bar + exact values).
+- Locked the canonical display order `Micro, Macro, Mystiko` in
+  `src/lib/classification-presentation.ts` (`presentClassification`,
+  `profileDimensions`); reuses the site tokens `--color-micro/macro/mystiko`.
+- Zero hydration, no chart/framework dependency; scoped CSS; exact textual
+  values always visible (not colour-only).  Null/non-ready → unavailable state
+  (no bars/confidence/fake zeros); READY → profiles + confidence +
+  provisional/stale indicator + submission count.  Unified regime renders as
+  the ordinary state; calculation version/timestamp are deliberately not
+  prominent.
+- Added 6 focused presentation tests (order/asymmetric mapping, null/non-ready/
+  ready/stale narrowing); frontend suite 112 green; production build
+  (`astro check && astro build`) green; lint + format clean.  No backend
+  change, no new dependency, no migration.  Documented the standing frontend
+  engineering defaults in `docs/frontend-architecture.md`.
+- **Notes reconciliation:** historical SBGC-73 "notes" has no canonical Final
+  Classification note — notes are not aggregated or invented here.
+
+## 2026-08-21 — SBGC-73 visual hierarchy refinement (post functional validation)
+
+- Refined the classification metadata hierarchy after functional human review:
+  extracted `ClassificationConfidence.astro` (section label → primary 2.25rem
+  percentage → semantic `High confidence` descriptor) and
+  `ClassificationStatus.astro` (reusable dot status for provisional/stale).
+- Increased spacing/grouping: profiles vs confidence vs status vs provenance are
+  now visually separated; the classification section is constrained to a
+  56rem max width; Challenge/Reward titles slightly stronger than legend.
+- Confidence percentage is now clearly primary; status is distinct and not
+  error-styled; `Based on N submissions` is tertiary but readable.  No backend/
+  domain change, no radar/D3, zero hydration retained.  Frontend suite 112
+  green; build/lint/format clean.
+
+## 2026-08-21 — SBGC-73 page information architecture (final presentation pass)
+
+- Reworked the desktop Game-detail page into a two-column grid: artwork left,
+  and a right panel with a `Game information` control above the always-visible
+  Skill Classification.  Mobile stacks below the artwork.
+- Added `src/components/game/GameInformation.astro` — a real button trigger +
+  native `<dialog>` (dark backdrop, Escape, explicit Close) with a tiny vanilla
+  `<script>` (no framework island, no `client:*`); consumes the already-loaded
+  SBGC-71 Game DTO (no refetch).  Secondary metadata (developer, release date,
+  source, Steam App ID, description) moved into the modal; Source no longer
+  occupies a standalone page region.
+- Added `src/lib/game-information.ts` (`gameInformationRows`, `formatReleaseDate`)
+  — user-relevant rows only, optional fields omitted, Steam App ID only for
+  Steam, internal ID/slug/content type excluded.  Challenge/Reward now stack
+  in the narrower right column.  5 focused tests; frontend suite 117 green;
+  build/lint/format clean.  No backend change, no new dependency, no D3/radar.
+
+## 2026-08-22 — SBGC-73 human validation PASS
+
+- Human verification (visual + interaction) passed on the local dev servers:
+  desktop two-column architecture; Game Information native modal (open, Close,
+  Escape, focus); Manual/sparse metadata omitted cleanly; responsive mobile
+  layout.  During review the modal was centered (was top-left) and the backdrop
+  darkened.  Documentation-only closure; no production code changed beyond the
+  review feedback.  SBGC-73 ready to merge.
+
 ## 2026-08-21 — SBGC-72 Astro game-detail route
 
 - Wired the existing `/games/[slug].astro` route to Django: it now fetches the

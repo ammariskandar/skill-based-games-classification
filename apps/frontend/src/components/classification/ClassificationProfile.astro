@@ -1,0 +1,125 @@
+---
+import type { ClassificationProfile as Profile } from "../../lib/server/api/games";
+import { profileDimensions } from "../../lib/classification-presentation";
+
+interface Props {
+  title: "Challenge" | "Reward";
+  profile: Profile;
+}
+
+const { title, profile } = Astro.props;
+const dimensions = profileDimensions(profile);
+---
+
+<section class="profile">
+  <h3 class="profile__title">{title}</h3>
+
+  <div class="profile__bar" aria-hidden="true">
+    {
+      dimensions.map((dimension) => (
+        <span
+          class={`segment segment--${dimension.key}`}
+          style={`width:${dimension.value}%`}
+        />
+      ))
+    }
+  </div>
+
+  <dl class="profile__values">
+    {
+      dimensions.map((dimension) => (
+        <div class="value">
+          <dt class="value__label">
+            <span
+              class={`value__swatch value__swatch--${dimension.key}`}
+              aria-hidden="true"
+            />
+            {dimension.label}
+          </dt>
+          <dd class="value__number">{dimension.value}%</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>
+
+<style>
+  .profile__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .profile__bar {
+    display: flex;
+    gap: 2px;
+    height: 0.75rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-border);
+  }
+
+  .segment {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .segment--micro {
+    background: var(--color-micro);
+  }
+
+  .segment--macro {
+    background: var(--color-macro);
+  }
+
+  .segment--mystiko {
+    background: var(--color-mystiko);
+  }
+
+  .profile__values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .value {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .value__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--color-muted);
+  }
+
+  .value__swatch {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    display: inline-block;
+  }
+
+  .value__swatch--micro {
+    background: var(--color-micro);
+  }
+
+  .value__swatch--macro {
+    background: var(--color-macro);
+  }
+
+  .value__swatch--mystiko {
+    background: var(--color-mystiko);
+  }
+
+  .value__number {
+    margin: 0;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
