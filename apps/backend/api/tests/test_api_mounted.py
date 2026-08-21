@@ -160,7 +160,9 @@ class UnknownPathTests(SimpleTestCase):
         self.assertNotIn(last_segment, r.content.decode().lower())
 
     def test_unknown_under_games_router(self):
-        self._assert_unknown_returns_not_found_envelope("/api/v1/games/not-real")
+        # A single-segment GET under /games/ is now the game-detail route
+        # (SBGC-71), so use a multi-segment path to exercise the API catch-all.
+        self._assert_unknown_returns_not_found_envelope("/api/v1/games/not-real/extra")
 
     def test_unknown_under_classifications_router(self):
         self._assert_unknown_returns_not_found_envelope(
