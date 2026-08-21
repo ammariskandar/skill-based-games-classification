@@ -146,6 +146,15 @@ Otherwise it exposes the persisted current published result:
 No scores are fabricated for non-ready statuses, and a non-ready result is
 returned as-is (never converted to `404` and never replaced by a stale score).
 
+### Human verification
+
+Completed on local SQLite (no live Steam, no engine run). All three checks
+passed: a public classified Game returned 200 with normalized fields and the
+persisted READY Challenge/Reward + confidence; a public Game without
+classification returned `classification: null` (no fake zeros); and
+hidden/non-game/unknown slugs returned `404 GAME_NOT_FOUND` with no
+hidden-record disclosure.
+
 Every error response follows this structure:
 
 ```json

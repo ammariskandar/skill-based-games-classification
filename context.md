@@ -2579,6 +2579,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   reconciliation — no canonical Final Classification note/explanation field
   exists; multi-submission notes are not aggregated here.
 
+## 2026-08-21 — SBGC-71 human validation PASS
+
+- Human verification completed on local SQLite (no live Steam, no engine run):
+  all three checks passed — public classified Game (200 + normalized fields +
+  persisted READY Challenge/Reward + confidence), public Game without
+  classification (`classification: null`, no fake zeros), and
+  hidden/non-game/unknown slugs (`404 GAME_NOT_FOUND`, no hidden-record
+  disclosure).  Documentation-only closure; no production code changed.
+  SBGC-71 ready to merge.
+
 ## 2026-08-21 — SBGC-183 Scheduled Steam metadata refresh
 
 - Added `ScheduledSteamRefreshService` (`games/services/scheduled_refresh.py`)
