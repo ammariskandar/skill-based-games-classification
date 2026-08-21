@@ -8,7 +8,13 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, Prefetch
 
 from games.forms import GameForm
-from games.models import Game, ListingStatus, SourceType
+from games.models import (
+    Game,
+    ListingStatus,
+    SourceType,
+    SteamRefreshGameAttempt,
+    SteamRefreshRun,
+)
 from games.services.imports.steam import (
     SteamGameRefreshStatus,
     SteamRefreshError,
@@ -24,19 +30,9 @@ def _build_steam_refresh_service():
     surface.  Tests patch this function with a fake service — no network
     in automated tests.
     """
-    from config.steam import steam_client_config_from_settings
+    from games.services.imports.factory import build_steam_refresh_service
 
-    from games.services.imports.steam import (
-        SteamGamePersistenceService,
-        SteamGameRefreshService,
-    )
-    from games.services.steam.adapters.app_details import SteamAppDetailsAdapter
-    from games.services.steam.client import SteamClient
-    from games.services.steam.import_foundation import SteamImportFoundation
-
-    client = SteamClient(steam_client_config_from_settings())
-    foundation = SteamImportFoundation(SteamAppDetailsAdapter(client))
-    return SteamGameRefreshService(foundation, SteamGamePersistenceService())
+    return build_steam_refresh_service()
 
 
 def _apply_listing_status(
@@ -333,3 +329,56 @@ class GameAdmin(admin.ModelAdmin):
                 f"Steam refresh finished ({summary}).",
                 level=messages.SUCCESS,
             )
+
+
+# ---------------------------------------------------------------------------
+# Scheduled Steam-refresh audit — read-only inspection (SBGC-183)
+# ---------------------------------------------------------------------------
+
+
+@admin.register(SteamRefreshRun)
+class SteamRefreshRunAdmin(admin.ModelAdmin):
+    list_display = (
+        "scheduled_at",
+        "status",
+        "selected_count",
+        "successful_count",
+        "failed_count",
+        "finished_at",
+        "alert_sent",
+    )
+    list_filter = ("status",)
+    readonly_fields = [field.name for field in SteamRefreshRun._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SteamRefreshGameAttempt)
+class SteamRefreshGameAttemptAdmin(admin.ModelAdmin):
+    list_display = (
+        "run",
+        "game",
+        "attempt_number",
+        "outcome",
+        "error_code",
+        "timestamp",
+    )
+    list_filter = ("outcome",)
+    list_select_related = ("run", "game")
+    readonly_fields = [field.name for field in SteamRefreshGameAttempt._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

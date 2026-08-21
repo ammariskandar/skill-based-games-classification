@@ -11,8 +11,11 @@ SBGC-56 delivers:
   refreshed);
 - a manual Django Admin action ("Refresh Steam metadata from Steam").
 
-Not delivered (explicitly out of scope): Ninja endpoints, cron/Celery,
-background schedulers, bulk-refresh jobs, frontend UI.
+Not delivered (explicitly out of scope for SBGC-56): Ninja endpoints,
+cron/Celery, background schedulers, bulk-refresh jobs, frontend UI.
+
+Daily scheduled refresh on top of this same service is delivered by
+**SBGC-183** — see [`docs/scheduled-steam-refresh.md`](scheduled-steam-refresh.md).
 
 ## Pipeline
 
@@ -144,6 +147,14 @@ PostgreSQL-specific semantics were introduced.
 - unexpected exceptions propagate (fail loudly);
 - the action performs real network calls in production — automated
   tests patch the composition factory (`games.admin._build_steam_refresh_service`).
+
+## Scheduled refresh (SBGC-183)
+
+The scheduled daily refresh uses the **same** `SteamGameRefreshService` through
+the shared composition root `games/services/imports/factory.py`. The scheduler
+never calls the Admin action; both depend on the refresh service. See
+[`docs/scheduled-steam-refresh.md`](scheduled-steam-refresh.md) for the
+scheduling, retry, audit, concurrency, and alerting contract.
 
 ## SBGC-57 Handoff
 

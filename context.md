@@ -913,7 +913,7 @@ Steam is authoritative. Persist only the subset needed for search, listings, ran
 
 ## 14.2 Refresh
 
-A manual Django Admin action or management command is sufficient. Refresh must update permitted metadata, preserve classifications, respect owner overrides, record success time, and fail without corrupting the record. Scheduled workers are not required.
+Refresh must update permitted metadata, preserve classifications, respect owner overrides, record success time, and fail without corrupting the record. A manual Django Admin action and `SteamGameRefreshService` remain the canonical refresh path. A daily scheduled refresh (Steam-only, per-Game retry budget, failure-only retries, one final-failure alert) is delivered by SBGC-183 — see `docs/scheduled-steam-refresh.md`.
 
 ## 14.3 Steam images
 
@@ -1373,7 +1373,10 @@ Use provider-native status, health checks, and logs:
 - Render service/deployment status;
 - Vercel deployment and function logs;
 - Neon connection/usage status;
-- optional free uptime check.
+- optional free uptime check;
+- the scheduled Steam refresh final-failure email (SBGC-183) surfaces a daily
+  run's residual failures to the operator (see
+  `docs/scheduled-steam-refresh.md`).
 
 ## 24.4 SigNoz decision
 
@@ -1512,7 +1515,9 @@ Render deployment must define:
 - static-file handling for Django Admin;
 - health-check route;
 - environment variables;
-- allowed hosts/CORS/CSRF settings.
+- allowed hosts/CORS/CSRF settings;
+- a Render Cron job for the daily scheduled Steam refresh (SBGC-183) if
+  enabled — application-implemented but not provisioned by the ticket.
 
 ## 27.3 Frontend deployment
 
@@ -2548,6 +2553,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 ---
 
 # 43. Changelog
+
+## 2026-08-21 — SBGC-183 Scheduled Steam metadata refresh
+
+- Added `ScheduledSteamRefreshService` (`games/services/scheduled_refresh.py`)
+  — a daily Steam-only refresh orchestration: up to four attempts per Game at
+  T+0 / +360s / +360s / +10800s, retrying only failures, with success removing
+  a Game from the pending population and no fifth attempt.
+- Added a DB-backed current-run audit (`SteamRefreshRun`,
+  `SteamRefreshGameAttempt`) with a partial unique "single active run"
+  constraint; establishing a new run atomically retires the prior run.
+  Registered both as read-only Admin (no add/change/delete).
+- Added `resolve_refresh_recipients()` (active Superuser emails, else
+  `STEAM_REFRESH_FALLBACK_EMAILS` fallback) and a single final-failure
+  `send_mail()` alert sent only after attempt 4; run state persisted before
+  notification so an email failure never loses the audit.
+- Added a thin `run_scheduled_steam_refresh` management command and the shared
+  `build_steam_refresh_service()` composition root (also used by the Admin
+  refresh action).  No Celery/Redis — Render Cron → command is the chosen
+  scheduler.  Added `STEAM_REFRESH_FALLBACK_EMAILS` and `DEFAULT_FROM_EMAIL`.
+- Added focused tests (`games/tests/test_scheduled_refresh.py`, 14 tests) for
+  all-success, partial retry, final failure, manual exclusion, same-day
+  retention, next-day replacement, concurrency skip, email failure, recipient
+  resolution, and command delegation; affected neighborhood 108 tests green.
+  One new migration (`games/0008`).  Documented in
+  `docs/scheduled-steam-refresh.md`.  Production Render Cron is
+  application-implemented but **not provisioned**.
 
 ## 2026-08-15 — SBGC-59 Manual Game creation and editing
 

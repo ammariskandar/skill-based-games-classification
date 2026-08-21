@@ -126,6 +126,31 @@ Secret environment variables (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STEAM_WEB_AP
 
 No Render database resource is defined. No real credentials are stored.
 
+## Scheduled Steam Refresh (SBGC-183)
+
+The daily scheduled Steam metadata refresh is a **separate Render Cron job**, not
+part of the Gunicorn web service:
+
+```text
+Render Cron
+  → python manage.py run_scheduled_steam_refresh --settings=config.settings.production
+```
+
+The job is application-implemented; the production cron itself is
+**not yet provisioned** (deployment-owned work). See
+[`docs/scheduled-steam-refresh.md`](scheduled-steam-refresh.md) for the
+retry, audit, concurrency, and alerting contract, and
+[`docs/steam-metadata-refresh.md`](steam-metadata-refresh.md) for the refresh
+service it orchestrates.
+
+Configuration:
+
+- `STEAM_REFRESH_FALLBACK_EMAILS` — fallback alert recipients (used only when no
+  valid active Superuser email exists).
+- `DEFAULT_FROM_EMAIL` — sender for the operational alert email.
+- Standard `EMAIL_*` settings drive `send_mail()`; no SMTP credentials are
+  hardcoded.
+
 ## Environment Variables
 
 | Variable | Required | Default | Notes |
@@ -138,6 +163,8 @@ No Render database resource is defined. No real credentials are stored.
 | `DJANGO_LOG_LEVEL` | — | `INFO` | DEBUG/INFO/WARNING/ERROR/CRITICAL |
 | `DJANGO_SECURE_HSTS_SECONDS` | — | `0` | Staged: 0 → 3600 → 31536000 |
 | `STEAM_WEB_API_KEY` | — | *(empty)* | Optional |
+| `STEAM_REFRESH_FALLBACK_EMAILS` | — | *(empty)* | Comma-separated fallback alert recipients |
+| `DEFAULT_FROM_EMAIL` | — | `webmaster@localhost` | Sender for operational alerts |
 | `WEB_CONCURRENCY` | — | `2` | Gunicorn workers |
 
 ## PostgreSQL-Only Production

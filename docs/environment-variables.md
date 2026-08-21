@@ -42,6 +42,8 @@ cp apps/backend/.env.example apps/backend/.env
 | `STEAM_RETRY_SLEEP_MAX_SECONDS` | Server | Public    | `5`                            | Render env vars     | No           |
 | `STEAM_MAX_RESPONSE_BYTES`      | Server | Public    | `2097152`                      | Render env vars     | No           |
 | `STEAM_CDN_ALLOWED_HOSTS`       | Server | Public    | *(empty)*                      | Render env vars     | No (later)   |
+| `STEAM_REFRESH_FALLBACK_EMAILS` | Server | Public    | *(empty)*                      | Render env vars     | No           |
+| `DEFAULT_FROM_EMAIL`            | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
 | `DJANGO_LOG_LEVEL`      | Server   | Public        | `INFO`                         | Render env vars     | No           |
 | `WEB_CONCURRENCY`       | Server   | Public        | `2`                            | Render env vars     | No           |
 | `ADMIN_URL_PATH`       | Server   | Secret        | `mygamedna-admin`              | Render env vars     | Yes          |
@@ -58,6 +60,13 @@ cp apps/backend/.env.example apps/backend/.env
 - `DEBUG` is controlled by the selected settings module (`config.settings.development` or `config.settings.production`), not by an environment variable.
   See [`docs/backend-architecture.md`](backend-architecture.md) for settings selection.
 - `ADMIN_URL_PATH` controls the Django Admin route and is validated at startup. Must be a single relative path segment containing only ASCII letters, digits, hyphens, and underscores, starting with an alphanumeric character. The segment "api" is reserved. See [`docs/admin-configuration.md`](admin-configuration.md).
+- `STEAM_REFRESH_FALLBACK_EMAILS` is a comma-separated list of fallback alert
+  recipients used only when no valid active Django Superuser email exists
+  (SBGC-183 scheduled Steam refresh). It is configuration, not a secret. See
+  [`docs/scheduled-steam-refresh.md`](scheduled-steam-refresh.md).
+- `DEFAULT_FROM_EMAIL` is the sender address for operational alert emails
+  (scheduled Steam refresh). Uses Django's standard email settings; no SMTP
+  credentials are hardcoded.
 
 ## Variable Classification
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 from classifications.skills import EditorialProfile, SkillCategory
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from games.services.assets import ManualAssetError, validate_manual_image_url
 from games.types import CONTENT_TYPE_CHOICES, ContentType
@@ -540,10 +541,84 @@ class Game(models.Model):
         return self.manual_image_url or self.steam_image_url
 
 
+class SteamRefreshRun(models.Model):
+    """One daily scheduled Steam-refresh run — the sole retained current audit."""
+
+    class Status(models.TextChoices):
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    scheduled_at = models.DateTimeField()
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=16, choices=Status.choices, default=Status.RUNNING
+    )
+    selected_count = models.PositiveIntegerField(default=0)
+    successful_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    alert_sent = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-scheduled_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["status"],
+                condition=models.Q(status="running"),
+                name="steam_refresh_run_single_active_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Steam refresh run {self.scheduled_at.isoformat()}"
+
+
+class SteamRefreshGameAttempt(models.Model):
+    """One per-Game refresh attempt inside a daily run."""
+
+    class Outcome(models.TextChoices):
+        SUCCESS = "success", "Success"
+        UNAVAILABLE = "unavailable", "Unavailable"
+        FAILED = "failed", "Failed"
+
+    run = models.ForeignKey(
+        SteamRefreshRun,
+        on_delete=models.CASCADE,
+        related_name="attempts",
+    )
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="steam_refresh_attempts",
+    )
+    attempt_number = models.PositiveSmallIntegerField()
+    timestamp = models.DateTimeField(default=timezone.now)
+    outcome = models.CharField(max_length=16, choices=Outcome.choices)
+    error_code = models.CharField(max_length=48, blank=True)
+    error_summary = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["attempt_number", "game_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["run", "game", "attempt_number"],
+                name="steam_refresh_attempt_run_game_num_uniq",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue]
+        run_id = self.run_id  # pyright: ignore[reportAttributeAccessIssue]
+        return f"Attempt {self.attempt_number} for {game_id} in run {run_id}"
+
+
 __all__ = [
     "ContentType",
     "CONTENT_TYPE_CHOICES",
     "Game",
     "ListingStatus",
     "SourceType",
+    "SteamRefreshGameAttempt",
+    "SteamRefreshRun",
 ]
