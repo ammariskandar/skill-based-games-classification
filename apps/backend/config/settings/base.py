@@ -207,6 +207,16 @@ CLASSIFICATION_RETRY_DELAY_SECONDS = env_str(
     env, "CLASSIFICATION_RETRY_DELAY_SECONDS", default="60"
 )
 
+# SBGC-183 — scheduled Steam metadata refresh.
+# Comma-separated fallback recipient emails, used only when no valid active
+# Superuser email exists.  This is configuration, not a secret.
+STEAM_REFRESH_FALLBACK_EMAILS = env_str(
+    env, "STEAM_REFRESH_FALLBACK_EMAILS", default=""
+)
+
+# Sender address for operational alert emails.
+DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+
 # Logging — SBGC-43
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.
 # Production default: INFO.  Development may use DEBUG.

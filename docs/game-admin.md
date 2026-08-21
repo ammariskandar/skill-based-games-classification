@@ -185,3 +185,19 @@ identity/system fields protected (Manual and Steam), classification provenance
 protected, single-object deletion with cascade and no bulk delete, derived
 records view-only, and standard Admin history shows operator attribution and
 timestamp for a safe Admin action.
+
+## Scheduled Steam refresh audit (SBGC-183)
+
+The daily scheduled Steam refresh records its current run in two read-only
+Admin surfaces:
+
+- `SteamRefreshRun` — scheduled/start/finish timestamps, status, selected /
+  successful / failed counts, alert-sent flag.
+- `SteamRefreshGameAttempt` — per-Game attempt number, timestamp, outcome, safe
+  error code, and truncated error summary.
+
+Both are registered as **view-only**: `has_add_permission`,
+`has_change_permission`, and `has_delete_permission` all return `False`, and all
+fields are readonly. There is no rerun button and no bulk deletion. The run and
+attempt records are the persisted audit of the scheduled job, not an editorial
+surface. See [`docs/scheduled-steam-refresh.md`](scheduled-steam-refresh.md).
