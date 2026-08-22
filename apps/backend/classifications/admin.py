@@ -206,6 +206,9 @@ class EditorialClassificationAdminForm(forms.ModelForm):
 class EditorialClassificationAdmin(admin.ModelAdmin):
     form = EditorialClassificationAdminForm
 
+    class Media:
+        css = {"all": ("classifications/admin.css",)}
+
     inlines = [
         ChallengeProfileInline,
         RewardProfileInline,

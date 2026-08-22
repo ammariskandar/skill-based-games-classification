@@ -1,0 +1,39 @@
+/*
+ * Editorial classification Admin — long Game name containment.
+ *
+ * A Game name is user/Steam controlled and can be arbitrarily long.  The
+ * default admin renders the Game as a raw FK select and a changelist link,
+ * both of which grow to fit the longest name and push the page wider than the
+ * viewport.  These rules cap that growth at roughly 90 characters and
+ * ellipsize the overflow so the rest of the form/table stays usable.
+ */
+
+/* Changelist "Game" column — ellipsize after ~90 characters. */
+td.field-game {
+    max-width: 90ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * `text-overflow` on a table cell is historically inconsistent, so ellipsize
+ * the link itself — the element that actually holds the game name.
+ */
+td.field-game a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/*
+ * Change form "Game" select.  A native <select> cannot reliably ellipsize its
+ * closed-state value, so capping the width is the honest fix; the open
+ * dropdown still shows full names.
+ */
+select#id_game {
+    max-width: min(100%, 90ch);
+}

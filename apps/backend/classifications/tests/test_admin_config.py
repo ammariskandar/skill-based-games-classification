@@ -16,6 +16,7 @@ from django.utils import timezone
 from games.models import Game, SourceType
 from games.types import ContentType
 
+from classifications.admin import EditorialClassificationAdmin
 from classifications.models import (
     CalculationEpoch,
     ChallengeProfile,
@@ -322,3 +323,9 @@ class FinalClassificationAdminTests(TestCase):
         self.assertFalse(model_admin.has_add_permission(request))
         self.assertFalse(model_admin.has_change_permission(request))
         self.assertFalse(model_admin.has_delete_permission(request))
+
+
+class EditorialClassificationMediaTests(TestCase):
+    def test_admin_includes_game_name_truncation_css(self):
+        model_admin = EditorialClassificationAdmin(EditorialClassification, admin.site)
+        self.assertIn("classifications/admin.css", str(model_admin.media))

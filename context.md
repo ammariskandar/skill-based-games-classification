@@ -2577,6 +2577,12 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Documented the state matrix in `docs/frontend-api-layer.md` and the
   exceptional-state semantics + `500.astro` route in
   `docs/frontend-architecture.md`.
+- Follow-up (human review): contained absurdly long Game names in the
+  Editorial Classification admin — added
+  `classifications/static/classifications/admin.css` (changelist `Game` column
+  ellipsizes at ~90ch; the add-form `Game` `<select>` is width-capped) wired via
+  `EditorialClassificationAdmin.Media`.  1 focused admin-media test;
+  classifications admin tests green; Ruff check + format clean.  No migration.
 
 ## 2026-08-21 — SBGC-73 Classification display
 
