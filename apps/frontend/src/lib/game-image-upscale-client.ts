@@ -158,6 +158,13 @@ export function mountGameImageEnhancer(options: MountOptions): void {
           window.matchMedia("(prefers-reduced-motion: reduce)").matches,
         );
         cleanup();
+        console.info("[game-image]", "revealed", {
+          mode: overlayImage.dataset.reveal,
+          overlayWidth: overlayImage.naturalWidth,
+          overlayHeight: overlayImage.naturalHeight,
+          originalWidth: originalImage.naturalWidth,
+          originalHeight: originalImage.naturalHeight,
+        });
       },
       { once: true },
     );
