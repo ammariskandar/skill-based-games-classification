@@ -220,8 +220,8 @@ touches Steam-owned fields or the editorial classification.  See
   enforces it by default (``PRAGMA ignore_check_constraints=0``).
   PostgreSQL-specific constraint and index behaviour is verified by
   SBGC-52.
-- Steam-owned metadata (`short_description`, `header_image_url`,
-  `website_url`, `is_free`, `developers`, `publishers`) has no canonical
-  fields yet — the import workflow does not persist it.  Manual editorial
-  `release_date`/`developer` fields (SBGC-59) are separate and are never
-  populated from Steam DTO metadata.
+- Steam-owned metadata `website_url`, `is_free`, and `publishers` still has
+  no canonical fields (the import workflow does not persist it).
+  `description`, `developer`, and `release_date` are now Steam-populated
+  (SBGC-188) with per-field override provenance; `header_image_url` and the
+  Library asset URLs are Steam-owned image metadata.

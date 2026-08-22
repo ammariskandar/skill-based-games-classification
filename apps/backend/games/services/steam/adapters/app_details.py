@@ -17,6 +17,11 @@ from games.services.steam.adapters import (
 from games.services.steam.cdn import validate_steam_image_url
 from games.services.steam.dto import SteamAppDetails, SteamAppId
 from games.services.steam.mapping import map_steam_product_type
+from games.services.steam.normalization import (
+    normalize_steam_description,
+    normalize_steam_developer,
+    normalize_steam_release_date,
+)
 
 # Store appdetails endpoint.
 _APP_DETAILS_PATH = "/api/appdetails"
@@ -92,22 +97,24 @@ class SteamAppDetailsAdapter:
 
         # -- optional fields -----------------------------------------------------
 
-        short_description = _optional_str(data, "short_description")
+        description = normalize_steam_description(data.get("short_description"))
+        developer = normalize_steam_developer(data.get("developers"))
+        release_date = normalize_steam_release_date(data.get("release_date"))
         header_image_url = validate_steam_image_url(data.get("header_image"))
         website_url = _validate_website_url(data.get("website"))
         is_free = _optional_bool(data, "is_free")
-        developers = _optional_str_list(data, "developers")
         publishers = _optional_str_list(data, "publishers")
 
         return SteamAppDetails(
             app_id=app_id,
             name=name,
             content_type=map_steam_product_type(raw_type),
-            short_description=short_description,
+            description=description,
+            developer=developer,
+            release_date=release_date,
             header_image_url=header_image_url,
             website_url=website_url,
             is_free=is_free,
-            developers=developers,
             publishers=publishers,
         )
 
@@ -130,17 +137,6 @@ def _require_nonblank_str(data: dict[str, object], key: str, app_id: str) -> str
             f"'{key}' must not be blank (App ID {app_id})."
         )
     return stripped
-
-
-def _optional_str(data: dict[str, object], key: str) -> str | None:
-    """Extract an optional string field.  Blank → None."""
-    value = data.get(key)
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        return None
-    stripped = value.strip()
-    return stripped if stripped else None
 
 
 def _optional_bool(data: dict[str, object], key: str) -> bool | None:

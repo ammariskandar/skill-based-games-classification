@@ -6,6 +6,7 @@ Tests against mocked adapter — no live calls, no database.
 
 from __future__ import annotations
 
+from datetime import date
 from unittest.mock import MagicMock
 
 from django.test import SimpleTestCase
@@ -48,11 +49,12 @@ class PrepareCandidateTests(SimpleTestCase):
             app_id="440",
             name="Team Fortress 2",
             content_type="game",
-            short_description="FPS",
+            description="FPS",
+            developer="Valve",
+            release_date=date(2007, 10, 10),
             header_image_url="https://cdn.example.com/img.jpg",
             website_url=None,
             is_free=True,
-            developers=("Valve",),
             publishers=("Valve",),
         )
         result = self.foundation.prepare_candidate("440")

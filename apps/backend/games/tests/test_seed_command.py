@@ -102,7 +102,7 @@ class FirstRunTests(TestCase):
 
     def test_manual_metadata_present(self):
         chess = Game.objects.get(slug="chess")
-        self.assertIn("board game", chess.manual_description)
+        self.assertIn("board game", chess.description)
 
     def test_complete_classifications_exist(self):
         qs = Game.objects.editorially_classified()
@@ -179,12 +179,12 @@ class CorrectiveRerunTests(TestCase):
 
     def test_restores_manual_metadata(self):
         g = Game.objects.get(slug="chess")
-        g.manual_description = "Wrong"
+        g.description = "Wrong"
         g.save()
         with override_settings(DEVELOPMENT_SEEDING_ENABLED=True):
             call_command("seed_development_data", stdout=StringIO())
         g.refresh_from_db()
-        self.assertIn("board game", g.manual_description)
+        self.assertIn("board game", g.description)
 
     def test_restores_classification_notes(self):
         c = EditorialClassification.objects.get(game__slug="portal-2")

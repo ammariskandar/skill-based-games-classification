@@ -393,7 +393,8 @@ class Game(models.Model):
         null=True,
         blank=True,
         help_text=(
-            "Release date for manually managed game metadata. Accepted formats: "
+            "Release date. Steam-managed for Steam Games unless overridden "
+            "in Admin; manually editable for Manual Games. Accepted formats: "
             "YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, or YYYY/MM/DD."
         ),
     )
@@ -401,12 +402,45 @@ class Game(models.Model):
     developer = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Developer name for manually managed game metadata.",
+        help_text=(
+            "Developer name. Steam-managed for Steam Games unless overridden "
+            "in Admin; manually editable for Manual Games."
+        ),
     )
 
-    manual_description = models.TextField(blank=True)
+    description = models.TextField(
+        blank=True,
+        help_text=(
+            "Short description. Steam-managed for Steam Games unless "
+            "overridden in Admin; manually editable for Manual Games."
+        ),
+    )
     manual_image_url = models.URLField(max_length=500, blank=True)
     manual_website_url = models.URLField(max_length=500, blank=True)
+
+    # -- Steam override provenance (SBGC-188) -----------------------------------
+
+    description_overridden = models.BooleanField(
+        default=False,
+        help_text=(
+            "True = description is human-owned; Steam refresh preserves it. "
+            "False = Steam-managed (Steam Games only)."
+        ),
+    )
+    developer_overridden = models.BooleanField(
+        default=False,
+        help_text=(
+            "True = developer is human-owned; Steam refresh preserves it. "
+            "False = Steam-managed (Steam Games only)."
+        ),
+    )
+    release_date_overridden = models.BooleanField(
+        default=False,
+        help_text=(
+            "True = release date is human-owned; Steam refresh preserves it. "
+            "False = Steam-managed (Steam Games only)."
+        ),
+    )
 
     # -- Steam-owned metadata ---------------------------------------------------
 

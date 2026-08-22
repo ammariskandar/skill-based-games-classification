@@ -126,8 +126,8 @@ A hidden record is indistinguishable from a missing one publicly.
 
 The `game` object exposes the public subset: `id`, `slug`, `name`, `source`
 (`steam` / `manual`), `external_id` (Steam App ID, or `null` for Manual),
-`content_type`, `description` (manual/editorial description), `release_date`,
-`developer`, `image_url` (canonical `display_image_url`), and
+`content_type`, `description` (Steam-populated for Steam Games unless
+overridden in Admin; manual for Manual Games), `release_date`, `developer`, `image_url` (canonical `display_image_url`), and
 `metadata_updated_at`.  Steam Games additionally expose the optional
 `library_hero_url` and `library_capsule_url` (both `null` for Manual Games and
 for Steam content without Library artwork) for the SBGC-184 layered Game-detail

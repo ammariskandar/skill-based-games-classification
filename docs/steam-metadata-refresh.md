@@ -29,9 +29,10 @@ canonical Steam Game
 ```
 
 The service reuses SBGC-54's `SteamGamePersistenceService` identity
-lookup and the shared `_apply_steam_owned_updates()` helper — there is
-exactly **one owner** of the Steam-owned field-mapping table for both
-imports and refreshes.
+lookup and the shared `_apply_steam_metadata()` helper — there is
+exactly **one owner** of the Steam-managed field-mapping table for both
+imports and refreshes (see SBGC-188 below for the editable-metadata
+ownership model).
 
 ## Eligibility
 
@@ -58,9 +59,10 @@ SteamGameRefreshResult(status, game_id, changed_fields=())
 ```
 
 - `UPDATED` requires non-empty `changed_fields` (deterministic order:
-  name, content_type, steam_image_url).
+  name, content_type, steam_image_url, library_hero_url,
+  library_capsule_url, description, developer, release_date).
 - `UNCHANGED` / `UNAVAILABLE` require empty `changed_fields`.
-- Only Steam-owned field names are permitted in `changed_fields`.
+- Only Steam-managed field names are permitted in `changed_fields`.
 
 ## Fields Refreshed
 
@@ -69,20 +71,24 @@ SteamGameRefreshResult(status, game_id, changed_fields=())
 | `name` | replaced when different |
 | `content_type` | replaced when different (canonical value incl. `unknown`) |
 | `steam_image_url` | SBGC-55 semantics: valid URL updates; `None`/blank preserves; malformed raises |
+| `library_hero_url` / `library_capsule_url` | derived from the App ID for base Games |
+| `description` | SBGC-188: updated unless `description_overridden`; absent upstream value preserves |
+| `developer` | SBGC-188: updated unless `developer_overridden`; absent upstream value preserves |
+| `release_date` | SBGC-188: updated unless `release_date_overridden`; absent upstream value preserves |
 | `last_steam_refresh_at` | set on every successful verification (UPDATED and UNCHANGED) |
 
-**Never refreshed:** slug, listing_status, `manual_*` metadata,
-editorial classification (parent + Challenge + Reward + notes +
-`updated_by`), `created_at`, `source_type`, `external_id`, `id`.
+**Never refreshed:** slug, listing_status, `manual_image_url` /
+`manual_website_url`, editorial classification (parent + Challenge +
+Reward + notes + `updated_by`), `created_at`, `source_type`,
+`external_id`, `id`.
 
-## DTO Fields Intentionally Not Persisted
+## DTO Fields Not Persisted
 
-The candidate DTO also carries `short_description`, `website_url`,
-`is_free`, `developers`, and `publishers`.  SBGC-56 does **not** persist
-these — the repository's recorded Jira scope covers safe field updates
-of the fields above plus refresh tracking, and no Steam-owned schema
-exists for them.  They are never written into `manual_*` fields.  A
-future ticket that persists them must add explicit Steam-owned schema.
+The candidate DTO also carries `website_url`, `is_free`, and `publishers`.
+SBGC-188 persists `description`, `developer`, and `release_date` (see
+below); the remaining fields still have no canonical `Game` schema and
+are neither written into `manual_*` fields nor dropped into new schema.
+A future ticket that persists them must add explicit Steam-owned schema.
 
 ## Unavailable Apps
 
@@ -167,3 +173,24 @@ POST /api/v1/games/{game_id}/steam/refresh
 ```
 
 See `docs/steam-api.md` and `docs/postman-steam-integration.md`.
+
+## SBGC-188 — editable Steam metadata
+
+Steam now populates the canonical editable fields `description`,
+`developer`, and `release_date` from a single normalized Steam metadata
+pipeline (`games/services/steam/normalization.py` → adapter → candidate →
+shared persistence).  The three fields have independent ownership:
+
+- `*_overridden = False` → Steam-managed; refresh may update it.
+- `*_overridden = True` → human-owned; refresh preserves it.
+
+Import (new Game) writes all three and leaves the flags `False`
+(Steam-managed).  Refresh honours each flag independently, and an absent
+upstream value **preserves** the current value (it never erases good
+metadata on a transient omission).  A blank human override is respected
+via the flag — blank never means "resume Steam".
+
+All refresh callers (Admin action, HTTP `POST …/steam/refresh`, and the
+SBGC-183 scheduled job) go through `SteamGameRefreshService` → the same
+`_apply_steam_metadata()` mapping — there is no per-caller mapping.  See
+`docs/game-admin.md` for the Admin override/resume UX.

@@ -62,7 +62,7 @@ class FieldMetadataTests(SimpleTestCase):
         self.assertEqual(field.default, ListingStatus.DRAFT)
 
     def test_manual_metadata_fields_blank(self):
-        for name in ("manual_description", "manual_image_url", "manual_website_url"):
+        for name in ("description", "manual_image_url", "manual_website_url"):
             field = model_field(Game, name)
             self.assertTrue(field.blank)
 
@@ -156,12 +156,12 @@ class ValidRecordTests(TestCase):
             source_type=SourceType.MANUAL,
             name="Meta",
             slug="meta",
-            manual_description="A description.",
+            description="A description.",
             manual_image_url="https://example.com/img.png",
             manual_website_url="https://example.com",
         )
         g.refresh_from_db()
-        self.assertEqual(g.manual_description, "A description.")
+        self.assertEqual(g.description, "A description.")
         self.assertEqual(g.manual_image_url, "https://example.com/img.png")
         self.assertEqual(g.manual_website_url, "https://example.com")
 
@@ -547,7 +547,7 @@ class AdminFunctionalTests(TestCase):
             "slug": "admin-game",
             "content_type": ContentType.GAME,
             "listing_status": ListingStatus.DRAFT,
-            "manual_description": "",
+            "description": "",
             "manual_image_url": "",
             "manual_website_url": "",
         }

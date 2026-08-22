@@ -78,7 +78,7 @@ class SeedGame:
     external_id: str | None
     content_type: str
     listing_status: str
-    manual_description: str = ""
+    description: str = ""
     manual_image_url: str = ""
     manual_website_url: str = ""
     classify: bool = False
@@ -138,7 +138,7 @@ SEED_GAMES: list[SeedGame] = [
         external_id=None,
         content_type=ContentType.GAME,
         listing_status=ListingStatus.PUBLISHED,
-        manual_description="The classic board game.",
+        description="The classic board game.",
         manual_website_url="https://example.invalid/chess",
         classify=True,
         challenge=(30, 50, 20),
@@ -152,7 +152,7 @@ SEED_GAMES: list[SeedGame] = [
         external_id=None,
         content_type=ContentType.GAME,
         listing_status=ListingStatus.PUBLISHED,
-        manual_description="The ancient game of surrounding territory.",
+        description="The ancient game of surrounding territory.",
         classify=True,
         challenge=(20, 70, 10),
         reward=(5, 80, 15),
@@ -165,7 +165,7 @@ SEED_GAMES: list[SeedGame] = [
         external_id=None,
         content_type=ContentType.SOFTWARE,
         listing_status=ListingStatus.PUBLISHED,
-        manual_description="A non-game application example.",
+        description="A non-game application example.",
         manual_website_url="https://example.invalid/tool",
     ),
     SeedGame(
@@ -262,7 +262,7 @@ def _seed_one_game(sg: SeedGame, editor: User, stats: dict) -> dict:
     game.slug = sg.slug
     game.content_type = sg.content_type
     game.listing_status = sg.listing_status
-    game.manual_description = sg.manual_description
+    game.description = sg.description
     game.manual_image_url = sg.manual_image_url
     game.manual_website_url = sg.manual_website_url
     game.save()

@@ -34,7 +34,7 @@ class CreateManualGameTests(TestCase):
         self.assertEqual(game.slug, "chess")
         self.assertEqual(game.content_type, ContentType.GAME)
         self.assertEqual(game.listing_status, ListingStatus.DRAFT)
-        self.assertEqual(game.manual_description, "")
+        self.assertEqual(game.description, "")
         self.assertEqual(game.manual_image_url, "")
         self.assertEqual(game.manual_website_url, "")
         self.assertEqual(game.steam_image_url, "")
@@ -45,12 +45,12 @@ class CreateManualGameTests(TestCase):
             name="Go",
             content_type=ContentType.GAME,
             listing_status=ListingStatus.PUBLISHED,
-            manual_description="Abstract strategy game",
+            description="Abstract strategy game",
             manual_image_url="https://example.com/go.jpg",
             manual_website_url="https://example.com",
         )
 
-        self.assertEqual(game.manual_description, "Abstract strategy game")
+        self.assertEqual(game.description, "Abstract strategy game")
         self.assertEqual(game.manual_image_url, "https://example.com/go.jpg")
         self.assertEqual(game.manual_website_url, "https://example.com")
         self.assertEqual(game.listing_status, ListingStatus.PUBLISHED)
@@ -111,7 +111,7 @@ class UpdateManualGameTests(TestCase):
             name="Chess Renamed",
             content_type=ContentType.GAME,
             listing_status=ListingStatus.PUBLISHED,
-            manual_description="updated",
+            description="updated",
             manual_image_url="https://example.com/new.jpg",
             manual_website_url="https://example.com/new",
         )
@@ -119,7 +119,7 @@ class UpdateManualGameTests(TestCase):
         self.assertEqual(game.name, "Chess Renamed")
         self.assertEqual(game.slug, "chess")
         self.assertEqual(game.listing_status, ListingStatus.PUBLISHED)
-        self.assertEqual(game.manual_description, "updated")
+        self.assertEqual(game.description, "updated")
         self.assertEqual(game.manual_image_url, "https://example.com/new.jpg")
         self.assertEqual(game.manual_website_url, "https://example.com/new")
 
@@ -170,7 +170,7 @@ class UpdateManualGameTests(TestCase):
         self.assertEqual(game.developer, "")
 
     def test_steam_identity_and_metadata_untouched(self):
-        game = update_manual_game(self.game, manual_description="edited")
+        game = update_manual_game(self.game, description="edited")
 
         self.assertEqual(game.source_type, SourceType.MANUAL)
         self.assertIsNone(game.external_id)
@@ -208,7 +208,7 @@ class UpdateManualGameTests(TestCase):
             notes="original notes",
         )
 
-        update_manual_game(self.game, name="Chess Renamed", manual_description="x")
+        update_manual_game(self.game, name="Chess Renamed", description="x")
 
         parent.refresh_from_db()
         self.assertEqual(parent.notes, "original notes")

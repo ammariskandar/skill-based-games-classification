@@ -56,11 +56,12 @@ class SteamImportFoundation:
             app_id=details.app_id,
             name=details.name,
             content_type=details.content_type,
-            short_description=details.short_description,
+            description=details.description,
+            developer=details.developer,
+            release_date=details.release_date,
             header_image_url=details.header_image_url,
             website_url=details.website_url,
             is_free=details.is_free,
-            developers=details.developers,
             publishers=details.publishers,
         )
 

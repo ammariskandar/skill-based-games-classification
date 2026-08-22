@@ -30,7 +30,7 @@ class ManualReleaseDateInputFormatTests(TestCase):
             "listing_status": ListingStatus.DRAFT,
             "release_date": release_date_value,
             "developer": "Date Studio",
-            "manual_description": "",
+            "description": "",
             "manual_image_url": "",
             "manual_website_url": "",
         }

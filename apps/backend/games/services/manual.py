@@ -41,7 +41,7 @@ def create_manual_game(
     listing_status: str = ListingStatus.DRAFT,
     release_date: date | None = None,
     developer: str = "",
-    manual_description: str = "",
+    description: str = "",
     manual_image_url: str = "",
     manual_website_url: str = "",
 ) -> Game:
@@ -67,7 +67,7 @@ def create_manual_game(
         listing_status=listing_status,
         release_date=release_date,
         developer=developer,
-        manual_description=manual_description,
+        description=description,
         manual_image_url=manual_image_url,
         manual_website_url=manual_website_url,
     )
@@ -87,15 +87,15 @@ def update_manual_game(
     listing_status: str | None = None,
     release_date: date | None | _Unset = _UNSET,
     developer: str | None = None,
-    manual_description: str | None = None,
+    description: str | None = None,
     manual_image_url: str | None = None,
     manual_website_url: str | None = None,
 ) -> Game:
     """Edit a canonical manual Game.
 
     Only manual Games may be edited.  ``None`` means "keep the existing
-    value" for most fields (including ``manual_*`` fields, whose valid empty
-    value can be passed explicitly).
+    value" for most fields (including ``description`` and the ``manual_*``
+    asset fields, whose valid empty value can be passed explicitly).
 
     ``release_date`` uses a distinct ``_UNSET`` sentinel as its default so
     callers can keep it (omit the argument), set a date (pass a ``date``), or
@@ -135,8 +135,8 @@ def update_manual_game(
     if developer is not None:
         game.developer = developer
         changed = True
-    if manual_description is not None:
-        game.manual_description = manual_description
+    if description is not None:
+        game.description = description
         changed = True
     if manual_image_url is not None:
         game.manual_image_url = manual_image_url

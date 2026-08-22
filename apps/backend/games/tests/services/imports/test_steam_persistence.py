@@ -7,6 +7,7 @@ the persistence layer never touches Steam transport.
 
 from __future__ import annotations
 
+from datetime import date
 from unittest import mock
 
 from classifications.models import EditorialClassification
@@ -35,12 +36,18 @@ def _candidate(
     name: str = "Counter-Strike",
     content_type: str = "game",
     header_image_url: str | None = None,
+    description: str | None = None,
+    developer: str | None = None,
+    release_date: date | None = None,
 ) -> SteamGameImportCandidate:
     return SteamGameImportCandidate(
         app_id=app_id,
         name=name,
         content_type=content_type,
         header_image_url=header_image_url,
+        description=description,
+        developer=developer,
+        release_date=release_date,
     )
 
 
@@ -142,7 +149,7 @@ class NewImportTests(TestCase):
     def test_new_game_has_no_manual_metadata(self):
         result = self.service.persist(_candidate("620", "Portal 2"))
         game = Game.objects.get(pk=result.game_id)
-        self.assertEqual(game.manual_description, "")
+        self.assertEqual(game.description, "")
         self.assertEqual(game.manual_image_url, "")
         self.assertEqual(game.manual_website_url, "")
 
@@ -232,14 +239,14 @@ class ReimportTests(TestCase):
         self.assertEqual(game.listing_status, ListingStatus.PUBLISHED)
 
     def test_manual_metadata_preserved_on_update(self):
-        self.game.manual_description = "Editorial description."
+        self.game.description = "Editorial description."
         self.game.manual_image_url = "https://cdn.example.com/img.png"
         self.game.manual_website_url = "https://example.com"
         self.game.save()
         self.service.persist(_candidate("620", "Portal 2 — Reloaded"))
 
         game = Game.objects.get(pk=self.original_pk)
-        self.assertEqual(game.manual_description, "Editorial description.")
+        self.assertEqual(game.description, "Editorial description.")
         self.assertEqual(game.manual_image_url, "https://cdn.example.com/img.png")
         self.assertEqual(game.manual_website_url, "https://example.com")
 
@@ -658,7 +665,7 @@ class SteamImageTests(TestCase):
             )
         )
         game = Game.objects.get(pk=created.game_id)
-        game.manual_description = "Editorial description."
+        game.description = "Editorial description."
         game.manual_image_url = "https://cdn.example.com/manual.png"
         game.manual_website_url = "https://example.com"
         game.save()
@@ -670,7 +677,7 @@ class SteamImageTests(TestCase):
         )
 
         game.refresh_from_db()
-        self.assertEqual(game.manual_description, "Editorial description.")
+        self.assertEqual(game.description, "Editorial description.")
         self.assertEqual(game.manual_image_url, "https://cdn.example.com/manual.png")
         self.assertEqual(game.manual_website_url, "https://example.com")
 
@@ -786,6 +793,58 @@ class LibraryAssetTests(TestCase):
         game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
         self.assertEqual(game.library_hero_url, "")
         self.assertEqual(game.library_capsule_url, "")
+
+
+# ---------------------------------------------------------------------------
+# Editable metadata population (SBGC-188)
+# ---------------------------------------------------------------------------
+
+
+class MetadataPopulationTests(TestCase):
+    """description/developer/release_date are populated from Steam on import."""
+
+    def setUp(self):
+        self.service = SteamGamePersistenceService()
+
+    def test_new_import_populates_editable_metadata(self):
+        result = self.service.persist(
+            _candidate(
+                "620",
+                "Portal 2",
+                description="A puzzle game.",
+                developer="Valve",
+                release_date=date(2011, 4, 18),
+            )
+        )
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.description, "A puzzle game.")
+        self.assertEqual(game.developer, "Valve")
+        self.assertEqual(game.release_date, date(2011, 4, 18))
+
+    def test_new_import_override_flags_default_false(self):
+        result = self.service.persist(
+            _candidate(
+                "620",
+                "Portal 2",
+                description="A puzzle game.",
+                developer="Valve",
+                release_date=date(2011, 4, 18),
+            )
+        )
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertFalse(game.description_overridden)
+        self.assertFalse(game.developer_overridden)
+        self.assertFalse(game.release_date_overridden)
+
+    def test_new_import_without_optional_values_leaves_blank(self):
+        result = self.service.persist(_candidate("620", "Portal 2"))
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.description, "")
+        self.assertEqual(game.developer, "")
+        self.assertIsNone(game.release_date)
 
 
 # ---------------------------------------------------------------------------

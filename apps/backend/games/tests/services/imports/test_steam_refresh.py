@@ -9,6 +9,7 @@ boundary.
 
 from __future__ import annotations
 
+from datetime import date
 from unittest import mock
 
 from classifications.models import EditorialClassification
@@ -51,12 +52,18 @@ def _candidate(
     name: str = "Portal 2",
     content_type: str = "game",
     header_image_url: str | None = None,
+    description: str | None = None,
+    developer: str | None = None,
+    release_date: date | None = None,
 ) -> SteamGameImportCandidate:
     return SteamGameImportCandidate(
         app_id=app_id,
         name=name,
         content_type=content_type,
         header_image_url=header_image_url,
+        description=description,
+        developer=developer,
+        release_date=release_date,
     )
 
 
@@ -65,11 +72,22 @@ def _found_lookup(
     name: str = "Portal 2",
     content_type: str = "game",
     header_image_url: str | None = None,
+    description: str | None = None,
+    developer: str | None = None,
+    release_date: date | None = None,
 ) -> SteamAppLookupResult:
     return SteamAppLookupResult(
         status=LookupStatus.FOUND,
         app_id=app_id,
-        candidate=_candidate(app_id, name, content_type, header_image_url),
+        candidate=_candidate(
+            app_id,
+            name,
+            content_type,
+            header_image_url,
+            description,
+            developer,
+            release_date,
+        ),
     )
 
 
@@ -466,7 +484,7 @@ class RefreshPreservationTests(TestCase):
             external_id="620",
             name="Portal 2",
             listing_status=ListingStatus.PUBLISHED,
-            manual_description="Editorial description.",
+            description="Editorial description.",
             manual_image_url="https://cdn.example.com/manual.png",
             manual_website_url="https://example.com",
         )
@@ -483,7 +501,7 @@ class RefreshPreservationTests(TestCase):
         self.game.refresh_from_db()
         self.assertEqual(self.game.slug, original_slug)
         self.assertEqual(self.game.listing_status, ListingStatus.PUBLISHED)
-        self.assertEqual(self.game.manual_description, "Editorial description.")
+        self.assertEqual(self.game.description, "Editorial description.")
         self.assertEqual(
             self.game.manual_image_url, "https://cdn.example.com/manual.png"
         )
@@ -565,3 +583,139 @@ class RefreshTransactionBoundaryTests(TransactionTestCase):
         self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
         game.refresh_from_db()
         self.assertEqual(game.name, "Portal 2 — Reloaded")
+
+
+# ---------------------------------------------------------------------------
+# Editable metadata ownership (SBGC-188)
+# ---------------------------------------------------------------------------
+
+
+class EditableMetadataRefreshTests(TestCase):
+    def setUp(self):
+        self.service, self.foundation = _make_service()
+        self.game = _steam_game(
+            external_id="620",
+            name="Portal 2",
+            description="A",
+            developer="B",
+            release_date=date(2011, 1, 1),
+        )
+
+    def test_steam_managed_fields_update(self):
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description="D",
+            developer="E",
+            release_date=date(2012, 2, 2),
+        )
+
+        result = self.service.refresh(self.game)
+
+        self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "D")
+        self.assertEqual(self.game.developer, "E")
+        self.assertEqual(self.game.release_date, date(2012, 2, 2))
+
+    def test_description_override_preserved(self):
+        self.game.description = "Human"
+        self.game.description_overridden = True
+        self.game.save()
+
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description="New Steam description",
+            developer="New Steam developer",
+            release_date=date(2013, 3, 3),
+        )
+
+        self.service.refresh(self.game)
+
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "Human")
+        self.assertEqual(self.game.developer, "New Steam developer")
+        self.assertEqual(self.game.release_date, date(2013, 3, 3))
+        self.assertTrue(self.game.description_overridden)
+        self.assertFalse(self.game.developer_overridden)
+        self.assertFalse(self.game.release_date_overridden)
+
+    def test_developer_override_only(self):
+        self.game.developer = "Human Studio"
+        self.game.developer_overridden = True
+        self.game.save()
+
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description="D2", developer="Steam Studio", release_date=date(2014, 4, 4)
+        )
+
+        self.service.refresh(self.game)
+
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "D2")
+        self.assertEqual(self.game.developer, "Human Studio")
+        self.assertEqual(self.game.release_date, date(2014, 4, 4))
+
+    def test_release_date_override_only(self):
+        self.game.release_date = date(2000, 1, 1)
+        self.game.release_date_overridden = True
+        self.game.save()
+
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description="D3", developer="E3", release_date=date(2015, 5, 5)
+        )
+
+        self.service.refresh(self.game)
+
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "D3")
+        self.assertEqual(self.game.developer, "E3")
+        self.assertEqual(self.game.release_date, date(2000, 1, 1))
+
+    def test_multiple_overrides(self):
+        self.game.description = "Human desc"
+        self.game.description_overridden = True
+        self.game.developer = "Human dev"
+        self.game.developer_overridden = True
+        self.game.save()
+
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description="S desc", developer="S dev", release_date=date(2016, 6, 6)
+        )
+
+        self.service.refresh(self.game)
+
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "Human desc")
+        self.assertEqual(self.game.developer, "Human dev")
+        self.assertEqual(self.game.release_date, date(2016, 6, 6))
+
+    def test_missing_upstream_value_preserves(self):
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            description=None, developer=None, release_date=None
+        )
+
+        result = self.service.refresh(self.game)
+
+        self.assertEqual(result.status, SteamGameRefreshStatus.UNCHANGED)
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.description, "A")
+        self.assertEqual(self.game.developer, "B")
+        self.assertEqual(self.game.release_date, date(2011, 1, 1))
+
+    def test_resume_sync_repopulates(self):
+        self.game.developer = "Human Studio"
+        self.game.developer_overridden = True
+        self.game.save()
+
+        # Operator clears the override (resume) then a refresh repopulates.
+        self.game.developer_overridden = False
+        self.game.save(update_fields=["developer_overridden"])
+
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            developer="Current Steam Studio"
+        )
+
+        result = self.service.refresh(self.game)
+
+        self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.developer, "Current Steam Studio")
+        self.assertFalse(self.game.developer_overridden)

@@ -145,12 +145,12 @@ class ValidCreateTests(TestCase):
 
     def test_create_manual_with_metadata(self):
         data = _valid_manual_data(slug="meta-manual")
-        data["manual_description"] = "A description"
+        data["description"] = "A description"
         data["manual_image_url"] = "https://example.invalid/img.png"
         data["manual_website_url"] = "https://example.invalid"
         self.client.post(self.url, data)
         game = Game.objects.get(slug="meta-manual")
-        self.assertEqual(game.manual_description, "A description")
+        self.assertEqual(game.description, "A description")
         self.assertEqual(game.manual_image_url, "https://example.invalid/img.png")
         self.assertEqual(game.manual_website_url, "https://example.invalid")
 
@@ -264,13 +264,13 @@ class EditTests(TestCase):
             slug="edit-manual",
             listing_status=ListingStatus.DRAFT,
         )
-        data["manual_description"] = "Updated description"
+        data["description"] = "Updated description"
         data["manual_image_url"] = "https://example.invalid/new.png"
         data["manual_website_url"] = "https://example.invalid/new-site"
         data["_changelist_filters"] = ""
         self.client.post(url, data)
         self.manual_game.refresh_from_db()
-        self.assertEqual(self.manual_game.manual_description, "Updated description")
+        self.assertEqual(self.manual_game.description, "Updated description")
         self.assertEqual(
             self.manual_game.manual_image_url, "https://example.invalid/new.png"
         )

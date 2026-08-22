@@ -56,6 +56,9 @@ _REFRESHABLE_FIELDS = (
     "steam_image_url",
     "library_hero_url",
     "library_capsule_url",
+    "description",
+    "developer",
+    "release_date",
 )
 
 
@@ -71,23 +74,42 @@ def _library_asset_urls(candidate: SteamGameImportCandidate) -> tuple[str, str]:
     return build_steam_library_asset_urls(candidate.app_id)
 
 
-def _apply_steam_owned_updates(
+def _apply_overrideable_field(
+    game: Game,
+    field_name: str,
+    upstream_value: object,
+    overridden: bool,
+) -> list[str]:
+    """Apply one overridable Steam metadata field, honouring ownership.
+
+    Returns ``[field_name]`` when the field changed, else ``[]``.
+    - ``overridden`` → preserve the human value (no write).
+    - ``upstream_value is None`` → absent/unusable → preserve current value.
+    - otherwise → update when different.
+    """
+    if overridden or upstream_value is None:
+        return []
+    current = getattr(game, field_name)
+    if current == upstream_value:
+        return []
+    setattr(game, field_name, upstream_value)
+    return [field_name]
+
+
+def _apply_steam_metadata(
     existing: Game,
     candidate: SteamGameImportCandidate,
 ) -> tuple[str, ...]:
-    """Apply Steam-owned field updates from *candidate* onto *existing*.
+    """Apply Steam-managed metadata from *candidate* onto *existing*.
 
-    The single owner of the field-mapping table for import updates and
-    metadata refresh.  SBGC-55 image semantics apply: a valid HTTPS URL
-    updates ``steam_image_url``; ``None``/blank preserves it; malformed
-    nonblank metadata raises ``SteamMalformedPayloadError`` before any
-    mutation.  Library Hero/Capsule URLs are derived from the App ID for
-    base Games (and cleared for non-game Steam content) via
-    ``_library_asset_urls``.
+    The single owner of the field-mapping table shared by import updates and
+    metadata refresh.  Handles always-Steam-owned fields (name, content_type,
+    images) and the overridable fields (description, developer, release date),
+    each of which is preserved when its per-field override flag is set.
 
-    Mutates *existing* in memory only — the caller decides whether to
-    save.  Returns the changed field names in the deterministic
-    ``_REFRESHABLE_FIELDS`` order.
+    Mutates *existing* in memory only — the caller decides whether to save.
+    Returns the changed field names in the deterministic ``_REFRESHABLE_FIELDS``
+    order.
     """
     image_url = validate_steam_image_url(candidate.header_image_url)
     hero_url, capsule_url = _library_asset_urls(candidate)
@@ -108,6 +130,29 @@ def _apply_steam_owned_updates(
     if existing.library_capsule_url != capsule_url:
         existing.library_capsule_url = capsule_url
         changed.append("library_capsule_url")
+
+    changed.extend(
+        _apply_overrideable_field(
+            existing,
+            "description",
+            candidate.description,
+            existing.description_overridden,
+        )
+    )
+    changed.extend(
+        _apply_overrideable_field(
+            existing, "developer", candidate.developer, existing.developer_overridden
+        )
+    )
+    changed.extend(
+        _apply_overrideable_field(
+            existing,
+            "release_date",
+            candidate.release_date,
+            existing.release_date_overridden,
+        )
+    )
+
     return tuple(changed)
 
 
@@ -297,12 +342,12 @@ class SteamGamePersistenceService:
         candidate: SteamGameImportCandidate,
         app_id: SteamAppId,
     ) -> SteamGameImportResult:
-        """Update source-owned fields only.  Preserve everything else.
+        """Update Steam-managed fields only.  Preserve everything else.
 
-        Delegates to ``_apply_steam_owned_updates`` — the single owner
+        Delegates to ``_apply_steam_metadata`` — the single owner
         of the field-mapping table shared with ``SteamGameRefreshService``.
         """
-        changed = _apply_steam_owned_updates(existing, candidate)
+        changed = _apply_steam_metadata(existing, candidate)
 
         if not changed:
             return SteamGameImportResult(
@@ -328,8 +373,11 @@ class SteamGamePersistenceService:
     ) -> SteamGameImportResult:
         """Create a canonical Steam Game for *candidate*.
 
-        New Games start as ``draft`` — imports never publish.  Manual
-        metadata fields are not populated from Steam data.
+        New Games start as ``draft`` — imports never publish.  The three
+        editable fields (description, developer, release date) are populated
+        from Steam on initial import; their override flags default to False
+        (Steam-managed).  ``manual_image_url`` / ``manual_website_url`` are
+        never populated from Steam.
         """
         slug = self._allocate_slug(candidate, app_id)
         hero_url, capsule_url = _library_asset_urls(candidate)
@@ -343,6 +391,9 @@ class SteamGamePersistenceService:
             steam_image_url=self._normalised_image_url(candidate) or "",
             library_hero_url=hero_url,
             library_capsule_url=capsule_url,
+            description=candidate.description or "",
+            developer=candidate.developer or "",
+            release_date=candidate.release_date,
         )
         # Field and model validation only — deliberately NOT
         # ``validate_constraints()``/``validate_unique()``.  The database
@@ -523,11 +574,12 @@ class SteamGameRefreshService:
       transaction opens.
     - Identity invariant: the lookup and candidate must match
       ``game.external_id`` — mismatches raise with zero writes.
-    - Steam-owned fields (name, content_type, steam_image_url) update
-      through the shared ``_apply_steam_owned_updates`` helper (single
-      owner).  Slug, listing status, manual metadata, classifications,
-      ``created_at``, and ``source_type``/``external_id``/``id`` are
-      never touched.
+    - Steam-managed fields update through the shared ``_apply_steam_metadata``
+      helper (single owner): name, content_type, images, plus the editable
+      description/developer/release_date unless their override flag is set.
+      Slug, listing status, ``manual_image_url``/``manual_website_url``,
+      classifications, ``created_at``, and ``source_type``/``external_id``/``id``
+      are never touched.
     - ``last_steam_refresh_at`` records successful verifications:
       ``UPDATED`` via the model save; ``UNCHANGED`` via a queryset
       update so ``updated_at`` stays untouched.
@@ -606,7 +658,7 @@ class SteamGameRefreshService:
                     "longer exists."
                 )
 
-            changed = _apply_steam_owned_updates(existing, candidate)
+            changed = _apply_steam_metadata(existing, candidate)
             now = timezone.now()
 
             if changed:

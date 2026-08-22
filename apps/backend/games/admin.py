@@ -100,51 +100,67 @@ class GameAdmin(admin.ModelAdmin):
 
     ordering = ("name", "id")
 
-    fieldsets = (
-        (
-            "Identity",
-            {
-                "fields": (
-                    "name",
-                    "slug",
-                    "source_type",
-                    "external_id",
-                    "content_type",
-                ),
-            },
-        ),
-        ("Publication", {"fields": ("listing_status",)}),
-        (
-            "Manual / editorial metadata",
-            {
-                "fields": (
-                    "release_date",
-                    "developer",
-                    "manual_description",
-                    "manual_image_url",
-                    "manual_website_url",
-                ),
-            },
-        ),
-        (
-            "Steam metadata",
-            {
-                "fields": (
-                    "steam_image_url",
-                    "library_hero_url",
-                    "library_capsule_url",
-                    "last_steam_refresh_at",
-                ),
-            },
-        ),
-        (
-            "System",
-            {
-                "fields": ("display_identity", "created_at", "updated_at"),
-                "classes": ("collapse",),
-            },
-        ),
+    EDITABLE_METADATA_FIELDS = (
+        "release_date",
+        "developer",
+        "description",
+        "manual_image_url",
+        "manual_website_url",
     )
+
+    def get_fieldsets(self, request, obj=None):
+        """Expose the per-field "Resume Steam sync" controls for Steam Games.
+
+        Manual Games and new records see plain editable metadata with no
+        Steam ownership controls (SBGC-188).
+        """
+        editable = list(self.EDITABLE_METADATA_FIELDS)
+        if obj is not None and obj.is_steam:
+            editable = []
+            resume_for = {
+                "release_date": "resume_release_date",
+                "developer": "resume_developer",
+                "description": "resume_description",
+            }
+            for field in self.EDITABLE_METADATA_FIELDS:
+                editable.append(field)
+                if field in resume_for:
+                    editable.append(resume_for[field])
+
+        return [
+            (
+                "Identity",
+                {
+                    "fields": (
+                        "name",
+                        "slug",
+                        "source_type",
+                        "external_id",
+                        "content_type",
+                    ),
+                },
+            ),
+            ("Publication", {"fields": ("listing_status",)}),
+            ("Editable metadata", {"fields": tuple(editable)}),
+            (
+                "Steam metadata",
+                {
+                    "fields": (
+                        "steam_image_url",
+                        "library_hero_url",
+                        "library_capsule_url",
+                        "last_steam_refresh_at",
+                    ),
+                },
+            ),
+            (
+                "System",
+                {
+                    "fields": ("display_identity", "created_at", "updated_at"),
+                    "classes": ("collapse",),
+                },
+            ),
+        ]
 
     prepopulated_fields = {
         "slug": ("name",),
@@ -191,6 +207,37 @@ class GameAdmin(admin.ModelAdmin):
             if obj.is_steam:
                 readonly.extend(("name", "content_type"))
         return readonly
+
+    def save_model(self, request, obj, form, change):
+        """Apply per-field Steam override provenance on Steam Game saves.
+
+        - "Resume Steam sync" is checked → override cleared (resume wins).
+        - Otherwise, if the operator changed a field, that field becomes
+          human-overridden (no manual override checkbox needed).
+        - Fields the operator did not touch keep their existing ownership.
+
+        Manual Games and new records are unaffected.
+        """
+        if obj.is_steam and change:
+            changed = set(form.changed_data)
+            cleaned = form.cleaned_data
+
+            if cleaned.get("resume_description"):
+                obj.description_overridden = False
+            elif "description" in changed:
+                obj.description_overridden = True
+
+            if cleaned.get("resume_developer"):
+                obj.developer_overridden = False
+            elif "developer" in changed:
+                obj.developer_overridden = True
+
+            if cleaned.get("resume_release_date"):
+                obj.release_date_overridden = False
+            elif "release_date" in changed:
+                obj.release_date_overridden = True
+
+        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         """Precompute the two derived changelist columns.

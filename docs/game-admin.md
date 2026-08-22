@@ -49,9 +49,11 @@ The add/edit form groups fields as:
 
 - **Identity** — `name`, `slug`, `source_type`, `external_id`, `content_type`
 - **Publication** — `listing_status`
-- **Manual / editorial metadata** — `release_date`, `developer`,
-  `manual_description`, `manual_image_url`, `manual_website_url`
-- **Steam metadata** — `steam_image_url`, `last_steam_refresh_at`
+- **Editable metadata** — `release_date`, `developer`, `description`,
+  `manual_image_url`, `manual_website_url` (Steam Games also show per-field
+  "Resume Steam sync" controls after each editable Steam-populated field)
+- **Steam metadata** — `steam_image_url`, `library_hero_url`,
+  `library_capsule_url`, `last_steam_refresh_at`
 - **System** (collapsed) — `display_identity`, `created_at`, `updated_at`
 
 ## Field ownership / editability matrix
@@ -67,12 +69,14 @@ Legend: **E** = editable, **R** = readonly, **—** = hidden/non-editable
 | `external_id` | E (Steam only) | R | R | Steam App ID is immutable after creation. |
 | `content_type` | E | E | R | Steam-owned for Steam records; refreshed from Steam. |
 | `listing_status` | E | E | E | Editorial publication state; source-independent. |
-| `release_date` | E | E | E | Local editorial metadata. |
-| `developer` | E | E | E | Local editorial metadata. |
-| `manual_description` | E | E | E | Local editorial metadata. |
+| `release_date` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
+| `developer` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
+| `description` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
 | `manual_image_url` | E | E | E | Local editorial metadata. |
 | `manual_website_url` | E | E | E | Local editorial metadata. |
 | `steam_image_url` | R | R | R | Steam-owned; never populated from manual data. |
+| `library_hero_url` | R | R | R | Steam-owned; derived from the App ID. |
+| `library_capsule_url` | R | R | R | Steam-owned; derived from the App ID. |
 | `last_steam_refresh_at` | R | R | R | Steam-owned; set only by refresh. |
 | `created_at` | — | R | R | Auto-managed timestamp. |
 | `updated_at` | — | R | R | Auto-managed timestamp. |
@@ -87,11 +91,17 @@ Legend: **E** = editable, **R** = readonly, **—** = hidden/non-editable
   metadata are editable.
 - **Existing Steam Game** — source identity (`source_type`, `external_id`) and
   Steam-owned `name` / `content_type` are readonly; `slug`, `listing_status`,
-  and all manual/editorial metadata remain editable. Steam metadata
-  (`steam_image_url`, `last_steam_refresh_at`) is always readonly.
+  and `description`/`developer`/`release_date` remain editable. Editing one of
+  those three fields marks it human-overridden automatically (no manual
+  checkbox); a per-field "Resume Steam sync" control clears the override so
+  the next refresh repopulates it. Steam metadata (`steam_image_url`,
+  `library_hero_url`, `library_capsule_url`, `last_steam_refresh_at`) is always
+  readonly.
 
 This preserves the canonical rules: no source conversion, no immutable
-source-identity editing, and no overwriting Steam-synced fields via Admin.
+source-identity editing, and no overwriting Steam-synced fields via Admin
+(except the three explicitly editable Steam-populated fields, whose ownership
+is tracked per field).
 
 ## Validation
 
