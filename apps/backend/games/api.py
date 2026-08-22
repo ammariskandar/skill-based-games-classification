@@ -147,6 +147,20 @@ class GameDetailResponse(Schema):
     classification: PublicFinalClassification | None = None
 
 
+class HomepageCarouselCard(Schema):
+    """Minimal carousel card: slug, name, and the Library Capsule URL."""
+
+    slug: str
+    name: str
+    library_capsule_url: str
+
+
+class HomepageCarouselResponse(Schema):
+    """Random homepage carousel selection of Steam base Games."""
+
+    games: list[HomepageCarouselCard]
+
+
 # ---------------------------------------------------------------------------
 # Authorization
 # ---------------------------------------------------------------------------
@@ -431,6 +445,37 @@ def steam_refresh(request, game_id: int):
         raise _map_steam_service_error(exc) from exc
 
     return _refresh_response(result)
+
+
+@router.get(
+    "/homepage",
+    response={200: HomepageCarouselResponse, **STANDARD_ERROR_RESPONSES},
+    operation_id="homepage_carousel",
+    summary="Get random homepage Steam carousel games",
+    description=(
+        "Return up to 10 randomly selected publicly-listed Steam base Games "
+        "that have a Library Capsule, for the homepage carousel.  Reads "
+        "persisted state only — never contacts Steam."
+    ),
+    url_name="homepage-carousel",
+)
+def homepage_carousel(request):
+    games = list(
+        Game.objects.publicly_listable()
+        .steam()
+        .exclude(library_capsule_url="")
+        .order_by("?")[:10]
+    )
+    return HomepageCarouselResponse(
+        games=[
+            HomepageCarouselCard(
+                slug=game.slug,
+                name=game.name,
+                library_capsule_url=game.library_capsule_url,
+            )
+            for game in games
+        ]
+    )
 
 
 @router.get(

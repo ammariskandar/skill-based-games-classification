@@ -30,7 +30,7 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | Router            | Module                          | Tag              | Status            |
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
-| Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71) |
+| Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71); homepage carousel (SBGC-189) |
 | Classifications   | `classifications/api.py`        | Classifications   | No operations yet |
 
 Routers own domain-specific endpoints.  Domain models and services are
@@ -39,7 +39,8 @@ import and refresh mutations on the Games router:
 `POST /api/v1/games/steam/import` and
 `POST /api/v1/games/{game_id}/steam/refresh` — see `docs/steam-api.md`.
 SBGC-71 added the public read endpoint `GET /api/v1/games/{slug}` — see the
-Game detail section below.
+Game detail section below. SBGC-189 added `GET /api/v1/games/homepage` for the
+homepage Steam carousel — see the Homepage Carousel section below.
 
 ## Request Schemas
 
@@ -157,6 +158,42 @@ persisted READY Challenge/Reward + confidence; a public Game without
 classification returned `classification: null` (no fake zeros); and
 hidden/non-game/unknown slugs returned `404 GAME_NOT_FOUND` with no
 hidden-record disclosure.
+
+## Homepage Carousel — `GET /api/v1/games/homepage`
+
+Returns up to 10 randomly selected Games for the homepage Steam carousel. It is
+**read-only**: it never contacts Steam and never recalculates classification.
+
+### Eligibility
+
+A Game is eligible only when it is:
+
+```text
+publicly_listable AND source_type == steam AND library_capsule_url != ""
+```
+
+`publicly_listable` is the canonical `content_type == game AND listing_status
+== published` policy. Manual Games, non-game Steam content, hidden/draft/
+archived Games, and Steam Games without a Library Capsule are excluded.
+
+### Selection
+
+Selection is a single `ORDER BY RANDOM()` limited to 10 rows. Random ordering
+happens per request; if fewer than 10 eligible Games exist, the available count
+is returned.
+
+### Response
+
+```json
+{
+  "games": [
+    { "slug": "hades", "name": "Hades", "library_capsule_url": "https://..." }
+  ]
+}
+```
+
+Only the carousel card fields are returned — `slug`, `name`,
+`library_capsule_url`. No classification objects are included.
 
 Every error response follows this structure:
 
@@ -289,8 +326,9 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **Game detail delivered; catalogue/search/ranking reads deferred.** SBGC-71
-  added `GET /api/v1/games/{slug}`.  Catalogue, search, and ranking read
+- **Game detail and homepage reads delivered; catalogue/search/ranking reads deferred.** SBGC-71
+  added `GET /api/v1/games/{slug}` and SBGC-189 added
+  `GET /api/v1/games/homepage`. Catalogue, search, and ranking read
   endpoints remain deferred to SBGC-10/SBGC-11.
 - **No global authentication backend.** Session auth is opt-in per operation
   via `auth=django_auth`; there is no project-wide auth middleware.

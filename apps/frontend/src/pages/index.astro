@@ -1,16 +1,60 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import HomepageCarousel from "../components/home/HomepageCarousel.astro";
+import HomepageShowcase from "../components/home/HomepageShowcase.astro";
+import {
+  getGameDetail,
+  getHomepageCarousel,
+  type GameDetailGame,
+  type HomepageCarouselCard,
+} from "../lib/server/api";
 
-export const prerender = true;
+// The homepage depends on live persisted Game data: render on demand, never
+// statically, so the carousel random selection happens per request.
+export const prerender = false;
+
+type CarouselState =
+  { kind: "ready"; games: HomepageCarouselCard[] } | { kind: "unavailable" };
+
+type ShowcaseState =
+  { kind: "ready"; game: GameDetailGame } | { kind: "unavailable" };
+
+async function fetchCarousel(): Promise<CarouselState> {
+  try {
+    return { kind: "ready", games: await getHomepageCarousel() };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+async function fetchShowcase(): Promise<ShowcaseState> {
+  try {
+    const detail = await getGameDetail("hades");
+    return { kind: "ready", game: detail.game };
+  } catch {
+    return { kind: "unavailable" };
+  }
+}
+
+const [carousel, showcase] = await Promise.all([
+  fetchCarousel(),
+  fetchShowcase(),
+]);
 ---
 
-<BaseLayout
-  description="MyGameDNA classifies games through the lens of skill, using Micro, Mystiko, and Macro dimensions within separate Challenge and Reward profiles."
-  canonicalPath="/"
->
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">MyGameDNA</h1>
-  <p class="mt-4 max-w-2xl text-lg text-muted">
-    Classifying games through the lens of skill, using Micro, Mystiko, and Macro
-    dimensions within separate Challenge and Reward profiles.
-  </p>
+<BaseLayout canonicalPath="/">
+  <section class="homepage-hero">
+    <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">MyGameDNA</h1>
+    <p class="mt-4 text-xl font-semibold tracking-tight sm:text-2xl">
+      A revolutionary way to categorize games better.
+    </p>
+  </section>
+
+  <div class="mt-10">
+    <HomepageCarousel
+      games={carousel.kind === "ready" ? carousel.games : null}
+    />
+  </div>
+
+  <HomepageShowcase game={showcase.kind === "ready" ? showcase.game : null} />
 </BaseLayout>

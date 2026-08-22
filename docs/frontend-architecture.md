@@ -180,6 +180,39 @@ training is **not** part of this ticket — see the future
 "Train MyGameDNA Game-Art Super-Resolution Model" ticket recorded in
 `context.md`.
 
+### Homepage (SBGC-189)
+
+The homepage (`/`) is **SSR/on-demand** (`export const prerender = false`) — it
+depends on live persisted Game data, so the random carousel selection happens per
+request rather than at build time. `index.astro` fetches two independent things
+server-side in parallel and degrades each gracefully:
+
+- **Random Steam carousel** — `GET /api/v1/games/homepage` (see
+  `docs/backend-api.md`) returns up to 10 randomly selected publicly-listable
+  Steam base Games that have a Library Capsule. Django owns eligibility and
+  selection; Astro never downloads the whole catalogue.
+- **Hades showcase** — `getGameDetail("hades")` fetches the real public Hades
+  Game through the existing SBGC-71 detail boundary, reusing its persisted
+  Library Hero/Capsule.
+
+The carousel is full-bleed (it breaks out of `shell-gutter`), uses CSS
+`scroll-snap` plus a small vanilla TypeScript controller (Previous/Next buttons,
+no autoplay, no framework), shows 5 capsules on desktop and fewer on smaller
+screens, and respects `prefers-reduced-motion`. Each card links Capsule and title
+to `/games/{slug}`.
+
+The Hades showcase reuses `GameImage.astro` (the SBGC-184 Hero + Capsule +
+classification-visualization-slot composition) as the left column of a
+two-column product-explanation section. No Game Information dialog or
+classification bars are rendered in the sample. `GameImage.astro` is the
+reusable artwork component shared by the Game-detail page and the homepage
+showcase; it is not duplicated.
+
+Failure behaviour: a carousel API failure renders a restrained "unavailable"
+state (hero and Hades copy still render); a Hades failure omits the sample
+artwork while keeping the explanatory copy. Neither failure turns the homepage
+into a 500.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
@@ -190,7 +223,7 @@ Routing is **file-based** under `src/pages/`:
 
 ```
 src/pages/
-├── index.astro          →  /              (prerendered)
+├── index.astro          →  /              (SSR/on-demand — random Steam carousel + Hades showcase)
 ├── about.astro          →  /about         (prerendered)
 ├── methodology.astro    →  /methodology   (prerendered)
 ├── login.astro          →  /login         (prerendered — future account placeholder)

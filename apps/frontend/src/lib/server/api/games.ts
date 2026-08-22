@@ -53,6 +53,17 @@ export interface GameDetailResponse {
   classification: GameFinalClassification | null;
 }
 
+/** One homepage carousel card: slug, name, and the Library Capsule URL. */
+export interface HomepageCarouselCard {
+  slug: string;
+  name: string;
+  library_capsule_url: string;
+}
+
+export interface HomepageCarouselResponse {
+  games: HomepageCarouselCard[];
+}
+
 /** The slug does not resolve to a publicly-listed Game (SBGC-71 404). */
 export class GameNotFoundError extends Error {
   constructor(readonly slug: string) {
@@ -83,6 +94,23 @@ export async function getGameDetail(slug: string): Promise<GameDetailResponse> {
   }
   if (result.status === 404) {
     throw new GameNotFoundError(slug);
+  }
+  throw new BackendApiError(result.error.message, result);
+}
+
+/**
+ * Fetch the random Steam carousel selection for the homepage (SBGC-189).
+ *
+ * Django owns eligibility (public Steam base Games with a Library Capsule) and
+ * random selection; the frontend never downloads the whole catalogue.
+ */
+export async function getHomepageCarousel(): Promise<HomepageCarouselCard[]> {
+  const result = await getJSON<HomepageCarouselResponse>(
+    "/api/v1/games/homepage",
+  );
+  if (result.ok) {
+    if ("data" in result) return result.data.games;
+    throw new BackendApiError("Unexpected empty response from the API.");
   }
   throw new BackendApiError(result.error.message, result);
 }
