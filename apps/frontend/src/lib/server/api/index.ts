@@ -1,6 +1,11 @@
 export { getJSON, postJSON } from "./client";
 export { apiError } from "./errors";
-export { BackendApiError, GameNotFoundError, getGameDetail } from "./games";
+export {
+  BackendApiError,
+  GameNotFoundError,
+  getGameDetail,
+  getHomepageCarousel,
+} from "./games";
 export type {
   ClassificationProfile,
   ClassificationRegime,
@@ -8,6 +13,8 @@ export type {
   GameDetailResponse,
   GameFinalClassification,
   GameSource,
+  HomepageCarouselCard,
+  HomepageCarouselResponse,
 } from "./games";
 export type {
   ApiError,

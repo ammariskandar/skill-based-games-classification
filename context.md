@@ -2554,6 +2554,33 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-189 Homepage content
+
+- Converted the homepage (`/`) from a prerendered scaffold into the first real
+  MyGameDNA landing experience: a revised hero/subheading
+  ("A revolutionary way to categorize games better."), a full-bleed random
+  Steam Capsule carousel, and a Hades product-explanation showcase reusing the
+  SBGC-184 Hero + Capsule + visualization-slot composition.
+- The homepage is now SSR/on-demand (`export const prerender = false`).
+  `index.astro` fetches the carousel and the Hades detail server-side in
+  parallel and degrades each gracefully (carousel unavailable → restrained
+  empty state; Hades unavailable → omit artwork, keep copy; never a 500).
+- Backend: added `GET /api/v1/games/homepage` returning up to 10 randomly
+  selected publicly-listable Steam base Games with a Library Capsule
+  (`{slug, name, library_capsule_url}` only).  Django owns eligibility and
+  selection (`ORDER BY RANDOM()`); Astro never downloads the whole catalogue.
+- Frontend: `HomepageCarousel.astro` (full-bleed CSS scroll-snap + vanilla TS
+  prev/next controller, 5/3/2 visible cards, hover/focus scale,
+  `prefers-reduced-motion`), `HomepageShowcase.astro` (reuses `GameImage.astro`;
+  no Game Information/classification bars), `getHomepageCarousel()` in the API
+  client, and `src/lib/homepage-carousel.ts` (pure viewport→visible-card
+  contract).
+- Validation: backend `api.tests` 113 OK (incl. 9 homepage tests); Ruff
+  check+format clean; BasedPyright 0/0/0.  Frontend 179 tests OK; `astro check`
+  0 errors; `astro build`, lint, format, `git diff --check` clean.
+  `docs/frontend-architecture.md` + `docs/backend-api.md` updated.  Human
+  verification pending (4 checks).
+
 ## 2026-08-23 — SBGC-188 human validation PASS
 
 - Human verification completed on local SQLite with live Steam refresh of two
