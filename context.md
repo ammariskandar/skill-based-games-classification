@@ -2554,6 +2554,17 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-187 Update README with project progress
+
+- Rewrote the root `README.md` as an interim progress snapshot: project status
+  (~42% roadmap completion, estimated late September 2026), current capabilities
+  (game/domain, Steam, classification, admin, public game page), accurate
+  architecture/stack, and the remaining roadmap.
+- Removed stale claims ("foundation phase complete", "no real application test
+  suites exist", the outdated 1,168-test count) and corrected the CI section to
+  reflect the real frontend/backend/PostgreSQL test jobs.
+- Docs-only; no application code changed.
+
 ## 2026-08-22 — SBGC-74 Handle exceptional states
 
 - Hardened the `/games/[slug]` vertical slice so every upstream response resolves
