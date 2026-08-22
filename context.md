@@ -2554,6 +2554,48 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-188 human validation PASS
+
+- Human verification completed on local SQLite with live Steam refresh of two
+  public Steam Games.  Check 1 (automatic population): a fresh Steam refresh
+  populated `description`, `developer`, and `release_date` for Hades
+  (Supergiant Games / 2020-09-17) with Steam-managed ownership.  Check 2
+  (selective override): Portal 2's pre-existing `developer="Test"` and
+  `release_date="2025-01-20"` (backfilled as human-owned by games.0011) were
+  preserved while its Steam-managed `description` updated.  Check 3 (resume
+  ownership): the "Resume Steam sync" control cleared an override and the
+  subsequent refresh repopulated the field from Steam.
+- Documentation-only closure; no production code changed.  SBGC-188 ready to
+  merge.
+
+## 2026-08-23 — SBGC-188 Populate editable Steam game metadata
+
+- Steam now populates the canonical editable `description`, `developer`, and
+  `release_date` fields through one normalized pipeline
+  (`games/services/steam/normalization.py` → adapter → candidate → shared
+  persistence).  Added `Game.description` (renamed from `manual_description`,
+  games.0010) plus three independent override flags
+  `description_overridden` / `developer_overridden` / `release_date_overridden`
+  (games.0010) with an offline data backfill (games.0011) that marks existing
+  non-empty Steam metadata as human-owned.
+- Import writes all three (flags `False` = Steam-managed); refresh honours each
+  flag independently and preserves a field when its upstream value is absent
+  (never erases good metadata on transient omission).  A blank human override is
+  authoritative via the flag — blank never means "resume Steam".
+- `_apply_steam_owned_updates` → `_apply_steam_metadata` remains the single
+  shared mapper for import/refresh; all callers (Admin action, HTTP refresh,
+  SBGC-183 scheduler) go through `SteamGameRefreshService`.
+- Admin: the three fields are editable for Steam Games with help text
+  "Steam-managed unless overridden"; `save_model` auto-detects changes
+  (per-field override) and per-field "Resume Steam sync" controls clear the
+  override (resume wins over a same-submit change).  Manual Games see no
+  ownership controls.
+- Validation: normalization/import/refresh/admin/migration/API focused tests;
+  affected backend neighbourhood (`games.tests` + `api.tests`) 899 OK
+  (10 skipped); Ruff check+format clean; BasedPyright 0/0/0; `makemigrations
+  --check` clean.  No frontend change, no PostgreSQL/statistical/live-Steam
+  suites run.  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-184 final layout scaffold (visualization slot)
 
 - Finalized the Steam foreground composition so SBGC-12's future radar chart

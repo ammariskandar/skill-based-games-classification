@@ -204,7 +204,7 @@ class FieldsetTests(_GameAdminTestCase):
         for heading in (
             "Identity",
             "Publication",
-            "Manual / editorial metadata",
+            "Editable metadata",
             "Steam metadata",
             "System",
         ):
@@ -222,7 +222,7 @@ class FieldsetTests(_GameAdminTestCase):
         for heading in (
             "Identity",
             "Publication",
-            "Manual / editorial metadata",
+            "Editable metadata",
             "Steam metadata",
             "System",
         ):

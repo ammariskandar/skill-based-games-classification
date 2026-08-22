@@ -313,7 +313,7 @@ def _public_game_detail(game: Game) -> PublicGameDetail:
         source=game.source_type,
         external_id=game.external_id,
         content_type=game.content_type,
-        description=game.manual_description,
+        description=game.description,
         release_date=game.release_date,
         developer=game.developer,
         image_url=game.display_image_url,

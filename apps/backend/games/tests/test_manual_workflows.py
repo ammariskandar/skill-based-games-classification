@@ -35,7 +35,7 @@ class ManualGameWorkflowTests(TestCase):
             listing_status=ListingStatus.DRAFT,
             release_date=date(2026, 1, 15),
             developer="Workflow Studio",
-            manual_description="A description.",
+            description="A description.",
             manual_image_url="https://example.com/chess.jpg",
             manual_website_url="https://example.com",
         )
@@ -46,7 +46,7 @@ class ManualGameWorkflowTests(TestCase):
         self.assertIsNone(game.last_steam_refresh_at)
         self.assertEqual(game.release_date, date(2026, 1, 15))
         self.assertEqual(game.developer, "Workflow Studio")
-        self.assertEqual(game.manual_description, "A description.")
+        self.assertEqual(game.description, "A description.")
         self.assertEqual(game.manual_image_url, "https://example.com/chess.jpg")
         self.assertEqual(game.manual_website_url, "https://example.com")
 
@@ -63,7 +63,7 @@ class ManualGameWorkflowTests(TestCase):
             listing_status=ListingStatus.PUBLISHED,
             release_date=date(2026, 2, 1),
             developer="New Studio",
-            manual_description="updated",
+            description="updated",
             manual_image_url="https://example.com/new.jpg",
         )
 
@@ -145,7 +145,7 @@ class ManualGameWorkflowTests(TestCase):
             notes="workflow notes",
         )
 
-        update_manual_game(game, name="Chess Renamed", manual_description="changed")
+        update_manual_game(game, name="Chess Renamed", description="changed")
 
         parent.refresh_from_db()
         self.assertEqual(parent.notes, "workflow notes")
@@ -178,7 +178,7 @@ class ManualGameAdminWorkflowTests(TestCase):
             "listing_status": ListingStatus.DRAFT,
             "release_date": "2026-01-15",
             "developer": "Workflow Studio",
-            "manual_description": "initial",
+            "description": "initial",
             "manual_image_url": "https://example.com/one.jpg",
             "manual_website_url": "https://example.com",
         }
@@ -197,7 +197,7 @@ class ManualGameAdminWorkflowTests(TestCase):
             "listing_status": ListingStatus.PUBLISHED,
             "release_date": "2026-02-01",
             "developer": "Renamed Studio",
-            "manual_description": "updated",
+            "description": "updated",
             "manual_image_url": "https://example.com/two.jpg",
             "manual_website_url": "https://example.com",
             "_changelist_filters": "",

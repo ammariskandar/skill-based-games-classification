@@ -89,6 +89,24 @@ class GameDetailEndpointTests(TestCase):
         self.assertIn("metadata_updated_at", body["game"])
         self.assertIsNone(body["classification"])
 
+    def test_public_steam_game_returns_steam_populated_metadata(self):
+        _game(
+            name="Portal 2",
+            slug="portal-2",
+            source_type=SourceType.STEAM,
+            external_id="620",
+            description="A puzzle game.",
+            developer="Valve",
+            release_date=date(2011, 4, 18),
+        )
+        r = self._get("portal-2")
+
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["game"]["description"], "A puzzle game.")
+        self.assertEqual(body["game"]["developer"], "Valve")
+        self.assertEqual(body["game"]["release_date"], "2011-04-18")
+
     # -- B. public Manual Game ----------------------------------------------
 
     def test_public_manual_game_returns_200_with_null_external_id(self):
@@ -100,7 +118,7 @@ class GameDetailEndpointTests(TestCase):
             developer="Editorial",
             release_date=date(1475, 1, 1),
             manual_image_url="https://example.com/chess.png",
-            manual_description="The classic board game.",
+            description="The classic board game.",
         )
         r = self._get("chess")
 

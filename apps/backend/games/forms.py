@@ -33,6 +33,39 @@ class GameForm(forms.ModelForm):
         help_text=MANUAL_RELEASE_DATE_HELP_TEXT,
     )
 
+    # Form-only "resume Steam sync" controls (SBGC-188).  These are not model
+    # fields — ``GameAdmin.save_model`` reads them to clear the per-field
+    # override flags.  They are hidden for Manual Games and new records.
+    _RESUME_HELP = "Clear the override; the next Steam refresh repopulates this field."
+    resume_release_date = forms.BooleanField(
+        required=False,
+        label="Resume Steam sync for release date",
+        help_text=_RESUME_HELP,
+    )
+    resume_developer = forms.BooleanField(
+        required=False,
+        label="Resume Steam sync for developer",
+        help_text=_RESUME_HELP,
+    )
+    resume_description = forms.BooleanField(
+        required=False,
+        label="Resume Steam sync for description",
+        help_text=_RESUME_HELP,
+    )
+
+    STEAM_RESUME_FIELDS = (
+        "resume_release_date",
+        "resume_developer",
+        "resume_description",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance
+        if instance is None or not instance.is_steam:
+            for name in self.STEAM_RESUME_FIELDS:
+                self.fields.pop(name, None)
+
     class Meta:
         model = Game
         fields = [
@@ -44,7 +77,7 @@ class GameForm(forms.ModelForm):
             "listing_status",
             "release_date",
             "developer",
-            "manual_description",
+            "description",
             "manual_image_url",
             "manual_website_url",
             "steam_image_url",

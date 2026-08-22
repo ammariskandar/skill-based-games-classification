@@ -8,6 +8,7 @@ No arithmetic semantics — value is always a decimal-digit string.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from enum import Enum
 
 _MAX_APP_ID_LENGTH = 32
@@ -80,11 +81,12 @@ class SteamAppDetails:
     app_id: str
     name: str
     content_type: str
-    short_description: str | None = None
+    description: str | None = None
+    developer: str | None = None
+    release_date: date | None = None
     header_image_url: str | None = None
     website_url: str | None = None
     is_free: bool | None = None
-    developers: tuple[str, ...] | None = None
     publishers: tuple[str, ...] | None = None
 
 
@@ -99,11 +101,12 @@ class SteamGameImportCandidate:
     app_id: str
     name: str
     content_type: str
-    short_description: str | None = None
+    description: str | None = None
+    developer: str | None = None
+    release_date: date | None = None
     header_image_url: str | None = None
     website_url: str | None = None
     is_free: bool | None = None
-    developers: tuple[str, ...] | None = None
     publishers: tuple[str, ...] | None = None
 
 

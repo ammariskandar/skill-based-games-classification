@@ -345,7 +345,7 @@ class StateIndependenceTests(TestCase):
             slug="meta",
             content_type=ContentType.GAME,
             listing_status=ListingStatus.PUBLISHED,
-            manual_description="desc",
+            description="desc",
         )
         self.assertIn(
             g.pk, Game.objects.publicly_listable().values_list("pk", flat=True)
@@ -421,7 +421,7 @@ class AdminContentTypeTests(TestCase):
                 "slug": f"save-{ct_value}",
                 "content_type": ct_value,
                 "listing_status": ListingStatus.DRAFT,
-                "manual_description": "",
+                "description": "",
                 "manual_image_url": "",
                 "manual_website_url": "",
             }
@@ -445,7 +445,7 @@ class AdminContentTypeTests(TestCase):
             "slug": "edit-ct",
             "content_type": ContentType.DLC,
             "listing_status": ListingStatus.PUBLISHED,
-            "manual_description": "",
+            "description": "",
             "manual_image_url": "",
             "manual_website_url": "",
         }

@@ -6,6 +6,7 @@ Tests against mocked SteamClient.get_store_api_json — no live calls.
 
 from __future__ import annotations
 
+from datetime import date
 from unittest.mock import MagicMock
 
 from django.test import SimpleTestCase
@@ -29,6 +30,7 @@ def _valid_response(app_id="730", **overrides):
         "name": "Test Game",
         "type": "game",
         "short_description": "A test game.",
+        "release_date": {"coming_soon": False, "date": "1 Jan, 2020"},
         "header_image": "https://cdn.example.com/img.jpg",
         "website": "https://example.com",
         "is_free": False,
@@ -100,17 +102,19 @@ class SuccessTests(SimpleTestCase):
     def test_optional_fields(self):
         self.client.get_store_api_json.return_value = _valid_response("730")  # pyright: ignore[reportAttributeAccessIssue]
         details = self.adapter.fetch(SteamAppId("730"))
-        self.assertEqual(details.short_description, "A test game.")
+        self.assertEqual(details.description, "A test game.")
+        self.assertEqual(details.developer, "Dev Co")
+        self.assertEqual(details.release_date, date(2020, 1, 1))
         self.assertEqual(details.header_image_url, "https://cdn.example.com/img.jpg")
         self.assertEqual(details.website_url, "https://example.com")
         self.assertFalse(details.is_free)
-        self.assertEqual(details.developers, ("Dev Co",))
         self.assertEqual(details.publishers, ("Pub Co",))
 
     def test_absent_optional_fields(self):
         self.client.get_store_api_json.return_value = _valid_response(  # pyright: ignore[reportAttributeAccessIssue]
             "730",
             short_description=None,
+            release_date=None,
             header_image=None,
             website=None,
             is_free=None,
@@ -118,11 +122,12 @@ class SuccessTests(SimpleTestCase):
             publishers=None,
         )
         details = self.adapter.fetch(SteamAppId("730"))
-        self.assertIsNone(details.short_description)
+        self.assertIsNone(details.description)
+        self.assertIsNone(details.developer)
+        self.assertIsNone(details.release_date)
         self.assertIsNone(details.header_image_url)
         self.assertIsNone(details.website_url)
         self.assertIsNone(details.is_free)
-        self.assertIsNone(details.developers)
         self.assertIsNone(details.publishers)
 
     def test_blank_website_becomes_none(self):
