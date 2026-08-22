@@ -113,7 +113,12 @@ const robots = game ? undefined : "noindex, nofollow";
         </header>
 
         <div class="mt-8 grid gap-8 lg:grid-cols-[3fr_2fr] lg:items-start">
-          <GameImage src={game.image_url} name={game.name} />
+          <GameImage
+            src={game.image_url}
+            name={game.name}
+            slug={game.slug}
+            source={game.source}
+          />
 
           <div class="space-y-8">
             <GameInformation game={game} />

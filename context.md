@@ -2554,6 +2554,34 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-184 Dynamic game-image upscaling
+
+- Added optional browser-side WebSR 2x super-resolution over the canonical Game
+  artwork, without changing the canonical image, the route, classification, or
+  SEO semantics.
+- `src/lib/game-image-upscale.ts` — pure policy: width-threshold eligibility
+  (source narrower than 800px), exact 2x geometry, content/model-addressed cache
+  key, 10-entry LRU, enhancement decision, reduced-motion reveal mode.
+- `src/lib/game-image-upscale-store.ts` — IndexedDB blob cache (10-entry LRU,
+  never localStorage/base64).  `src/lib/game-image-upscale.worker.ts` — module
+  worker running WebSR (`@websr/websr@0.0.16`, `anime4k/cnn-2x-s` +
+  `cnn-2x-s-3d` weights) on an `OffscreenCanvas`.  `src/lib/game-image-upscale-client.ts`
+  — eligibility → cache → worker → reveal orchestration; every failure degrades
+  to the original.
+- `GameImage.astro` layers a decorative overlay (`aria-hidden`) with a
+  top-to-bottom clip-path reveal; the original renders first and enhancement
+  begins after paint via `requestAnimationFrame`.  Steam images use
+  `crossorigin="anonymous"` (Steam CDN sends `Access-Control-Allow-Origin: *` on
+  all three hosts); Manual images omit it.
+- 18 focused pure-logic tests; frontend suite 150 green; `astro check && astro
+  build` green; lint + format + `git diff --check` clean.  Added `@websr/websr` +
+  `@webgpu/types` deps.  No Django change, no migration.
+- Future work (not implemented): custom Game-art model training — first evaluate
+  the bundled model on ~20–50 Game headers; train only if materially inadequate
+  (500–1000+ images, SteamGridDB licensing/terms validated, offline WebSR
+  custom-training workflow); each new model version invalidates SBGC-184 cache
+  entries.
+
 ## 2026-08-22 — SBGC-75 human validation PASS
 
 - Human verification completed: three representative cases passed — complete Game

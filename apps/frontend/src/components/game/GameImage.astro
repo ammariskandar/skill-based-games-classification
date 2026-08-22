@@ -2,22 +2,45 @@
 interface Props {
   src: string;
   name: string;
+  slug: string;
+  source: "steam" | "manual";
 }
 
-const { src, name } = Astro.props;
+const { src, name, slug, source } = Astro.props;
 const resolvedSrc = src.trim();
 const hasImage = resolvedSrc !== "";
+// Steam's image CDN consistently sends `Access-Control-Allow-Origin: *`, so
+// `crossorigin="anonymous"` enables pixel-read upscaling without breaking the
+// image. Manual images may point at arbitrary origins, so no crossorigin there:
+// they still render, and enhancement is skipped if pixel-read is blocked.
+const crossorigin = source === "steam" ? "anonymous" : undefined;
 ---
 
 {
   hasImage ? (
-    <div class="overflow-hidden rounded-lg border border-border bg-surface">
-      <img
-        src={resolvedSrc}
-        alt={`${name} cover image`}
-        class="aspect-video h-auto w-full object-cover"
-        loading="lazy"
-      />
+    <div
+      class="game-image"
+      data-game-image
+      data-game-slug={slug}
+      data-source-url={resolvedSrc}
+    >
+      <div class="game-image__frame">
+        <img
+          src={resolvedSrc}
+          alt={`${name} cover image`}
+          class="game-image__original"
+          data-game-image-original
+          loading="lazy"
+          crossorigin={crossorigin}
+        />
+        <img
+          class="game-image__enhanced"
+          data-game-image-enhanced
+          alt=""
+          aria-hidden="true"
+          hidden
+        />
+      </div>
     </div>
   ) : (
     <div
@@ -45,3 +68,68 @@ const hasImage = resolvedSrc !== "";
     </div>
   )
 }
+
+<script>
+  import { mountGameImageEnhancer } from "../../lib/game-image-upscale-client";
+
+  for (const root of document.querySelectorAll<HTMLElement>(
+    "[data-game-image]",
+  )) {
+    const gameSlug = root.dataset.gameSlug;
+    const sourceUrl = root.dataset.sourceUrl;
+    if (gameSlug && sourceUrl) {
+      mountGameImageEnhancer({ root, gameSlug, sourceUrl });
+    }
+  }
+</script>
+
+<style>
+  .game-image__frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .game-image__original {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .game-image__enhanced {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    clip-path: inset(0 0 100% 0);
+  }
+
+  .game-image__enhanced[data-reveal="animated"] {
+    animation: game-image-reveal 500ms ease forwards;
+  }
+
+  .game-image__enhanced[data-reveal="instant"] {
+    clip-path: inset(0 0 0 0);
+  }
+
+  @keyframes game-image-reveal {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .game-image__enhanced[data-reveal="animated"] {
+      animation: none;
+      clip-path: inset(0 0 0 0);
+    }
+  }
+</style>

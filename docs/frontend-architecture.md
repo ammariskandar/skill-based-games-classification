@@ -101,6 +101,46 @@ The Game-detail page resolves every plausible upstream response into one honest 
 
 The broader generic integration-failure (SBGC-92) and frontend error-state (SBGC-101) work remains separate — SBGC-74 is page-scoped only.
 
+### Dynamic Game-Image Upscaling (SBGC-184)
+
+`GameImage.astro` layers a WebSR 2x super-resolution enhancement over the
+canonical artwork as an optional, browser-side progressive enhancement:
+
+- **Canonical artwork never changes** — Steam Games keep the official Steam
+  `header.jpg`; Manual Games keep the operator URL. The enhancement is visual
+  only and never becomes a new backend source.
+- **Original-first SSR** — the ordinary `<img>` always renders first; the page
+  never waits for WebGPU/WebSR/weights before showing artwork.
+- **Eligibility** — a source narrower than `ELIGIBILITY_WIDTH_THRESHOLD`
+  (800px) is treated as materially undersampled for the maximum intended
+  Game-detail display width (~800px). Width-only keeps it aspect-ratio agnostic
+  so an adequate wide-but-short image is not flagged.
+- **2x only** — output is exactly `2 × source width` and `2 × source height`,
+  preserving aspect ratio (never iterative, never resized to a fixed target).
+- **Cache-before-inference** — a valid IndexedDB hit bypasses WebSR entirely.
+- **IndexedDB cache** — binary Blob storage (never localStorage/base64), a
+  content- and model-addressed key, and a hard 10-entry LRU policy.
+- **Cache invalidation** — the key includes the Game slug, the source URL, and
+  the model version, so artwork or model changes produce a miss.
+- **Worker strategy** — a module Web Worker runs WebSR against an
+  `OffscreenCanvas`; the main thread only orchestrates and reveals the result.
+- **CORS** — Steam's image CDN (`cdn.cloudflare.steamstatic.com`,
+  `cdn.akamai.steamstatic.com`, `steamcdn-a.akamaihd.net`) sends
+  `Access-Control-Allow-Origin: *`, so Steam images use `crossorigin="anonymous"`
+  to permit pixel reads; Manual images omit `crossorigin` (they render
+  regardless, and enhancement is skipped if pixel-read is blocked).
+- **Failure semantics** — every enhancement-only failure (no WebGPU, worker
+  error, cross-origin pixel-read, cache/encoding failure) degrades silently to
+  the original image. No user-facing error UI.
+- **Reduced motion** — `prefers-reduced-motion: reduce` swaps the enhanced
+  image in instantly instead of the top-to-bottom reveal animation.
+
+WebSR is `@websr/websr@0.0.16` using the `anime4k/cnn-2x-s` network with the
+`cnn-2x-s-3d` weights (the 3D/gaming-trained variant). Custom Game-art model
+training is **not** part of this ticket — see the future
+"Train MyGameDNA Game-Art Super-Resolution Model" ticket recorded in
+`context.md`.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
