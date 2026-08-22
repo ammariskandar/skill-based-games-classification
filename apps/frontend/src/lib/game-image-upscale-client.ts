@@ -11,7 +11,9 @@ import {
   decideEnhancement,
   isEligibleForUpscale,
   MODEL_VERSION,
+  NETWORK_NAME,
   revealMode,
+  UPSCALE_FACTOR,
 } from "./game-image-upscale";
 import {
   getCachedImage,
@@ -117,10 +119,11 @@ export function mountGameImageEnhancer(options: MountOptions): void {
         {
           type: "upscale",
           bitmap,
-          width,
-          height,
+          outputWidth: width * UPSCALE_FACTOR,
+          outputHeight: height * UPSCALE_FACTOR,
           websrUrl,
           weights: weights3d,
+          networkName: NETWORK_NAME,
         },
         [bitmap],
       );

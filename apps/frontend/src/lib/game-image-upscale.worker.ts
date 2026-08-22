@@ -2,23 +2,25 @@
  * Classic Web Worker for WebSR 2x upscaling — SBGC-184.
  *
  * WebSR ships a webpack UMD bundle whose internal class hierarchy breaks when it
- * is re-bundled as an ESM module (`Class extends value undefined`). This worker
- * therefore loads the UMD bundle at runtime via `importScripts` and reaches it
- * through the `self.WebSR` global, exactly as WebSR's own worker example does.
+ * is re-bundled as an ESM module, so this worker loads it at runtime via
+ * `importScripts` and reaches it through the `self.WebSR` global.
+ *
+ * This file deliberately has **no ESM `import` statements** so it loads
+ * correctly as a classic worker in both dev and production; the controller
+ * passes in everything it needs.
  */
 
-import { NETWORK_NAME, upscaleDimensions } from "./game-image-upscale";
-
-export interface UpscaleRequest {
+interface UpscaleRequest {
   type: "upscale";
   bitmap: ImageBitmap;
-  width: number;
-  height: number;
+  outputWidth: number;
+  outputHeight: number;
   websrUrl: string;
   weights: unknown;
+  networkName: string;
 }
 
-export type UpscaleResponse =
+type UpscaleResponse =
   | { type: "success"; blob: Blob; width: number; height: number }
   | { type: "unsupported" }
   | { type: "failed" };
@@ -66,13 +68,15 @@ scope.onmessage = async (event) => {
       return;
     }
 
-    const { width, height } = upscaleDimensions(request.width, request.height);
-    const canvas = new OffscreenCanvas(width, height);
+    const canvas = new OffscreenCanvas(
+      request.outputWidth,
+      request.outputHeight,
+    );
 
     const websr = new WebSR({
       canvas,
       weights: request.weights,
-      network_name: NETWORK_NAME,
+      network_name: request.networkName,
       gpu,
     });
 
@@ -86,12 +90,17 @@ scope.onmessage = async (event) => {
     await websr.destroy();
 
     console.info("[game-image-worker]", "success", {
-      width,
-      height,
+      width: request.outputWidth,
+      height: request.outputHeight,
       bytes: blob.size,
     });
 
-    scope.postMessage({ type: "success", blob, width, height });
+    scope.postMessage({
+      type: "success",
+      blob,
+      width: request.outputWidth,
+      height: request.outputHeight,
+    });
   } catch (error) {
     console.info("[game-image-worker]", "failed", error);
     scope.postMessage({ type: "failed" });
