@@ -1,15 +1,11 @@
 /**
- * Web Worker for WebSR 2x upscaling — SBGC-184.
+ * Classic Web Worker for WebSR 2x upscaling — SBGC-184.
  *
- * Browser-only and WebGPU-only. All failures are reported back to the
- * controller, which keeps the original image. The WebSR library's published
- * types annotate the output canvas as `HTMLCanvasElement`, but its runtime
- * supports `OffscreenCanvas` (documented upstream), which is what a worker can
- * create.
+ * WebSR ships a webpack UMD bundle whose internal class hierarchy breaks when it
+ * is re-bundled as an ESM module (`Class extends value undefined`). This worker
+ * therefore loads the UMD bundle at runtime via `importScripts` and reaches it
+ * through the `self.WebSR` global, exactly as WebSR's own worker example does.
  */
-
-import WebSR from "@websr/websr";
-import weights3d from "@websr/websr/weights/anime4k/cnn-2x-s-3d.json";
 
 import { NETWORK_NAME, upscaleDimensions } from "./game-image-upscale";
 
@@ -18,6 +14,8 @@ export interface UpscaleRequest {
   bitmap: ImageBitmap;
   width: number;
   height: number;
+  websrUrl: string;
+  weights: unknown;
 }
 
 export type UpscaleResponse =
@@ -25,10 +23,26 @@ export type UpscaleResponse =
   | { type: "unsupported" }
   | { type: "failed" };
 
-/** Minimal worker-scope surface (the DOM lib types `self` as `Window`). */
+interface WebSrInstance {
+  render(source: ImageBitmap): Promise<void>;
+  destroy(): Promise<void>;
+}
+
+interface WebSrClass {
+  new (params: {
+    canvas: OffscreenCanvas;
+    weights: unknown;
+    network_name: string;
+    gpu: unknown;
+  }): WebSrInstance;
+  initWebGPU(): Promise<unknown>;
+}
+
 interface WorkerScope {
   onmessage: ((event: MessageEvent<UpscaleRequest>) => void) | null;
   postMessage(message: UpscaleResponse): void;
+  importScripts(...urls: string[]): void;
+  WebSR?: WebSrClass;
 }
 
 const scope = self as unknown as WorkerScope;
@@ -38,6 +52,13 @@ scope.onmessage = async (event) => {
   if (request?.type !== "upscale") return;
 
   try {
+    scope.importScripts(request.websrUrl);
+    const WebSR = scope.WebSR;
+    if (!WebSR) {
+      scope.postMessage({ type: "failed" });
+      return;
+    }
+
     const gpu = await WebSR.initWebGPU();
     console.info("[game-image-worker]", "initWebGPU", Boolean(gpu));
     if (!gpu) {
@@ -49,9 +70,8 @@ scope.onmessage = async (event) => {
     const canvas = new OffscreenCanvas(width, height);
 
     const websr = new WebSR({
-      // Upstream types omit OffscreenCanvas, but the runtime accepts it.
-      canvas: canvas as unknown as HTMLCanvasElement,
-      weights: weights3d,
+      canvas,
+      weights: request.weights,
       network_name: NETWORK_NAME,
       gpu,
     });

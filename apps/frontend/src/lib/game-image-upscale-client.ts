@@ -18,6 +18,11 @@ import {
   putCachedImage,
   type CachedGameImage,
 } from "./game-image-upscale-store";
+// The WebSR UMD bundle must not be re-bundled as ESM (its class hierarchy
+// breaks), so it is imported as a raw asset URL and loaded at runtime in a
+// classic worker via `importScripts`.
+import websrUrl from "@websr/websr/dist/websr.js?url";
+import weights3d from "@websr/websr/weights/anime4k/cnn-2x-s-3d.json";
 
 export interface MountOptions {
   root: HTMLElement;
@@ -96,7 +101,6 @@ export function mountGameImageEnhancer(options: MountOptions): void {
 
     const worker = new Worker(
       new URL("./game-image-upscale.worker.ts", import.meta.url),
-      { type: "module" },
     );
 
     const blob = await new Promise<Blob | null>((resolve) => {
@@ -109,7 +113,17 @@ export function mountGameImageEnhancer(options: MountOptions): void {
         console.info("[game-image]", "worker error", error.message);
         resolve(null);
       };
-      worker.postMessage({ type: "upscale", bitmap, width, height }, [bitmap]);
+      worker.postMessage(
+        {
+          type: "upscale",
+          bitmap,
+          width,
+          height,
+          websrUrl,
+          weights: weights3d,
+        },
+        [bitmap],
+      );
     });
 
     worker.terminate();
