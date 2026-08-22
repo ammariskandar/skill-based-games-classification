@@ -118,6 +118,15 @@ Admin surfaces domain validation as clean form errors (no partial writes):
 The existing `games/tests/test_admin_validation.py` and
 `games/tests/test_admin_date_formats.py` cover these boundaries.
 
+## SBGC-188 validation
+
+Human verification completed on local SQLite with a live Steam refresh of two
+public Steam Games: automatic population (Steam-managed fields filled),
+selective per-field override (edited field preserved, untouched fields still
+Steam-managed), and resume ownership (clearing an override then refreshing
+repopulates from Steam).  Override/resume tests are in
+`games/tests/test_admin_steam_override.py`.
+
 ## Delete behavior
 
 `delete_selected` bulk deletion remains disabled. Canonical deletion is the

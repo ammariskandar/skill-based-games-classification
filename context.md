@@ -2554,6 +2554,20 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-188 human validation PASS
+
+- Human verification completed on local SQLite with live Steam refresh of two
+  public Steam Games.  Check 1 (automatic population): a fresh Steam refresh
+  populated `description`, `developer`, and `release_date` for Hades
+  (Supergiant Games / 2020-09-17) with Steam-managed ownership.  Check 2
+  (selective override): Portal 2's pre-existing `developer="Test"` and
+  `release_date="2025-01-20"` (backfilled as human-owned by games.0011) were
+  preserved while its Steam-managed `description` updated.  Check 3 (resume
+  ownership): the "Resume Steam sync" control cleared an override and the
+  subsequent refresh repopulated the field from Steam.
+- Documentation-only closure; no production code changed.  SBGC-188 ready to
+  merge.
+
 ## 2026-08-23 — SBGC-188 Populate editable Steam game metadata
 
 - Steam now populates the canonical editable `description`, `developer`, and
