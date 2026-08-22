@@ -2,6 +2,7 @@
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
+import { buildCanonicalUrl, resolveSiteOrigin } from "../lib/seo";
 import "../styles/global.css";
 
 interface Props {
@@ -9,20 +10,29 @@ interface Props {
   description?: string;
   canonicalPath?: string;
   robots?: string;
+  image?: string;
+  imageAlt?: string;
+  jsonLd?: string;
 }
+
+const DEFAULT_DESCRIPTION =
+  "Classifying games through the lens of skill, using Micro, Mystiko, and Macro dimensions within separate Challenge and Reward profiles.";
 
 const titleTemplate = Astro.props.title
   ? `${Astro.props.title} | MyGameDNA`
   : "MyGameDNA";
 
-const description =
-  Astro.props.description ??
-  "Classifying games through the lens of skill, using Micro, Mystiko, and Macro dimensions within separate Challenge and Reward profiles.";
+const description = Astro.props.description ?? DEFAULT_DESCRIPTION;
 
-const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
+const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
 const canonicalUrl = Astro.props.canonicalPath
-  ? `${siteUrl}${Astro.props.canonicalPath}`
-  : siteUrl;
+  ? buildCanonicalUrl(siteOrigin, Astro.props.canonicalPath)
+  : siteOrigin;
+
+const image = Astro.props.image ?? null;
+const imageAlt = Astro.props.imageAlt ?? null;
+const jsonLd = Astro.props.jsonLd ?? null;
+const twitterCard = image ? "summary_large_image" : "summary";
 ---
 
 <!doctype html>
@@ -35,14 +45,33 @@ const canonicalUrl = Astro.props.canonicalPath
     <link rel="canonical" href={canonicalUrl} />
     <meta name="robots" content={Astro.props.robots ?? "index, follow"} />
 
+    <meta property="og:site_name" content="MyGameDNA" />
     <meta property="og:title" content={titleTemplate} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
+    {
+      image && (
+        <>
+          <meta property="og:image" content={image} />
+          {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
+        </>
+      )
+    }
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content={twitterCard} />
     <meta name="twitter:title" content={titleTemplate} />
     <meta name="twitter:description" content={description} />
+    {
+      image && (
+        <>
+          <meta name="twitter:image" content={image} />
+          {imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
+        </>
+      )
+    }
+
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
