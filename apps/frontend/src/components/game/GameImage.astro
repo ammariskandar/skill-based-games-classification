@@ -226,7 +226,9 @@ const isDev = import.meta.env.DEV;
   }
 
   .game-image__foreground--group .game-image__enhance--capsule {
-    position: static;
+    position: relative;
+    top: auto;
+    left: auto;
     height: 100%;
     aspect-ratio: 2 / 3;
     max-width: none;
