@@ -2554,6 +2554,21 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-75 Add game-page metadata
+
+- Added SEO/social metadata and `VideoGame` JSON-LD to public `/games/{slug}`:
+  a shared `src/lib/seo.ts` (site-origin validation, canonical URL building via
+  the `URL` API, safe JSON-LD serialization, `buildVideoGameJsonLd`).
+- `BaseLayout` now owns `og:site_name`, conditional `og:image`/`twitter:image`
+  (with alt), a dynamic `twitter:card` (`summary_large_image` when artwork
+  exists), and an optional `application/ld+json` slot.
+- `[slug].astro` derives the Game title/description (with a product fallback),
+  canonical URL, social image, and `VideoGame` JSON-LD (omitting unavailable
+  description/image/datePublished; no rating/classification data) and passes them
+  into the layout.  Error states emit no Game structured data.
+- 12 focused SEO tests; full frontend suite 132 green; `astro check && astro
+  build` green; lint + format + `git diff --check` clean.  No backend change.
+
 ## 2026-08-22 — SBGC-187 Update README with project progress
 
 - Rewrote the root `README.md` as an interim progress snapshot: project status

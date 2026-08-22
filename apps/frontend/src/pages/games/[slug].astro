@@ -9,6 +9,11 @@ import {
   getGameDetail,
   type GameDetailResponse,
 } from "../../lib/server/api/games";
+import {
+  buildCanonicalUrl,
+  buildVideoGameJsonLd,
+  resolveSiteOrigin,
+} from "../../lib/seo";
 
 const slug = Astro.params.slug;
 
@@ -39,8 +44,32 @@ const game = state.kind === "game" ? state.detail.game : null;
 const classification =
   state.kind === "game" ? state.detail.classification : null;
 const title = game ? game.name : "Something went wrong";
-const description = game ? game.description.trim() || undefined : undefined;
+
+const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
+
+const persistedDescription = game
+  ? game.description.trim() || undefined
+  : undefined;
+const description = game
+  ? (persistedDescription ??
+    `Explore the Challenge and Reward skill profiles for ${game.name} across Micro, Mystiko, and Macro on MyGameDNA.`)
+  : undefined;
+
 const canonicalPath = game ? `/games/${game.slug}` : undefined;
+
+const image = game ? game.image_url.trim() || undefined : undefined;
+const imageAlt = game && image ? `${game.name} cover image` : undefined;
+
+const jsonLd = game
+  ? buildVideoGameJsonLd({
+      name: game.name,
+      url: buildCanonicalUrl(siteOrigin, `/games/${game.slug}`),
+      description: persistedDescription,
+      image,
+      datePublished: game.release_date ?? undefined,
+    })
+  : undefined;
+
 const robots = game ? undefined : "noindex, nofollow";
 ---
 
@@ -49,6 +78,9 @@ const robots = game ? undefined : "noindex, nofollow";
   description={description}
   canonicalPath={canonicalPath}
   robots={robots}
+  image={image}
+  imageAlt={imageAlt}
+  jsonLd={jsonLd}
 >
   {
     game === null ? (
