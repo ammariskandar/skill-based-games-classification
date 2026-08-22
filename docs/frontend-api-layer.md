@@ -125,8 +125,25 @@ TypeScript types describe expected shapes at compile time. They do **not** valid
 
 The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
 - Call it from Astro frontmatter (server-side).
-- Catch `GameNotFoundError` to render a real 404; let `BackendApiError` and other failures propagate as a server error.
+- Catch `GameNotFoundError` to render a real 404 (rewrite to `404.astro` with a 404 status).
+- Catch every other failure (`BackendApiError` — timeout, network, Django 5xx, malformed/empty response) and render a friendly service-failure state with a real 500 status. Never a 404, and never a 200 "error page".
+- Unhandled render errors fall through to the native `500.astro` error page.
 - Never display raw `ApiError` content that may contain backend context directly in public UI.
+
+### Game-detail state matrix (SBGC-74)
+
+| Upstream outcome | `getGameDetail` result | Page result |
+| --- | --- | --- |
+| Django 404 `GAME_NOT_FOUND` (unknown/hidden/draft/archived/non-game) | throws `GameNotFoundError` | HTTP 404 + `404.astro` |
+| Django 5xx | throws `BackendApiError` (`HTTP_ERROR`) | HTTP 500 + service-failure state |
+| Timeout | throws `BackendApiError` (`TIMEOUT`) | HTTP 500 + service-failure state |
+| Network failure | throws `BackendApiError` (`NETWORK_ERROR`) | HTTP 500 + service-failure state |
+| Malformed/empty response | throws `BackendApiError` (`INVALID_RESPONSE`) | HTTP 500 + service-failure state |
+| 200 valid Game | returns `GameDetailResponse` | HTTP 200 + Game page |
+
+- `classification: null` and legitimate non-ready classifications are **not errors**: they render the ordinary Game page at HTTP 200 with the unavailable/non-ready state.
+- Stale classification renders the persisted scores plus a stale qualifier at HTTP 200.
+- Service failure offers a plain `<a href={Astro.url.pathname}>Try again</a>` — no automatic retry, no backoff, no polling.
 
 ## Behavioural Tests
 
@@ -139,3 +156,15 @@ checks passed: `/games/portal-2` returned a server-rendered 200 with the correct
 Game and image; `/games/chess` (Manual, no classification) returned a valid 200
 with no fabricated scores; and `/games/definitely-not-a-game` returned a real 404
 via the custom not-found page with no backend JSON exposed.
+
+## Human verification (SBGC-74)
+
+Completed on the local dev servers (Django `runserver` + Astro `dev`). All four
+checks passed: unknown/hidden slug → real 404 (no internal JSON, hidden and
+unknown indistinguishable); backend unavailable → real 500 with a friendly retry
+state (no stack trace/backend URL, restored after restarting Django + Retry);
+missing-image/sparse/null/non-ready/stale fixtures → no broken image, modal omits
+missing rows, no fake zeros, stale qualified; extreme/long fixtures + repeated
+Game-Information open/close/Escape + resize/desktop/mobile/200% zoom → no
+overflow/stuck dialog/client exception. A follow-up long-Game-name overflow in
+the Editorial Classification admin was also fixed and re-verified.

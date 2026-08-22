@@ -86,6 +86,21 @@ The desktop Game page is a two-column grid: artwork (left) and a right panel (Ga
 
 Human verification (visual + interaction) passed on the local dev servers: desktop two-column architecture, Game Information modal (open/Close/Escape), Manual/sparse metadata, and responsive mobile layout all reviewed and accepted; the modal was centered and the backdrop darkened during review.
 
+### Exceptional States (SBGC-74)
+
+The Game-detail page resolves every plausible upstream response into one honest state without inventing data:
+
+- **Not found** — Django 404 (`GAME_NOT_FOUND`, indistinguishable for unknown/hidden/draft/archived/non-game) → real HTTP 404 via `404.astro`; hidden records are never disclosed.
+- **Service failure** — timeout, network, Django 5xx, or malformed response → real HTTP 500 with a friendly `Try again` link to the current URL. No automatic retry/backoff/polling, and never a 200 "error page".
+- **Unhandled render error** — Astro's native fallback renders `500.astro` with a real 500.
+- **Missing image** — a null/empty `image_url` renders a local CSS placeholder (`GameImage.astro`) preserving the 16:9 container and carrying the Game name as accessible text; no broken image, no Steam/CDN fetch.
+- **Sparse metadata** — optional Game Information rows are omitted when empty; no `N/A` or blank rows.
+- **No / non-ready classification** — HTTP 200 with the deliberate unavailable state; no fake zeros.
+- **Stale classification** — HTTP 200 with persisted scores plus a stale qualifier.
+- A failed Steam metadata refresh does **not** invalidate a persisted Game; the page renders persisted data without querying scheduler audit.
+
+The broader generic integration-failure (SBGC-92) and frontend error-state (SBGC-101) work remains separate — SBGC-74 is page-scoped only.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
@@ -106,6 +121,7 @@ src/pages/
 ├── search.astro         →  /search        (SSR/on-demand — reads ?q= param)
 ├── profile.astro        →  /profile       (SSR/on-demand — future auth required)
 ├── 404.astro            →  custom not-found (SSR — Vercel serverless)
+├── 500.astro            →  custom server-error (SSR — Vercel serverless)
 └── games/
     └── [slug].astro     →  /games/:slug   (SSR/on-demand — dynamic route)
 ```
@@ -114,12 +130,13 @@ Future dynamic routes **must not be prerendered** unless an explicit product dec
 
 ### Dynamic-route rules
 
-- `/games/[slug]` is an **on-demand** route that reads `Astro.params.slug`, fetches the SBGC-71 public game-detail DTO server-side via `getGameDetail()`, and renders the normalized Game + persisted classification. No `getStaticPaths`. A Django `404 GAME_NOT_FOUND` rewrites to the custom `404.astro`; backend/service failures propagate as a server error (never a 404).
+- `/games/[slug]` is an **on-demand** route that reads `Astro.params.slug`, fetches the SBGC-71 public game-detail DTO server-side via `getGameDetail()`, and renders the normalized Game + persisted classification. No `getStaticPaths`. A Django `404 GAME_NOT_FOUND` rewrites to the custom `404.astro` (real 404); every other failure (timeout, network, Django 5xx, malformed response) renders a friendly service-failure state with a real 500 (never a 404, never a 200 "error page"). Unhandled render errors fall through to the native `500.astro`. `classification: null` and non-ready statuses render the ordinary page at 200 (no fake scores).
 - `/search` reads `?q=` from `Astro.url.searchParams`. A semantic GET form updates the URL. No backend search is executed.
 - `/profile` is SSR and will require authentication in a future phase.
 - `/login` is prerendered as an informational placeholder — no credential form, no auth package.
-- `/error` is a prerendered visual fallback / demo route only. It does not automatically catch Astro SSR exceptions, does not handle Django/API failures, and does not implement HTTP 500 behaviour. Actual framework-level exception handling, API failure states, and production-safe error handling remain pending future integration/security work.
-- Custom 404 uses `404.astro` and is the actual custom not-found route, handled by the Vercel serverless runtime.
+- `/error` is a prerendered visual fallback / demo route only — it is **not** the framework error handler.
+- `404.astro` is the custom not-found route (real 404 status), handled by the Vercel serverless runtime.
+- `500.astro` is the custom server-error page used by Astro's native error fallback for unhandled render errors (real 500 status). The `/games/[slug]` route renders its own service-failure state (real 500) for backend/service failures before any exception reaches the framework fallback.
 - Route skeletons contain honest placeholder content — no fake records, counts, rankings, or operational claims.
 
 ## Client-Side JavaScript

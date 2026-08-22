@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ClassificationDisplay from "../../components/classification/ClassificationDisplay.astro";
+import GameImage from "../../components/game/GameImage.astro";
 import GameInformation from "../../components/game/GameInformation.astro";
+import ErrorState from "../../components/ui/ErrorState.astro";
 import {
   GameNotFoundError,
   getGameDetail,
@@ -15,56 +17,78 @@ if (!slug) {
   return Astro.rewrite("/404");
 }
 
-let detail: GameDetailResponse;
+type PageState =
+  { kind: "game"; detail: GameDetailResponse } | { kind: "service-error" };
+
+let state: PageState;
 try {
-  detail = await getGameDetail(slug);
+  state = { kind: "game", detail: await getGameDetail(slug) };
 } catch (error: unknown) {
   if (error instanceof GameNotFoundError) {
     Astro.response.status = 404;
     return Astro.rewrite("/404");
   }
-  throw error;
+  // Timeout, network failure, Django 5xx, or a malformed response all mean the
+  // service is unavailable: render a real 5xx — never a 404, and never a 200
+  // "error page" that would mislead users and crawlers about availability.
+  Astro.response.status = 500;
+  state = { kind: "service-error" };
 }
 
-const { game, classification } = detail;
-const description = game.description.trim();
+const game = state.kind === "game" ? state.detail.game : null;
+const classification =
+  state.kind === "game" ? state.detail.classification : null;
+const title = game ? game.name : "Something went wrong";
+const description = game ? game.description.trim() || undefined : undefined;
+const canonicalPath = game ? `/games/${game.slug}` : undefined;
+const robots = game ? undefined : "noindex, nofollow";
 ---
 
 <BaseLayout
-  title={game.name}
-  description={description || undefined}
-  canonicalPath={`/games/${game.slug}`}
+  title={title}
+  description={description}
+  canonicalPath={canonicalPath}
+  robots={robots}
 >
-  <article>
-    <header>
-      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
-        {game.source === "steam" ? "Steam" : "Manual"}
-      </p>
-      <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-        {game.name}
-      </h1>
-    </header>
+  {
+    game === null ? (
+      <ErrorState
+        title="We couldn't load this game right now."
+        message="Please try again in a moment."
+        headingLevel="h1"
+      >
+        <div class="flex flex-wrap justify-center gap-4">
+          <a
+            href={Astro.url.pathname}
+            class="text-sm font-medium text-blue hover:underline"
+          >
+            Try again →
+          </a>
+          <a href="/" class="text-sm font-medium text-blue hover:underline">
+            Go Home →
+          </a>
+        </div>
+      </ErrorState>
+    ) : (
+      <article>
+        <header>
+          <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+            {game.source === "steam" ? "Steam" : "Manual"}
+          </p>
+          <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            {game.name}
+          </h1>
+        </header>
 
-    <div class="mt-8 grid gap-8 lg:grid-cols-[3fr_2fr] lg:items-start">
-      <div>
-        {
-          game.image_url && (
-            <div class="overflow-hidden rounded-lg border border-border bg-surface">
-              <img
-                src={game.image_url}
-                alt={`${game.name} cover image`}
-                class="aspect-video h-auto w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          )
-        }
-      </div>
+        <div class="mt-8 grid gap-8 lg:grid-cols-[3fr_2fr] lg:items-start">
+          <GameImage src={game.image_url} name={game.name} />
 
-      <div class="space-y-8">
-        <GameInformation game={game} />
-        <ClassificationDisplay classification={classification} />
-      </div>
-    </div>
-  </article>
+          <div class="space-y-8">
+            <GameInformation game={game} />
+            <ClassificationDisplay classification={classification} />
+          </div>
+        </div>
+      </article>
+    )
+  }
 </BaseLayout>

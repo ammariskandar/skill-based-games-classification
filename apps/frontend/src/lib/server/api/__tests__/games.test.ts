@@ -101,6 +101,48 @@ describe("getGameDetail", () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
     vi.stubGlobal("fetch", fetchMock);
 
+    const { getGameDetail } = await importGames();
+    await expect(getGameDetail("portal-2")).rejects.toMatchObject({
+      name: "BackendApiError",
+      failure: { error: { code: "NETWORK_ERROR" } },
+    });
+  });
+
+  it("throws BackendApiError with a TIMEOUT code when the transport aborts", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValue(new DOMException("Aborted", "AbortError"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameDetail } = await importGames();
+    await expect(getGameDetail("portal-2")).rejects.toMatchObject({
+      name: "BackendApiError",
+      failure: { error: { code: "TIMEOUT" } },
+    });
+  });
+
+  it("throws BackendApiError with an INVALID_RESPONSE code on malformed JSON", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("{not json", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameDetail } = await importGames();
+    await expect(getGameDetail("portal-2")).rejects.toMatchObject({
+      name: "BackendApiError",
+      failure: { error: { code: "INVALID_RESPONSE" } },
+    });
+  });
+
+  it("throws BackendApiError on an empty 204 success response", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
     const { BackendApiError, getGameDetail } = await importGames();
     await expect(getGameDetail("portal-2")).rejects.toBeInstanceOf(
       BackendApiError,

@@ -2554,6 +2554,55 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-74 Handle exceptional states
+
+- Hardened the `/games/[slug]` vertical slice so every upstream response resolves
+  to an honest state: valid Game (complete/sparse/no/non-ready/stale
+  classification) vs HTTP 404 (not found) vs HTTP 500 (service failure). No fake
+  zeros, no silently-normalized scores, no 404-for-failure, no 200 "error page".
+- `[slug].astro` now catches `GameNotFoundError` → 404 rewrite and every other
+  failure → `Astro.response.status = 500` + a friendly `ErrorState` with a
+  `Try again` link to `Astro.url.pathname`. No automatic retry/backoff/polling,
+  no new hydration.
+- Added `src/pages/500.astro` (native Astro server-error fallback for unhandled
+  render errors) reusing `ui/ErrorState.astro`; added
+  `src/components/game/GameImage.astro` for the missing-image fallback (local
+  CSS placeholder, 16:9, Game-name accessible text) replacing the conditional
+  `<img>` that silently dropped missing images.
+- Extended `games.test.ts` to 8 tests (timeout `TIMEOUT`, malformed JSON
+  `INVALID_RESPONSE`, empty 204, network `NETWORK_ERROR` all `BackendApiError`;
+  404 stays `GameNotFoundError`). Frontend suite 120 green; `astro check &&
+  astro build` green (0 errors); lint + format + `git diff --check` clean. No
+  backend change, no migration, no new dependency.
+- Documented the state matrix in `docs/frontend-api-layer.md` and the
+  exceptional-state semantics + `500.astro` route in
+  `docs/frontend-architecture.md`.
+- Follow-up (human review): contained absurdly long Game names in the
+  Editorial Classification admin.  The changelist `Game` column now ellipsizes
+  at ~90ch via a concrete `max-width` on the link (a cell `%` width is
+  ineffective against table min-content), and the add-form `Game` picker uses
+  `autocomplete_fields = ["game"]` (searchable, bounded dropdown) because a
+  native `<select>` option list cannot be constrained by CSS and overflowed the
+  viewport when expanded.  Wired via `EditorialClassificationAdmin.Media` +
+  `autocomplete_fields`.  2 focused admin tests; classifications admin tests
+  green (107); Ruff check + format clean.  No migration.
+
+## 2026-08-22 — SBGC-74 human validation PASS
+
+- Human verification completed on the local dev servers (Django `runserver` +
+  Astro `dev`): all four checks passed — unknown/hidden slug → real 404 (no
+  internal JSON, hidden and unknown indistinguishable); backend unavailable →
+  real 500 (not 404) with a friendly retry state and no stack trace/backend
+  URL, restored after restarting Django + Retry; missing-image/sparse/null/
+  non-ready/stale fixtures → no broken image, modal omits missing rows, no fake
+  zeros, stale qualified; extreme/long fixtures + repeated Game-Information
+  open/close/Escape + resize/desktop/mobile/200% zoom → no overflow/stuck
+  dialog/client exception, exact scores readable.
+- The follow-up defect (long Game names in the Editorial Classification admin)
+  was fixed and re-verified: the changelist `Game` column ellipsizes and the
+  add-form picker is a bounded autocomplete.  Documentation-only closure; no
+  production code changed beyond the validated fix.  SBGC-74 ready to merge.
+
 ## 2026-08-21 — SBGC-73 Classification display
 
 - Built the public Game-page classification display from the SBGC-71 DTO:

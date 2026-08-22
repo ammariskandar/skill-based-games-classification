@@ -1,0 +1,31 @@
+/*
+ * Editorial classification Admin — long Game name containment.
+ *
+ * A Game name is user/Steam controlled and can be arbitrarily long.  The
+ * changelist renders it as a link that grows to fit the longest name and
+ * pushes the table wider than the viewport.  The change form uses Django's
+ * autocomplete widget (`autocomplete_fields = ["game"]`) so the Game picker is
+ * searchable and its results stay bounded, instead of a native <select> whose
+ * option list the browser renders full-width and off-screen.
+ */
+
+/*
+ * Changelist "Game" column.  A concrete `max-width` on the inline-block link
+ * (not a % of the unconstrained cell) is what actually stops the column from
+ * widening the table; the cell-level rule is a fallback for non-link cells.
+ */
+td.field-game a {
+    display: inline-block;
+    max-width: 90ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+td.field-game {
+    max-width: 90ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
