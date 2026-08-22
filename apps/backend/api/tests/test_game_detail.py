@@ -256,6 +256,34 @@ class GameDetailEndpointTests(TestCase):
         r = self._get("image-game")
         self.assertEqual(r.json()["game"]["image_url"], "https://example.com/steam.jpg")
 
+    def test_steam_game_exposes_library_asset_urls(self):
+        _game(
+            slug="layered-game",
+            source_type=SourceType.STEAM,
+            external_id="620",
+            library_hero_url="https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_hero.jpg",
+            library_capsule_url="https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_600x900.jpg",
+        )
+        r = self._get("layered-game")
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json()["game"]["library_hero_url"],
+            "https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_hero.jpg",
+        )
+        self.assertEqual(
+            r.json()["game"]["library_capsule_url"],
+            "https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_600x900.jpg",
+        )
+
+    def test_manual_game_has_null_library_asset_urls(self):
+        _game(slug="manual-no-library", source_type=SourceType.MANUAL, external_id=None)
+        r = self._get("manual-no-library")
+
+        self.assertEqual(r.status_code, 200)
+        self.assertIsNone(r.json()["game"]["library_hero_url"])
+        self.assertIsNone(r.json()["game"]["library_capsule_url"])
+
     # -- L + M. no side effects ---------------------------------------------
 
     def test_get_does_not_contact_steam_or_recalculate(self):

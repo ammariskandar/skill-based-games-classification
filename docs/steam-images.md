@@ -30,11 +30,21 @@ transport controls and **must** go through `validate_steam_cdn_url()`
 | Field | Owner | Meaning |
 |-------|-------|---------|
 | `steam_image_url` | Steam (import) | Validated header-image URL from import candidates.  Readonly in Admin. |
+| `library_hero_url` | Steam (derived, SBGC-184) | Official Steam Library Hero URL for base Games.  Readonly in Admin. |
+| `library_capsule_url` | Steam (derived, SBGC-184) | Official Steam Library Capsule (portrait key-art) URL for base Games.  Readonly in Admin. |
 | `manual_image_url` | Manual/editorial | Owner-supplied image URL for manual records or editorial overrides. |
 
 `steam_image_url` is **never** populated from manual/editorial data, and
 `manual_image_url` is **never** populated from Steam.  The two fields are
 independent.
+
+`library_hero_url` and `library_capsule_url` are Steam-owned and derived
+from the App ID for base Games (`content_type == game`) during import and
+refresh; they are empty for Manual Games and non-game Steam content (see
+SBGC-184 in `docs/frontend-architecture.md`).  The `header.jpg`
+(`steam_image_url`) remains the canonical `image_url` for SEO/OG/Twitter and
+catalogue fallback — the Library assets are an additive Game-detail
+presentation layer, not a replacement.
 
 For effective display, `Game.display_image_url` (SBGC-60) returns the manual
 override when present, otherwise `steam_image_url`.  Manual asset validation

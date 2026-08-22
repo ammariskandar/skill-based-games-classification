@@ -42,13 +42,33 @@ from games.services.steam.dto import (
     SteamGameImportCandidate,
 )
 from games.services.steam.import_foundation import SteamImportFoundation
+from games.services.steam.library_assets import build_steam_library_asset_urls
+from games.types import ContentType
 
 # ---------------------------------------------------------------------------
 # Shared Steam-owned field mapping (single owner)
 # ---------------------------------------------------------------------------
 
 #: Steam-owned fields refreshable from a candidate, in deterministic order.
-_REFRESHABLE_FIELDS = ("name", "content_type", "steam_image_url")
+_REFRESHABLE_FIELDS = (
+    "name",
+    "content_type",
+    "steam_image_url",
+    "library_hero_url",
+    "library_capsule_url",
+)
+
+
+def _library_asset_urls(candidate: SteamGameImportCandidate) -> tuple[str, str]:
+    """Return the derived Steam Library ``(hero, capsule)`` URLs.
+
+    Only base Games receive Library artwork; non-game Steam content and Manual
+    Games carry empty URLs (the fallback ladder treats empty as "absent").
+    The URLs are a pure function of the validated App ID — never network access.
+    """
+    if candidate.content_type != ContentType.GAME:
+        return "", ""
+    return build_steam_library_asset_urls(candidate.app_id)
 
 
 def _apply_steam_owned_updates(
@@ -61,13 +81,16 @@ def _apply_steam_owned_updates(
     metadata refresh.  SBGC-55 image semantics apply: a valid HTTPS URL
     updates ``steam_image_url``; ``None``/blank preserves it; malformed
     nonblank metadata raises ``SteamMalformedPayloadError`` before any
-    mutation.
+    mutation.  Library Hero/Capsule URLs are derived from the App ID for
+    base Games (and cleared for non-game Steam content) via
+    ``_library_asset_urls``.
 
     Mutates *existing* in memory only — the caller decides whether to
     save.  Returns the changed field names in the deterministic
     ``_REFRESHABLE_FIELDS`` order.
     """
     image_url = validate_steam_image_url(candidate.header_image_url)
+    hero_url, capsule_url = _library_asset_urls(candidate)
 
     changed: list[str] = []
     if existing.name != candidate.name:
@@ -79,6 +102,12 @@ def _apply_steam_owned_updates(
     if image_url is not None and existing.steam_image_url != image_url:
         existing.steam_image_url = image_url
         changed.append("steam_image_url")
+    if existing.library_hero_url != hero_url:
+        existing.library_hero_url = hero_url
+        changed.append("library_hero_url")
+    if existing.library_capsule_url != capsule_url:
+        existing.library_capsule_url = capsule_url
+        changed.append("library_capsule_url")
     return tuple(changed)
 
 
@@ -303,6 +332,7 @@ class SteamGamePersistenceService:
         metadata fields are not populated from Steam data.
         """
         slug = self._allocate_slug(candidate, app_id)
+        hero_url, capsule_url = _library_asset_urls(candidate)
 
         game = Game(
             source_type=SourceType.STEAM,
@@ -311,6 +341,8 @@ class SteamGamePersistenceService:
             content_type=candidate.content_type,
             slug=slug,
             steam_image_url=self._normalised_image_url(candidate) or "",
+            library_hero_url=hero_url,
+            library_capsule_url=capsule_url,
         )
         # Field and model validation only — deliberately NOT
         # ``validate_constraints()``/``validate_unique()``.  The database

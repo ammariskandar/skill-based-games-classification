@@ -19,6 +19,8 @@ function game(overrides: Partial<GameDetailGame> = {}): GameDetailGame {
     release_date: "2011-04-19",
     developer: "Valve",
     image_url: "https://example.com/header.jpg",
+    library_hero_url: null,
+    library_capsule_url: null,
     metadata_updated_at: "2026-08-21T00:00:00Z",
     ...overrides,
   };

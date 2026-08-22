@@ -126,7 +126,17 @@ class GameAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        ("Steam metadata", {"fields": ("steam_image_url", "last_steam_refresh_at")}),
+        (
+            "Steam metadata",
+            {
+                "fields": (
+                    "steam_image_url",
+                    "library_hero_url",
+                    "library_capsule_url",
+                    "last_steam_refresh_at",
+                ),
+            },
+        ),
         (
             "System",
             {
@@ -157,6 +167,8 @@ class GameAdmin(admin.ModelAdmin):
         # Steam-owned metadata is source-managed — readonly for all
         # records.  Manual/editorial imagery stays on manual_image_url.
         "steam_image_url",
+        "library_hero_url",
+        "library_capsule_url",
         "last_steam_refresh_at",
     )
 

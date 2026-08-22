@@ -2554,6 +2554,80 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-184 final layout scaffold (visualization slot)
+
+- Finalized the Steam foreground composition so SBGC-12's future radar chart
+  can be added without restructuring: the Hero + Capsule foreground is now one
+  centered group holding the portrait Capsule (left) and a reserved square
+  classification-visualization slot (right, `data-classification-visualization`).
+- The slot shares the Capsule's flex-group height and is `1 / 1` (therefore
+  wider than the portrait Capsule).  It is empty and `hidden` in production
+  (dev shows a dashed "Visualization slot" scaffold) so no unfinished UI
+  appears publicly; narrow screens encode a stacked column layout.  No radar,
+  D3, SVG, labels, tooltips, or fake data implemented.
+- Extracted the layout decision into `src/lib/game-image-layout.ts`
+  (`resolveGameImageLayout` + aspect-ratio constants) with focused tests; the
+  existing Manual/Steam fallback/WebSR/SEO/classification behaviour is
+  untouched.
+- Validation: frontend 169 tests OK; `astro check` 0 errors; `astro build`,
+  lint, format, `git diff --check` clean.  No backend change.  Human visual
+  check pending.
+
+## 2026-08-22 — SBGC-184 correction: layered Steam Hero + Capsule
+
+- Replaced the header-first progressive upscaling presentation with a layered
+  Steam composition: official Steam **Library Hero** as a softened/dimmed
+  full-region background (never upscaled) and official Steam **Library Capsule**
+  as the sharp portrait foreground key-art (WebSR-enhanced only when its
+  effective density is insufficient).  The Library Logo is intentionally unused.
+- `header.jpg` (`steam_image_url`/`image_url`) semantics are unchanged for
+  SEO/OG/Twitter/VideoGame and as the canonical fallback; Library assets are
+  additive, source-managed fields.  Manual Games keep the single operator image.
+- Backend: added `Game.library_hero_url` + `Game.library_capsule_url` (nullable
+  URL fields, `games.0009`) and a pure `games/services/steam/library_assets.py`
+  builder.  Import and refresh derive the URLs for base Games only
+  (`content_type == game`); non-game Steam content and Manual Games remain
+  empty.  Admin exposes them read-only under Steam metadata.  Public DTO exposes
+  `library_hero_url`/`library_capsule_url` (`null` for Manual).
+- Frontend: `GameImage.astro` renders the Hero/Capsule/header fallback ladder;
+  the enhancer is now role-aware (`library-capsule`, `header`,
+  `manual-primary`).  Capsule eligibility uses `renderedCssSize × DPR × 1.25`
+  (`QUALITY_HEADROOM`) headroom; header/Manual keep the 800px width rule; the
+  cache key includes the asset role; the Capsule crossfades instead of wiping.
+- Validation: backend affected neighborhood (imports/steam/api/model/constraints/
+  admin-config) 459 tests OK + api/refresh/slugging/concurrency/listing 273 OK;
+  Ruff + BasedPyright clean.  Frontend 159 tests OK; `astro check && astro
+  build`, lint, format clean.  No PostgreSQL/statistical/live-Steam run.
+- Human verification of the four checks is pending.
+
+## 2026-08-22 — SBGC-184 Dynamic game-image upscaling
+
+- Added optional browser-side WebSR 2x super-resolution over the canonical Game
+  artwork, without changing the canonical image, the route, classification, or
+  SEO semantics.
+- `src/lib/game-image-upscale.ts` — pure policy: width-threshold eligibility
+  (source narrower than 800px), exact 2x geometry, content/model-addressed cache
+  key, 10-entry LRU, enhancement decision, reduced-motion reveal mode.
+- `src/lib/game-image-upscale-store.ts` — IndexedDB blob cache (10-entry LRU,
+  never localStorage/base64).  `src/lib/game-image-upscale.worker.ts` — module
+  worker running WebSR (`@websr/websr@0.0.16`, `anime4k/cnn-2x-s` +
+  `cnn-2x-s-3d` weights) on an `OffscreenCanvas`.  `src/lib/game-image-upscale-client.ts`
+  — eligibility → cache → worker → reveal orchestration; every failure degrades
+  to the original.
+- `GameImage.astro` layers a decorative overlay (`aria-hidden`) with a
+  top-to-bottom clip-path reveal; the original renders first and enhancement
+  begins after paint via `requestAnimationFrame`.  Steam images use
+  `crossorigin="anonymous"` (Steam CDN sends `Access-Control-Allow-Origin: *` on
+  all three hosts); Manual images omit it.
+- 18 focused pure-logic tests; frontend suite 150 green; `astro check && astro
+  build` green; lint + format + `git diff --check` clean.  Added `@websr/websr` +
+  `@webgpu/types` deps.  No Django change, no migration.
+- Future work (not implemented): custom Game-art model training — first evaluate
+  the bundled model on ~20–50 Game headers; train only if materially inadequate
+  (500–1000+ images, SteamGridDB licensing/terms validated, offline WebSR
+  custom-training workflow); each new model version invalidates SBGC-184 cache
+  entries.
+
 ## 2026-08-22 — SBGC-75 human validation PASS
 
 - Human verification completed: three representative cases passed — complete Game

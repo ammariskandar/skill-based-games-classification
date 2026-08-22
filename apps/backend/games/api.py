@@ -112,6 +112,8 @@ class PublicGameDetail(Schema):
     release_date: date | None
     developer: str
     image_url: str
+    library_hero_url: str | None = None
+    library_capsule_url: str | None = None
     metadata_updated_at: datetime
 
 
@@ -315,6 +317,8 @@ def _public_game_detail(game: Game) -> PublicGameDetail:
         release_date=game.release_date,
         developer=game.developer,
         image_url=game.display_image_url,
+        library_hero_url=game.library_hero_url or None,
+        library_capsule_url=game.library_capsule_url or None,
         metadata_updated_at=game.updated_at,
     )
 

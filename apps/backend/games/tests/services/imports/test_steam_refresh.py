@@ -36,6 +36,14 @@ from games.services.steam.dto import (
 )
 from games.services.steam.errors import SteamTimeoutError
 from games.services.steam.import_foundation import SteamImportFoundation
+from games.services.steam.library_assets import build_steam_library_asset_urls
+
+
+def _library_urls(content_type: str, external_id: str) -> tuple[str, str]:
+    """Derived Library Hero/Capsule URLs matching the persistence mapping."""
+    if content_type != "game":
+        return "", ""
+    return build_steam_library_asset_urls(external_id)
 
 
 def _candidate(
@@ -75,6 +83,9 @@ def _steam_game(
     content_type: str = "game",
     **kwargs,
 ) -> Game:
+    hero, capsule = _library_urls(content_type, external_id)
+    kwargs.setdefault("library_hero_url", hero)
+    kwargs.setdefault("library_capsule_url", capsule)
     return Game.objects.create(
         source_type=SourceType.STEAM,
         external_id=external_id,
@@ -244,9 +255,15 @@ class RefreshOutcomeTests(TestCase):
         result = self.service.refresh(self.game)
 
         self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
-        self.assertEqual(result.changed_fields, ("content_type",))
+        self.assertEqual(
+            result.changed_fields,
+            ("content_type", "library_hero_url", "library_capsule_url"),
+        )
         self.game.refresh_from_db()
         self.assertEqual(self.game.content_type, "dlc")
+        # Non-game Steam content has no Library Hero/Capsule presentation.
+        self.assertEqual(self.game.library_hero_url, "")
+        self.assertEqual(self.game.library_capsule_url, "")
 
     def test_updated_image(self):
         self.foundation.prepare_candidate.return_value = _found_lookup(
@@ -260,6 +277,39 @@ class RefreshOutcomeTests(TestCase):
         self.game.refresh_from_db()
         self.assertEqual(self.game.steam_image_url, "https://cdn.example.com/new.jpg")
 
+    def test_transition_to_game_populates_library_assets(self):
+        dlc = _steam_game(external_id="730", name="Counter-Strike", content_type="dlc")
+        hero, capsule = build_steam_library_asset_urls("730")
+        self.foundation.prepare_candidate.return_value = _found_lookup(
+            app_id="730",
+            name="Counter-Strike",
+            content_type="game",
+        )
+
+        result = self.service.refresh(dlc)
+
+        self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
+        self.assertEqual(
+            result.changed_fields,
+            ("content_type", "library_hero_url", "library_capsule_url"),
+        )
+        dlc.refresh_from_db()
+        self.assertEqual(dlc.content_type, "game")
+        self.assertEqual(dlc.library_hero_url, hero)
+        self.assertEqual(dlc.library_capsule_url, capsule)
+
+    def test_library_assets_unchanged_for_game_content_type(self):
+        hero, capsule = build_steam_library_asset_urls("620")
+        self.assertEqual(self.game.library_hero_url, hero)
+        self.assertEqual(self.game.library_capsule_url, capsule)
+
+        self.foundation.prepare_candidate.return_value = _found_lookup()
+
+        result = self.service.refresh(self.game)
+
+        self.assertEqual(result.status, SteamGameRefreshStatus.UNCHANGED)
+        self.assertEqual(result.changed_fields, ())
+
     def test_changed_fields_deterministic_order(self):
         self.foundation.prepare_candidate.return_value = _found_lookup(
             name="Portal 2 — Reloaded",
@@ -272,7 +322,13 @@ class RefreshOutcomeTests(TestCase):
         self.assertEqual(result.status, SteamGameRefreshStatus.UPDATED)
         self.assertEqual(
             result.changed_fields,
-            ("name", "content_type", "steam_image_url"),
+            (
+                "name",
+                "content_type",
+                "steam_image_url",
+                "library_hero_url",
+                "library_capsule_url",
+            ),
         )
 
     def test_unchanged(self):
