@@ -420,6 +420,27 @@ class Game(models.Model):
         ),
     )
 
+    library_hero_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text=(
+            "Steam Library Hero image URL for the layered Game-detail "
+            "presentation.  Steam-owned and derived from the App ID for "
+            "base Games; blank for manual and non-game Steam content."
+        ),
+    )
+
+    library_capsule_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text=(
+            "Steam Library Capsule (portrait key-art) image URL for the "
+            "layered Game-detail presentation.  Steam-owned and derived "
+            "from the App ID for base Games; blank for manual and non-game "
+            "Steam content."
+        ),
+    )
+
     last_steam_refresh_at = models.DateTimeField(
         null=True,
         blank=True,

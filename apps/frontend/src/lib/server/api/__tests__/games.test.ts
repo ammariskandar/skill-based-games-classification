@@ -33,6 +33,8 @@ const GAME = {
   release_date: null,
   developer: "Valve",
   image_url: "https://example.com/header.jpg",
+  library_hero_url: "https://example.com/library_hero.jpg",
+  library_capsule_url: "https://example.com/library_600x900.jpg",
   metadata_updated_at: "2026-08-21T00:00:00Z",
 };
 
@@ -52,6 +54,12 @@ describe("getGameDetail", () => {
 
     expect(detail.game.name).toBe("Portal 2");
     expect(detail.game.source).toBe("steam");
+    expect(detail.game.library_hero_url).toBe(
+      "https://example.com/library_hero.jpg",
+    );
+    expect(detail.game.library_capsule_url).toBe(
+      "https://example.com/library_600x900.jpg",
+    );
     expect(detail.classification).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

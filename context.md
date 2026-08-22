@@ -2554,6 +2554,33 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-184 correction: layered Steam Hero + Capsule
+
+- Replaced the header-first progressive upscaling presentation with a layered
+  Steam composition: official Steam **Library Hero** as a softened/dimmed
+  full-region background (never upscaled) and official Steam **Library Capsule**
+  as the sharp portrait foreground key-art (WebSR-enhanced only when its
+  effective density is insufficient).  The Library Logo is intentionally unused.
+- `header.jpg` (`steam_image_url`/`image_url`) semantics are unchanged for
+  SEO/OG/Twitter/VideoGame and as the canonical fallback; Library assets are
+  additive, source-managed fields.  Manual Games keep the single operator image.
+- Backend: added `Game.library_hero_url` + `Game.library_capsule_url` (nullable
+  URL fields, `games.0009`) and a pure `games/services/steam/library_assets.py`
+  builder.  Import and refresh derive the URLs for base Games only
+  (`content_type == game`); non-game Steam content and Manual Games remain
+  empty.  Admin exposes them read-only under Steam metadata.  Public DTO exposes
+  `library_hero_url`/`library_capsule_url` (`null` for Manual).
+- Frontend: `GameImage.astro` renders the Hero/Capsule/header fallback ladder;
+  the enhancer is now role-aware (`library-capsule`, `header`,
+  `manual-primary`).  Capsule eligibility uses `renderedCssSize × DPR × 1.25`
+  (`QUALITY_HEADROOM`) headroom; header/Manual keep the 800px width rule; the
+  cache key includes the asset role; the Capsule crossfades instead of wiping.
+- Validation: backend affected neighborhood (imports/steam/api/model/constraints/
+  admin-config) 459 tests OK + api/refresh/slugging/concurrency/listing 273 OK;
+  Ruff + BasedPyright clean.  Frontend 159 tests OK; `astro check && astro
+  build`, lint, format clean.  No PostgreSQL/statistical/live-Steam run.
+- Human verification of the four checks is pending.
+
 ## 2026-08-22 — SBGC-184 Dynamic game-image upscaling
 
 - Added optional browser-side WebSR 2x super-resolution over the canonical Game

@@ -10,6 +10,7 @@
 import {
   accessCache,
   MAX_ENHANCED_GAME_IMAGES,
+  type AssetRole,
   type LruCacheEntry,
 } from "./game-image-upscale";
 
@@ -20,6 +21,7 @@ const STORE_NAME = "enhanced";
 export interface CachedGameImage {
   key: string;
   gameSlug: string;
+  assetRole: AssetRole;
   sourceUrl: string;
   modelVersion: string;
   blob: Blob;

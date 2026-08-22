@@ -24,6 +24,8 @@ export interface GameDetailGame {
   release_date: string | null;
   developer: string;
   image_url: string;
+  library_hero_url: string | null;
+  library_capsule_url: string | null;
   metadata_updated_at: string;
 }
 

@@ -9,13 +9,16 @@ import {
   buildCacheKey,
   decideEnhancement,
   isEligibleForUpscale,
+  isEligibleForUpscaleByDensity,
   MAX_ENHANCED_GAME_IMAGES,
+  QUALITY_HEADROOM,
   revealMode,
+  transitionMode,
   type LruCacheEntry,
   upscaleDimensions,
 } from "./game-image-upscale";
 
-describe("isEligibleForUpscale", () => {
+describe("isEligibleForUpscale (width rule)", () => {
   it("flags a clearly low-resolution source as eligible", () => {
     expect(isEligibleForUpscale(460, 215)).toBe(true);
   });
@@ -38,6 +41,60 @@ describe("isEligibleForUpscale", () => {
   });
 });
 
+describe("isEligibleForUpscaleByDensity (capsule rule)", () => {
+  it("flags a source that fails the density target", () => {
+    // 300x450 source rendered at 250x375 CSS on a 2x display needs
+    // 250*2*1.25 = 625 wide and 375*2*1.25 = 937.5 tall — undersampled.
+    expect(isEligibleForUpscaleByDensity(300, 450, 250, 375, 2)).toBe(true);
+  });
+
+  it("skips a source that meets the density target", () => {
+    // 800x1200 source rendered at 250x375 on a 2x display: the target is
+    // 625x937.5, so the source clears it on both axes.
+    expect(isEligibleForUpscaleByDensity(800, 1200, 250, 375, 2)).toBe(false);
+  });
+
+  it("higher DPR can make an adequate source insufficient", () => {
+    // 600x900 source: adequate at DPR 1.5 (target 469x703) but insufficient at
+    // DPR 3 (target 938x1406).
+    expect(isEligibleForUpscaleByDensity(600, 900, 250, 375, 1.5)).toBe(false);
+    expect(isEligibleForUpscaleByDensity(600, 900, 250, 375, 3)).toBe(true);
+  });
+
+  it("aspect-ratio difference alone does not trigger", () => {
+    // A square source with plenty of pixels on both axes is not undersampled
+    // merely because the rendered box is a different aspect ratio.
+    expect(isEligibleForUpscaleByDensity(1000, 1000, 250, 375, 2)).toBe(false);
+  });
+
+  it("treats invalid inputs as not eligible", () => {
+    expect(isEligibleForUpscaleByDensity(0, 0, 250, 375, 2)).toBe(false);
+    expect(isEligibleForUpscaleByDensity(300, 450, 0, 0, 2)).toBe(false);
+    expect(isEligibleForUpscaleByDensity(300, 450, 250, 375, 0)).toBe(false);
+    expect(isEligibleForUpscaleByDensity(Number.NaN, 450, 250, 375, 2)).toBe(
+      false,
+    );
+  });
+
+  it("applies the documented 1.25 quality headroom", () => {
+    // A source exactly equal to `rendered × DPR` (no headroom) is still
+    // undersampled; the headroom constant is what makes it insufficient.
+    const renderedWidth = 250;
+    const renderedHeight = 375;
+    const dpr = 2;
+    expect(
+      isEligibleForUpscaleByDensity(
+        500,
+        750,
+        renderedWidth,
+        renderedHeight,
+        dpr,
+      ),
+    ).toBe(true);
+    expect(QUALITY_HEADROOM).toBe(1.25);
+  });
+});
+
 describe("upscaleDimensions", () => {
   it("maps input dimensions to exactly 2x output", () => {
     expect(upscaleDimensions(460, 215)).toEqual({ width: 920, height: 430 });
@@ -50,43 +107,41 @@ describe("upscaleDimensions", () => {
 });
 
 describe("buildCacheKey", () => {
+  const base = {
+    gameSlug: "portal-2",
+    assetRole: "header" as const,
+    sourceUrl: "https://cdn.example.com/header.jpg",
+    modelVersion: "websr-0.0.16/cnn-2x-s-3d",
+  };
+
   it("is content- and model-addressed", () => {
-    const a = buildCacheKey({
-      gameSlug: "portal-2",
-      sourceUrl: "https://cdn.example.com/header.jpg",
-      modelVersion: "websr-0.0.16/cnn-2x-s-3d",
-    });
-    expect(a).toBe(
-      "game:portal-2|source:https://cdn.example.com/header.jpg|model:websr-0.0.16/cnn-2x-s-3d",
+    expect(buildCacheKey(base)).toBe(
+      "game:portal-2|role:header|source:https://cdn.example.com/header.jpg|model:websr-0.0.16/cnn-2x-s-3d",
     );
   });
 
   it("changes when the source URL changes", () => {
-    const a = buildCacheKey({
-      gameSlug: "portal-2",
-      sourceUrl: "https://cdn.example.com/header.jpg",
-      modelVersion: "websr-0.0.16/cnn-2x-s-3d",
-    });
     const b = buildCacheKey({
-      gameSlug: "portal-2",
+      ...base,
       sourceUrl: "https://cdn.example.com/header-v2.jpg",
-      modelVersion: "websr-0.0.16/cnn-2x-s-3d",
     });
-    expect(a).not.toBe(b);
+    expect(b).not.toBe(buildCacheKey(base));
   });
 
   it("changes when the model version changes", () => {
-    const a = buildCacheKey({
-      gameSlug: "portal-2",
-      sourceUrl: "https://cdn.example.com/header.jpg",
-      modelVersion: "websr-0.0.16/cnn-2x-s-3d",
-    });
     const b = buildCacheKey({
-      gameSlug: "portal-2",
-      sourceUrl: "https://cdn.example.com/header.jpg",
+      ...base,
       modelVersion: "websr-0.0.17/cnn-2x-s-3d",
     });
-    expect(a).not.toBe(b);
+    expect(b).not.toBe(buildCacheKey(base));
+  });
+
+  it("distinguishes the asset role", () => {
+    const capsule = buildCacheKey({ ...base, assetRole: "library-capsule" });
+    const header = buildCacheKey({ ...base, assetRole: "header" });
+    expect(capsule).not.toBe(header);
+    expect(capsule).toContain("role:library-capsule");
+    expect(header).toContain("role:header");
   });
 });
 
@@ -105,7 +160,6 @@ describe("accessCache (LRU)", () => {
   });
 
   it("evicts the least-recently-used entry past capacity", () => {
-    // Fill with a..j (10 entries).
     let entries: LruCacheEntry[] = [];
     for (let i = 0; i < 10; i += 1) {
       entries = accessCache(
@@ -114,9 +168,7 @@ describe("accessCache (LRU)", () => {
         i + 1,
       ).entries;
     }
-    // Touch "a" so "b" becomes the least recently used.
     entries = accessCache(entries, "a", 11).entries;
-    // Insert "k" — should evict "b".
     const result = accessCache(entries, "k", 12);
     expect(result.evicted).toEqual(["b"]);
     expect(result.entries.length).toBe(MAX_ENHANCED_GAME_IMAGES);
@@ -156,5 +208,16 @@ describe("revealMode", () => {
 
   it("swaps instantly under reduced motion", () => {
     expect(revealMode(true)).toBe("instant");
+  });
+});
+
+describe("transitionMode", () => {
+  it("crossfades the portrait Library Capsule", () => {
+    expect(transitionMode("library-capsule")).toBe("crossfade");
+  });
+
+  it("wipes the header fallback and Manual primary image", () => {
+    expect(transitionMode("header")).toBe("wipe");
+    expect(transitionMode("manual-primary")).toBe("wipe");
   });
 });

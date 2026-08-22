@@ -27,6 +27,7 @@ from games.services.imports.steam import (
 )
 from games.services.steam.adapters import SteamMalformedPayloadError
 from games.services.steam.dto import SteamAppId, SteamGameImportCandidate
+from games.services.steam.library_assets import build_steam_library_asset_urls
 
 
 def _candidate(
@@ -414,11 +415,14 @@ class ValidationAndAtomicityTests(TestCase):
 
     def test_identity_race_recovers_existing_row(self):
         """A concurrent winner's row is adopted instead of duplicating."""
+        hero, capsule = build_steam_library_asset_urls("777")
         raced = Game.objects.create(
             source_type=SourceType.STEAM,
             external_id="777",
             name="Raced",
             slug="raced",
+            library_hero_url=hero,
+            library_capsule_url=capsule,
         )
         service = SteamGamePersistenceService()
 
@@ -436,11 +440,14 @@ class ValidationAndAtomicityTests(TestCase):
         self.assertEqual(steam_rows.count(), 1)
 
     def test_identity_race_with_changed_name_updates_winner(self):
+        hero, capsule = build_steam_library_asset_urls("777")
         raced = Game.objects.create(
             source_type=SourceType.STEAM,
             external_id="777",
             name="Raced",
             slug="raced",
+            library_hero_url=hero,
+            library_capsule_url=capsule,
         )
         service = SteamGamePersistenceService()
         real_save = Game.save
@@ -729,6 +736,56 @@ class SteamImageTests(TestCase):
         self.assertEqual(result.status, SteamGameImportStatus.CREATED)
         game = Game.objects.get(pk=result.game_id)
         self.assertEqual(game.steam_image_url, image)
+
+
+# ---------------------------------------------------------------------------
+# Steam Library asset URLs
+# ---------------------------------------------------------------------------
+
+
+class LibraryAssetTests(TestCase):
+    """Library Hero/Capsule URL ownership for Steam base Games."""
+
+    def setUp(self):
+        self.service = SteamGamePersistenceService()
+
+    def test_new_import_populates_library_asset_urls(self):
+        result = self.service.persist(_candidate("620", "Portal 2"))
+
+        game = Game.objects.get(pk=result.game_id)
+        hero, capsule = build_steam_library_asset_urls("620")
+        self.assertEqual(game.library_hero_url, hero)
+        self.assertEqual(game.library_capsule_url, capsule)
+
+    def test_new_import_non_game_has_empty_library_asset_urls(self):
+        result = self.service.persist(_candidate("620", "Portal 2", content_type="dlc"))
+
+        game = Game.objects.get(pk=result.game_id)
+        self.assertEqual(game.library_hero_url, "")
+        self.assertEqual(game.library_capsule_url, "")
+
+    def test_reimport_game_content_type_keeps_library_asset_urls(self):
+        self.service.persist(_candidate("620", "Portal 2"))
+
+        result = self.service.persist(_candidate("620", "Portal 2"))
+
+        self.assertEqual(result.status, SteamGameImportStatus.UNCHANGED)
+        game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
+        hero, capsule = build_steam_library_asset_urls("620")
+        self.assertEqual(game.library_hero_url, hero)
+        self.assertEqual(game.library_capsule_url, capsule)
+
+    def test_reimport_content_type_transition_clears_library_asset_urls(self):
+        self.service.persist(_candidate("620", "Portal 2"))
+
+        result = self.service.persist(
+            _candidate("620", "Portal 2", content_type="software")
+        )
+
+        self.assertEqual(result.status, SteamGameImportStatus.UPDATED)
+        game = Game.objects.get(source_type=SourceType.STEAM, external_id="620")
+        self.assertEqual(game.library_hero_url, "")
+        self.assertEqual(game.library_capsule_url, "")
 
 
 # ---------------------------------------------------------------------------

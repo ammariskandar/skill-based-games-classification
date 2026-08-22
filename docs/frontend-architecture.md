@@ -103,37 +103,68 @@ The broader generic integration-failure (SBGC-92) and frontend error-state (SBGC
 
 ### Dynamic Game-Image Upscaling (SBGC-184)
 
-`GameImage.astro` layers a WebSR 2x super-resolution enhancement over the
-canonical artwork as an optional, browser-side progressive enhancement:
+Steam Games use a **layered Hero + Capsule** presentation; Manual Games keep
+a single operator image.  WebSR 2x super-resolution is an optional,
+browser-side progressive enhancement over the *foreground* artwork only.
 
-- **Canonical artwork never changes** — Steam Games keep the official Steam
-  `header.jpg`; Manual Games keep the operator URL. The enhancement is visual
-  only and never becomes a new backend source.
+#### Steam presentation
+
+```text
+STEAM GAME
+  official Library Hero   → wide, softened/dimmed background (never upscaled)
+  official Library Capsule → sharp portrait key-art foreground (optionally enhanced)
+  header.jpg              → fallback only (foreground-over-Hero, or background when Hero absent)
+```
+
+The Library Logo is **intentionally not used**.  The fallback ladder is:
+
+- **Hero + Capsule** → Hero background + Capsule foreground;
+- **Hero only** → Hero background + contained `header.jpg` foreground;
+- **Capsule only** → `header.jpg` background + Capsule foreground;
+- **neither** → existing `header.jpg` full-frame behaviour;
+- **no image** → existing placeholder (never upscaled).
+
+Steam's canonical `header.jpg`/`image_url` semantics (SBGC-75 SEO/OG/Twitter
+and `VideoGame.image`) are unchanged; the Library assets are additive fields
+(`library_hero_url`, `library_capsule_url`) resolved by Django and exposed via
+the public DTO.
+
+#### Enhancement policy
+
 - **Original-first SSR** — the ordinary `<img>` always renders first; the page
   never waits for WebGPU/WebSR/weights before showing artwork.
-- **Eligibility** — a source narrower than `ELIGIBILITY_WIDTH_THRESHOLD`
-  (800px) is treated as materially undersampled for the maximum intended
-  Game-detail display width (~800px). Width-only keeps it aspect-ratio agnostic
-  so an adequate wide-but-short image is not flagged.
+- **Capsule density rule** — a Capsule is enhanced only when its effective
+  physical density is insufficient: `required = renderedCssSize ×
+  devicePixelRatio`, `target = required × 1.25` (`QUALITY_HEADROOM`).  A source
+  meeting the target is skipped; a deficient source is a WebSR candidate.  The
+  1.25 is *display-density headroom*, not a native 1.25x neural model — WebSR
+  remains a 2x model internally.
+- **Header/Manual width rule** — the header fallback and Manual primary image
+  use the original `ELIGIBILITY_WIDTH_THRESHOLD` (800px) width-only rule.
+- **Hero is never upscaled** — it is a high-resolution background whose slight
+  softening already de-emphasizes source imperfections.
 - **2x only** — output is exactly `2 × source width` and `2 × source height`,
-  preserving aspect ratio (never iterative, never resized to a fixed target).
+  preserving aspect ratio (never iterative, never resized to a fixed target;
+  the UI never auto-doubles the rendered CSS size).
 - **Cache-before-inference** — a valid IndexedDB hit bypasses WebSR entirely.
 - **IndexedDB cache** — binary Blob storage (never localStorage/base64), a
   content- and model-addressed key, and a hard 10-entry LRU policy.
-- **Cache invalidation** — the key includes the Game slug, the source URL, and
-  the model version, so artwork or model changes produce a miss.
-- **Worker strategy** — a module Web Worker runs WebSR against an
+- **Cache identity/invalidation** — the key includes the Game slug, the asset
+  role (`library-capsule`, `header`, `manual-primary`), the source URL, and the
+  model version, so artwork, role, or model changes produce a miss.
+- **Worker strategy** — a classic Web Worker (import-free) runs WebSR against an
   `OffscreenCanvas`; the main thread only orchestrates and reveals the result.
-- **CORS** — Steam's image CDN (`cdn.cloudflare.steamstatic.com`,
-  `cdn.akamai.steamstatic.com`, `steamcdn-a.akamaihd.net`) sends
-  `Access-Control-Allow-Origin: *`, so Steam images use `crossorigin="anonymous"`
-  to permit pixel reads; Manual images omit `crossorigin` (they render
-  regardless, and enhancement is skipped if pixel-read is blocked).
+- **CORS** — Steam's image CDN sends `Access-Control-Allow-Origin: *`, so the
+  enhanceable Steam foreground uses `crossorigin="anonymous"` to permit pixel
+  reads; the decorative Hero carries no `crossorigin`; Manual images omit it
+  (they render regardless, and enhancement is skipped if pixel-read is blocked).
+- **Transition** — the portrait Capsule crossfades (~200ms); the header and
+  Manual full-frame images keep the top-to-bottom wipe.
 - **Failure semantics** — every enhancement-only failure (no WebGPU, worker
   error, cross-origin pixel-read, cache/encoding failure) degrades silently to
-  the original image. No user-facing error UI.
+  the original image.  No user-facing error UI.
 - **Reduced motion** — `prefers-reduced-motion: reduce` swaps the enhanced
-  image in instantly instead of the top-to-bottom reveal animation.
+  image in instantly (no animation).
 
 WebSR is `@websr/websr@0.0.16` using the `anime4k/cnn-2x-s` network with the
 `cnn-2x-s-3d` weights (the 3D/gaming-trained variant). Custom Game-art model

@@ -15,8 +15,19 @@ export const MAX_ENHANCED_GAME_IMAGES = 10;
  * for the maximum intended Game-detail display width (~800px) and is eligible
  * for 2x enhancement. Width-only keeps the rule aspect-ratio agnostic so an
  * otherwise adequate wide-but-short image is not flagged as deficient.
+ *
+ * Used for the header fallback and Manual primary image.
  */
 export const ELIGIBILITY_WIDTH_THRESHOLD = 800;
+
+/**
+ * Conservative quality headroom applied to the effective physical-pixel target
+ * for the Library Capsule. `required = renderedCssSize × devicePixelRatio`;
+ * `target = required × 1.25`. A capsule meeting or exceeding the target is not
+ * enhanced. This is display-density headroom, not a native 1.25x neural model —
+ * WebSR remains a 2x model internally.
+ */
+export const QUALITY_HEADROOM = 1.25;
 
 /** WebSR network used (small 2x CNN). */
 export const NETWORK_NAME = "anime4k/cnn-2x-s";
@@ -30,6 +41,9 @@ export const MODEL_VERSION = "websr-0.0.16/cnn-2x-s-3d";
 /** Exact upscale factor — never iterate beyond this. */
 export const UPSCALE_FACTOR = 2;
 
+/** Which canonical artwork role is being enhanced. */
+export type AssetRole = "library-capsule" | "header" | "manual-primary";
+
 export interface ImageDimensions {
   width: number;
   height: number;
@@ -40,6 +54,44 @@ export function isEligibleForUpscale(width: number, height: number): boolean {
   if (!Number.isFinite(width) || !Number.isFinite(height)) return false;
   if (width <= 0 || height <= 0) return false;
   return width < ELIGIBILITY_WIDTH_THRESHOLD;
+}
+
+/**
+ * Whether a source image is materially undersampled for how it is actually
+ * rendered on screen (the Library Capsule rule).
+ *
+ * - `sourceWidth`/`sourceHeight` are the decoded intrinsic dimensions.
+ * - `renderedCssWidth`/`renderedCssHeight` are the on-screen CSS dimensions.
+ * - `devicePixelRatio` is the physical-pixel multiplier.
+ *
+ * A source is undersampled when it fails to meet the required physical pixels
+ * plus `QUALITY_HEADROOM` on either axis. Aspect-ratio differences alone never
+ * trigger this (the axes are compared independently).
+ */
+export function isEligibleForUpscaleByDensity(
+  sourceWidth: number,
+  sourceHeight: number,
+  renderedCssWidth: number,
+  renderedCssHeight: number,
+  devicePixelRatio: number,
+): boolean {
+  if (!Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight)) {
+    return false;
+  }
+  if (
+    !Number.isFinite(renderedCssWidth) ||
+    !Number.isFinite(renderedCssHeight)
+  ) {
+    return false;
+  }
+  if (!Number.isFinite(devicePixelRatio) || devicePixelRatio <= 0) return false;
+  if (sourceWidth <= 0 || sourceHeight <= 0) return false;
+  if (renderedCssWidth <= 0 || renderedCssHeight <= 0) return false;
+
+  const targetWidth = renderedCssWidth * devicePixelRatio * QUALITY_HEADROOM;
+  const targetHeight = renderedCssHeight * devicePixelRatio * QUALITY_HEADROOM;
+
+  return sourceWidth < targetWidth || sourceHeight < targetHeight;
 }
 
 /** Exact 2x output dimensions, preserving aspect ratio. */
@@ -55,13 +107,17 @@ export function upscaleDimensions(
 
 export interface CacheKeyInput {
   gameSlug: string;
+  assetRole: AssetRole;
   sourceUrl: string;
   modelVersion: string;
 }
 
-/** Stable, content-and-model-addressed cache key. */
+/** Stable, content-and-model-addressed cache key including the asset role. */
 export function buildCacheKey(input: CacheKeyInput): string {
-  return `game:${input.gameSlug}|source:${input.sourceUrl}|model:${input.modelVersion}`;
+  return (
+    `game:${input.gameSlug}|role:${input.assetRole}` +
+    `|source:${input.sourceUrl}|model:${input.modelVersion}`
+  );
 }
 
 export interface LruCacheEntry {
@@ -118,4 +174,14 @@ export type RevealMode = "animated" | "instant";
 /** Reduced motion swaps the enhanced image in instantly instead of animating. */
 export function revealMode(prefersReducedMotion: boolean): RevealMode {
   return prefersReducedMotion ? "instant" : "animated";
+}
+
+export type TransitionMode = "crossfade" | "wipe";
+
+/**
+ * The portrait foreground Capsule crossfades; the full-frame header and Manual
+ * images keep the top-to-bottom wipe already established in SBGC-184.
+ */
+export function transitionMode(assetRole: AssetRole): TransitionMode {
+  return assetRole === "library-capsule" ? "crossfade" : "wipe";
 }
