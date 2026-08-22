@@ -1,105 +1,160 @@
-# MyGameDNA (Skill-Based Games Classification)
+# MyGameDNA — Skill-Based Games Classification
 
-A web application that classifies games across three skill-based dimensions — **Micro**, **Mystiko**, and **Macro** — enabling players to discover, compare, and understand games through a structured skill lens rather than genre or difficulty alone.
+MyGameDNA is a web application that classifies games across three skill-based
+dimensions — **Micro**, **Mystiko**, and **Macro** — within two separate profiles
+(**Challenge** and **Reward**), so players can understand and compare games through
+a structured skill lens rather than genre or difficulty alone.
 
-## Current Status
+## Project status
 
-**Foundation phase complete.** The following are configured and operational:
+- **Status:** Active development — not yet finished.
+- **Approximate roadmap completion:** ~42% — measured by completed Jira issues
+  against the current project issue inventory. This is a roadmap indicator, not
+  a percentage of code or effort.
+- **README last updated:** 22 August 2026, 13:59 MYT (UTC+8).
+- **Estimated completion:** approximately 1 month — target late September 2026,
+  subject to scope and validation findings. This is an estimate, not a deadline.
 
-- Astro frontend with official Vercel adapter (`output: "server"`)
-- Hybrid MPA rendering (SSR/on-demand by default, prerendered fixed routes)
-- Tailwind CSS 4 via `@tailwindcss/vite`
-- Shared `BaseLayout` component
-- Dark-themed MyGameDNA application shell (Header, Navigation, Footer, responsive container, SEO metadata)
-- Prerendered placeholder routes for `/catalogue` and `/rankings`
-- Reusable UI foundations (Button, FormField, Card, Badge, DataTable, ItemList, EmptyState, LoadingState, ErrorState) — see [`docs/ui-foundations.md`](docs/ui-foundations.md)
-- Micro/Mystiko/Macro visual system (legends, score summaries, Observable Plot bars, D3 radar) — see [`docs/skill-visual-system.md`](docs/skill-visual-system.md)
-- Frontend API layer (server-side Django client, typed results, normalized errors) — see [`docs/frontend-api-layer.md`](docs/frontend-api-layer.md)
-- Security headers and analytics placeholder (vercel.json, opt-in GA, environment variable classification) — see [`docs/frontend-security.md`](docs/frontend-security.md)
-- Django backend skeleton with `django-environ`
-- Django application structure (games, classifications, API routing, environment-specific settings) — see [`docs/backend-architecture.md`](docs/backend-architecture.md)
-- Django Ninja 1.6.2 API with versioned v1 endpoints, standardised error envelope, and OpenAPI documentation — see [`docs/backend-api.md`](docs/backend-api.md)
-- Game domain model (`Game`, `GameQuerySet`, content types, listing rules) — see [`docs/game-model.md`](docs/game-model.md)
-- Editorial classification (Challenge + Reward profiles, Micro/Mystiko/Macro) — see [`docs/editorial-classification.md`](docs/editorial-classification.md)
-- PostgreSQL 16 verification (constraints, migrations, indexes, transactions) — see [`docs/postgresql-verification.md`](docs/postgresql-verification.md)
-- Hardened Steam transport and Store endpoint adapters — see [`docs/steam-integration.md`](docs/steam-integration.md) and [`docs/steam-endpoint-adapters.md`](docs/steam-endpoint-adapters.md)
-- Django Admin with MyGameDNA branding, games and classifications registered — see [`docs/admin-configuration.md`](docs/admin-configuration.md)
-- Deterministic development seed data (9 games, 5 classifications) — see [`docs/development-seed-data.md`](docs/development-seed-data.md)
-- SQLite local development and Neon PostgreSQL connectivity via Psycopg 3, with environment-specific fallback policy — see [`docs/database-connectivity.md`](docs/database-connectivity.md)
-- Backend test suite (1,168 tests) with discovery audit, reverse, shuffle, warnings, and PostgreSQL lane — see [`docs/backend-testing.md`](docs/backend-testing.md)
-- Environment-variable loading for both apps
-- Code-quality tooling (Prettier, ESLint, astro check, Ruff, BasedPyright)
-- GitHub Actions CI (frontend + backend + PostgreSQL jobs)
-- Locked design reference (`design-reference/`)
+## What MyGameDNA does
 
-**Pending:** Steam import persistence (candidate-to-Game workflow), public API endpoints for games and classifications, frontend catalogue/search/rankings/game pages connected to Django, questionnaire/community classification, production deployment.
+Traditional game taxonomies group games by genre, platform, or difficulty.
+MyGameDNA instead scores each game on the same three skill dimensions —
+Micro (fine execution/timing), Mystiko (hidden knowledge/decision-making under
+uncertainty), and Macro (strategy/planning) — and separates the skills a game
+**challenges** a player to use from the skills it **rewards**. This produces a
+comparable, product-consistent classification that is derived from editorial
+submissions through a governed statistical model rather than a single opinion.
 
-| Service  | Development URL           |
-| -------- | ------------------------- |
-| Frontend | http://localhost:4321     |
-| Backend  | http://127.0.0.1:8000     |
+See [context.md](context.md) for the canonical product vision, and
+[docs/statistical_model.md](docs/statistical_model.md) for the mathematics.
 
-## Stack
+## Current capabilities
 
-| Layer       | Technology                          |
-| ----------- | ----------------------------------- |
-| Frontend    | Astro, Tailwind CSS                 |
-| Backend API | Django, Django Ninja                |
-| Database    | PostgreSQL (Neon)                   |
-| Hosting     | Vercel (frontend), Render (backend) |
+The project has moved well beyond a skeleton. What is implemented and tested today:
 
-## Rendering
+### Game / domain management
 
-Astro MPA with hybrid rendering:
+- Canonical `Game` model with Steam and Manual source types.
+- Public listing and content-type rules (only published `game` records are
+  publicly listable; hidden/draft/archived/non-game are excluded).
+- Source-specific behaviour (Steam-owned fields vs manual-editable fields).
+- Image/display handling with a canonical display-image fallback.
+- Archive and hard-delete workflows. See
+  [docs/game-model.md](docs/game-model.md) and
+  [docs/source-specific-behaviour.md](docs/source-specific-behaviour.md).
 
-- **SSR/on-demand** by default (`output: "server"` + Vercel adapter)
-- **Prerendered** fixed informational routes (`/`, `/about`, `/methodology`)
-- **Limited client-side islands** — no SPA router, no client framework
+### Steam integration
 
-See [docs/frontend-architecture.md](docs/frontend-architecture.md) for routing conventions and planned pages.
+- Steam metadata import (App Details → persisted Game).
+- Metadata refresh (manual Admin action and scheduled).
+- Persisted Steam metadata and image URLs.
+- HTTP import/refresh endpoints plus Django Admin workflows.
+- Scheduled daily refresh with retry, audit, and operator email notification.
+  See [docs/steam-integration.md](docs/steam-integration.md) and
+  [docs/scheduled-steam-refresh.md](docs/scheduled-steam-refresh.md).
 
-## Styling
+### Editorial / classification system
 
-Tailwind CSS 4 via the `@tailwindcss/vite` Vite plugin. Utility-first, responsive, and accessible. A shared `BaseLayout` provides the document shell. See [docs/frontend-styling.md](docs/frontend-styling.md).
+- Multi-user editorial submissions with role-aware weighting.
+- Derived classification engine: Method 1 (role-aware anchored), Method 2
+  (Isolation Forest), Method 3 (LoOP), and BHPCM unification.
+- Provisional and unified regimes, and a Confidence Level.
+- Persisted Final Classification. See
+  [docs/classification-submissions.md](docs/classification-submissions.md) and
+  [docs/statistical_model.md](docs/statistical_model.md).
 
-## Design Reference
+### Admin
 
-A read-only Figma Make React/Vite prototype is archived at [`design-reference/figma-make-dark-ui/`](design-reference/figma-make-dark-ui/) (SBGC-136, archived by SBGC-137). It is **not** production code — do not edit, import, build, or deploy it. Use it only as a visual implementation guide. See [`design-reference/README.md`](design-reference/README.md).
+- Game and classification management.
+- Read-only derived outputs (Final Classification).
+- Safe bulk actions (publish/hide/archive; bulk delete disabled).
+- Audit logging and scheduler audit visibility.
 
-## Software Development Reviews
+### Public frontend
 
-A **read-only** senior software development reviewer ([`codex.md`](codex.md)) performs periodic audits covering product alignment, architecture, code quality, security, dependencies, documentation, and maintainability. Review outputs are saved as immutable governance records in [`reviews/`](reviews/).
+- `GET /api/v1/games/{slug}` (SBGC-71) — public game-detail API.
+- Astro `/games/{slug}` (SBGC-72/73/74) — server-rendered game page.
+- Normalised Steam/Manual Game details.
+- Classification display (Challenge/Reward profiles, confidence, state).
+- Game Information dialog.
+- Exceptional-state handling (404 / 5xx / missing image / sparse metadata).
 
-- **Zed** — implementation-agent workflow (write code, edit files, commit, push)
-- **VS Code + Codex** — read-only reviewer workflow (analyse, report, never modify)
+Catalogue, search, and rankings pages are **not yet implemented** — they remain
+route placeholders.
 
-See [`docs/software-development-reviews.md`](docs/software-development-reviews.md) and [`reviews/README.md`](reviews/README.md).
+## Architecture
 
-## Monorepo Directory Layout
+| Layer       | Technology                                        |
+| ----------- | ------------------------------------------------- |
+| Frontend    | Astro 7, TypeScript (strict), Tailwind CSS 4      |
+| Backend API | Python 3.12, Django 6, Django Ninja               |
+| Database    | PostgreSQL (Neon production); SQLite local dev    |
+| Hosting     | Vercel (frontend), Render (backend), Neon (DB)    |
+| Operations  | Django Admin, Render Cron, GitHub Actions         |
+
+- **Frontend** is an Astro multi-page app: server-rendered/on-demand by default
+  (`output: "server"` + Vercel adapter) with a few prerendered informational
+  routes. Client JavaScript is minimal and used only where interaction requires
+  it. See [docs/frontend-architecture.md](docs/frontend-architecture.md).
+- **Backend** owns all domain logic, the classification engine, and the API.
+  Django remains the single source of truth; the frontend only composes and
+  renders API data. See [docs/backend-architecture.md](docs/backend-architecture.md)
+  and [docs/backend-api.md](docs/backend-api.md).
+- **Production deployment is the stated direction but is not yet fully
+  verified** against live Render/Vercel/Neon services — see
+  [render.yaml](render.yaml) and [docs/backend-operations.md](docs/backend-operations.md).
+
+## Classification model
+
+Each game has a **Challenge** profile and a **Reward** profile, each scoring
+Micro, Mystiko, and Macro (0–100). Scores are derived from editorial submissions
+through Methods 1–3 and the BHPCM unification layer, producing either a
+**provisional** (small-N) or **unified** Final Classification with a Confidence
+Level. The full mathematical specification is in
+[docs/statistical_model.md](docs/statistical_model.md).
+
+## Current public experience
+
+A visitor can open a classified game at `/games/{slug}` and see its artwork,
+source, and Skill Classification (Challenge/Reward profiles, confidence, and
+provisional/stale status). Secondary metadata (developer, release date, source,
+description) lives in a "Game information" dialog. Unknown/hidden games return a
+real 404, and backend failures return a real 500 — neither leaks backend detail
+nor fabricates data.
+
+## Remaining roadmap
+
+Major remaining areas (not exhaustive):
+
+- Finish Public Game Pages (metadata completeness).
+- Richer Micro/Macro/Mystiko visualisation (e.g. the planned D3 radar).
+- Catalogue, search, and discovery.
+- Rankings and skill-based filtering.
+- Broader integration/error hardening.
+- Community scoring and recommendation (final-product phases).
+- Production deployment and release verification.
+
+See the registry in [context.md](context.md) for the full ticket inventory.
+
+## Monorepo directory layout
 
 ```
 skill-based-games-classification/
 ├── apps/
-│   ├── frontend/   # Astro application (initialized)
-│   └── backend/    # Django application (initialized)
+│   ├── frontend/   # Astro application
+│   └── backend/    # Django application
 ├── docs/           # Project documentation and architecture decision records
-├── scripts/        # Simple cross-project helper scripts
+├── scripts/        # Cross-project helper scripts
+├── reviews/        # Read-only software-development review records
 ├── context.md      # Canonical project context — read this first
-├── skills.md       # Agent engineering skill — defines workflows and standards
+├── skills.md       # Agent engineering skill — workflows and standards
 ├── README.md       # This file
-├── .editorconfig   # Editor encoding and indentation settings
-├── .gitignore      # Files excluded from version control
+├── render.yaml     # Render blueprint (backend web service)
 ├── .nvmrc          # Node.js version pinning
 └── package.json    # npm workspace root
 ```
 
-## Key References
-
-- **[context.md](context.md)** — The single source of truth for product vision, architecture, data model, Jira tasks, and all project decisions. The canonical framework contains separate **Challenge** and **Reward** profiles, each scored on Micro, Mystiko, and Macro dimensions.
-- **[skills.md](skills.md)** — The engineering skill that defines the required development workflow, architectural boundaries, coding standards, and quality gates for any agent or contributor working on this project. Its context-sources section is auto-generated by `scripts/update-skills-context.py` and must not be edited manually.
-- **[docs/archive/context-pre-reward-framework-2026-07-22.md](docs/archive/context-pre-reward-framework-2026-07-22.md)** — Historical snapshot of the classification framework before the dual-profile (Challenge/Reward) model was introduced. Reference only; must not override the current `context.md`.
-
-## Getting Started
+## Getting started
 
 ```bash
 # Use the correct Node.js version
@@ -112,7 +167,7 @@ npm install
 cp apps/frontend/.env.example apps/frontend/.env
 cp apps/backend/.env.example apps/backend/.env
 
-# Create backend virtual environment (first time only)
+# Create the backend virtual environment (first time only)
 npm run install:backend
 
 # Start the Astro dev server
@@ -124,20 +179,26 @@ python apps/backend/manage.py runserver
 deactivate
 ```
 
-### Environment Variables
+| Service  | Development URL        |
+| -------- | ---------------------- |
+| Frontend | http://localhost:4321  |
+| Backend  | http://127.0.0.1:8000  |
+
+### Environment variables
 
 - Copy `.env.example` to `.env` for each app — **never commit `.env` files**.
-- Frontend and backend use separate `.env` files (`apps/frontend/.env`, `apps/backend/.env`).
-- In the frontend, only variables prefixed `PUBLIC_` are accessible in browser code.
+- Frontend and backend use separate `.env` files (`apps/frontend/.env`,
+  `apps/backend/.env`).
+- In the frontend, only `PUBLIC_`-prefixed variables reach browser code.
 - Backend secrets (keys, database URLs) belong only in Django's environment.
-- In production, values are set in Vercel (frontend), Render (backend), and Neon (database) settings.
+- In production, values are set in Vercel, Render, and Neon settings.
 
-See [docs/environment-variables.md](docs/environment-variables.md) for the full variable reference.
+See [docs/environment-variables.md](docs/environment-variables.md).
 
-### Adding Dependencies
+### Adding dependencies
 
 ```bash
-# Frontend — add a package to the Astro workspace
+# Frontend
 npm install <package> --workspace=apps/frontend
 
 # Backend — install into the virtual environment, then freeze
@@ -145,34 +206,60 @@ apps/backend/.venv/bin/python -m pip install <package>
 apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
 ```
 
-### Code Quality
+### Code quality
 
 ```bash
 npm run lint         # ESLint + Ruff
 npm run format       # Prettier + Ruff (auto-fix)
 npm run format:check # verify formatting without changing files
 npm run check        # astro check + Django system check
-npm run ci           # full local quality gate (format, lint, check, build)
+npm run ci           # full local quality gate (format, lint, check, test, build)
 ```
 
-See [docs/code-quality.md](docs/code-quality.md) for tool details and editor setup.
+See [docs/code-quality.md](docs/code-quality.md).
 
-## Git Workflow
+## Git workflow
 
-- **`main`** is the stable branch. Create one feature branch per Jira task: `SBGC-<key>-short-description`.
+- **`main`** is the stable branch. Create one feature branch per Jira task:
+  `SBGC-<key>-short-description`.
 - Commit messages use the format `SBGC-<key> concise imperative summary`.
-- Pull requests require all CI checks to pass before merging. See the [PR template](.github/pull_request_template.md).
-- Run `npm run ci` locally before pushing — this executes the full quality gate.
+- Pull requests require all CI checks to pass before merging. See the
+  [PR template](.github/pull_request_template.md).
+- Run `npm run ci` locally before pushing.
 
-See [docs/git-workflow.md](docs/git-workflow.md) for the complete workflow.
+See [docs/git-workflow.md](docs/git-workflow.md).
 
 ## CI
 
-GitHub Actions runs on every pull request targeting `main` and on every push to `main`. Two independent jobs enforce the same gates as local `npm run ci`:
+GitHub Actions runs on every pull request to `main` and every push to `main`
+(see [.github/workflows/ci.yml](.github/workflows/ci.yml)):
 
-- **Frontend** — Prettier format check, ESLint, astro check, test entry point (placeholder), design-reference isolation check, Astro production build
-- **Backend** — Ruff lint, Ruff format check, Django system check, test entry point (placeholder)
+- **Frontend** — Prettier, ESLint, astro check, Vitest tests, design-reference
+  isolation check, and production build.
+- **Backend (SQLite)** — Ruff lint/format, BasedPyright type check, Django
+  system check, and the Django test suite.
+- **Backend (PostgreSQL 16)** — the PostgreSQL test lane.
 
-No real application test suites exist yet. Green CI means all currently implemented gates passed — it does not mean behavioural coverage is complete.
+## Design reference
 
-See `.github/workflows/ci.yml` for the pipeline definition.
+A read-only Figma Make React/Vite prototype is archived at
+[`design-reference/figma-make-dark-ui/`](design-reference/figma-make-dark-ui/).
+It is **not** production code — do not edit, import, build, or deploy it. Use it
+only as a visual guide. See [design-reference/README.md](design-reference/README.md).
+
+## Software development reviews
+
+A read-only senior reviewer ([`codex.md`](codex.md)) performs periodic audits.
+Review outputs are saved as governance records in [`reviews/`](reviews/). See
+[docs/software-development-reviews.md](docs/software-development-reviews.md).
+
+## Documentation
+
+- [context.md](context.md) — canonical product vision, architecture, data model,
+  and full Jira registry.
+- [docs/statistical_model.md](docs/statistical_model.md) — classification mathematics.
+- [docs/backend-api.md](docs/backend-api.md) — public API contract.
+- [docs/frontend-architecture.md](docs/frontend-architecture.md) — frontend
+  rendering model and conventions.
+- [docs/frontend-api-layer.md](docs/frontend-api-layer.md) — server-side API client.
+- [docs/backend-operations.md](docs/backend-operations.md) — deployment/operations.
