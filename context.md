@@ -2554,6 +2554,20 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-189 human validation PASS
+
+- All SBGC-189 human checks passed in a real browser: the carousel edge arrows
+  (left/right overlay, vertically centered on the Capsule region), positional
+  brightness hierarchy (darkest/intermediate/full/intermediate/darkest on the
+  desktop 5-card window; center-focused on fewer cards), responsive behaviour
+  with no page-level overflow, the `Methodology.` punctuation fix (no whitespace
+  before the period), and the 10-item local Steam carousel (8 Games freshly
+  imported via the canonical import workflow — no Manual filler).
+- Documentation-only closure; no production code changed.  SBGC-189 ready to
+  merge.
+- A separate manually-supplied-image-override issue observed during validation
+  is intentionally out of scope and tracked as SBGC-190 (deferred).
+
 ## 2026-08-23 — SBGC-189 Homepage content
 
 - Converted the homepage (`/`) from a prerendered scaffold into the first real
