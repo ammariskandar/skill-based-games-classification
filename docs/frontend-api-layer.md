@@ -156,3 +156,15 @@ checks passed: `/games/portal-2` returned a server-rendered 200 with the correct
 Game and image; `/games/chess` (Manual, no classification) returned a valid 200
 with no fabricated scores; and `/games/definitely-not-a-game` returned a real 404
 via the custom not-found page with no backend JSON exposed.
+
+## Human verification (SBGC-74)
+
+Completed on the local dev servers (Django `runserver` + Astro `dev`). All four
+checks passed: unknown/hidden slug → real 404 (no internal JSON, hidden and
+unknown indistinguishable); backend unavailable → real 500 with a friendly retry
+state (no stack trace/backend URL, restored after restarting Django + Retry);
+missing-image/sparse/null/non-ready/stale fixtures → no broken image, modal omits
+missing rows, no fake zeros, stale qualified; extreme/long fixtures + repeated
+Game-Information open/close/Escape + resize/desktop/mobile/200% zoom → no
+overflow/stuck dialog/client exception. A follow-up long-Game-name overflow in
+the Editorial Classification admin was also fixed and re-verified.

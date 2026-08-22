@@ -2587,6 +2587,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `autocomplete_fields`.  2 focused admin tests; classifications admin tests
   green (107); Ruff check + format clean.  No migration.
 
+## 2026-08-22 — SBGC-74 human validation PASS
+
+- Human verification completed on the local dev servers (Django `runserver` +
+  Astro `dev`): all four checks passed — unknown/hidden slug → real 404 (no
+  internal JSON, hidden and unknown indistinguishable); backend unavailable →
+  real 500 (not 404) with a friendly retry state and no stack trace/backend
+  URL, restored after restarting Django + Retry; missing-image/sparse/null/
+  non-ready/stale fixtures → no broken image, modal omits missing rows, no fake
+  zeros, stale qualified; extreme/long fixtures + repeated Game-Information
+  open/close/Escape + resize/desktop/mobile/200% zoom → no overflow/stuck
+  dialog/client exception, exact scores readable.
+- The follow-up defect (long Game names in the Editorial Classification admin)
+  was fixed and re-verified: the changelist `Game` column ellipsizes and the
+  add-form picker is a bounded autocomplete.  Documentation-only closure; no
+  production code changed beyond the validated fix.  SBGC-74 ready to merge.
+
 ## 2026-08-21 — SBGC-73 Classification display
 
 - Built the public Game-page classification display from the SBGC-71 DTO:
