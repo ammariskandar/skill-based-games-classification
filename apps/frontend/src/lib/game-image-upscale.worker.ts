@@ -39,6 +39,7 @@ scope.onmessage = async (event) => {
 
   try {
     const gpu = await WebSR.initWebGPU();
+    console.info("[game-image-worker]", "initWebGPU", Boolean(gpu));
     if (!gpu) {
       scope.postMessage({ type: "unsupported" });
       return;
@@ -64,8 +65,15 @@ scope.onmessage = async (event) => {
 
     await websr.destroy();
 
+    console.info("[game-image-worker]", "success", {
+      width,
+      height,
+      bytes: blob.size,
+    });
+
     scope.postMessage({ type: "success", blob, width, height });
-  } catch {
+  } catch (error) {
+    console.info("[game-image-worker]", "failed", error);
     scope.postMessage({ type: "failed" });
   }
 };

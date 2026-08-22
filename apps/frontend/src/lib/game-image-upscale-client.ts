@@ -47,7 +47,9 @@ export function mountGameImageEnhancer(options: MountOptions): void {
   const start = (): void => {
     const width = originalImage.naturalWidth;
     const height = originalImage.naturalHeight;
-    if (!isEligibleForUpscale(width, height)) return;
+    const eligible = isEligibleForUpscale(width, height);
+    console.info("[game-image]", "dimensions", { width, height, eligible });
+    if (!eligible) return;
     void enhance(width, height);
   };
 
@@ -69,6 +71,7 @@ export function mountGameImageEnhancer(options: MountOptions): void {
     // Cache-before-inference: a valid cached result must bypass WebSR.
     const cached = await getCachedImage(key);
     const decision = decideEnhancement(true, cached !== null);
+    console.info("[game-image]", "decision", decision);
     if (decision === "cache-hit" && cached) {
       reveal(cached.blob);
       return;
@@ -86,8 +89,8 @@ export function mountGameImageEnhancer(options: MountOptions): void {
     let bitmap: ImageBitmap;
     try {
       bitmap = await createImageBitmap(originalImage);
-    } catch {
-      // Cross-origin pixel-read blocked (tainted canvas) — original stays.
+    } catch (error) {
+      console.info("[game-image]", "pixel-read blocked", error);
       return;
     }
 
@@ -99,9 +102,13 @@ export function mountGameImageEnhancer(options: MountOptions): void {
     const blob = await new Promise<Blob | null>((resolve) => {
       worker.onmessage = (event: MessageEvent) => {
         const data = event.data as { type?: string; blob?: Blob } | null;
+        console.info("[game-image]", "worker result", data?.type ?? "(none)");
         resolve(data?.type === "success" && data.blob ? data.blob : null);
       };
-      worker.onerror = () => resolve(null);
+      worker.onerror = (error) => {
+        console.info("[game-image]", "worker error", error.message);
+        resolve(null);
+      };
       worker.postMessage({ type: "upscale", bitmap, width, height }, [bitmap]);
     });
 
