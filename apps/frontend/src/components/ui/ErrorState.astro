@@ -2,17 +2,28 @@
 interface Props {
   title?: string;
   message: string;
+  headingLevel?: "h1" | "h2";
 }
+
+const { title, message, headingLevel = "h2" } = Astro.props;
+const resolvedTitle = title ?? "Something went wrong";
+const headingClass = `font-semibold text-text ${
+  headingLevel === "h1" ? "text-2xl" : "text-lg"
+}`;
 ---
 
 <div
   class="flex flex-col items-center py-16 text-center"
-  role={Astro.props.title ? "alert" : undefined}
+  role={title ? "alert" : undefined}
 >
-  <h2 class="text-lg font-semibold text-text">
-    {Astro.props.title ?? "Something went wrong"}
-  </h2>
-  <p class="mt-2 max-w-md text-sm text-muted">{Astro.props.message}</p>
+  {
+    headingLevel === "h1" ? (
+      <h1 class={headingClass}>{resolvedTitle}</h1>
+    ) : (
+      <h2 class={headingClass}>{resolvedTitle}</h2>
+    )
+  }
+  <p class="mt-2 max-w-md text-sm text-muted">{message}</p>
   {
     Astro.slots.has("default") && (
       <div class="mt-6">

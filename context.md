@@ -2554,6 +2554,30 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-74 Handle exceptional states
+
+- Hardened the `/games/[slug]` vertical slice so every upstream response resolves
+  to an honest state: valid Game (complete/sparse/no/non-ready/stale
+  classification) vs HTTP 404 (not found) vs HTTP 500 (service failure). No fake
+  zeros, no silently-normalized scores, no 404-for-failure, no 200 "error page".
+- `[slug].astro` now catches `GameNotFoundError` → 404 rewrite and every other
+  failure → `Astro.response.status = 500` + a friendly `ErrorState` with a
+  `Try again` link to `Astro.url.pathname`. No automatic retry/backoff/polling,
+  no new hydration.
+- Added `src/pages/500.astro` (native Astro server-error fallback for unhandled
+  render errors) reusing `ui/ErrorState.astro`; added
+  `src/components/game/GameImage.astro` for the missing-image fallback (local
+  CSS placeholder, 16:9, Game-name accessible text) replacing the conditional
+  `<img>` that silently dropped missing images.
+- Extended `games.test.ts` to 8 tests (timeout `TIMEOUT`, malformed JSON
+  `INVALID_RESPONSE`, empty 204, network `NETWORK_ERROR` all `BackendApiError`;
+  404 stays `GameNotFoundError`). Frontend suite 120 green; `astro check &&
+  astro build` green (0 errors); lint + format + `git diff --check` clean. No
+  backend change, no migration, no new dependency.
+- Documented the state matrix in `docs/frontend-api-layer.md` and the
+  exceptional-state semantics + `500.astro` route in
+  `docs/frontend-architecture.md`.
+
 ## 2026-08-21 — SBGC-73 Classification display
 
 - Built the public Game-page classification display from the SBGC-71 DTO:
