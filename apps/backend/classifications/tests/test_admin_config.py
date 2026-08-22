@@ -329,3 +329,7 @@ class EditorialClassificationMediaTests(TestCase):
     def test_admin_includes_game_name_truncation_css(self):
         model_admin = EditorialClassificationAdmin(EditorialClassification, admin.site)
         self.assertIn("classifications/admin.css", str(model_admin.media))
+
+    def test_game_uses_autocomplete(self):
+        model_admin = EditorialClassificationAdmin(EditorialClassification, admin.site)
+        self.assertIn("game", model_admin.autocomplete_fields)

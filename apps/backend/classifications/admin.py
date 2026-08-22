@@ -206,6 +206,11 @@ class EditorialClassificationAdminForm(forms.ModelForm):
 class EditorialClassificationAdmin(admin.ModelAdmin):
     form = EditorialClassificationAdminForm
 
+    # A native FK <select> renders its option list full-width, so an absurdly
+    # long Game name overflows the viewport when the dropdown is expanded.  The
+    # autocomplete widget is searchable and keeps its results bounded.
+    autocomplete_fields = ["game"]
+
     class Media:
         css = {"all": ("classifications/admin.css",)}
 

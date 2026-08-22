@@ -2578,11 +2578,14 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   exceptional-state semantics + `500.astro` route in
   `docs/frontend-architecture.md`.
 - Follow-up (human review): contained absurdly long Game names in the
-  Editorial Classification admin — added
-  `classifications/static/classifications/admin.css` (changelist `Game` column
-  ellipsizes at ~90ch; the add-form `Game` `<select>` is width-capped) wired via
-  `EditorialClassificationAdmin.Media`.  1 focused admin-media test;
-  classifications admin tests green; Ruff check + format clean.  No migration.
+  Editorial Classification admin.  The changelist `Game` column now ellipsizes
+  at ~90ch via a concrete `max-width` on the link (a cell `%` width is
+  ineffective against table min-content), and the add-form `Game` picker uses
+  `autocomplete_fields = ["game"]` (searchable, bounded dropdown) because a
+  native `<select>` option list cannot be constrained by CSS and overflowed the
+  viewport when expanded.  Wired via `EditorialClassificationAdmin.Media` +
+  `autocomplete_fields`.  2 focused admin tests; classifications admin tests
+  green (107); Ruff check + format clean.  No migration.
 
 ## 2026-08-21 — SBGC-73 Classification display
 

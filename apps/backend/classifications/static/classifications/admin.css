@@ -2,38 +2,30 @@
  * Editorial classification Admin — long Game name containment.
  *
  * A Game name is user/Steam controlled and can be arbitrarily long.  The
- * default admin renders the Game as a raw FK select and a changelist link,
- * both of which grow to fit the longest name and push the page wider than the
- * viewport.  These rules cap that growth at roughly 90 characters and
- * ellipsize the overflow so the rest of the form/table stays usable.
+ * changelist renders it as a link that grows to fit the longest name and
+ * pushes the table wider than the viewport.  The change form uses Django's
+ * autocomplete widget (`autocomplete_fields = ["game"]`) so the Game picker is
+ * searchable and its results stay bounded, instead of a native <select> whose
+ * option list the browser renders full-width and off-screen.
  */
 
-/* Changelist "Game" column — ellipsize after ~90 characters. */
-td.field-game {
-    max-width: 90ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 /*
- * `text-overflow` on a table cell is historically inconsistent, so ellipsize
- * the link itself — the element that actually holds the game name.
+ * Changelist "Game" column.  A concrete `max-width` on the inline-block link
+ * (not a % of the unconstrained cell) is what actually stops the column from
+ * widening the table; the cell-level rule is a fallback for non-link cells.
  */
 td.field-game a {
     display: inline-block;
-    max-width: 100%;
+    max-width: 90ch;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
 }
 
-/*
- * Change form "Game" select.  A native <select> cannot reliably ellipsize its
- * closed-state value, so capping the width is the honest fix; the open
- * dropdown still shows full names.
- */
-select#id_game {
-    max-width: min(100%, 90ch);
+td.field-game {
+    max-width: 90ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
