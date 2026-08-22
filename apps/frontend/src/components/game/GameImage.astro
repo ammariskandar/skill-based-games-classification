@@ -1,4 +1,6 @@
 ---
+import { resolveGameImageLayout } from "../../lib/game-image-layout";
+
 interface Props {
   src: string;
   name: string;
@@ -11,53 +13,24 @@ interface Props {
 const { src, name, slug, source, libraryHeroUrl, libraryCapsuleUrl } =
   Astro.props;
 
-const isSteam = source === "steam";
-const hero = (libraryHeroUrl ?? "").trim();
-const capsule = (libraryCapsuleUrl ?? "").trim();
-const header = src.trim();
+const layout = resolveGameImageLayout({
+  src,
+  source,
+  libraryHeroUrl,
+  libraryCapsuleUrl,
+});
 
-// Layered Steam presentation fallback ladder (SBGC-184 correction):
-//   A) Hero + Capsule  → softened Hero background + sharp Capsule foreground
-//   B) Hero only       → softened Hero background + contained header fallback
-//   C) Capsule only    → softened header background + sharp Capsule foreground
-//   D) neither         → existing header-only full-frame behaviour
-//   E) no image        → placeholder (no enhancement)
-let backgroundSrc = "";
-let foregroundSrc = "";
-let foregroundRole: "library-capsule" | "header" | "manual-primary" = "header";
-let foregroundContained = false;
-
-if (isSteam) {
-  if (hero !== "") {
-    backgroundSrc = hero;
-    if (capsule !== "") {
-      foregroundSrc = capsule;
-      foregroundRole = "library-capsule";
-      foregroundContained = true;
-    } else if (header !== "") {
-      foregroundSrc = header;
-      foregroundRole = "header";
-      foregroundContained = true;
-    }
-  } else if (capsule !== "") {
-    backgroundSrc = header;
-    foregroundSrc = capsule;
-    foregroundRole = "library-capsule";
-    foregroundContained = true;
-  } else if (header !== "") {
-    foregroundSrc = header;
-    foregroundRole = "header";
-    foregroundContained = false;
-  }
-} else {
-  foregroundSrc = header;
-  foregroundRole = "manual-primary";
-  foregroundContained = false;
-}
+const {
+  backgroundSrc,
+  foregroundSrc,
+  foregroundRole,
+  foregroundContained,
+  showVisualizationSlot,
+} = layout;
 
 const hasBackground = backgroundSrc !== "";
 const hasForeground = foregroundSrc !== "";
-const hasImage = hasBackground || hasForeground;
+const hasImage = layout.kind === "image";
 
 const foregroundClass = foregroundContained
   ? foregroundRole === "library-capsule"
@@ -71,7 +44,8 @@ const foregroundClass = foregroundContained
 // `crossorigin`. Manual images may point at arbitrary origins, so no
 // `crossorigin` there: they still render, and enhancement is skipped if
 // pixel-read is blocked.
-const foregroundCrossorigin = isSteam ? "anonymous" : undefined;
+const foregroundCrossorigin = source === "steam" ? "anonymous" : undefined;
+const isDev = import.meta.env.DEV;
 ---
 
 {
@@ -89,27 +63,44 @@ const foregroundCrossorigin = isSteam ? "anonymous" : undefined;
         )}
         {hasForeground && (
           <div
-            class={`game-image__enhance ${foregroundClass}`}
-            data-game-image-enhance
-            data-asset-role={foregroundRole}
-            data-game-slug={slug}
-            data-source-url={foregroundSrc}
+            class={`game-image__foreground${showVisualizationSlot ? " game-image__foreground--group" : ""}`}
           >
-            <img
-              src={foregroundSrc}
-              alt={`${name} cover image`}
-              class="game-image__original"
-              data-game-image-original
-              loading="eager"
-              crossorigin={foregroundCrossorigin}
-            />
-            <img
-              class="game-image__enhanced"
-              data-game-image-enhanced
-              alt=""
-              aria-hidden="true"
-              hidden
-            />
+            <div
+              class={`game-image__enhance ${foregroundClass}`}
+              data-game-image-enhance
+              data-asset-role={foregroundRole}
+              data-game-slug={slug}
+              data-source-url={foregroundSrc}
+            >
+              <img
+                src={foregroundSrc}
+                alt={`${name} cover image`}
+                class="game-image__original"
+                data-game-image-original
+                loading="eager"
+                crossorigin={foregroundCrossorigin}
+              />
+              <img
+                class="game-image__enhanced"
+                data-game-image-enhanced
+                alt=""
+                aria-hidden="true"
+                hidden
+              />
+            </div>
+            {showVisualizationSlot && (
+              <div
+                class="game-image__visualization"
+                data-classification-visualization
+                hidden={!isDev}
+              >
+                {isDev && (
+                  <span class="game-image__visualization-label">
+                    Visualization slot
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -212,6 +203,75 @@ const foregroundCrossorigin = isSteam ? "anonymous" : undefined;
     width: 62%;
     aspect-ratio: 460 / 215;
     max-height: 70%;
+  }
+
+  /* Case A only: a centered group holding the Capsule and the reserved square
+     classification-visualization slot. Every other case passes through
+     unchanged via `display: contents` (the wrapper generates no box). */
+  .game-image__foreground {
+    display: contents;
+  }
+
+  .game-image__foreground--group {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    height: 72%;
+    max-width: 90%;
+  }
+
+  .game-image__foreground--group .game-image__enhance--capsule {
+    position: static;
+    height: 100%;
+    aspect-ratio: 2 / 3;
+    max-width: none;
+    transform: none;
+    flex: none;
+  }
+
+  .game-image__visualization {
+    position: relative;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    flex: none;
+  }
+
+  /* The slot carries `hidden` (rendered only when a visualization exists;
+     currently dev-only). SBGC-12 renders real content and drops the `hidden`
+     attribute, at which point it participates in the two-slot layout. */
+  .game-image__visualization-label {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0.5rem;
+    text-align: center;
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+  }
+
+  /* Narrow/mobile: stack the reserved layout rather than squeezing the
+     portrait Capsule and square slot side by side. Only when the slot is
+     actually present (not `hidden`) do we split the shared height. */
+  @media (max-width: 640px) {
+    .game-image__foreground--group {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .game-image__foreground--group:has(.game-image__visualization:not([hidden]))
+      .game-image__enhance--capsule,
+    .game-image__foreground--group:has(.game-image__visualization:not([hidden]))
+      .game-image__visualization {
+      height: 50%;
+    }
   }
 
   .game-image__original {

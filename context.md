@@ -2554,6 +2554,25 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-184 final layout scaffold (visualization slot)
+
+- Finalized the Steam foreground composition so SBGC-12's future radar chart
+  can be added without restructuring: the Hero + Capsule foreground is now one
+  centered group holding the portrait Capsule (left) and a reserved square
+  classification-visualization slot (right, `data-classification-visualization`).
+- The slot shares the Capsule's flex-group height and is `1 / 1` (therefore
+  wider than the portrait Capsule).  It is empty and `hidden` in production
+  (dev shows a dashed "Visualization slot" scaffold) so no unfinished UI
+  appears publicly; narrow screens encode a stacked column layout.  No radar,
+  D3, SVG, labels, tooltips, or fake data implemented.
+- Extracted the layout decision into `src/lib/game-image-layout.ts`
+  (`resolveGameImageLayout` + aspect-ratio constants) with focused tests; the
+  existing Manual/Steam fallback/WebSR/SEO/classification behaviour is
+  untouched.
+- Validation: frontend 169 tests OK; `astro check` 0 errors; `astro build`,
+  lint, format, `git diff --check` clean.  No backend change.  Human visual
+  check pending.
+
 ## 2026-08-22 — SBGC-184 correction: layered Steam Hero + Capsule
 
 - Replaced the header-first progressive upscaling presentation with a layered

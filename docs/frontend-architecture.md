@@ -124,6 +124,14 @@ The Library Logo is **intentionally not used**.  The fallback ladder is:
 - **neither** → existing `header.jpg` full-frame behaviour;
 - **no image** → existing placeholder (never upscaled).
 
+The Hero + Capsule foreground is one centered group: the portrait Capsule on the
+left and a reserved square **classification-visualization slot** on the right
+(`data-classification-visualization`).  The slot shares the Capsule's flex-group
+height and is `1 / 1` (so it is wider than the portrait Capsule).  It is empty
+and `hidden` in production until SBGC-12 renders the combined radar chart;
+`GameImage.astro` is already structured so adding that content requires no
+layout restructuring.
+
 Steam's canonical `header.jpg`/`image_url` semantics (SBGC-75 SEO/OG/Twitter
 and `VideoGame.image`) are unchanged; the Library assets are additive fields
 (`library_hero_url`, `library_capsule_url`) resolved by Django and exposed via
