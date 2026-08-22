@@ -2554,6 +2554,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-22 — SBGC-75 human validation PASS
+
+- Human verification completed: three representative cases passed — complete Game
+  (correct title/description/canonical/OG-Twitter image metadata + valid
+  `VideoGame` JSON-LD), sparse Manual Game (meaningful fallback description, no
+  fake image/release fields, minimal valid JSON-LD), and an exceptional state
+  (404/5xx unchanged with no fabricated `VideoGame` structured data).  No visible
+  Game-page layout or interaction change.  Documentation-only closure; SBGC-75
+  ready to merge.
+
 ## 2026-08-22 — SBGC-75 Add game-page metadata
 
 - Added SEO/social metadata and `VideoGame` JSON-LD to public `/games/{slug}`:
