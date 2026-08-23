@@ -2554,6 +2554,26 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-77 final catalogue sizing + full-card link
+
+- Normalized every catalogue card to an identical outer width/height: the title
+  reserves two lines (`min-height: 2.6em`) and the classification area reserves
+  the fully-populated height (`min-height: 4rem`), so unclassified and no-cover
+  cards no longer collapse the grid.  Enlarged cards ~15% (`minmax(7rem, 1fr)`)
+  from the corrected size (still far smaller than the homepage carousel).
+- Made the entire card a single semantic `<a href="/games/{slug}">` (via
+  `gameHref`) — no nested anchors, no JS click handler; hover/keyboard focus
+  enlarges the whole card by ~1.15× with `transform: scale(1.15)` (no reflow,
+  reduced-motion exempt).  Focus outline remains visible.
+- Fixed broken-image handling: a failed **general image** (a Manual Game with no
+  Capsule but a dead image URL) now swaps to the local placeholder via the same
+  native `load`/`error` handling — no broken-image icon.  Capsule failure
+  behaviour and coverless reordering are unchanged.
+- Validation: `gameHref` helper added with 2 tests; frontend suite 246 OK;
+  `astro check` 0 errors; `astro build`, lint, format, `git diff --check` clean.
+  `docs/frontend-architecture.md` updated.  No backend change, no new
+  dependency, no migration.  Human verification pending (1 check).
+
 ## 2026-08-23 — SBGC-77 catalogue density + cover ordering correction
 
 - Made catalogue cards ~30% of their prior linear size: the grid now uses

@@ -129,19 +129,23 @@ const summary =
     const scheduler = createReorderScheduler(reorder, requestAnimationFrame);
 
     for (const card of cards) {
-      const image = card.querySelector<HTMLImageElement>(
-        "[data-catalogue-cover]",
-      );
+      const image = card.querySelector<HTMLImageElement>("img");
       if (!image) continue;
 
-      const markNoCover = () => {
-        card.dataset.coverState = "no-cover";
+      const isCover = image.hasAttribute("data-catalogue-cover");
+
+      const showPlaceholder = () => {
         const art = image.closest<HTMLElement>(".catalogue-card__art");
         if (art) art.dataset.failed = "true";
+      };
+      const markNoCover = () => {
+        showPlaceholder();
+        if (!isCover) return;
+        card.dataset.coverState = "no-cover";
         scheduler.schedule();
       };
       const markHasCover = () => {
-        card.dataset.coverState = "has-cover";
+        if (isCover) card.dataset.coverState = "has-cover";
       };
 
       const settled = resolveCoverStateFromImage(image);
@@ -160,7 +164,7 @@ const summary =
 <style>
   .catalogue-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
     gap: 0.75rem;
   }
 </style>

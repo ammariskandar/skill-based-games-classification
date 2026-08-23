@@ -59,6 +59,11 @@ export function cataloguePageHref(page: number): string {
   return page <= 1 ? "/catalogue" : `/catalogue?page=${page}`;
 }
 
+/** Public Game-detail href for a slug (used by the catalogue card link). */
+export function gameHref(slug: string): string {
+  return `/games/${slug}`;
+}
+
 export type CatalogueClassificationPresentation =
   | { kind: "unclassified" }
   | {

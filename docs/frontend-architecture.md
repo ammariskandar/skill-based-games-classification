@@ -236,17 +236,22 @@ the SBGC-76 catalogue DTO server-side via `getGameCatalogue({ page })` (page siz
 left to Django's 24 default) and renders the result as plain HTML — no client
 router, no client-side fetch, no React/Vue/Svelte.
 
-- **Card** — `GameCatalogueCard.astro` renders one item: effective artwork
-  (Capsule first, general image fallback, then a local SVG placeholder), a
-  linked title (`/games/{slug}`), a compact Steam/Manual source label, and a
-  compact Challenge/Reward summary or "Not yet classified".  Artwork is an
-  ordinary `<img>` — the SBGC-184 WebSR enhancer is **not** mounted here, so up
-  to 24 cards stay cheap on ordinary hardware.
-- **Dense presentation** — catalogue cards are intentionally much smaller than
-  the homepage carousel (~30% of the prior linear size).  The grid uses
-  `repeat(auto-fill, minmax(6rem, 1fr))` so many titles fit per row on wide
+- **Card** — `GameCatalogueCard.astro` renders one item as a single full-card
+  `<a href="/games/{slug}">` (no nested links, no JS click handler): effective
+  artwork (Capsule first, general image fallback, then a local SVG placeholder),
+  the title, a compact Steam/Manual source label, and a compact Challenge/Reward
+  summary or "Not yet classified".  Artwork is an ordinary `<img>` — the SBGC-184
+  WebSR enhancer is **not** mounted here, so up to 24 cards stay cheap.
+  All cards share an identical outer width and height: the title reserves two
+  lines (`min-height`) and the classification area reserves the fully-populated
+  height so unclassified/no-cover cards do not collapse the grid.
+- **Dense presentation** — catalogue cards are much smaller than the homepage
+  carousel, then enlarged ~15% from that corrected size.  The grid uses
+  `repeat(auto-fill, minmax(7rem, 1fr))` so many titles fit per row on wide
   screens while still collapsing to a usable multi-column grid on mobile.  The
-  homepage carousel sizing is untouched.
+  homepage carousel sizing is untouched.  Hover/keyboard focus enlarges the
+  whole card by ~1.15× via `transform: scale(1.15)` (no reflow); reduced-motion
+  users get no enlargement.
 - **Compact classification** — `CatalogueProfileSummary.astro` renders each
   profile as a small segmented bar plus an accessible label; exact
   "Micro X · Macro Y · Mystiko Z" values move to a visually-hidden text node
@@ -283,7 +288,10 @@ runtime enhancement only: it does **not** implement global cross-page
 "show games without a cover last" sorting, which belongs to SBGC-79 and must
 run before pagination in the backend.  A failed Capsule swaps to the local
 placeholder (no broken-image icon); the card is still treated as coverless for
-sorting even when a general-image fallback is shown.
+sorting even when a general-image fallback is shown.  A broken **general image**
+(no Capsule) also swaps to the placeholder via the same native `load`/`error`
+handling, so a Manual Game with a dead image URL never shows a broken-image
+icon.
 
 SBGC-78 (search UI + `q`) and SBGC-79 (source/classification filters + sort
 controls) are intentionally absent — no search input, no filter/sort controls,

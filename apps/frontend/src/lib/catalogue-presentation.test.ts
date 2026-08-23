@@ -13,6 +13,7 @@ import {
   computeResultRange,
   formatGameCount,
   formatResultSummary,
+  gameHref,
   parsePageParam,
   presentCatalogueClassification,
 } from "./catalogue-presentation";
@@ -126,6 +127,17 @@ describe("cataloguePageHref", () => {
   it("appends the page query for later pages", () => {
     expect(cataloguePageHref(2)).toBe("/catalogue?page=2");
     expect(cataloguePageHref(42)).toBe("/catalogue?page=42");
+  });
+});
+
+describe("gameHref", () => {
+  it("builds the public Game-detail href from a slug", () => {
+    expect(gameHref("portal-2")).toBe("/games/portal-2");
+  });
+
+  it("preserves slugs with hyphens and underscores", () => {
+    expect(gameHref("elden-ring")).toBe("/games/elden-ring");
+    expect(gameHref("a_game")).toBe("/games/a_game");
   });
 });
 
