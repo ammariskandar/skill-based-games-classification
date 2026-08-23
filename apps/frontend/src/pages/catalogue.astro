@@ -80,10 +80,10 @@ const summary =
       <>
         <p class="mt-6 text-sm text-muted">{summary}</p>
 
-        <ul class="mt-6 grid list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul class="catalogue-grid mt-6 list-none" data-catalogue-grid>
           {games.map((game, index) => (
             <li>
-              <GameCatalogueCard game={game} eager={index < 4} />
+              <GameCatalogueCard game={game} eager={index < 4} index={index} />
             </li>
           ))}
         </ul>
@@ -95,3 +95,72 @@ const summary =
     )
   }
 </BaseLayout>
+
+<script>
+  import {
+    createReorderScheduler,
+    partitionCoverless,
+    resolveCoverStateFromImage,
+    type CoverState,
+  } from "../lib/catalogue-cover";
+
+  const grid = document.querySelector<HTMLElement>("[data-catalogue-grid]");
+  if (grid) {
+    const cards = Array.from(
+      grid.querySelectorAll<HTMLElement>("[data-catalogue-index]"),
+    );
+
+    // Partition confirmed coverless cards to the end of the CURRENT page only,
+    // preserving original API order within each group. No cross-page sort.
+    const reorder = () => {
+      const ordered = partitionCoverless(
+        cards.map((card) => ({
+          value: card,
+          index: Number(card.dataset.catalogueIndex ?? "0"),
+          state: (card.dataset.coverState ?? "unknown") as CoverState,
+        })),
+      );
+      for (const { value } of ordered) {
+        const item = value.closest("li");
+        if (item) grid.appendChild(item);
+      }
+    };
+
+    const scheduler = createReorderScheduler(reorder, requestAnimationFrame);
+
+    for (const card of cards) {
+      const image = card.querySelector<HTMLImageElement>(
+        "[data-catalogue-cover]",
+      );
+      if (!image) continue;
+
+      const markNoCover = () => {
+        card.dataset.coverState = "no-cover";
+        const art = image.closest<HTMLElement>(".catalogue-card__art");
+        if (art) art.dataset.failed = "true";
+        scheduler.schedule();
+      };
+      const markHasCover = () => {
+        card.dataset.coverState = "has-cover";
+      };
+
+      const settled = resolveCoverStateFromImage(image);
+      if (settled === "has-cover") {
+        markHasCover();
+      } else if (settled === "no-cover") {
+        markNoCover();
+      } else {
+        image.addEventListener("load", markHasCover, { once: true });
+        image.addEventListener("error", markNoCover, { once: true });
+      }
+    }
+  }
+</script>
+
+<style>
+  .catalogue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: 0.75rem;
+  }
+</style>

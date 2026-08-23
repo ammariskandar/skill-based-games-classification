@@ -1,55 +1,75 @@
 ---
 import CatalogueProfileSummary from "./CatalogueProfileSummary.astro";
 import { presentCatalogueClassification } from "../../lib/catalogue-presentation";
+import { initialCoverState } from "../../lib/catalogue-cover";
 import type { GameCatalogueItem } from "../../lib/server/api/games";
 
 interface Props {
   game: GameCatalogueItem;
   eager?: boolean;
+  /** Original SBGC-76 API position — the stable tie-breaker for reordering. */
+  index?: number;
 }
 
-const { game, eager = false } = Astro.props;
+const { game, eager = false, index = 0 } = Astro.props;
 
-const artworkUrl = (game.library_capsule_url || game.image_url).trim();
+// The cover is the effective Capsule specifically (not the general image).
+// A missing Capsule URL means "no-cover" immediately; otherwise the card starts
+// "unknown" and the native <img> load/error resolves it at runtime.
+const capsuleUrl = (game.library_capsule_url ?? "").trim();
+const hasCapsule = capsuleUrl !== "";
+const coverState = initialCoverState(hasCapsule);
+
+// Displayed artwork still falls back to the general image when no Capsule
+// exists, but that general image is not a cover for sorting purposes.
+const artworkUrl = capsuleUrl || (game.image_url ?? "").trim();
 const hasArtwork = artworkUrl !== "";
+
 const sourceLabel = game.source === "steam" ? "Steam" : "Manual";
 const classification = presentCatalogueClassification(game.classification);
 const href = `/games/${game.slug}`;
 ---
 
-<article class="catalogue-card">
-  <a href={href} class="catalogue-card__art">
+<article
+  class="catalogue-card"
+  data-catalogue-index={index}
+  data-cover-state={coverState}
+>
+  <a
+    href={href}
+    class={`catalogue-card__art${hasArtwork ? "" : " catalogue-card__art--placeholder"}`}
+  >
     {
-      hasArtwork ? (
+      hasArtwork && (
         <img
           class="catalogue-card__image"
           src={artworkUrl}
           alt={`${game.name} box art`}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
+          data-catalogue-cover={hasCapsule ? "" : undefined}
         />
-      ) : (
-        <span
-          class="catalogue-card__placeholder"
-          role="img"
-          aria-label={`${game.name} artwork unavailable`}
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <circle cx="8.5" cy="10" r="1.5" />
-            <path d="M21 15l-5-5L5 20" />
-          </svg>
-        </span>
       )
     }
+    <span
+      class="catalogue-card__placeholder"
+      role="img"
+      aria-label={`${game.name} artwork unavailable`}
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <circle cx="8.5" cy="10" r="1.5"></circle>
+        <path d="M21 15l-5-5L5 20"></path>
+      </svg>
+    </span>
   </a>
 
   <div class="catalogue-card__body">
@@ -87,7 +107,7 @@ const href = `/games/${game.slug}`;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
     overflow: hidden;
     transition:
@@ -98,7 +118,7 @@ const href = `/games/${game.slug}`;
   .catalogue-card:hover,
   .catalogue-card:focus-within {
     border-color: var(--color-border-2);
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
   }
 
   .catalogue-card__art {
@@ -116,7 +136,7 @@ const href = `/games/${game.slug}`;
   }
 
   .catalogue-card__placeholder {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     width: 100%;
@@ -124,16 +144,31 @@ const href = `/games/${game.slug}`;
     color: var(--color-dim);
   }
 
+  /* A card with no artwork at all shows the placeholder from the start. */
+  .catalogue-card__art--placeholder .catalogue-card__placeholder {
+    display: flex;
+  }
+
+  /* A card whose cover image actually failed swaps to the placeholder (set at
+     runtime via `data-failed` by the cover controller). */
+  .catalogue-card__art[data-failed] .catalogue-card__image {
+    display: none;
+  }
+
+  .catalogue-card__art[data-failed] .catalogue-card__placeholder {
+    display: flex;
+  }
+
   .catalogue-card__placeholder svg {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .catalogue-card__body {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem 1rem 0.75rem;
+    gap: 0.25rem;
+    padding: 0.5rem;
   }
 
   .catalogue-card__title {
@@ -149,9 +184,9 @@ const href = `/games/${game.slug}`;
 
   .catalogue-card__heading {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    line-height: 1.35;
+    line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -161,28 +196,33 @@ const href = `/games/${game.slug}`;
 
   .catalogue-card__source {
     align-self: flex-start;
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     font-weight: 500;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--color-muted);
   }
 
   .catalogue-card__classification {
     display: grid;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem 1rem;
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem 0.5rem;
     border-top: 1px solid var(--color-border);
   }
 
   .catalogue-card__unclassified {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.6875rem;
+    line-height: 1.3;
     color: var(--color-muted);
   }
 
   .catalogue-card__stale {
     align-self: flex-start;
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     font-weight: 500;
+    line-height: 1;
     color: var(--color-yellow);
   }
 

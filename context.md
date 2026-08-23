@@ -2554,6 +2554,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-77 catalogue density + cover ordering correction
+
+- Made catalogue cards ~30% of their prior linear size: the grid now uses
+  `repeat(auto-fill, minmax(6rem, 1fr))` (dense multi-column on desktop, still
+  a usable multi-column grid on mobile) instead of the old 1/2/3/4-column
+  model.  The homepage carousel sizing is untouched.
+- Compacted the card summary: `CatalogueProfileSummary.astro` now renders a
+  small segmented Challenge/Reward bar with exact Micro/Macro/Mystiko values
+  moved to a visually-hidden `sr-only` text (colours are never the sole
+  carrier); the visible title/source/classification stay readable at small size.
+- Added a source-agnostic cover-state model (`src/lib/catalogue-cover.ts`):
+  `unknown` / `has-cover` / `no-cover`.  A card with no effective Capsule URL
+  is `no-cover` immediately; otherwise the native `<img>` `load`/`error` (plus
+  `complete`/`naturalWidth` for cached images) is the only remote-health signal
+  — no `fetch`/`HEAD`/`Image()` probe, so no duplicate image request.  A failed
+  Capsule swaps to the local placeholder (no broken-image icon).
+- Confirmed `no-cover` cards are stably partitioned to the end of the CURRENT
+  rendered page (working/unknown first, coverless last, original API order
+  preserved) via a `requestAnimationFrame`-batched reorder.  This is a runtime
+  enhancement only — global cross-page "show games without a cover last"
+  sorting is deferred to SBGC-79 (before pagination).
+- Validation: 15 new focused `catalogue-cover` tests; frontend suite 244 OK;
+  `astro check` 0 errors; `astro build`, lint, format, `git diff --check`
+  clean.  `docs/frontend-architecture.md` updated.  No backend change, no new
+  dependency, no migration.  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-77 Public catalogue page
 
 - Replaced the `/catalogue` placeholder with the real SSR catalogue page:
