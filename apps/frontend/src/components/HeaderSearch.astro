@@ -122,14 +122,19 @@ const listId = `${idPrefix}-search-listbox`;
     state.toggle.setAttribute("aria-expanded", open ? "true" : "false");
     state.input.setAttribute("aria-expanded", open ? "true" : "false");
 
-    // Desktop: collapse the nav tabs so the expanded search replaces them.
+    // Desktop: hide the navigation controls (tabs + About) so the expanded
+    // search replaces the whole navigation region, leaving the search close
+    // (`×`) as the rightmost visible control.
     // Compact: collapse the menu trigger + brand so the search fills the bar.
     // Hidden elements are removed from layout, tab order, and the accessibility
     // tree, so invisible links can never be reached.
-    const desktopTabs = state.root
-      .closest("[data-desktop-row]")
-      ?.querySelector<HTMLElement>("[data-desktop-tabs]");
-    if (desktopTabs) desktopTabs.hidden = open;
+    const desktopRow = state.root.closest<HTMLElement>("[data-desktop-row]");
+    if (desktopRow) {
+      const desktopCollapsible = desktopRow.querySelector<HTMLElement>(
+        "[data-desktop-collapsible]",
+      );
+      if (desktopCollapsible) desktopCollapsible.hidden = open;
+    }
 
     const compactCollapsible = state.root
       .closest("[data-compact-bar]")
@@ -348,7 +353,7 @@ const listId = `${idPrefix}-search-listbox`;
   }
 </script>
 
-<style>
+<style is:global>
   .header-search {
     position: relative;
     display: flex;
@@ -494,8 +499,10 @@ const listId = `${idPrefix}-search-listbox`;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 3rem;
+    /* ≈95% of the catalogue-card Capsule (110px wide) — a compact portrait
+       thumbnail, not a full-size poster. `aspect-ratio` keeps the 2:3 shape. */
+    width: 6.5rem;
+    aspect-ratio: 2 / 3;
     flex: none;
     overflow: hidden;
     border-radius: var(--radius-sm);
@@ -507,12 +514,14 @@ const listId = `${idPrefix}-search-listbox`;
     display: block;
     width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
     object-fit: cover;
   }
 
   .header-search__thumb--placeholder svg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .header-search__name {
