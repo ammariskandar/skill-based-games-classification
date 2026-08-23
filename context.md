@@ -2554,6 +2554,20 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-76 human validation PASS
+
+- All three SBGC-76 human checks passed via Postman against a local Django
+  development server: the base catalogue returned a well-formed paginated
+  envelope with only Published base Games (Steam + Manual) and stable
+  `name ASC` ordering; search/source/classified filters composed correctly
+  (with invalid values rejected as 422 and empty results as truthful 200s);
+  and pagination/classification truth held — pages navigated without
+  duplicate/missing games, a page beyond the last returned empty 200,
+  classified Games exposed real READY challenge/reward scores, and
+  unavailable Games returned `classification: null` (no fake zero vectors).
+- Documentation-only closure; no production code changed.  SBGC-76 ready to
+  merge.
+
 ## 2026-08-23 — SBGC-76 Game catalogue API
 
 - Added `GET /api/v1/games/` — the canonical deterministic public catalogue
