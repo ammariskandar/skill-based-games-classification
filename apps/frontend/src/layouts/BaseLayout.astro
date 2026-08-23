@@ -13,6 +13,8 @@ interface Props {
   image?: string;
   imageAlt?: string;
   jsonLd?: string;
+  /** Discovery routes enable a low-priority background Search-index preload. */
+  preloadGameSearchIndex?: boolean;
 }
 
 const DEFAULT_DESCRIPTION =
@@ -23,6 +25,8 @@ const titleTemplate = Astro.props.title
   : "MyGameDNA";
 
 const description = Astro.props.description ?? DEFAULT_DESCRIPTION;
+
+const preloadSearch = Astro.props.preloadGameSearchIndex ?? false;
 
 const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
 const canonicalUrl = Astro.props.canonicalPath
@@ -78,7 +82,10 @@ const twitterCard = image ? "summary_large_image" : "summary";
 
     <GoogleAnalytics />
   </head>
-  <body class="min-h-screen bg-bg text-text antialiased">
+  <body
+    class="min-h-screen bg-bg text-text antialiased"
+    data-preload-search={preloadSearch ? "true" : "false"}
+  >
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded focus:bg-blue focus:px-4 focus:py-2 focus:text-bg focus:outline-none"

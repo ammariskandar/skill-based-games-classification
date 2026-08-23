@@ -230,6 +230,44 @@ classification returned `classification: null` (no fake zeros); and
 hidden/non-game/unknown slugs returned `404 GAME_NOT_FOUND` with no
 hidden-record disclosure.
 
+## Game Search Index — `GET /api/v1/games/search-index`
+
+Returns the **complete** compact public Game search index used by the frontend
+header autocomplete (SBGC-78). It is **read-only**: it never contacts Steam,
+never probes images, and never recalculates classification.
+
+### Eligibility & ordering
+
+A Game is included only when it is **publicly listable** — the canonical
+`Game.objects.publicly_listable()` policy (`content_type == game AND
+listing_status == published`). Both Steam and Manual Games are included;
+draft/archived and non-game content (dlc, demo, software, soundtrack, unknown)
+are excluded. A Game with no Capsule is still included (the autocomplete falls
+back to a placeholder). Ordering is deterministic (`name ASC, id ASC`).
+
+### Response
+
+```json
+{
+  "games": [
+    {
+      "slug": "hades",
+      "name": "Hades",
+      "capsule_url": "https://...",
+      "image_url": "https://..."
+    }
+  ]
+}
+```
+
+- `capsule_url` — effective Capsule (`manual_capsule_url` overrides the Steam
+  Library Capsule — SBGC-190), or `null` when absent;
+- `image_url` — effective general image (thumbnail fallback), or `null` when
+  absent.
+
+Only the fields needed to render a suggestion are returned — no classification,
+description, Hero, raw source fields, or override provenance.
+
 ## Homepage Carousel — `GET /api/v1/games/homepage`
 
 Returns up to 10 randomly selected Games for the homepage Steam carousel. It is

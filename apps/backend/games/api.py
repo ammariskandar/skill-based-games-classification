@@ -201,6 +201,27 @@ class GameCatalogueResponse(Schema):
     results: list[GameCatalogueItem]
 
 
+class SearchIndexItem(Schema):
+    """One compact Game search-index entry for client-side autocomplete.
+
+    Only the fields needed to render a suggestion row are exposed; effective
+    artwork is resolved by Django (SBGC-190) so the frontend never sees
+    override precedence.  ``image_url`` is the effective general image used as
+    a thumbnail fallback when no Capsule exists.
+    """
+
+    slug: str
+    name: str
+    capsule_url: str | None = None
+    image_url: str | None = None
+
+
+class SearchIndexResponse(Schema):
+    """Compact public Game search index (all publicly-listable base Games)."""
+
+    games: list[SearchIndexItem]
+
+
 # ---------------------------------------------------------------------------
 # Authorization
 # ---------------------------------------------------------------------------
@@ -538,6 +559,35 @@ def homepage_carousel(request):
                 slug=game.slug,
                 name=game.name,
                 library_capsule_url=game.display_capsule_url,
+            )
+            for game in games
+        ]
+    )
+
+
+@router.get(
+    "/search-index",
+    response={200: SearchIndexResponse, **STANDARD_ERROR_RESPONSES},
+    operation_id="game_search_index",
+    summary="Get compact game search index",
+    description=(
+        "Return the complete compact search index of publicly-listed base "
+        "Games (slug, name, effective Capsule, and effective general image) "
+        "for client-side autocomplete.  Deterministic (name ASC, id ASC); "
+        "reads persisted state only — never contacts Steam, never probes "
+        "images, and never recalculates classification."
+    ),
+    url_name="game-search-index",
+)
+def game_search_index(request):
+    games = list(Game.objects.publicly_listable().order_by("name", "id"))
+    return SearchIndexResponse(
+        games=[
+            SearchIndexItem(
+                slug=game.slug,
+                name=game.name,
+                capsule_url=game.display_capsule_url or None,
+                image_url=game.display_image_url or None,
             )
             for game in games
         ]

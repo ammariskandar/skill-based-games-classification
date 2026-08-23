@@ -293,9 +293,44 @@ sorting even when a general-image fallback is shown.  A broken **general image**
 handling, so a Manual Game with a dead image URL never shows a broken-image
 icon.
 
-SBGC-78 (search UI + `q`) and SBGC-79 (source/classification filters + sort
-controls) are intentionally absent — no search input, no filter/sort controls,
-and no disabled placeholders.
+### Header Search (SBGC-78)
+
+A **persistent Search control** lives in the Header.  On desktop the Search
+button sits immediately next to the `About` link (after the nav tabs); clicking
+it moves the icon left and expands a search input that **replaces the nav-tab
+region** (the nav tabs are hidden from layout, tab order, and the accessibility
+tree), while `About` stays at the far right and the Header height is unchanged.
+On compact/mobile the same Search control expands within the compact bar (the
+menu trigger and brand collapse).  CSS transitions animate the expansion;
+`prefers-reduced-motion` disables it.  Escape or the explicit close button
+restores the nav.
+
+The form is a progressive-enhancement `GET /catalogue` form (`name="q"`); plain
+Enter always navigates to `/catalogue?q=...` even with JavaScript disabled, and
+never waits on autocomplete.
+
+- **Autocomplete** — a local, source-agnostic matcher (`src/lib/game-search.ts`)
+  ranks prefix matches before substring matches (max 6) against the complete
+  public Game set, never the current catalogue page.
+- **Search index** — Django `GET /api/v1/games/search-index` returns the complete
+  compact index (`slug`, `name`, effective `capsule_url`, effective `image_url`);
+  the browser fetches it through a same-origin Astro proxy (`/api/search-index`)
+  so it never talks to Django directly.  The shared loader
+  (`src/lib/game-search-index.ts`) adds a memory cache, a versioned
+  `sessionStorage` cache (15-minute TTL), and a single in-flight Promise so
+  background preload and explicit open never produce a duplicate request.
+- **Selective preload** — discovery routes (Home and Catalogue) opt in via
+  `BaseLayout`'s `preloadGameSearchIndex` and schedule a low-priority
+  `requestIdleCallback` preload after render; ordinary routes (Game detail,
+  Methodology, About) stay lazy and load on Search open.  Future `/rankings`
+  should enable the same flag.
+- **No per-keystroke network** — once the index is loading/loaded, typing performs
+  zero backend requests; only the current (≤6) suggestion rows render `<img>`s, so
+  there is no image-download storm.  Index failure keeps the input usable (Enter
+  still submits) and shows a restrained "Suggestions unavailable".
+
+SBGC-79 (source/classification filters + sort controls) remains intentionally
+absent — no filter/sort controls and no disabled placeholders.
 
 ### SEO Metadata
 

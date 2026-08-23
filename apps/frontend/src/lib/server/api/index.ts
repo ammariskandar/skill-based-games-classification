@@ -5,6 +5,7 @@ export {
   GameNotFoundError,
   getGameCatalogue,
   getGameDetail,
+  getGameSearchIndex,
   getHomepageCarousel,
 } from "./games";
 export type {
@@ -17,6 +18,8 @@ export type {
   GameDetailGame,
   GameDetailResponse,
   GameFinalClassification,
+  GameSearchIndexItem,
+  GameSearchIndexResponse,
   GameSource,
   HomepageCarouselCard,
   HomepageCarouselResponse,

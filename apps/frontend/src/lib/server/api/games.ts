@@ -93,8 +93,22 @@ export interface GameCatalogueResponse {
   results: GameCatalogueItem[];
 }
 
-/** Catalogue request inputs. `q`/`source`/`classified` are SBGC-78/79. */
+/** One compact search-index entry for client-side autocomplete (SBGC-78). */
+export interface GameSearchIndexItem {
+  slug: string;
+  name: string;
+  capsule_url: string | null;
+  image_url: string | null;
+}
+
+/** Complete compact public Game search index (SBGC-78). */
+export interface GameSearchIndexResponse {
+  games: GameSearchIndexItem[];
+}
+
+/** Catalogue request inputs. `q` is used by SBGC-78; `source`/`classified` are SBGC-79. */
 export interface GameCatalogueQuery {
+  q?: string;
   page?: number;
   pageSize?: number;
 }
@@ -160,6 +174,7 @@ export async function getGameCatalogue(
   query: GameCatalogueQuery = {},
 ): Promise<GameCatalogueResponse> {
   const params: Record<string, string> = {};
+  if (query.q !== undefined && query.q !== "") params.q = query.q;
   if (query.page !== undefined) params.page = String(query.page);
   if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
 
@@ -168,6 +183,23 @@ export async function getGameCatalogue(
   });
   if (result.ok) {
     if ("data" in result) return result.data;
+    throw new BackendApiError("Unexpected empty response from the API.");
+  }
+  throw new BackendApiError(result.error.message, result);
+}
+
+/**
+ * Fetch the complete compact public Game search index from Django (SBGC-78).
+ *
+ * Django owns eligibility and effective-artwork resolution; the frontend never
+ * downloads catalogue pages to reconstruct this.  Deterministic order.
+ */
+export async function getGameSearchIndex(): Promise<GameSearchIndexItem[]> {
+  const result = await getJSON<GameSearchIndexResponse>(
+    "/api/v1/games/search-index",
+  );
+  if (result.ok) {
+    if ("data" in result) return result.data.games;
     throw new BackendApiError("Unexpected empty response from the API.");
   }
   throw new BackendApiError(result.error.message, result);

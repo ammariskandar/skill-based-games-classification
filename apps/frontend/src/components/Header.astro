@@ -1,12 +1,17 @@
 ---
 import Navigation from "./Navigation.astro";
+import HeaderSearch from "./HeaderSearch.astro";
 ---
 
-<header class="relative border-b border-border bg-surface/80 backdrop-blur-sm">
+<header
+  class="relative border-b border-border bg-surface/80 backdrop-blur-sm"
+  data-header
+>
   <div class="shell-gutter">
     <!-- ── Desktop row (lg and above) ── -->
     <div
       class="desktop-nav-row hidden lg:flex items-center justify-between gap-4 py-3"
+      data-desktop-row
     >
       <a
         href="/"
@@ -14,62 +19,34 @@ import Navigation from "./Navigation.astro";
       >
         MyGameDNA
       </a>
-      <Navigation />
+
+      <div class="ml-auto flex items-center gap-1 sm:gap-2">
+        <div data-desktop-tabs>
+          <Navigation omit={["About"]} />
+        </div>
+        <HeaderSearch />
+        <a
+          href="/about"
+          class="inline-block rounded px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+        >
+          About
+        </a>
+      </div>
     </div>
 
     <!-- ── Compact bar (below lg) ── -->
-    <div class="compact-nav-bar flex lg:hidden items-center py-3">
-      <div class="grid grid-cols-[1fr_auto_1fr] items-center w-full">
-        <!-- Left: menu trigger -->
-        <div class="flex justify-start">
-          <details id="nav-disclosure">
-            <summary
-              class="list-none cursor-pointer p-2 -ml-2 rounded hover:bg-surface-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-              aria-expanded="false"
-              aria-controls="nav-panel"
-            >
-              <span class="sr-only">Navigation menu</span>
-              <svg
-                aria-hidden="true"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              >
-                <line x1="2" y1="5" x2="18" y2="5"></line>
-                <line x1="2" y1="10" x2="18" y2="10"></line>
-                <line x1="2" y1="15" x2="18" y2="15"></line>
-              </svg>
-            </summary>
-            <div
-              id="nav-panel"
-              class="absolute left-0 right-0 top-full z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
-            >
-              <div class="shell-gutter py-3">
-                <Navigation class="flex-col items-start gap-1" />
-              </div>
-            </div>
-          </details>
-        </div>
-
-        <!-- Center: brand -->
-        <a
-          href="/"
-          class="shrink-0 text-lg font-bold tracking-tight text-text hover:text-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue rounded"
-        >
-          MyGameDNA
-        </a>
-
-        <!-- Right: search link -->
-        <div class="flex justify-end">
-          <a
-            href="/search"
-            aria-label="Search"
-            class="p-2 -mr-2 rounded hover:bg-surface-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+    <div
+      class="compact-nav-bar flex lg:hidden items-center py-3"
+      data-compact-bar
+    >
+      <div class="flex w-full items-center" data-compact-collapsible>
+        <details id="nav-disclosure">
+          <summary
+            class="list-none cursor-pointer p-2 -ml-2 rounded hover:bg-surface-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            aria-expanded="false"
+            aria-controls="nav-panel"
           >
+            <span class="sr-only">Navigation menu</span>
             <svg
               aria-hidden="true"
               width="20"
@@ -80,11 +57,31 @@ import Navigation from "./Navigation.astro";
               stroke-width="2"
               stroke-linecap="round"
             >
-              <circle cx="9" cy="9" r="5"></circle>
-              <line x1="14" y1="14" x2="18" y2="18"></line>
+              <line x1="2" y1="5" x2="18" y2="5"></line>
+              <line x1="2" y1="10" x2="18" y2="10"></line>
+              <line x1="2" y1="15" x2="18" y2="15"></line>
             </svg>
-          </a>
-        </div>
+          </summary>
+          <div
+            id="nav-panel"
+            class="absolute left-0 right-0 top-full z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
+          >
+            <div class="shell-gutter py-3">
+              <Navigation class="flex-col items-start gap-1" />
+            </div>
+          </div>
+        </details>
+
+        <a
+          href="/"
+          class="flex-1 text-center text-lg font-bold tracking-tight text-text hover:text-blue transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue rounded"
+        >
+          MyGameDNA
+        </a>
+      </div>
+
+      <div class="flex-shrink-0">
+        <HeaderSearch compact />
       </div>
     </div>
   </div>

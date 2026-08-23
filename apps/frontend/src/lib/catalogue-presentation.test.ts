@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  catalogueHref,
   cataloguePageHref,
   computeResultRange,
   formatGameCount,
@@ -127,6 +128,32 @@ describe("cataloguePageHref", () => {
   it("appends the page query for later pages", () => {
     expect(cataloguePageHref(2)).toBe("/catalogue?page=2");
     expect(cataloguePageHref(42)).toBe("/catalogue?page=42");
+  });
+});
+
+describe("catalogueHref", () => {
+  it("builds the bare route with no params", () => {
+    expect(catalogueHref()).toBe("/catalogue");
+  });
+
+  it("omits page 1 and keeps the query", () => {
+    expect(catalogueHref({ q: "persona", page: 1 })).toBe(
+      "/catalogue?q=persona",
+    );
+  });
+
+  it("preserves q and page together", () => {
+    expect(catalogueHref({ q: "persona", page: 2 })).toBe(
+      "/catalogue?q=persona&page=2",
+    );
+  });
+
+  it("encodes special characters in q", () => {
+    expect(catalogueHref({ q: "elden ring" })).toBe("/catalogue?q=elden+ring");
+  });
+
+  it("omits an empty q", () => {
+    expect(catalogueHref({ q: "", page: 2 })).toBe("/catalogue?page=2");
   });
 });
 

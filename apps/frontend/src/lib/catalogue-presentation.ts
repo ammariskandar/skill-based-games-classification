@@ -56,7 +56,29 @@ export function formatResultSummary(
 
 /** Canonical catalogue href for a page number (page 1 is the bare route). */
 export function cataloguePageHref(page: number): string {
-  return page <= 1 ? "/catalogue" : `/catalogue?page=${page}`;
+  return catalogueHref({ page });
+}
+
+export interface CatalogueHrefParams {
+  page?: number;
+  q?: string;
+}
+
+/**
+ * Build a catalogue href preserving any active query parameters.
+ *
+ * `q` is included when non-empty; `page` is omitted for page 1.  This is the
+ * single builder used by pagination and recovery links, and is the place SBGC-79
+ * will later add source/classification/sort parameters.
+ */
+export function catalogueHref(params: CatalogueHrefParams = {}): string {
+  const search = new URLSearchParams();
+  if (params.q) search.set("q", params.q);
+  if (params.page !== undefined && params.page > 1) {
+    search.set("page", String(params.page));
+  }
+  const query = search.toString();
+  return query ? `/catalogue?${query}` : "/catalogue";
 }
 
 /** Public Game-detail href for a slug (used by the catalogue card link). */
