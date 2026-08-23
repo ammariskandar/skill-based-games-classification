@@ -416,6 +416,8 @@ class Game(models.Model):
         ),
     )
     manual_image_url = models.URLField(max_length=500, blank=True)
+    manual_hero_url = models.URLField(max_length=500, blank=True)
+    manual_capsule_url = models.URLField(max_length=500, blank=True)
     manual_website_url = models.URLField(max_length=500, blank=True)
 
     # -- Steam override provenance (SBGC-188) -----------------------------------
@@ -538,13 +540,15 @@ class Game(models.Model):
         if self.name is not None and self.name.strip() == "":
             raise ValidationError({"name": "Name must not be whitespace-only."})
 
-        # Manual asset reference — editor-supplied, HTTPS-only, no
-        # credentials, hostname required (SBGC-60).  Blank means none.
-        if self.manual_image_url:
-            try:
-                self.manual_image_url = validate_manual_image_url(self.manual_image_url)
-            except ManualAssetError as exc:
-                raise ValidationError({"manual_image_url": str(exc)}) from exc
+        # Manual asset references — editor-supplied, HTTPS-only image URLs with
+        # a supported extension (SBGC-60 / SBGC-190).  Blank means none.
+        for field_name in ("manual_image_url", "manual_hero_url", "manual_capsule_url"):
+            value = getattr(self, field_name)
+            if value:
+                try:
+                    setattr(self, field_name, validate_manual_image_url(value))
+                except ManualAssetError as exc:
+                    raise ValidationError({field_name: str(exc)}) from exc
 
         # Steam external-ID validation — no network calls.
         if self.source_type == SourceType.STEAM:
@@ -587,13 +591,37 @@ class Game(models.Model):
 
     @property
     def display_image_url(self) -> str:
-        """Effective display image (SBGC-60).
+        """Effective display image (SBGC-60 / SBGC-190).
 
         Manual/editorial ``manual_image_url`` is the override when present;
-        otherwise Steam-owned ``steam_image_url`` is used.  Pure — no network
-        and no extra database query.
+        otherwise Steam-owned ``steam_image_url`` is used.  Manual Games never
+        fall back to Steam-owned fields.  Pure — no network or extra query.
         """
-        return self.manual_image_url or self.steam_image_url
+        if self.is_steam:
+            return self.manual_image_url or self.steam_image_url
+        return self.manual_image_url
+
+    @property
+    def display_hero_url(self) -> str:
+        """Effective Hero artwork (SBGC-190).
+
+        Manual-first with Steam fallback for Steam Games; Manual Games use only
+        their manual Hero value.
+        """
+        if self.is_steam:
+            return self.manual_hero_url or self.library_hero_url
+        return self.manual_hero_url
+
+    @property
+    def display_capsule_url(self) -> str:
+        """Effective Capsule artwork (SBGC-190).
+
+        Manual-first with Steam fallback for Steam Games; Manual Games use only
+        their manual Capsule value.
+        """
+        if self.is_steam:
+            return self.manual_capsule_url or self.library_capsule_url
+        return self.manual_capsule_url
 
 
 class SteamRefreshRun(models.Model):

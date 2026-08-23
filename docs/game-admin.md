@@ -50,8 +50,10 @@ The add/edit form groups fields as:
 - **Identity** — `name`, `slug`, `source_type`, `external_id`, `content_type`
 - **Publication** — `listing_status`
 - **Editable metadata** — `release_date`, `developer`, `description`,
-  `manual_image_url`, `manual_website_url` (Steam Games also show per-field
-  "Resume Steam sync" controls after each editable Steam-populated field)
+  `manual_website_url` (Steam Games also show per-field "Resume Steam sync"
+  controls after each editable Steam-populated field)
+- **Manual Image Overrides** (Steam) / **Images** (Manual) — `manual_image_url`,
+  `manual_hero_url`, `manual_capsule_url`
 - **Steam metadata** — `steam_image_url`, `library_hero_url`,
   `library_capsule_url`, `last_steam_refresh_at`
 - **System** (collapsed) — `display_identity`, `created_at`, `updated_at`
@@ -72,7 +74,9 @@ Legend: **E** = editable, **R** = readonly, **—** = hidden/non-editable
 | `release_date` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
 | `developer` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
 | `description` | E | E | E | Steam-managed unless overridden for Steam; manual for Manual. |
-| `manual_image_url` | E | E | E | Local editorial metadata. |
+| `manual_image_url` | E | E | E | Local editorial general/header image; overrides Steam header when present. |
+| `manual_hero_url` | E | E | E | Local editorial wide-background image; overrides Steam Hero when present. |
+| `manual_capsule_url` | E | E | E | Local editorial portrait key-art; overrides Steam Capsule when present. |
 | `manual_website_url` | E | E | E | Local editorial metadata. |
 | `steam_image_url` | R | R | R | Steam-owned; never populated from manual data. |
 | `library_hero_url` | R | R | R | Steam-owned; derived from the App ID. |
@@ -109,7 +113,8 @@ Admin surfaces domain validation as clean form errors (no partial writes):
 
 - whitespace-only `name`;
 - duplicate `slug`;
-- invalid `manual_image_url`;
+- invalid `manual_image_url` / `manual_hero_url` / `manual_capsule_url`
+  (HTTPS URL ending in `.jpg`, `.jpeg`, `.png`, or `.webp`);
 - invalid `release_date` input;
 - Steam `external_id` missing / non-decimal;
 - Manual record with an `external_id`;
@@ -117,6 +122,21 @@ Admin surfaces domain validation as clean form errors (no partial writes):
 
 The existing `games/tests/test_admin_validation.py` and
 `games/tests/test_admin_date_formats.py` cover these boundaries.
+
+## SBGC-190 — manual image overrides
+
+Steam Games expose three optional, independent manual image overrides:
+`manual_image_url` (general/header), `manual_hero_url` (wide background), and
+`manual_capsule_url` (portrait key-art).  Presence of a role's manual URL
+means that role is overridden; clearing it falls back to the current Steam
+source value automatically (no override checkbox).  Manual Games use the same
+three fields as their plain image sources (shown under the "Images" fieldset).
+
+All three fields share one validator: HTTPS only, and the URL path must end in
+`.jpg`, `.jpeg`, `.png`, or `.webp` (case-insensitive, query strings allowed).
+No remote probing/download — validation is structural only.  Steam refresh
+updates the underlying Steam source image fields but never writes the manual
+override fields, so an active override survives refresh.
 
 ## SBGC-188 validation
 

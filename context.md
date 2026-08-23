@@ -2554,6 +2554,46 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-190 human validation PASS
+
+- All three SBGC-190 human checks passed: Steam manual image/hero/capsule
+  overrides rendered correctly and survived a Steam refresh (clearing one
+  override fell back to the latest Steam value for that role); a Manual Game
+  with all three image roles received the layered softened-Hero / foreground-
+  Capsule treatment with correct fallback; and Admin URL validation accepted
+  `.jpg`/`.jpeg`/`.png`/`.webp` (including uppercase) while rejecting HTTP and
+  non-image extensions with no visible remote probing.
+- Documentation-only closure; no production code changed.  SBGC-190 ready to
+  merge.
+
+## 2026-08-23 — SBGC-190 manual image overrides
+
+- Expanded the manual image override from one URL into three independent
+  optional roles: `manual_image_url` (general/header), `manual_hero_url` (wide
+  background), and `manual_capsule_url` (portrait key-art) — `games.0012`.
+- Source metadata and override metadata stay separate: Steam refresh owns
+  `steam_image_url`/`library_hero_url`/`library_capsule_url` and never writes
+  the `manual_*` fields, so an active override survives refresh.  Presence of a
+  role's manual URL is the override; clearing it falls back to Steam
+  automatically (no override flag).
+- Added source-aware effective resolvers `display_image_url` (existing),
+  `display_hero_url`, `display_capsule_url` (manual-first with Steam fallback
+  for Steam Games; Manual Games never fall back to Steam fields).
+- Shared validator now enforces HTTPS-only plus a case-insensitive
+  `.jpg`/`.jpeg`/`.png`/`.webp` path extension (query strings allowed),
+  structural-only — no fetch/probe/download.
+- Admin: Steam Games get a "Manual Image Overrides" fieldset (Steam images
+  stay read-only); Manual Games get an "Images" fieldset.  Public API returns
+  effective `image_url`/`library_hero_url`/`library_capsule_url`; the homepage
+  carousel is eligible/renders from the effective Capsule.
+- Frontend: `resolveGameImageLayout` is now source-agnostic so Manual Games
+  support the full layered Hero + Capsule composition; `crossorigin` is applied
+  only for Steam CDN hosts.
+- Validation: backend `games.tests` + `api.tests` 926 OK (10 skipped); Ruff
+  check+format clean; BasedPyright 0/0/0; makemigrations --check clean.
+  Frontend 194 tests OK; astro check 0 errors; build/lint/format clean.
+  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-189 human validation PASS
 
 - All SBGC-189 human checks passed in a real browser: the carousel edge arrows

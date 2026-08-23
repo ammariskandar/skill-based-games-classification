@@ -294,6 +294,45 @@ class GameDetailEndpointTests(TestCase):
             "https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_600x900.jpg",
         )
 
+    def test_steam_game_manual_image_overrides_returned_as_effective(self):
+        _game(
+            slug="override-game",
+            source_type=SourceType.STEAM,
+            external_id="620",
+            steam_image_url="https://example.com/steam.jpg",
+            library_hero_url="https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_hero.jpg",
+            library_capsule_url="https://cdn.cloudflare.steamstatic.com/steam/apps/620/library_600x900.jpg",
+            manual_image_url="https://example.com/image.png",
+            manual_hero_url="https://example.com/hero.jpeg",
+            manual_capsule_url="https://example.com/capsule.webp",
+        )
+        r = self._get("override-game")
+
+        self.assertEqual(r.status_code, 200)
+        game = r.json()["game"]
+        self.assertEqual(game["image_url"], "https://example.com/image.png")
+        self.assertEqual(game["library_hero_url"], "https://example.com/hero.jpeg")
+        self.assertEqual(
+            game["library_capsule_url"], "https://example.com/capsule.webp"
+        )
+
+    def test_manual_game_with_manual_hero_and_capsule(self):
+        _game(
+            slug="manual-layered",
+            source_type=SourceType.MANUAL,
+            external_id=None,
+            manual_image_url="https://example.com/image.jpg",
+            manual_hero_url="https://example.com/hero.jpg",
+            manual_capsule_url="https://example.com/capsule.jpg",
+        )
+        r = self._get("manual-layered")
+
+        self.assertEqual(r.status_code, 200)
+        game = r.json()["game"]
+        self.assertEqual(game["image_url"], "https://example.com/image.jpg")
+        self.assertEqual(game["library_hero_url"], "https://example.com/hero.jpg")
+        self.assertEqual(game["library_capsule_url"], "https://example.com/capsule.jpg")
+
     def test_manual_game_has_null_library_asset_urls(self):
         _game(slug="manual-no-library", source_type=SourceType.MANUAL, external_id=None)
         r = self._get("manual-no-library")

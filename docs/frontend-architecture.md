@@ -137,6 +137,20 @@ and `VideoGame.image`) are unchanged; the Library assets are additive fields
 (`library_hero_url`, `library_capsule_url`) resolved by Django and exposed via
 the public DTO.
 
+### Source-agnostic artwork composition (SBGC-190)
+
+The Hero/Capsule/Image composition is **source-agnostic**.  Django resolves
+effective `image_url` / `library_hero_url` / `library_capsule_url` (manual
+override first, Steam fallback), and the frontend renders whatever it receives
+— no `manual ?? steam` branches in Astro.  Manual Games may now supply the same
+three roles (`manual_image_url` / `manual_hero_url` / `manual_capsule_url`) and
+receive the identical softened-Hero / foreground-Capsule treatment.  The
+WebSR enhancer is also source-agnostic: it keys off the asset role and the
+effective source URL, so a manual Capsule receives the same density/2x/cache
+handling as a Steam Capsule.  `crossorigin="anonymous"` is applied only for
+known Steam CDN hosts so arbitrary manual origins still display (enhancement is
+skipped if pixel-read is blocked).
+
 #### Enhancement policy
 
 - **Original-first SSR** — the ordinary `<img>` always renders first; the page

@@ -62,7 +62,7 @@ describe("resolveGameImageLayout — Manual Games", () => {
     expect(layout.backgroundSrc).toBe("");
   });
 
-  it("ignores any Library asset fields on a Manual game", () => {
+  it("uses the layered Hero + Capsule composition", () => {
     const layout = resolveGameImageLayout({
       src: "https://example.com/manual.png",
       source: "manual",
@@ -70,8 +70,39 @@ describe("resolveGameImageLayout — Manual Games", () => {
       libraryCapsuleUrl: "https://example.com/capsule.jpg",
     });
 
-    expect(layout.showVisualizationSlot).toBe(false);
+    expect(layout.backgroundSrc).toBe("https://example.com/hero.jpg");
+    expect(layout.foregroundSrc).toBe("https://example.com/capsule.jpg");
+    expect(layout.foregroundRole).toBe("library-capsule");
+    expect(layout.foregroundContained).toBe(true);
+    expect(layout.showVisualizationSlot).toBe(true);
+  });
+
+  it("Hero only → Hero background + contained image foreground", () => {
+    const layout = resolveGameImageLayout({
+      src: "https://example.com/manual.png",
+      source: "manual",
+      libraryHeroUrl: "https://example.com/hero.jpg",
+    });
+
+    expect(layout.backgroundSrc).toBe("https://example.com/hero.jpg");
+    expect(layout.foregroundSrc).toBe("https://example.com/manual.png");
     expect(layout.foregroundRole).toBe("manual-primary");
+    expect(layout.foregroundContained).toBe(true);
+    expect(layout.showVisualizationSlot).toBe(false);
+  });
+
+  it("Capsule only → image background + Capsule foreground", () => {
+    const layout = resolveGameImageLayout({
+      src: "https://example.com/manual.png",
+      source: "manual",
+      libraryCapsuleUrl: "https://example.com/capsule.jpg",
+    });
+
+    expect(layout.backgroundSrc).toBe("https://example.com/manual.png");
+    expect(layout.foregroundSrc).toBe("https://example.com/capsule.jpg");
+    expect(layout.foregroundRole).toBe("library-capsule");
+    expect(layout.foregroundContained).toBe(true);
+    expect(layout.showVisualizationSlot).toBe(false);
   });
 });
 

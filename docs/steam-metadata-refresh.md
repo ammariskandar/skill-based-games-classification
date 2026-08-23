@@ -78,9 +78,9 @@ SteamGameRefreshResult(status, game_id, changed_fields=())
 | `last_steam_refresh_at` | set on every successful verification (UPDATED and UNCHANGED) |
 
 **Never refreshed:** slug, listing_status, `manual_image_url` /
-`manual_website_url`, editorial classification (parent + Challenge +
-Reward + notes + `updated_by`), `created_at`, `source_type`,
-`external_id`, `id`.
+`manual_hero_url` / `manual_capsule_url` / `manual_website_url`, editorial
+classification (parent + Challenge + Reward + notes + `updated_by`),
+`created_at`, `source_type`, `external_id`, `id`.
 
 ## DTO Fields Not Persisted
 

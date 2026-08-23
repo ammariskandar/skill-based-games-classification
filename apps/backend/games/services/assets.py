@@ -17,6 +17,11 @@ from urllib.parse import urlparse
 # Control characters are never valid in a browser-safe URL reference.
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f]")
 
+# SBGC-190: manual image URLs must end in one of these image extensions.
+_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+_EXTENSION_ERROR = "Use an HTTPS image URL ending in .jpg, .jpeg, .png, or .webp."
+
 
 class ManualAssetError(ValueError):
     """Domain error for an invalid manual asset reference."""
@@ -66,6 +71,13 @@ def validate_manual_image_url(value: str) -> str:
 
     if not (parsed.hostname or "").strip():
         raise ManualAssetError("Manual image URL must have a nonempty hostname.")
+
+    # Extension — validate the URL path (not the raw full string, because a
+    # query string may follow the extension).  Case-insensitive.
+    path = parsed.path or ""
+    extension = path[path.rfind(".") :].lower() if "." in path else ""
+    if extension not in _ALLOWED_EXTENSIONS:
+        raise ManualAssetError(_EXTENSION_ERROR)
 
     return v
 
