@@ -2554,6 +2554,18 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-190 human validation PASS
+
+- All three SBGC-190 human checks passed: Steam manual image/hero/capsule
+  overrides rendered correctly and survived a Steam refresh (clearing one
+  override fell back to the latest Steam value for that role); a Manual Game
+  with all three image roles received the layered softened-Hero / foreground-
+  Capsule treatment with correct fallback; and Admin URL validation accepted
+  `.jpg`/`.jpeg`/`.png`/`.webp` (including uppercase) while rejecting HTTP and
+  non-image extensions with no visible remote probing.
+- Documentation-only closure; no production code changed.  SBGC-190 ready to
+  merge.
+
 ## 2026-08-23 — SBGC-190 manual image overrides
 
 - Expanded the manual image override from one URL into three independent
