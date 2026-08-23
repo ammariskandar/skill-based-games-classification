@@ -2554,6 +2554,28 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-77 human validation PASS
+
+- All three SBGC-77 catalogue correction checks passed in a real browser on
+  local dev servers.  Check 1 (dense catalogue): cards render ~30% of their
+  prior linear size with substantially more titles on screen, titles/Challenge
+  and Reward summaries stay readable, exact scores remain screen-reader
+  accessible, hover/focus works, and the homepage carousel is unchanged.
+  Check 2 (coverless/broken-cover ordering): no-URL and broken-Capsule games
+  are treated as coverless via the native `<img>` request (no extra
+  fetch/HEAD probe), fall back cleanly, and move after working/unknown games
+  on the current page with stable API order.  Check 3 (performance/lazy): no
+  eager separate probing, offscreen failures reorder correctly, no permanent
+  rAF loop, no horizontal overflow.
+- Final sizing/link pass also confirmed: every card aligns to identical
+  width/height (no-cover and unclassified cards are not shorter), cards are
+  ~15% larger than the corrected size, hover/focus enlarges the whole card
+  ~1.15× without reflow or clipping, clicking anywhere navigates to the correct
+  `/games/{slug}`, and the manually-created long-name game with a broken image
+  renders the placeholder instead of a broken-image icon.
+- Documentation-only closure; no production code changed.  SBGC-77 ready to
+  merge.
+
 ## 2026-08-23 — SBGC-77 final catalogue sizing + full-card link
 
 - Normalized every catalogue card to an identical outer width/height: the title
