@@ -21,16 +21,23 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
+from typing import Literal
 
 from api.errors import STANDARD_ERROR_RESPONSES, ApiException
 from api.schemas import ApiErrorResponse, ApiRequestSchema
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from ninja import Router, Schema, Status
+from ninja import Query, Router, Schema, Status
 from ninja.errors import AuthorizationError
 from ninja.security import django_auth
 
-from games.models import Game
+from games.models import Game, SourceType
+from games.services.catalogue import (
+    CatalogueClassification,
+    CatalogueGame,
+    CatalogueQuery,
+    get_game_catalogue,
+)
 from games.services.imports.steam import (
     SteamGameImportResult,
     SteamGameImportStatus,
@@ -160,6 +167,38 @@ class HomepageCarouselResponse(Schema):
     """Random homepage carousel selection of Steam base Games."""
 
     games: list[HomepageCarouselCard]
+
+
+class GameCatalogueClassification(Schema):
+    """Narrow public classification summary for a catalogue item (SBGC-76)."""
+
+    status: str
+    challenge: PublicClassificationProfile | None = None
+    reward: PublicClassificationProfile | None = None
+    confidence_level: float | None = None
+    confidence_label: str | None = None
+    is_stale: bool = False
+
+
+class GameCatalogueItem(Schema):
+    """One public catalogue item with effective artwork."""
+
+    slug: str
+    name: str
+    source: str
+    image_url: str
+    library_capsule_url: str | None = None
+    classification: GameCatalogueClassification | None = None
+
+
+class GameCatalogueResponse(Schema):
+    """Paginated public Game catalogue."""
+
+    count: int
+    page: int
+    page_size: int
+    total_pages: int
+    results: list[GameCatalogueItem]
 
 
 # ---------------------------------------------------------------------------
@@ -384,6 +423,32 @@ def _public_final_classification(published) -> PublicFinalClassification | None:
     )
 
 
+def _catalogue_classification(
+    classification: CatalogueClassification | None,
+) -> GameCatalogueClassification | None:
+    if classification is None:
+        return None
+    return GameCatalogueClassification(
+        status=classification.status,
+        challenge=_classification_profile(classification.challenge),
+        reward=_classification_profile(classification.reward),
+        confidence_level=classification.confidence_level,
+        confidence_label=classification.confidence_label,
+        is_stale=classification.is_stale,
+    )
+
+
+def _catalogue_item(game: CatalogueGame) -> GameCatalogueItem:
+    return GameCatalogueItem(
+        slug=game.slug,
+        name=game.name,
+        source=game.source,
+        image_url=game.image_url,
+        library_capsule_url=game.library_capsule_url,
+        classification=_catalogue_classification(game.classification),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -476,6 +541,48 @@ def homepage_carousel(request):
             )
             for game in games
         ]
+    )
+
+
+@router.get(
+    "",
+    response={
+        200: GameCatalogueResponse,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="game_catalogue",
+    summary="List public games",
+    description=(
+        "Return a deterministic paginated list of publicly-listed base Games. "
+        "Supports name search, source filter, classification filter, and "
+        "pagination.  Reads persisted state only — never contacts Steam and "
+        "never recalculates classification."
+    ),
+    url_name="game-catalogue",
+)
+def game_catalogue(
+    request,
+    q: str | None = None,
+    source: Literal["steam", "manual"] | None = None,
+    classified: bool | None = None,
+    page: int = Query(default=1, ge=1),  # pyright: ignore[reportCallIssue]
+    page_size: int = Query(default=24, ge=1, le=100),  # pyright: ignore[reportCallIssue]
+):
+    catalogue = CatalogueQuery(
+        q=q.strip() if q and q.strip() else None,
+        source=SourceType(source) if source else None,
+        classified=classified,
+        page=page,
+        page_size=page_size,
+    )
+    result = get_game_catalogue(catalogue)
+    return GameCatalogueResponse(
+        count=result.count,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
+        results=[_catalogue_item(game) for game in result.games],
     )
 
 

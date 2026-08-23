@@ -113,3 +113,6 @@ property access.
 
 - `docs/game-listing-rules.md` — public listing eligibility
 - `docs/editorial-classification.md` — editorial classification model
+- `docs/backend-api.md` — `GET /api/v1/games/` catalogue endpoint; its query
+  object lives in `games/services/catalogue.py` (builds on
+  `publicly_listable()` and prefetches current classification snapshots).

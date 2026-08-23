@@ -93,6 +93,66 @@ on the operation response declaration.
 Use `Status(status, body)` from `ninja` for explicit non-default statuses.
 Do not use the deprecated `(status, body)` tuple syntax.
 
+## Game Catalogue — `GET /api/v1/games/`
+
+Returns a deterministic, paginated list of publicly-listed base Games
+(`content_type == game AND listing_status == published`).  It is **read-only**:
+it never contacts Steam, never probes images, and never recalculates
+classification.  Draft/archived and non-game content (DLC, demo, software,
+soundtrack, unknown) are excluded from both `results` and `count`.
+
+### Query parameters
+
+| Parameter | Type | Default | Meaning |
+|-----------|------|---------|---------|
+| `q` | string | — | case-insensitive `name` substring search (trimmed; whitespace-only is no filter) |
+| `source` | `steam` / `manual` | — | restrict to one source; omitted means both |
+| `classified` | boolean | — | `true` = has a current published READY classification; `false` = no displayable scores |
+| `page` | positive int | `1` | 1-based page number |
+| `page_size` | positive int | `24` | results per page (max `100`) |
+
+Filters are AND-composed.  `classified=true` means the Game currently has a
+current `ClassificationSnapshot` with `status == READY` (including a stale
+READY result retained after an engine/system failure); every other state —
+`NO_SNAPSHOT`, a current non-READY domain status, etc. — is `classified=false`.
+This matches the published-read semantics of the Game-detail endpoint and is
+driven by persisted state, never by a recalculation.
+
+### Response envelope
+
+```json
+{
+  "count": 42,
+  "page": 1,
+  "page_size": 24,
+  "total_pages": 2,
+  "results": [
+    {
+      "slug": "hades",
+      "name": "Hades",
+      "source": "steam",
+      "image_url": "https://...",
+      "library_capsule_url": "https://...",
+      "classification": {
+        "status": "READY",
+        "challenge": {"micro": 51, "macro": 31, "mystiko": 18},
+        "reward": {"micro": 17, "macro": 29, "mystiko": 54},
+        "confidence_level": 85.5,
+        "confidence_label": "High",
+        "is_stale": false
+      }
+    }
+  ]
+}
+```
+
+`count` is the filtered count; `total_pages` is `0` when `count` is `0`.
+Ordering is deterministic (`name ASC, id ASC`).  A page beyond the final page
+returns `200` with `results: []`.  `image_url` and `library_capsule_url` are
+effective values (manual override first, Steam fallback — SBGC-190); the
+frontend never resolves override precedence.  `classification` is `null` when
+the Game has no displayable scores (no fake zero vectors).
+
 ## Public Game Detail — `GET /api/v1/games/{slug}`
 
 Returns the normalized public identity and persisted metadata for one
