@@ -1,32 +1,97 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import GameCatalogueCard from "../components/catalogue/GameCatalogueCard.astro";
+import CataloguePagination from "../components/catalogue/CataloguePagination.astro";
+import EmptyState from "../components/ui/EmptyState.astro";
+import ErrorState from "../components/ui/ErrorState.astro";
+import {
+  formatResultSummary,
+  parsePageParam,
+} from "../lib/catalogue-presentation";
+import {
+  getGameCatalogue,
+  type GameCatalogueResponse,
+} from "../lib/server/api";
+
+// The catalogue depends on live persisted Game data: render on demand, never
+// statically, so each request reads the current page from Django.
+export const prerender = false;
+
+const page = parsePageParam(Astro.url.searchParams.get("page"));
+
+type PageState =
+  | { kind: "ready"; catalogue: GameCatalogueResponse }
+  | { kind: "service-error" };
+
+let state: PageState;
+try {
+  state = { kind: "ready", catalogue: await getGameCatalogue({ page }) };
+} catch {
+  // Timeout, network, Django 5xx, or a malformed response all mean the service
+  // is unavailable — never "no games found".
+  Astro.response.status = 500;
+  state = { kind: "service-error" };
+}
+
+const catalogue = state.kind === "ready" ? state.catalogue : null;
+const count = catalogue?.count ?? 0;
+const totalPages = catalogue?.total_pages ?? 0;
+const games = catalogue?.results ?? [];
+const summary =
+  catalogue !== null
+    ? formatResultSummary(count, page, catalogue.page_size)
+    : "";
+
+// Canonical: the shared SEO helper accepts only a pathname (it strips query
+// strings), so every catalogue page intentionally canonicalizes to the base
+// /catalogue URL.  Documented in docs/frontend-architecture.md (SBGC-77).
 ---
 
 <BaseLayout
   title="Catalogue"
-  description="Browse the MyGameDNA game catalogue, classified by separate Challenge and Reward profiles across Micro, Mystiko, and Macro dimensions."
+  description="Browse the MyGameDNA game catalogue and compare Challenge and Reward skill profiles across Micro, Macro, and Mystiko."
   canonicalPath="/catalogue"
 >
   <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Catalogue</h1>
+  <p class="mt-2 max-w-2xl text-muted">
+    Browse MyGameDNA's public Game catalogue and compare Challenge and Reward
+    skill profiles.
+  </p>
 
-  <div class="mt-8 space-y-6">
-    <div class="rounded-lg border border-border bg-surface p-8 text-center">
-      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
-        Awaiting Backend
-      </p>
-      <h2 class="mt-2 text-xl font-semibold text-text">
-        Game catalogue coming soon
-      </h2>
-      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
-        The full game catalogue will be available once the Django API and
-        database are connected. Games will be listed with their Challenge and
-        Reward profiles, searchable and filterable by Micro, Mystiko, and Macro
-        dimensions.
-      </p>
-      <p class="mt-3 text-xs text-dim">
-        Future features: search, filters, sorting, pagination, and skill-based
-        rankings.
-      </p>
-    </div>
-  </div>
+  {
+    state.kind === "service-error" ? (
+      <ErrorState
+        title="The catalogue is temporarily unavailable."
+        message="Please try again in a moment."
+        headingLevel="h2"
+      />
+    ) : count === 0 ? (
+      <EmptyState title="No games are currently available in the catalogue." />
+    ) : games.length === 0 ? (
+      <EmptyState title="No games are available on this page.">
+        <a
+          href="/catalogue"
+          class="text-sm font-medium text-blue hover:underline"
+        >
+          Back to first page
+        </a>
+      </EmptyState>
+    ) : (
+      <>
+        <p class="mt-6 text-sm text-muted">{summary}</p>
+
+        <ul class="mt-6 grid list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {games.map((game, index) => (
+            <li>
+              <GameCatalogueCard game={game} eager={index < 4} />
+            </li>
+          ))}
+        </ul>
+
+        {totalPages > 1 && (
+          <CataloguePagination page={page} totalPages={totalPages} />
+        )}
+      </>
+    )
+  }
 </BaseLayout>

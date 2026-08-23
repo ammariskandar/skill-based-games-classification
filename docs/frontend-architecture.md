@@ -227,6 +227,43 @@ state (hero and Hades copy still render); a Hades failure omits the sample
 artwork while keeping the explanatory copy. Neither failure turns the homepage
 into a 500.
 
+### Game Catalogue (SBGC-77)
+
+The catalogue (`/catalogue`) is **SSR/on-demand** (`export const prerender = false`) — it
+depends on live persisted Game data, so each request reads the current page from
+Django rather than building statically.  `catalogue.astro` fetches one page of
+the SBGC-76 catalogue DTO server-side via `getGameCatalogue({ page })` (page size
+left to Django's 24 default) and renders the result as plain HTML — no client
+router, no client-side fetch, no React/Vue/Svelte.
+
+- **Card** — `GameCatalogueCard.astro` renders one item: effective artwork
+  (Capsule first, general image fallback, then a local SVG placeholder), a
+  linked title (`/games/{slug}`), a restrained Steam/Manual source label, and a
+  compact Challenge/Reward summary or "Not yet classified".  Artwork is an
+  ordinary `<img>` — the SBGC-184 WebSR enhancer is **not** mounted here, so up
+  to 24 cards stay cheap on ordinary hardware.
+- **Compact classification** — `CatalogueProfileSummary.astro` renders each
+  profile as a segmented bar plus exact "Micro X · Macro Y · Mystiko Z" text in
+  the locked Micro/Macro/Mystiko order, reusing `--color-micro`/`--color-macro`/
+  `--color-mystiko`.  `classification: null` (or missing scores) renders "Not
+  yet classified", never a fake 0/0/0.
+- **Pagination** — `CataloguePagination.astro` emits ordinary anchor links
+  (`/catalogue?page=N`; page 1 is the bare route).  Previous/Next are omitted or
+  `aria-disabled` at the bounds; a page beyond the last renders a truthful empty
+  state with a "Back to first page" link (never a fabricated page).
+- **States** — a Django/service failure renders a real HTTP 500 error state
+  (never "0 games"); an empty catalogue renders a distinct empty state.
+- **No client loading state** — the initial render is SSR, so the browser's
+  normal navigation is the loading state; there is no spinner/skeleton/hydration.
+- **Canonical URL** — the shared `BaseLayout` canonical helper accepts only a
+  pathname (it strips query strings), so every pagination page canonicalizes to
+  the base `/catalogue` URL.  This is an accepted SBGC-77 limitation; a
+  query-aware canonical helper is deferred.
+
+SBGC-78 (search UI + `q`) and SBGC-79 (source/classification filters + sort
+controls) are intentionally absent — no search input, no filter/sort controls,
+and no disabled placeholders.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.

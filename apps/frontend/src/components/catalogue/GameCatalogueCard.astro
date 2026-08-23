@@ -1,0 +1,194 @@
+---
+import CatalogueProfileSummary from "./CatalogueProfileSummary.astro";
+import { presentCatalogueClassification } from "../../lib/catalogue-presentation";
+import type { GameCatalogueItem } from "../../lib/server/api/games";
+
+interface Props {
+  game: GameCatalogueItem;
+  eager?: boolean;
+}
+
+const { game, eager = false } = Astro.props;
+
+const artworkUrl = (game.library_capsule_url || game.image_url).trim();
+const hasArtwork = artworkUrl !== "";
+const sourceLabel = game.source === "steam" ? "Steam" : "Manual";
+const classification = presentCatalogueClassification(game.classification);
+const href = `/games/${game.slug}`;
+---
+
+<article class="catalogue-card">
+  <a href={href} class="catalogue-card__art">
+    {
+      hasArtwork ? (
+        <img
+          class="catalogue-card__image"
+          src={artworkUrl}
+          alt={`${game.name} box art`}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+        />
+      ) : (
+        <span
+          class="catalogue-card__placeholder"
+          role="img"
+          aria-label={`${game.name} artwork unavailable`}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="8.5" cy="10" r="1.5" />
+            <path d="M21 15l-5-5L5 20" />
+          </svg>
+        </span>
+      )
+    }
+  </a>
+
+  <div class="catalogue-card__body">
+    <a href={href} class="catalogue-card__title">
+      <h2 class="catalogue-card__heading">{game.name}</h2>
+    </a>
+    <span class="catalogue-card__source">{sourceLabel}</span>
+  </div>
+
+  <div class="catalogue-card__classification">
+    {
+      classification.kind === "classified" ? (
+        <>
+          {classification.isStale && (
+            <span class="catalogue-card__stale">Stale result</span>
+          )}
+          <CatalogueProfileSummary
+            label="Challenge"
+            profile={classification.challenge}
+          />
+          <CatalogueProfileSummary
+            label="Reward"
+            profile={classification.reward}
+          />
+        </>
+      ) : (
+        <p class="catalogue-card__unclassified">Not yet classified</p>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .catalogue-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .catalogue-card:hover,
+  .catalogue-card:focus-within {
+    border-color: var(--color-border-2);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+
+  .catalogue-card__art {
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: var(--color-surface-2);
+  }
+
+  .catalogue-card__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .catalogue-card__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-dim);
+  }
+
+  .catalogue-card__placeholder svg {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .catalogue-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .catalogue-card__title {
+    text-decoration: none;
+    color: var(--color-text);
+    border-radius: 2px;
+  }
+
+  .catalogue-card__title:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .catalogue-card__heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .catalogue-card__source {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  .catalogue-card__classification {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .catalogue-card__unclassified {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+
+  .catalogue-card__stale {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-yellow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .catalogue-card {
+      transition: none;
+    }
+  }
+</style>

@@ -2554,6 +2554,36 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-77 Public catalogue page
+
+- Replaced the `/catalogue` placeholder with the real SSR catalogue page:
+  `catalogue.astro` (on-demand, `prerender = false`) reads `?page=`, calls the
+  SBGC-76 `getGameCatalogue({ page })` boundary server-side, and renders a
+  responsive CSS grid (1/2/3/4 columns), a truthful result summary, and
+  anchor-link pagination.
+- Added `GameCatalogueCard.astro` (effective Capsule-first artwork via a plain
+  `<img>` — the SBGC-184 WebSR enhancer is deliberately not mounted for up to 24
+  cards — linked title, restrained Steam/Manual label, and compact
+  Challenge/Reward summary or "Not yet classified") plus
+  `CatalogueProfileSummary.astro` (segmented bar + exact Micro/Macro/Mystiko
+  values, reusing `--color-micro`/`--color-macro`/`--color-mystiko`) and
+  `CataloguePagination.astro` (Previous / "Page N of M" / Next).
+- Pure presentation helpers in `src/lib/catalogue-presentation.ts`
+  (`parsePageParam`, `formatGameCount`, `computeResultRange`, `formatResultSummary`,
+  `cataloguePageHref`, `presentCatalogueClassification`) keep the route thin and
+  Vitest-testable.
+- States: service failure → real HTTP 500; empty catalogue → distinct empty
+  state; page beyond the last → truthful empty state with a "Back to first
+  page" link.  No client loading state (SSR), no search/filter/sort UI
+  (SBGC-78/79).
+- Canonical URL strips the query (the `BaseLayout` helper is path-only), so
+  every pagination page canonicalizes to `/catalogue` — a documented limitation.
+- Validation: 35 new focused frontend tests (presentation + API boundary);
+  frontend suite 229 OK; `astro check` 0 errors; `astro build`, lint, format,
+  `git diff --check` clean.  `docs/frontend-architecture.md` +
+  `docs/frontend-api-layer.md` updated.  No backend change, no migration, no
+  new dependency.  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-76 human validation PASS
 
 - All three SBGC-76 human checks passed via Postman against a local Django

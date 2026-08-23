@@ -1,0 +1,89 @@
+---
+import { profileDimensions } from "../../lib/classification-presentation";
+import type { ClassificationProfile } from "../../lib/server/api/games";
+
+interface Props {
+  label: "Challenge" | "Reward";
+  profile: ClassificationProfile;
+}
+
+const { label, profile } = Astro.props;
+const dimensions = profileDimensions(profile);
+---
+
+<div class="catalogue-profile">
+  <span class="catalogue-profile__label">{label}</span>
+
+  <div class="catalogue-profile__bar" aria-hidden="true">
+    {
+      dimensions.map((dimension) => (
+        <span
+          class={`catalogue-profile__segment catalogue-profile__segment--${dimension.key}`}
+          style={`width:${dimension.value}%`}
+        />
+      ))
+    }
+  </div>
+
+  <p class="catalogue-profile__values">
+    {
+      dimensions.map((dimension, index) => (
+        <>
+          {index > 0 && <span aria-hidden="true"> · </span>}
+          <span>
+            {dimension.label} {dimension.value}
+          </span>
+        </>
+      ))
+    }
+  </p>
+</div>
+
+<style>
+  .catalogue-profile {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .catalogue-profile__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-muted);
+  }
+
+  .catalogue-profile__bar {
+    display: flex;
+    gap: 2px;
+    height: 0.5rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-border);
+  }
+
+  .catalogue-profile__segment {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .catalogue-profile__segment--micro {
+    background: var(--color-micro);
+  }
+
+  .catalogue-profile__segment--macro {
+    background: var(--color-macro);
+  }
+
+  .catalogue-profile__segment--mystiko {
+    background: var(--color-mystiko);
+  }
+
+  .catalogue-profile__values {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
