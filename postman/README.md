@@ -3,7 +3,8 @@
 Postman assets for exercising the SBGC-57 authorized Steam import and refresh
 HTTP endpoints against a **local** Django development server.
 
-- `Skill-Based Games Classification.postman_collection.json` — collection
+- `Skill-Based Games Classification.postman_collection.json` — Steam import/refresh collection (SBGC-57)
+- `Game Catalogue API.postman_collection.json` — public Game catalogue collection (SBGC-76)
 - `local.postman_environment.json` — local environment (no secrets committed)
 
 ## What this covers
@@ -161,3 +162,26 @@ The import and refresh endpoints will reach real Steam during manual testing.
 That is an **optional local smoke test**, not the formal SBGC-58 controlled
 live integration validation. Do not run this collection against production
 Neon or Render.
+
+## Game Catalogue collection
+
+The separate `Game Catalogue API.postman_collection.json` collection exercises
+the **public, read-only** SBGC-76 catalogue endpoint:
+
+```text
+GET /api/v1/games/
+```
+
+It needs **no authentication, CSRF, or Steam** — only a running local Django
+development server and the `base_url` variable from `local.postman_environment.json`.
+
+Three folders map to the three SBGC-76 human checks:
+
+| Folder | Requests |
+|--------|----------|
+| `01 Base Catalogue` | default pagination envelope + stable name ordering |
+| `02 Search & Filters` | `q`, `source`, `classified`, combined filters, invalid source → 422 |
+| `03 Pagination & Classification Truth` | page 1/2/beyond-last, classified scores, `null` classification, `page_size` max, invalid page → 422 |
+
+Run it with the catalogue collection's own `base_url` variable (or reuse the
+existing local environment).  No credentials are needed.

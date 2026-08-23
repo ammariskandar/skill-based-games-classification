@@ -1,0 +1,631 @@
+{
+  "info": {
+    "name": "Game Catalogue API",
+    "description": "Postman collection for the SBGC-76 public Game catalogue endpoint (`GET /api/v1/games/`). Covers the three human checks: base catalogue, search/filters, and pagination/classification truth. Public read-only — no authentication, no Steam, no CSRF. Requires a locally running Django development server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Base Catalogue",
+      "item": [
+        {
+          "name": "List all games (default pagination)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('envelope has pagination fields', function () {",
+                  "    pm.expect(body).to.have.property('count');",
+                  "    pm.expect(body).to.have.property('page');",
+                  "    pm.expect(body).to.have.property('page_size');",
+                  "    pm.expect(body).to.have.property('total_pages');",
+                  "    pm.expect(body).to.have.property('results');",
+                  "});",
+                  "pm.test('count is a non-negative integer', function () {",
+                  "    pm.expect(Number.isInteger(body.count)).to.be.true;",
+                  "    pm.expect(body.count).to.be.at.least(0);",
+                  "});",
+                  "pm.test('defaults are page 1 and page_size 24', function () {",
+                  "    pm.expect(body.page).to.eql(1);",
+                  "    pm.expect(body.page_size).to.eql(24);",
+                  "});",
+                  "pm.test('results length does not exceed page_size', function () {",
+                  "    pm.expect(Array.isArray(body.results)).to.be.true;",
+                  "    pm.expect(body.results.length).to.be.at.most(body.page_size);",
+                  "});",
+                  "pm.test('each item has the catalogue keys', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item).to.have.property('slug');",
+                  "        pm.expect(item).to.have.property('name');",
+                  "        pm.expect(item).to.have.property('source');",
+                  "        pm.expect(item).to.have.property('image_url');",
+                  "        pm.expect(item).to.have.property('library_capsule_url');",
+                  "        pm.expect(item).to.have.property('classification');",
+                  "    });",
+                  "});",
+                  "pm.test('source is steam or manual', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(['steam', 'manual']).to.include(item.source);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""]
+            },
+            "description": "Fetches the first page of the public catalogue with default pagination. Asserts the envelope shape, default page/page_size, and that each item exposes the expected public fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Stable ordering (name ascending)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('results ordered by name ascending', function () {",
+                  "    const names = body.results.map(function (r) { return r.name; });",
+                  "    for (let i = 1; i < names.length; i++) {",
+                  "        pm.expect(names[i - 1] <= names[i]).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page_size=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page_size", "value": "50" }
+              ]
+            },
+            "description": "Fetches a larger page and asserts deterministic ordering (`name ASC, id ASC`)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Search & Filters",
+      "item": [
+        {
+          "name": "Search q=elden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result matches the query (case-insensitive)', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.name.toLowerCase()).to.include('elden');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?q=elden",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "q", "value": "elden" }
+              ]
+            },
+            "description": "Name substring search. Asserts every returned game's name contains the query."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter source=steam",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result is steam', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.source).to.eql('steam');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?source=steam",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "source", "value": "steam" }
+              ]
+            },
+            "description": "Restricts the catalogue to Steam Games only."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter source=manual",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result is manual', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.source).to.eql('manual');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?source=manual",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "source", "value": "manual" }
+              ]
+            },
+            "description": "Restricts the catalogue to Manual Games only."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter classified=true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result has a READY classification', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.classification).to.not.be.null;",
+                  "        pm.expect(item.classification.status).to.eql('READY');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?classified=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "classified", "value": "true" }
+              ]
+            },
+            "description": "Restricts to Games with a current published READY classification (displayable scores)."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter classified=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result has null classification', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.classification).to.eql(null);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?classified=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "classified", "value": "false" }
+              ]
+            },
+            "description": "Restricts to Games without a displayable published classification."
+          },
+          "response": []
+        },
+        {
+          "name": "Combined q + source + classified",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('every result matches all three filters', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item.name.toLowerCase()).to.include('persona');",
+                  "        pm.expect(item.source).to.eql('steam');",
+                  "        pm.expect(item.classification).to.not.be.null;",
+                  "        pm.expect(item.classification.status).to.eql('READY');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?q=persona&source=steam&classified=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "q", "value": "persona" },
+                { "key": "source", "value": "steam" },
+                { "key": "classified", "value": "true" }
+              ]
+            },
+            "description": "AND-composes name search, source, and classification filters."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid source returns 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid source is rejected with 422', function () {",
+                  "    pm.expect(pm.response.code).to.eql(422);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?source=invalid",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "source", "value": "invalid" }
+              ]
+            },
+            "description": "Proves enumerated query validation rejects an unsupported source."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Pagination & Classification Truth",
+      "item": [
+        {
+          "name": "Page 1 with small page_size",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('page and page_size respected', function () {",
+                  "    pm.expect(body.page).to.eql(1);",
+                  "    pm.expect(body.page_size).to.eql(3);",
+                  "    pm.expect(body.results.length).to.be.at.most(3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page=1&page_size=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "3" }
+              ]
+            },
+            "description": "Navigates with a small page size to exercise pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Page 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('page 2 returned', function () {",
+                  "    pm.expect(body.page).to.eql(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page=2&page_size=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page", "value": "2" },
+                { "key": "page_size", "value": "3" }
+              ]
+            },
+            "description": "Fetches the second page (valid 200 whether or not the population has that many pages)."
+          },
+          "response": []
+        },
+        {
+          "name": "Page beyond last",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('beyond last page returns empty results', function () {",
+                  "    pm.expect(body.results).to.eql([]);",
+                  "});",
+                  "pm.test('count remains the filtered total', function () {",
+                  "    pm.expect(Number.isInteger(body.count)).to.be.true;",
+                  "    pm.expect(body.count).to.be.at.least(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page=999&page_size=3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page", "value": "999" },
+                { "key": "page_size", "value": "3" }
+              ]
+            },
+            "description": "A page beyond the final page is a truthful 200 with an empty results array (no 404, no silent clamp)."
+          },
+          "response": []
+        },
+        {
+          "name": "Classified game exposes real scores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "if (body.results.length > 0) {",
+                  "    const c = body.results[0].classification;",
+                  "    pm.test('classification is READY with challenge/reward profiles', function () {",
+                  "        pm.expect(c).to.not.be.null;",
+                  "        pm.expect(c.status).to.eql('READY');",
+                  "        ['micro', 'macro', 'mystiko'].forEach(function (k) {",
+                  "            pm.expect(c.challenge).to.have.property(k);",
+                  "            pm.expect(c.reward).to.have.property(k);",
+                  "        });",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?classified=true&page_size=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "classified", "value": "true" },
+                { "key": "page_size", "value": "1" }
+              ]
+            },
+            "description": "A classified Game must expose a non-null READY summary with challenge and reward profiles (real scores, never a fake zero vector)."
+          },
+          "response": []
+        },
+        {
+          "name": "Unclassified game has null classification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "if (body.results.length > 0) {",
+                  "    pm.test('classification is null (no fake zeros)', function () {",
+                  "        pm.expect(body.results[0].classification).to.eql(null);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?classified=false&page_size=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "classified", "value": "false" },
+                { "key": "page_size", "value": "1" }
+              ]
+            },
+            "description": "A Game without displayable scores must report `classification: null`, not a fabricated zero vector."
+          },
+          "response": []
+        },
+        {
+          "name": "page_size maximum 100 accepted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('page_size 100 respected', function () {",
+                  "    pm.expect(body.page_size).to.eql(100);",
+                  "    pm.expect(body.results.length).to.be.at.most(100);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page_size=100",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page_size", "value": "100" }
+              ]
+            },
+            "description": "The maximum page_size is accepted and respected."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid page returns 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid page is rejected with 422', function () {",
+                  "    pm.expect(pm.response.code).to.eql(422);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/?page=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", ""],
+              "query": [
+                { "key": "page", "value": "0" }
+              ]
+            },
+            "description": "A non-positive page is rejected by typed query validation."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
