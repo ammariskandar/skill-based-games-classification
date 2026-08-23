@@ -119,7 +119,7 @@ TypeScript types describe expected shapes at compile time. They do **not** valid
 
 ## Endpoint-Specific Types
 
-`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure). It also defines the SBGC-189 homepage carousel boundary (`getHomepageCarousel`, `HomepageCarouselCard`) and the SBGC-76 catalogue boundary (`getGameCatalogue`, `GameCatalogueResponse`, `GameCatalogueItem`, `GameCatalogueClassification`, `GameCatalogueQuery`).
+`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure). It also defines the SBGC-189 homepage carousel boundary (`getHomepageCarousel`, `HomepageCarouselCard`), the SBGC-76 catalogue boundary (`getGameCatalogue`, `GameCatalogueResponse`, `GameCatalogueItem`, `GameCatalogueClassification`, `GameCatalogueQuery`), and the SBGC-78 search-index boundary (`getGameSearchIndex`, `GameSearchIndexItem`, `GameSearchIndexResponse`).
 
 ## Route Integration
 
@@ -130,13 +130,23 @@ The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
 - Unhandled render errors fall through to the native `500.astro` error page.
 - Never display raw `ApiError` content that may contain backend context directly in public UI.
 
-### Catalogue route (SBGC-77)
+### Catalogue route (SBGC-77/SBGC-78)
 
 The `/catalogue` route imports `getGameCatalogue()` from this layer:
-- Call it from Astro frontmatter (server-side) with only `{ page }` — the page-size default (24) stays with Django; `q`/`source`/`classified` are supported by SBGC-76 but surfaced in later tickets.
+- Call it from Astro frontmatter (server-side) with `{ page, q }` — the page-size default (24) stays with Django; `q` is the SBGC-78 name search. `source`/`classified` remain SBGC-79.
 - The endpoint is mounted at `/api/v1/games/` **with the trailing slash**; the client path preserves it.
 - Any failure (timeout, network, Django 5xx, malformed/empty response) throws `BackendApiError` and renders a real HTTP 500 service-failure state — never an empty-catalogue state, never a 200 error page.
-- A valid-but-empty result (`count === 0`) and a valid page-beyond-the-end (`count > 0`, `results: []`) are ordinary 200 responses rendered as distinct truthful empty states, not errors.
+- A valid-but-empty result (`count === 0`) and a valid page-beyond-the-end (`count > 0`, `results: []`) are ordinary 200 responses rendered as distinct truthful empty states, not errors. `q` is preserved across pagination and recovery links via `catalogueHref({ page, q })`.
+
+### Search index (SBGC-78)
+
+`getGameSearchIndex()` fetches the complete compact public index from Django
+(`GET /api/v1/games/search-index`) — used only by the server-side Astro proxy
+route `/api/search-index`. The **browser** never calls Django directly; the
+client-side loader `src/lib/game-search-index.ts` fetches `/api/search-index`
+and layers a memory cache, a versioned `sessionStorage` cache (15-minute TTL),
+and a single in-flight Promise (so background preload and explicit Search open
+never issue a duplicate request).
 
 ### Game-detail state matrix (SBGC-74)
 

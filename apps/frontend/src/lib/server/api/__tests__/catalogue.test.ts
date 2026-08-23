@@ -116,6 +116,28 @@ describe("getGameCatalogue", () => {
     expect(url).toBe("http://backend.test/api/v1/games/?page=2&page_size=50");
   });
 
+  it("serializes the q parameter before page (SBGC-78)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(CATALOGUE));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameCatalogue } = await importGames();
+    await getGameCatalogue({ q: "elden ring", page: 2 });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://backend.test/api/v1/games/?q=elden+ring&page=2");
+  });
+
+  it("omits an empty q parameter", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(CATALOGUE));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameCatalogue } = await importGames();
+    await getGameCatalogue({ q: "" });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://backend.test/api/v1/games/");
+  });
+
   it("throws BackendApiError on a Django 500", async () => {
     const fetchMock = vi
       .fn()

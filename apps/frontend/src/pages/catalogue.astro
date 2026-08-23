@@ -5,6 +5,7 @@ import CataloguePagination from "../components/catalogue/CataloguePagination.ast
 import EmptyState from "../components/ui/EmptyState.astro";
 import ErrorState from "../components/ui/ErrorState.astro";
 import {
+  catalogueHref,
   formatResultSummary,
   parsePageParam,
 } from "../lib/catalogue-presentation";
@@ -18,6 +19,8 @@ import {
 export const prerender = false;
 
 const page = parsePageParam(Astro.url.searchParams.get("page"));
+const rawQ = Astro.url.searchParams.get("q");
+const q = rawQ ? rawQ.trim() : "";
 
 type PageState =
   | { kind: "ready"; catalogue: GameCatalogueResponse }
@@ -25,7 +28,10 @@ type PageState =
 
 let state: PageState;
 try {
-  state = { kind: "ready", catalogue: await getGameCatalogue({ page }) };
+  state = {
+    kind: "ready",
+    catalogue: await getGameCatalogue({ page, q: q || undefined }),
+  };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service
   // is unavailable — never "no games found".
@@ -42,21 +48,37 @@ const summary =
     ? formatResultSummary(count, page, catalogue.page_size)
     : "";
 
+const searching = q !== "";
+const heading = searching ? `Search results for “${q}”` : "Catalogue";
+// Search result pages are ephemeral query states — indexable base catalogue,
+// not an infinite set of crawled query URLs.
+const robots = searching ? "noindex, follow" : undefined;
+
 // Canonical: the shared SEO helper accepts only a pathname (it strips query
 // strings), so every catalogue page intentionally canonicalizes to the base
 // /catalogue URL.  Documented in docs/frontend-architecture.md (SBGC-77).
 ---
 
 <BaseLayout
-  title="Catalogue"
+  title={heading}
   description="Browse the MyGameDNA game catalogue and compare Challenge and Reward skill profiles across Micro, Macro, and Mystiko."
   canonicalPath="/catalogue"
+  robots={robots}
+  preloadGameSearchIndex
 >
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Catalogue</h1>
-  <p class="mt-2 max-w-2xl text-muted">
-    Browse MyGameDNA's public Game catalogue and compare Challenge and Reward
-    skill profiles.
-  </p>
+  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{heading}</h1>
+  {
+    searching ? (
+      <p class="mt-2 max-w-2xl text-muted">
+        Matching public Games by name for “{q}”.
+      </p>
+    ) : (
+      <p class="mt-2 max-w-2xl text-muted">
+        Browse MyGameDNA's public Game catalogue and compare Challenge and
+        Reward skill profiles.
+      </p>
+    )
+  }
 
   {
     state.kind === "service-error" ? (
@@ -65,12 +87,21 @@ const summary =
         message="Please try again in a moment."
         headingLevel="h2"
       />
+    ) : searching && count === 0 ? (
+      <EmptyState title={`No games found for “${q}”.`}>
+        <a
+          href={catalogueHref()}
+          class="text-sm font-medium text-blue hover:underline"
+        >
+          View full catalogue
+        </a>
+      </EmptyState>
     ) : count === 0 ? (
       <EmptyState title="No games are currently available in the catalogue." />
     ) : games.length === 0 ? (
       <EmptyState title="No games are available on this page.">
         <a
-          href="/catalogue"
+          href={catalogueHref({ page: 1, q: q || undefined })}
           class="text-sm font-medium text-blue hover:underline"
         >
           Back to first page
@@ -89,7 +120,11 @@ const summary =
         </ul>
 
         {totalPages > 1 && (
-          <CataloguePagination page={page} totalPages={totalPages} />
+          <CataloguePagination
+            page={page}
+            totalPages={totalPages}
+            q={q || undefined}
+          />
         )}
       </>
     )

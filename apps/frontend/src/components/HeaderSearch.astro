@@ -1,0 +1,547 @@
+---
+interface Props {
+  /** Renders the compact/mobile variant (dedicated id prefix; layout is the
+   *  same — the surrounding Header decides which sibling content hides). */
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+const idPrefix = compact ? "compact" : "desktop";
+const formId = `${idPrefix}-search-form`;
+const listId = `${idPrefix}-search-listbox`;
+---
+
+<div class="header-search" data-header-search={idPrefix} data-expanded="false">
+  <button
+    type="button"
+    class="header-search__toggle"
+    aria-label="Search games"
+    aria-expanded="false"
+    aria-controls={formId}
+  >
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    >
+      <circle cx="9" cy="9" r="5"></circle>
+      <line x1="14" y1="14" x2="18" y2="18"></line>
+    </svg>
+  </button>
+
+  <form
+    id={formId}
+    class="header-search__form"
+    role="search"
+    action="/catalogue"
+    method="get"
+  >
+    <input
+      class="header-search__input"
+      name="q"
+      type="search"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-expanded="false"
+      aria-controls={listId}
+      aria-activedescendant=""
+      placeholder="Search for any game"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button
+      type="button"
+      class="header-search__close"
+      aria-label="Close search"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </form>
+
+  <ul
+    id={listId}
+    class="header-search__suggestions"
+    role="listbox"
+    aria-label="Game suggestions"
+    hidden
+  >
+  </ul>
+</div>
+
+<script>
+  import { gameHref } from "../lib/catalogue-presentation";
+  import { searchGames } from "../lib/game-search";
+  import { loadGameSearchIndex, scheduleIdle } from "../lib/game-search-index";
+  import type { GameSearchIndexItem } from "../lib/server/api/games";
+
+  interface HeaderSearchState {
+    root: HTMLElement;
+    toggle: HTMLButtonElement;
+    form: HTMLFormElement;
+    input: HTMLInputElement;
+    close: HTMLButtonElement;
+    list: HTMLUListElement;
+    index: GameSearchIndexItem[] | null;
+    indexState: "idle" | "loading" | "ready" | "error";
+    activeIndex: number;
+  }
+
+  let preloadScheduled = false;
+
+  function schedulePreload(): void {
+    if (preloadScheduled) return;
+    preloadScheduled = true;
+    scheduleIdle(() => {
+      loadGameSearchIndex().catch(() => {});
+    });
+  }
+
+  function ensureIndex(state: HeaderSearchState): void {
+    if (state.indexState === "ready" || state.indexState === "loading") return;
+    state.indexState = "loading";
+    loadGameSearchIndex()
+      .then((games) => {
+        state.index = games;
+        state.indexState = "ready";
+        render(state);
+      })
+      .catch(() => {
+        state.indexState = "error";
+        render(state);
+      });
+  }
+
+  function setExpanded(state: HeaderSearchState, open: boolean): void {
+    state.root.dataset.expanded = open ? "true" : "false";
+    state.form.inert = !open;
+    state.toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    state.input.setAttribute("aria-expanded", open ? "true" : "false");
+
+    // Desktop: hide the navigation controls (tabs + About) so the expanded
+    // search replaces the whole navigation region, leaving the search close
+    // (`×`) as the rightmost visible control.
+    // Compact: collapse the menu trigger + brand so the search fills the bar.
+    // Hidden elements are removed from layout, tab order, and the accessibility
+    // tree, so invisible links can never be reached.
+    const desktopRow = state.root.closest<HTMLElement>("[data-desktop-row]");
+    if (desktopRow) {
+      const desktopCollapsible = desktopRow.querySelector<HTMLElement>(
+        "[data-desktop-collapsible]",
+      );
+      if (desktopCollapsible) desktopCollapsible.hidden = open;
+    }
+
+    const compactCollapsible = state.root
+      .closest("[data-compact-bar]")
+      ?.querySelector<HTMLElement>("[data-compact-collapsible]");
+    if (compactCollapsible) compactCollapsible.hidden = open;
+
+    if (open) {
+      state.input.focus();
+      ensureIndex(state);
+    } else {
+      state.list.hidden = true;
+      state.toggle.focus();
+    }
+  }
+
+  function closeSuggestions(state: HeaderSearchState): void {
+    state.list.hidden = true;
+    state.input.setAttribute("aria-expanded", "false");
+    state.input.removeAttribute("aria-activedescendant");
+    state.activeIndex = -1;
+  }
+
+  function placeholderThumb(name: string): HTMLElement {
+    const span = document.createElement("span");
+    span.className = "header-search__thumb header-search__thumb--placeholder";
+    span.setAttribute("role", "img");
+    span.setAttribute("aria-label", `${name} artwork unavailable`);
+    span.innerHTML =
+      '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 20"/></svg>';
+    return span;
+  }
+
+  function render(state: HeaderSearchState): void {
+    const query = state.input.value;
+    const suggestions =
+      state.indexState === "ready" && state.index
+        ? searchGames(state.index, query)
+        : [];
+
+    state.list.textContent = "";
+
+    if (state.indexState === "error") {
+      const row = document.createElement("li");
+      row.className = "header-search__status";
+      row.textContent = "Suggestions unavailable";
+      state.list.appendChild(row);
+      state.list.hidden = false;
+      return;
+    }
+
+    state.list.hidden = suggestions.length === 0;
+
+    suggestions.forEach((game, i) => {
+      const li = document.createElement("li");
+      li.className = "header-search__option";
+      li.id = `search-option-${game.slug}`;
+      li.setAttribute("role", "option");
+      li.setAttribute(
+        "aria-selected",
+        i === state.activeIndex ? "true" : "false",
+      );
+
+      const link = document.createElement("a");
+      link.className = "header-search__link";
+      link.href = gameHref(game.slug);
+
+      const art = document.createElement("span");
+      art.className = "header-search__thumb";
+
+      const src = game.capsule_url || game.image_url;
+      if (src) {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.addEventListener(
+          "error",
+          () => {
+            art.textContent = "";
+            art.appendChild(placeholderThumb(game.name));
+          },
+          { once: true },
+        );
+        art.appendChild(img);
+      } else {
+        art.appendChild(placeholderThumb(game.name));
+      }
+
+      const name = document.createElement("span");
+      name.className = "header-search__name";
+      name.textContent = game.name;
+
+      link.appendChild(art);
+      link.appendChild(name);
+      li.appendChild(link);
+      state.list.appendChild(li);
+    });
+  }
+
+  function moveActive(state: HeaderSearchState, delta: number): void {
+    const options = state.list.querySelectorAll<HTMLLIElement>(
+      ".header-search__option",
+    );
+    if (options.length === 0) return;
+    state.activeIndex = Math.max(
+      0,
+      Math.min(options.length - 1, state.activeIndex + delta),
+    );
+    options.forEach((option, i) => {
+      option.setAttribute(
+        "aria-selected",
+        i === state.activeIndex ? "true" : "false",
+      );
+      if (i === state.activeIndex) {
+        state.input.setAttribute("aria-activedescendant", option.id);
+      }
+    });
+  }
+
+  function selectActive(state: HeaderSearchState): boolean {
+    if (state.activeIndex < 0) return false;
+    const option = state.list.querySelector<HTMLLIElement>(
+      ".header-search__option[aria-selected='true']",
+    );
+    const link = option?.querySelector<HTMLAnchorElement>("a");
+    if (link) {
+      link.click();
+      return true;
+    }
+    return false;
+  }
+
+  function init(root: HTMLElement): void {
+    const toggle = root.querySelector<HTMLButtonElement>(
+      ".header-search__toggle",
+    );
+    const form = root.querySelector<HTMLFormElement>(".header-search__form");
+    const input = root.querySelector<HTMLInputElement>(".header-search__input");
+    const close = root.querySelector<HTMLButtonElement>(
+      ".header-search__close",
+    );
+    const list = root.querySelector<HTMLUListElement>(
+      ".header-search__suggestions",
+    );
+    if (!toggle || !form || !input || !close || !list) return;
+
+    const state: HeaderSearchState = {
+      root,
+      toggle,
+      form,
+      input,
+      close,
+      list,
+      index: null,
+      indexState: "idle",
+      activeIndex: -1,
+    };
+
+    form.inert = true;
+    list.hidden = true;
+
+    toggle.addEventListener("click", () => {
+      setExpanded(state, root.dataset.expanded !== "true");
+    });
+
+    close.addEventListener("click", () => {
+      setExpanded(state, false);
+    });
+
+    input.addEventListener("input", () => {
+      state.activeIndex = -1;
+      input.removeAttribute("aria-activedescendant");
+      render(state);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        moveActive(state, 1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        moveActive(state, -1);
+      } else if (event.key === "Enter") {
+        if (selectActive(state)) {
+          event.preventDefault();
+        }
+      } else if (event.key === "Escape") {
+        if (!list.hidden) {
+          event.preventDefault();
+          closeSuggestions(state);
+        } else {
+          setExpanded(state, false);
+        }
+      }
+    });
+
+    form.addEventListener("submit", () => {
+      // Trim; whitespace-only submission should not generate a meaningless
+      // `?q=` — the catalogue route also treats empty q as no filter.
+      const q = input.value.trim();
+      if (q === "") {
+        input.value = "";
+      }
+    });
+  }
+
+  if (document.body.dataset.preloadSearch === "true") {
+    schedulePreload();
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>(
+    "[data-header-search]",
+  )) {
+    init(root);
+  }
+</script>
+
+<style is:global>
+  .header-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .header-search[data-expanded="true"] {
+    flex: 1 1 auto;
+  }
+
+  .header-search__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .header-search__toggle:hover {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
+  .header-search__toggle:focus-visible,
+  .header-search__close:focus-visible,
+  .header-search__input:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .header-search__form {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    transition:
+      max-width 0.25s ease,
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+  }
+
+  .header-search[data-expanded="true"] .header-search__form {
+    max-width: 30rem;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .header-search__input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+
+  .header-search__input::placeholder {
+    color: var(--color-dim);
+  }
+
+  .header-search__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .header-search__close:hover {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
+  .header-search__suggestions {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    margin: 0;
+    padding: 0.375rem;
+    list-style: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  .header-search__option {
+    margin: 0;
+    padding: 0;
+  }
+
+  .header-search__option[aria-selected="true"] .header-search__link {
+    background: var(--color-surface-2);
+  }
+
+  .header-search__link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .header-search__link:hover,
+  .header-search__link:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+
+  .header-search__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* ≈95% of the catalogue-card Capsule (110px wide) — a compact portrait
+       thumbnail, not a full-size poster. `aspect-ratio` keeps the 2:3 shape. */
+    width: 6.5rem;
+    aspect-ratio: 2 / 3;
+    flex: none;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-dim);
+  }
+
+  .header-search__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    object-fit: cover;
+  }
+
+  .header-search__thumb--placeholder svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .header-search__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+  }
+
+  .header-search__status {
+    padding: 0.5rem 0.625rem;
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .header-search__form {
+      transition: none;
+    }
+  }
+</style>

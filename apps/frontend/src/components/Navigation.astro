@@ -6,9 +6,15 @@ const { pathname } = Astro.url;
 interface Props {
   pathname?: string;
   class?: string;
+  /** Skip destinations whose label appears in this list (e.g. "About"). */
+  omit?: readonly string[];
 }
 
 const current = Astro.props.pathname ?? pathname;
+const omit = Astro.props.omit ?? [];
+const destinations = NAV_DESTINATIONS.filter(
+  (link) => !omit.includes(link.label),
+);
 ---
 
 <nav aria-label="Main navigation">
@@ -19,7 +25,7 @@ const current = Astro.props.pathname ?? pathname;
     ]}
   >
     {
-      NAV_DESTINATIONS.map((link) => (
+      destinations.map((link) => (
         <li>
           <a
             href={link.href}

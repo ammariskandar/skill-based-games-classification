@@ -2554,6 +2554,38 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-23 — SBGC-78 Build search experience
+
+- Added `GET /api/v1/games/search-index` — the complete compact public search
+  index (`slug`, `name`, effective `capsule_url`, effective `image_url`) built
+  on `publicly_listable()`, deterministic (`name ASC, id ASC`), effective
+  artwork resolved by SBGC-190 (Manual Capsule override wins), read-only.
+- Added a persistent Header Search: a real button next to About (desktop) that
+  expands an input over the nav tabs (nav hidden from layout/tab order/a11y),
+  plus a compact/mobile variant.  CSS transitions with reduced-motion fallback;
+  autofocus, close button, Escape, and combobox semantics (`aria-autocomplete`,
+  `aria-controls`, `aria-activedescendant`) with real anchor rows.
+- Progressive-enhancement form (`GET /catalogue?q=...`) never waits on
+  autocomplete; local `searchGames` matcher (prefix > substring, max 6) over the
+  complete index; only visible suggestions render Capsule `<img>`s (no image
+  storm); no per-keystroke network.
+- Shared loader `src/lib/game-search-index.ts`: memory cache, versioned
+  `sessionStorage` (15-minute TTL), single in-flight Promise (preload + open
+  share one request); fetched via an Astro proxy `/api/search-index` (browser
+  never calls Django directly).
+- Selective preload: Home + Catalogue opt in via `BaseLayout
+  preloadGameSearchIndex` and schedule `requestIdleCallback` after render;
+  ordinary routes stay lazy.  Future `/rankings` should enable the same flag.
+- Extended `/catalogue` with `q`: search-results heading, truthful no-results
+  state + "View full catalogue", pagination/recovery links preserve `q` via
+  `catalogueHref`, and `noindex, follow` on query pages.
+- Validation: backend search-index + catalogue/detail/homepage 69 OK; Ruff
+  check+format clean; BasedPyright 0/0/0; `manage.py check` +
+  `makemigrations --check` clean (no migration).  Frontend 283 OK; `astro
+  check` 0 errors; build/lint/format/`git diff --check` clean.
+  `docs/backend-api.md`, `docs/frontend-architecture.md`,
+  `docs/frontend-api-layer.md` updated.  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-77 human validation PASS
 
 - All three SBGC-77 catalogue correction checks passed in a real browser on
