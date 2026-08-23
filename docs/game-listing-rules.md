@@ -99,7 +99,8 @@ are not yet implemented.
 - Public listing remains safe because ``publicly_listable()`` explicitly
   requires ``content_type="game"`` — obsolete or raw values are excluded
   regardless.
-- No public listing API endpoint yet
+- Public listing API endpoint: `GET /api/v1/games/` (SBGC-76) — see
+  `docs/backend-api.md`.
 - No frontend listing page
 - No persisted Steam import workflow
 - Index tuning deferred to real query evidence
