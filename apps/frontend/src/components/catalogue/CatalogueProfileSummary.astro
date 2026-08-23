@@ -1,0 +1,80 @@
+---
+import { profileDimensions } from "../../lib/classification-presentation";
+import type { ClassificationProfile } from "../../lib/server/api/games";
+
+interface Props {
+  label: "Challenge" | "Reward";
+  profile: ClassificationProfile;
+}
+
+const { label, profile } = Astro.props;
+const dimensions = profileDimensions(profile);
+
+// Exact Micro/Macro/Mystiko values remain available to assistive technology
+// even though the visible presentation is a compact segmented bar. The visible
+// label and bar are aria-hidden to avoid duplicate announcement.
+const accessibleValues = dimensions
+  .map((dimension) => `${dimension.label} ${dimension.value} percent`)
+  .join(", ");
+---
+
+<div class="catalogue-profile">
+  <span class="catalogue-profile__label" aria-hidden="true">{label}</span>
+
+  <div class="catalogue-profile__bar" aria-hidden="true">
+    {
+      dimensions.map((dimension) => (
+        <span
+          class={`catalogue-profile__segment catalogue-profile__segment--${dimension.key}`}
+          style={`width:${dimension.value}%`}
+        />
+      ))
+    }
+  </div>
+
+  <span class="sr-only">
+    {label}: {accessibleValues}
+  </span>
+</div>
+
+<style>
+  .catalogue-profile {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .catalogue-profile__label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--color-muted);
+  }
+
+  .catalogue-profile__bar {
+    display: flex;
+    gap: 1px;
+    height: 0.25rem;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-border);
+  }
+
+  .catalogue-profile__segment {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .catalogue-profile__segment--micro {
+    background: var(--color-micro);
+  }
+
+  .catalogue-profile__segment--macro {
+    background: var(--color-macro);
+  }
+
+  .catalogue-profile__segment--mystiko {
+    background: var(--color-mystiko);
+  }
+</style>

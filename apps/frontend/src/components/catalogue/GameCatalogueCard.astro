@@ -1,0 +1,248 @@
+---
+import CatalogueProfileSummary from "./CatalogueProfileSummary.astro";
+import {
+  gameHref,
+  presentCatalogueClassification,
+} from "../../lib/catalogue-presentation";
+import { initialCoverState } from "../../lib/catalogue-cover";
+import type { GameCatalogueItem } from "../../lib/server/api/games";
+
+interface Props {
+  game: GameCatalogueItem;
+  eager?: boolean;
+  /** Original SBGC-76 API position — the stable tie-breaker for reordering. */
+  index?: number;
+}
+
+const { game, eager = false, index = 0 } = Astro.props;
+
+// The cover is the effective Capsule specifically (not the general image).
+// A missing Capsule URL means "no-cover" immediately; otherwise the card starts
+// "unknown" and the native <img> load/error resolves it at runtime.
+const capsuleUrl = (game.library_capsule_url ?? "").trim();
+const hasCapsule = capsuleUrl !== "";
+const coverState = initialCoverState(hasCapsule);
+
+// Displayed artwork falls back to the general image when no Capsule exists;
+// that general image is not a cover for sorting purposes, but a broken general
+// image must still swap to the local placeholder (no broken-image icon).
+const artworkUrl = capsuleUrl || (game.image_url ?? "").trim();
+const hasArtwork = artworkUrl !== "";
+
+const sourceLabel = game.source === "steam" ? "Steam" : "Manual";
+const classification = presentCatalogueClassification(game.classification);
+const href = gameHref(game.slug);
+---
+
+<a
+  href={href}
+  class={`catalogue-card${hasArtwork ? "" : " catalogue-card--no-artwork"}`}
+  data-catalogue-index={index}
+  data-cover-state={coverState}
+>
+  <span class="catalogue-card__art">
+    {
+      hasArtwork && (
+        <img
+          class="catalogue-card__image"
+          src={artworkUrl}
+          alt={`${game.name} box art`}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          data-catalogue-cover={hasCapsule ? "" : undefined}
+        />
+      )
+    }
+    <span
+      class="catalogue-card__placeholder"
+      role="img"
+      aria-label={`${game.name} artwork unavailable`}
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <circle cx="8.5" cy="10" r="1.5"></circle>
+        <path d="M21 15l-5-5L5 20"></path>
+      </svg>
+    </span>
+  </span>
+
+  <span class="catalogue-card__body">
+    <h2 class="catalogue-card__heading">{game.name}</h2>
+    <span class="catalogue-card__source">{sourceLabel}</span>
+  </span>
+
+  <span class="catalogue-card__classification">
+    {
+      classification.kind === "classified" ? (
+        <>
+          {classification.isStale && (
+            <span class="catalogue-card__stale">Stale result</span>
+          )}
+          <CatalogueProfileSummary
+            label="Challenge"
+            profile={classification.challenge}
+          />
+          <CatalogueProfileSummary
+            label="Reward"
+            profile={classification.reward}
+          />
+        </>
+      ) : (
+        <p class="catalogue-card__unclassified">Not yet classified</p>
+      )
+    }
+  </span>
+</a>
+
+<style>
+  .catalogue-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  /* Hover / keyboard focus: a restrained 1.15x rise that does not reflow the
+     grid (transform-based). Reduced-motion users get no enlargement. */
+  .catalogue-card:hover,
+  .catalogue-card:focus-visible {
+    transform: scale(1.15);
+    z-index: 2;
+    border-color: var(--color-border-2);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+  }
+
+  .catalogue-card:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .catalogue-card__art {
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: var(--color-surface-2);
+  }
+
+  .catalogue-card__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .catalogue-card__placeholder {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-dim);
+  }
+
+  /* A card with no artwork at all shows the placeholder from the start. */
+  .catalogue-card--no-artwork .catalogue-card__placeholder {
+    display: flex;
+  }
+
+  /* A card whose image actually failed swaps to the placeholder (set at runtime
+     via `data-failed` by the cover controller). */
+  .catalogue-card__art[data-failed] .catalogue-card__image {
+    display: none;
+  }
+
+  .catalogue-card__art[data-failed] .catalogue-card__placeholder {
+    display: flex;
+  }
+
+  .catalogue-card__placeholder svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .catalogue-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.5625rem;
+  }
+
+  .catalogue-card__heading {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    /* Reserve two lines so short and long titles occupy the same height. */
+    min-height: 2.6em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .catalogue-card__source {
+    align-self: flex-start;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+  }
+
+  .catalogue-card__classification {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+    padding: 0.4375rem 0.5625rem 0.5625rem;
+    border-top: 1px solid var(--color-border);
+    /* Reserve the fully-populated classified height (optional "Stale result"
+       tag plus Challenge and Reward bars) so unclassified cards do not
+       collapse and every card keeps an identical height. */
+    min-height: 4rem;
+  }
+
+  .catalogue-card__unclassified {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--color-muted);
+  }
+
+  .catalogue-card__stale {
+    align-self: flex-start;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--color-yellow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .catalogue-card {
+      transition: none;
+    }
+
+    .catalogue-card:hover,
+    .catalogue-card:focus-visible {
+      transform: none;
+    }
+  }
+</style>

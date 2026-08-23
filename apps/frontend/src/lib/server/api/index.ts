@@ -3,12 +3,17 @@ export { apiError } from "./errors";
 export {
   BackendApiError,
   GameNotFoundError,
+  getGameCatalogue,
   getGameDetail,
   getHomepageCarousel,
 } from "./games";
 export type {
   ClassificationProfile,
   ClassificationRegime,
+  GameCatalogueClassification,
+  GameCatalogueItem,
+  GameCatalogueQuery,
+  GameCatalogueResponse,
   GameDetailGame,
   GameDetailResponse,
   GameFinalClassification,

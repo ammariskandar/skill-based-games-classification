@@ -22,7 +22,7 @@ apps/frontend/src/lib/server/api/
 ├── client.ts    # fetch-based transport, getJSON, postJSON
 ├── errors.ts    # Normalized error factory
 ├── types.ts     # ApiResult<T>, ApiError, request options
-├── games.ts     # getGameDetail + game-detail DTO types + error classes
+├── games.ts     # getGameDetail / getHomepageCarousel / getGameCatalogue + DTO types + error classes
 └── index.ts     # Public re-exports
 ```
 
@@ -119,7 +119,7 @@ TypeScript types describe expected shapes at compile time. They do **not** valid
 
 ## Endpoint-Specific Types
 
-`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure).
+`games.ts` defines the SBGC-71 game-detail DTO types (`GameDetailResponse`, `GameDetailGame`, `GameFinalClassification`, `ClassificationProfile`, `GameSource`, `ClassificationRegime`) and two typed errors: `GameNotFoundError` (Django 404) and `BackendApiError` (any other failure). It also defines the SBGC-189 homepage carousel boundary (`getHomepageCarousel`, `HomepageCarouselCard`) and the SBGC-76 catalogue boundary (`getGameCatalogue`, `GameCatalogueResponse`, `GameCatalogueItem`, `GameCatalogueClassification`, `GameCatalogueQuery`).
 
 ## Route Integration
 
@@ -129,6 +129,14 @@ The `/games/[slug]` route (SBGC-72) imports `getGameDetail()` from this layer:
 - Catch every other failure (`BackendApiError` — timeout, network, Django 5xx, malformed/empty response) and render a friendly service-failure state with a real 500 status. Never a 404, and never a 200 "error page".
 - Unhandled render errors fall through to the native `500.astro` error page.
 - Never display raw `ApiError` content that may contain backend context directly in public UI.
+
+### Catalogue route (SBGC-77)
+
+The `/catalogue` route imports `getGameCatalogue()` from this layer:
+- Call it from Astro frontmatter (server-side) with only `{ page }` — the page-size default (24) stays with Django; `q`/`source`/`classified` are supported by SBGC-76 but surfaced in later tickets.
+- The endpoint is mounted at `/api/v1/games/` **with the trailing slash**; the client path preserves it.
+- Any failure (timeout, network, Django 5xx, malformed/empty response) throws `BackendApiError` and renders a real HTTP 500 service-failure state — never an empty-catalogue state, never a 200 error page.
+- A valid-but-empty result (`count === 0`) and a valid page-beyond-the-end (`count > 0`, `results: []`) are ordinary 200 responses rendered as distinct truthful empty states, not errors.
 
 ### Game-detail state matrix (SBGC-74)
 

@@ -64,6 +64,41 @@ export interface HomepageCarouselResponse {
   games: HomepageCarouselCard[];
 }
 
+/** Narrow public classification summary for a catalogue item (SBGC-76). */
+export interface GameCatalogueClassification {
+  status: string;
+  challenge: ClassificationProfile | null;
+  reward: ClassificationProfile | null;
+  confidence_level: number | null;
+  confidence_label: string | null;
+  is_stale: boolean;
+}
+
+/** One public catalogue item with effective artwork (SBGC-76). */
+export interface GameCatalogueItem {
+  slug: string;
+  name: string;
+  source: GameSource;
+  image_url: string;
+  library_capsule_url: string | null;
+  classification: GameCatalogueClassification | null;
+}
+
+/** Paginated public Game catalogue envelope (SBGC-76). */
+export interface GameCatalogueResponse {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: GameCatalogueItem[];
+}
+
+/** Catalogue request inputs. `q`/`source`/`classified` are SBGC-78/79. */
+export interface GameCatalogueQuery {
+  page?: number;
+  pageSize?: number;
+}
+
 /** The slug does not resolve to a publicly-listed Game (SBGC-71 404). */
 export class GameNotFoundError extends Error {
   constructor(readonly slug: string) {
@@ -110,6 +145,29 @@ export async function getHomepageCarousel(): Promise<HomepageCarouselCard[]> {
   );
   if (result.ok) {
     if ("data" in result) return result.data.games;
+    throw new BackendApiError("Unexpected empty response from the API.");
+  }
+  throw new BackendApiError(result.error.message, result);
+}
+
+/**
+ * Fetch one page of the public Game catalogue from Django (SBGC-76).
+ *
+ * Django owns eligibility, search, filtering, ordering, and pagination; the
+ * frontend only passes the page/page_size it wants to render.
+ */
+export async function getGameCatalogue(
+  query: GameCatalogueQuery = {},
+): Promise<GameCatalogueResponse> {
+  const params: Record<string, string> = {};
+  if (query.page !== undefined) params.page = String(query.page);
+  if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
+
+  const result = await getJSON<GameCatalogueResponse>("/api/v1/games/", {
+    params,
+  });
+  if (result.ok) {
+    if ("data" in result) return result.data;
     throw new BackendApiError("Unexpected empty response from the API.");
   }
   throw new BackendApiError(result.error.message, result);

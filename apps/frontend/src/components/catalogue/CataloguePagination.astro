@@ -1,0 +1,99 @@
+---
+import { cataloguePageHref } from "../../lib/catalogue-presentation";
+
+interface Props {
+  page: number;
+  totalPages: number;
+}
+
+const { page, totalPages } = Astro.props;
+const hasPrevious = page > 1;
+const hasNext = page < totalPages;
+---
+
+<nav class="catalogue-pagination" aria-label="Catalogue pagination">
+  {
+    hasPrevious ? (
+      <a class="catalogue-pagination__link" href={cataloguePageHref(page - 1)}>
+        Previous
+      </a>
+    ) : (
+      <span
+        class="catalogue-pagination__link catalogue-pagination__link--disabled"
+        aria-disabled="true"
+      >
+        Previous
+      </span>
+    )
+  }
+
+  <span class="catalogue-pagination__status">
+    Page <span aria-current="page">{page}</span> of {totalPages}
+  </span>
+
+  {
+    hasNext ? (
+      <a class="catalogue-pagination__link" href={cataloguePageHref(page + 1)}>
+        Next
+      </a>
+    ) : (
+      <span
+        class="catalogue-pagination__link catalogue-pagination__link--disabled"
+        aria-disabled="true"
+      >
+        Next
+      </span>
+    )
+  }
+</nav>
+
+<style>
+  .catalogue-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+  }
+
+  .catalogue-pagination__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .catalogue-pagination__link:hover {
+    border-color: var(--color-border-2);
+    background: var(--color-surface-2);
+  }
+
+  .catalogue-pagination__link:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  .catalogue-pagination__link--disabled {
+    color: var(--color-dim);
+    cursor: not-allowed;
+    background: transparent;
+  }
+
+  .catalogue-pagination__link--disabled:hover {
+    border-color: var(--color-border);
+    background: transparent;
+  }
+
+  .catalogue-pagination__status {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

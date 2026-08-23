@@ -227,6 +227,76 @@ state (hero and Hades copy still render); a Hades failure omits the sample
 artwork while keeping the explanatory copy. Neither failure turns the homepage
 into a 500.
 
+### Game Catalogue (SBGC-77)
+
+The catalogue (`/catalogue`) is **SSR/on-demand** (`export const prerender = false`) — it
+depends on live persisted Game data, so each request reads the current page from
+Django rather than building statically.  `catalogue.astro` fetches one page of
+the SBGC-76 catalogue DTO server-side via `getGameCatalogue({ page })` (page size
+left to Django's 24 default) and renders the result as plain HTML — no client
+router, no client-side fetch, no React/Vue/Svelte.
+
+- **Card** — `GameCatalogueCard.astro` renders one item as a single full-card
+  `<a href="/games/{slug}">` (no nested links, no JS click handler): effective
+  artwork (Capsule first, general image fallback, then a local SVG placeholder),
+  the title, a compact Steam/Manual source label, and a compact Challenge/Reward
+  summary or "Not yet classified".  Artwork is an ordinary `<img>` — the SBGC-184
+  WebSR enhancer is **not** mounted here, so up to 24 cards stay cheap.
+  All cards share an identical outer width and height: the title reserves two
+  lines (`min-height`) and the classification area reserves the fully-populated
+  height so unclassified/no-cover cards do not collapse the grid.
+- **Dense presentation** — catalogue cards are much smaller than the homepage
+  carousel, then enlarged ~15% from that corrected size.  The grid uses
+  `repeat(auto-fill, minmax(7rem, 1fr))` so many titles fit per row on wide
+  screens while still collapsing to a usable multi-column grid on mobile.  The
+  homepage carousel sizing is untouched.  Hover/keyboard focus enlarges the
+  whole card by ~1.15× via `transform: scale(1.15)` (no reflow); reduced-motion
+  users get no enlargement.
+- **Compact classification** — `CatalogueProfileSummary.astro` renders each
+  profile as a small segmented bar plus an accessible label; exact
+  "Micro X · Macro Y · Mystiko Z" values move to a visually-hidden text node
+  (`sr-only`) rather than six visible rows.  The locked Micro/Macro/Mystiko
+  order and `--color-micro`/`--color-macro`/`--color-mystiko` tokens are
+  unchanged; colours are never the sole semantic carrier.  `classification:
+  null` (or missing scores) renders "Not yet classified", never a fake 0/0/0.
+- **Pagination** — `CataloguePagination.astro` emits ordinary anchor links
+  (`/catalogue?page=N`; page 1 is the bare route).  Previous/Next are omitted or
+  `aria-disabled` at the bounds; a page beyond the last renders a truthful empty
+  state with a "Back to first page" link (never a fabricated page).
+- **States** — a Django/service failure renders a real HTTP 500 error state
+  (never "0 games"); an empty catalogue renders a distinct empty state.
+- **No client loading state** — the initial render is SSR, so the browser's
+  normal navigation is the loading state; there is no spinner/skeleton/hydration.
+- **Canonical URL** — the shared `BaseLayout` canonical helper accepts only a
+  pathname (it strips query strings), so every pagination page canonicalizes to
+  the base `/catalogue` URL.  This is an accepted SBGC-77 limitation; a
+  query-aware canonical helper is deferred.
+
+### Cover state and broken-cover ordering (SBGC-77 correction)
+
+Each card has a source-agnostic `data-cover-state` of `unknown` / `has-cover` /
+`no-cover`.  A card with no effective Capsule URL is `no-cover` immediately (no
+remote request is attempted); otherwise it starts `unknown` and the browser's
+native `<img>` `load`/`error` events are the **only** remote-health signal — no
+`fetch`, no `HEAD`, no `new Image()` probe, so there is no duplicate image
+request.  Cached images are settled via `img.complete`/`img.naturalWidth`.
+
+Confirmed `no-cover` cards are stably partitioned to the end of the **current
+rendered page** (working/unknown first, coverless last, each group preserving
+original API order) using a `requestAnimationFrame`-batched reorder.  This is a
+runtime enhancement only: it does **not** implement global cross-page
+"show games without a cover last" sorting, which belongs to SBGC-79 and must
+run before pagination in the backend.  A failed Capsule swaps to the local
+placeholder (no broken-image icon); the card is still treated as coverless for
+sorting even when a general-image fallback is shown.  A broken **general image**
+(no Capsule) also swaps to the placeholder via the same native `load`/`error`
+handling, so a Manual Game with a dead image URL never shows a broken-image
+icon.
+
+SBGC-78 (search UI + `q`) and SBGC-79 (source/classification filters + sort
+controls) are intentionally absent — no search input, no filter/sort controls,
+and no disabled placeholders.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.
