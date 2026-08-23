@@ -24,6 +24,7 @@ from datetime import date, datetime
 
 from api.errors import STANDARD_ERROR_RESPONSES, ApiException
 from api.schemas import ApiErrorResponse, ApiRequestSchema
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema, Status
 from ninja.errors import AuthorizationError
@@ -331,8 +332,8 @@ def _public_game_detail(game: Game) -> PublicGameDetail:
         release_date=game.release_date,
         developer=game.developer,
         image_url=game.display_image_url,
-        library_hero_url=game.library_hero_url or None,
-        library_capsule_url=game.library_capsule_url or None,
+        library_hero_url=game.display_hero_url or None,
+        library_capsule_url=game.display_capsule_url or None,
         metadata_updated_at=game.updated_at,
     )
 
@@ -463,7 +464,7 @@ def homepage_carousel(request):
     games = list(
         Game.objects.publicly_listable()
         .steam()
-        .exclude(library_capsule_url="")
+        .exclude(Q(library_capsule_url="") & Q(manual_capsule_url=""))
         .order_by("?")[:10]
     )
     return HomepageCarouselResponse(
@@ -471,7 +472,7 @@ def homepage_carousel(request):
             HomepageCarouselCard(
                 slug=game.slug,
                 name=game.name,
-                library_capsule_url=game.library_capsule_url,
+                library_capsule_url=game.display_capsule_url,
             )
             for game in games
         ]

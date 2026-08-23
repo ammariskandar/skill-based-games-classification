@@ -64,7 +64,35 @@ class HomepageCarouselEligibilityTests(TestCase):
     def test_excludes_games_without_capsule(self):
         _game("no-capsule", library_capsule_url="")
         r = _get()
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["games"], [])
+
+    def test_manual_capsule_override_makes_steam_game_eligible(self):
+        _game(
+            "manual-capsule-game",
+            library_capsule_url="",
+            manual_capsule_url="https://cdn.example.com/manual-capsule.jpg",
+        )
+        r = _get()
+        self.assertEqual(r.status_code, 200)
+        cards = r.json()["games"]
+        self.assertEqual(len(cards), 1)
+        self.assertEqual(
+            cards[0]["library_capsule_url"],
+            "https://cdn.example.com/manual-capsule.jpg",
+        )
+
+    def test_manual_capsule_override_wins_over_steam_capsule(self):
+        _game(
+            "override-game",
+            library_capsule_url="https://cdn.example.com/steam-capsule.jpg",
+            manual_capsule_url="https://cdn.example.com/manual-capsule.jpg",
+        )
+        r = _get()
+        card = r.json()["games"][0]
+        self.assertEqual(
+            card["library_capsule_url"], "https://cdn.example.com/manual-capsule.jpg"
+        )
 
     def test_result_count_bounded_at_ten(self):
         for i in range(15):

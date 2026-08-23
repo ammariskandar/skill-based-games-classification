@@ -104,28 +104,37 @@ class GameAdmin(admin.ModelAdmin):
         "release_date",
         "developer",
         "description",
-        "manual_image_url",
         "manual_website_url",
     )
 
+    MANUAL_IMAGE_FIELDS = (
+        "manual_image_url",
+        "manual_hero_url",
+        "manual_capsule_url",
+    )
+
     def get_fieldsets(self, request, obj=None):
-        """Expose the per-field "Resume Steam sync" controls for Steam Games.
+        """Expose the per-field "Resume Steam sync" controls for Steam Games
+        and the source-aware manual image fields (SBGC-188 / SBGC-190).
 
         Manual Games and new records see plain editable metadata with no
-        Steam ownership controls (SBGC-188).
+        Steam ownership controls.
         """
+        is_steam = obj is not None and obj.is_steam
         editable = list(self.EDITABLE_METADATA_FIELDS)
-        if obj is not None and obj.is_steam:
-            editable = []
+        if is_steam:
             resume_for = {
                 "release_date": "resume_release_date",
                 "developer": "resume_developer",
                 "description": "resume_description",
             }
+            editable = []
             for field in self.EDITABLE_METADATA_FIELDS:
                 editable.append(field)
                 if field in resume_for:
                     editable.append(resume_for[field])
+
+        image_fieldset_label = "Manual Image Overrides" if is_steam else "Images"
 
         return [
             (
@@ -142,6 +151,7 @@ class GameAdmin(admin.ModelAdmin):
             ),
             ("Publication", {"fields": ("listing_status",)}),
             ("Editable metadata", {"fields": tuple(editable)}),
+            (image_fieldset_label, {"fields": self.MANUAL_IMAGE_FIELDS}),
             (
                 "Steam metadata",
                 {

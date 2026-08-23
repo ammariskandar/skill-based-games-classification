@@ -65,6 +65,22 @@ class GameForm(forms.ModelForm):
         if instance is None or not instance.is_steam:
             for name in self.STEAM_RESUME_FIELDS:
                 self.fields.pop(name, None)
+            # Manual Games have no Steam source underneath — no override wording.
+            self.fields["manual_image_url"].help_text = "Optional general/header image."
+            self.fields["manual_hero_url"].help_text = "Optional wide background image."
+            self.fields[
+                "manual_capsule_url"
+            ].help_text = "Optional portrait key-art image."
+        else:
+            self.fields[
+                "manual_image_url"
+            ].help_text = "Overrides the Steam Header image when supplied."
+            self.fields[
+                "manual_hero_url"
+            ].help_text = "Overrides the Steam Library Hero when supplied."
+            self.fields[
+                "manual_capsule_url"
+            ].help_text = "Overrides the Steam Library Capsule when supplied."
 
     class Meta:
         model = Game
@@ -79,6 +95,8 @@ class GameForm(forms.ModelForm):
             "developer",
             "description",
             "manual_image_url",
+            "manual_hero_url",
+            "manual_capsule_url",
             "manual_website_url",
             "steam_image_url",
             "last_steam_refresh_at",

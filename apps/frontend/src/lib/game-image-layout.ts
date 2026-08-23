@@ -25,7 +25,7 @@ export interface GameImageLayout {
   foregroundSrc: string;
   foregroundRole: ForegroundRole;
   foregroundContained: boolean;
-  /** True only for the Steam "ideal" Hero + Capsule composition. */
+  /** True only for the "ideal" Hero + Capsule composition (any source). */
   showVisualizationSlot: boolean;
 }
 
@@ -39,53 +39,48 @@ export interface GameImageLayoutInput {
 /**
  * Resolve the presentation layout for one Game image.
  *
- * Steam fallback ladder:
- *   A) Hero + Capsule  → Hero background + Capsule foreground + slot
- *   B) Hero only       → Hero background + contained header fallback
- *   C) Capsule only    → header background + Capsule foreground
- *   D) neither         → header-only full-frame
- *   E) no image        → placeholder
+ * Source-agnostic fallback ladder (SBGC-190): Steam and Manual Games share the
+ * same effective Hero + Capsule + Image composition.
  *
- * Manual Games always use a single full-frame operator image.
+ *   A) Hero + Capsule  → Hero background + Capsule foreground + slot
+ *   B) Hero only       → Hero background + contained image foreground
+ *   C) Capsule only    → image background + Capsule foreground
+ *   D) neither         → image-only full-frame
+ *   E) no image        → placeholder
  */
 export function resolveGameImageLayout(
   input: GameImageLayoutInput,
 ): GameImageLayout {
-  const isSteam = input.source === "steam";
   const hero = (input.libraryHeroUrl ?? "").trim();
   const capsule = (input.libraryCapsuleUrl ?? "").trim();
-  const header = input.src.trim();
+  const image = input.src.trim();
+  const generalRole: ForegroundRole =
+    input.source === "steam" ? "header" : "manual-primary";
 
   let backgroundSrc = "";
   let foregroundSrc = "";
-  let foregroundRole: ForegroundRole = "header";
+  let foregroundRole: ForegroundRole = generalRole;
   let foregroundContained = false;
 
-  if (isSteam) {
-    if (hero !== "") {
-      backgroundSrc = hero;
-      if (capsule !== "") {
-        foregroundSrc = capsule;
-        foregroundRole = "library-capsule";
-        foregroundContained = true;
-      } else if (header !== "") {
-        foregroundSrc = header;
-        foregroundRole = "header";
-        foregroundContained = true;
-      }
-    } else if (capsule !== "") {
-      backgroundSrc = header;
+  if (hero !== "") {
+    backgroundSrc = hero;
+    if (capsule !== "") {
       foregroundSrc = capsule;
       foregroundRole = "library-capsule";
       foregroundContained = true;
-    } else if (header !== "") {
-      foregroundSrc = header;
-      foregroundRole = "header";
-      foregroundContained = false;
+    } else if (image !== "") {
+      foregroundSrc = image;
+      foregroundRole = generalRole;
+      foregroundContained = true;
     }
-  } else {
-    foregroundSrc = header;
-    foregroundRole = "manual-primary";
+  } else if (capsule !== "") {
+    backgroundSrc = image;
+    foregroundSrc = capsule;
+    foregroundRole = "library-capsule";
+    foregroundContained = true;
+  } else if (image !== "") {
+    foregroundSrc = image;
+    foregroundRole = generalRole;
     foregroundContained = false;
   }
 
@@ -99,6 +94,6 @@ export function resolveGameImageLayout(
     foregroundSrc,
     foregroundRole,
     foregroundContained,
-    showVisualizationSlot: isSteam && hero !== "" && capsule !== "",
+    showVisualizationSlot: hero !== "" && capsule !== "",
   };
 }

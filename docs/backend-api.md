@@ -128,11 +128,22 @@ A hidden record is indistinguishable from a missing one publicly.
 The `game` object exposes the public subset: `id`, `slug`, `name`, `source`
 (`steam` / `manual`), `external_id` (Steam App ID, or `null` for Manual),
 `content_type`, `description` (Steam-populated for Steam Games unless
-overridden in Admin; manual for Manual Games), `release_date`, `developer`, `image_url` (canonical `display_image_url`), and
-`metadata_updated_at`.  Steam Games additionally expose the optional
-`library_hero_url` and `library_capsule_url` (both `null` for Manual Games and
-for Steam content without Library artwork) for the SBGC-184 layered Game-detail
-presentation.
+overridden in Admin; manual for Manual Games), `release_date`, `developer`,
+`image_url`, and `metadata_updated_at`.
+
+The three artwork fields are **effective** values (SBGC-190) — Django resolves
+manual-override precedence, so the frontend never does `manual ?? steam`:
+
+- `image_url` — effective general/header image (`manual_image_url` overrides
+  `steam_image_url` for Steam Games);
+- `library_hero_url` — effective Hero (`manual_hero_url` overrides the Steam
+  Library Hero);
+- `library_capsule_url` — effective Capsule (`manual_capsule_url` overrides the
+  Steam Library Capsule).
+
+These are `null` when no effective value exists (for example, a Manual Game
+with no manual Hero/Capsule, or a Steam Game with neither Steam nor manual
+Library artwork).
 
 ### Classification payload
 
