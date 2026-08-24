@@ -106,11 +106,27 @@ export interface GameSearchIndexResponse {
   games: GameSearchIndexItem[];
 }
 
-/** Catalogue request inputs. `q` is used by SBGC-78; `source`/`classified` are SBGC-79. */
+/** Primary catalogue sort identifiers (SBGC-79). */
+export type CatalogueSort =
+  "name_asc" | "name_desc" | "recent" | "micro" | "mystiko" | "macro";
+
+/** Explicit Challenge/Reward profile for score sort and dominant filter. */
+export type CatalogueProfile = "challenge" | "reward";
+
+/** Dominant skill category for the dominant filter. */
+export type CatalogueDominant = "micro" | "mystiko" | "macro";
+
+/** Catalogue request inputs (SBGC-76/78/79). */
 export interface GameCatalogueQuery {
   q?: string;
   page?: number;
   pageSize?: number;
+  source?: GameSource;
+  classified?: boolean;
+  sort?: CatalogueSort;
+  profile?: CatalogueProfile;
+  dominant?: CatalogueDominant;
+  coverlessLast?: boolean;
 }
 
 /** The slug does not resolve to a publicly-listed Game (SBGC-71 404). */
@@ -177,6 +193,15 @@ export async function getGameCatalogue(
   if (query.q !== undefined && query.q !== "") params.q = query.q;
   if (query.page !== undefined) params.page = String(query.page);
   if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
+  if (query.source !== undefined) params.source = query.source;
+  if (query.classified !== undefined) {
+    params.classified = query.classified ? "true" : "false";
+  }
+  if (query.sort !== undefined) params.sort = query.sort;
+  if (query.profile !== undefined) params.profile = query.profile;
+  if (query.dominant !== undefined) params.dominant = query.dominant;
+  // Only send the explicit unchecked state; the backend defaults to true.
+  if (query.coverlessLast === false) params.coverless_last = "false";
 
   const result = await getJSON<GameCatalogueResponse>("/api/v1/games/", {
     params,
