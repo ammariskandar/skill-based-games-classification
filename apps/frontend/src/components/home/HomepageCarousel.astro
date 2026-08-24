@@ -100,10 +100,8 @@ const hasGames = resolved.length > 0;
 
 <script>
   import {
-    assignCarouselEmphasis,
     carouselCloneCount,
     normalizeCarouselScroll,
-    visibleCardsForViewport,
   } from "../../lib/homepage-carousel";
 
   (() => {
@@ -165,11 +163,6 @@ const hasGames = resolved.length > 0;
       track.scrollLeft = buffer * step();
     }
 
-    // All cards — canonical and clones — participate in positional emphasis.
-    const cards = Array.from(
-      track.querySelectorAll<HTMLElement>("[data-carousel-card]"),
-    );
-
     // Vertically center the arrows on the Capsule region (the media), not the
     // taller media + title card. `top: 50%` in CSS is the pre-JS fallback.
     const measureArrows = () => {
@@ -180,23 +173,6 @@ const hasGames = resolved.length > 0;
       const top = `${media.offsetHeight / 2}px`;
       prev.style.top = top;
       next.style.top = top;
-    };
-
-    const applyEmphasis = () => {
-      const visibleCount = visibleCardsForViewport(window.innerWidth);
-      const trackRect = track.getBoundingClientRect();
-      const viewportCenter = trackRect.left + trackRect.width / 2;
-
-      const distances = cards.map((card) => {
-        const rect = card.getBoundingClientRect();
-        const center = rect.left + rect.width / 2;
-        return Math.round(Math.abs(center - viewportCenter));
-      });
-
-      const emphasis = assignCarouselEmphasis(distances, visibleCount);
-      cards.forEach((card, index) => {
-        card.dataset.emphasis = emphasis[index];
-      });
     };
 
     // Silently re-enter the canonical region when the scroll crosses a clone
@@ -224,20 +200,6 @@ const hasGames = resolved.length > 0;
       next.disabled = !canScroll;
     };
 
-    const refresh = () => {
-      updateArrows();
-      applyEmphasis();
-    };
-
-    let rafId = 0;
-    const schedule = () => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
-        refresh();
-      });
-    };
-
     // The loop wrap must not run while a smooth scroll is animating: writing
     // `scrollLeft` mid-animation would cancel the `scrollBy` and could leave the
     // carousel pinned on the same card. Debounce it so `normalize` only fires
@@ -246,10 +208,7 @@ const hasGames = resolved.length > 0;
     let settleId = 0;
     const scheduleSettle = () => {
       window.clearTimeout(settleId);
-      settleId = window.setTimeout(() => {
-        normalize();
-        refresh();
-      }, 120);
+      settleId = window.setTimeout(normalize, 120);
     };
 
     prev.addEventListener("click", () => {
@@ -265,27 +224,20 @@ const hasGames = resolved.length > 0;
       });
     });
 
-    track.addEventListener(
-      "scroll",
-      () => {
-        schedule();
-        scheduleSettle();
-      },
-      { passive: true },
-    );
+    track.addEventListener("scroll", scheduleSettle, { passive: true });
     window.addEventListener("resize", () => {
       measureArrows();
-      schedule();
+      updateArrows();
       scheduleSettle();
     });
     window.addEventListener("load", () => {
       measureArrows();
-      schedule();
+      updateArrows();
       scheduleSettle();
     });
 
     measureArrows();
-    refresh();
+    updateArrows();
     normalize();
   })();
 </script>
@@ -345,8 +297,6 @@ const hasGames = resolved.length > 0;
     color: var(--color-text);
     border-radius: var(--radius-md);
     transition: transform 0.2s ease;
-    /* Positional dim base; `data-emphasis` overrides this per card. */
-    --carousel-dim: 1;
   }
 
   @media (min-width: 40rem) {
@@ -359,14 +309,6 @@ const hasGames = resolved.length > 0;
     .homepage-carousel__card {
       flex-basis: calc((100% - 4rem) / 5);
     }
-  }
-
-  .homepage-carousel__card[data-emphasis="intermediate"] {
-    --carousel-dim: 0.82;
-  }
-
-  .homepage-carousel__card[data-emphasis="darkest"] {
-    --carousel-dim: 0.62;
   }
 
   .homepage-carousel__card:hover,
@@ -394,15 +336,14 @@ const hasGames = resolved.length > 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: brightness(var(--carousel-dim));
+    filter: brightness(0.65);
     transition: filter 0.25s ease;
   }
 
-  /* Hover/focus lift composes on top of the positional dim rather than
-     replacing it, so the center stays the base full-brightness focal card. */
+  /* Hover and keyboard focus reveal full-brightness artwork. */
   .homepage-carousel__card:hover .homepage-carousel__media img,
   .homepage-carousel__card:focus-visible .homepage-carousel__media img {
-    filter: brightness(var(--carousel-dim)) brightness(1.12);
+    filter: brightness(1);
   }
 
   .homepage-carousel__title {
