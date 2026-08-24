@@ -1,0 +1,35 @@
+---
+import "../../styles/global.css";
+
+// Dev-only test fixture (SBGC-194). Renders the same responsive grid used by
+// `/games/[slug]` with a representative artwork element so the Playwright suite
+// can measure the artwork column's intrinsic (rem-based) sizing without
+// Django/Steam data. Not linked from any production page.
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game-detail grid fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter py-8">
+      <div
+        class="mt-8 grid gap-8 lg:grid-cols-[44rem_minmax(0,1fr)] lg:items-start"
+      >
+        <div
+          class="aspect-video w-full rounded-lg border border-border bg-surface"
+          data-artwork
+        >
+        </div>
+        <div class="space-y-8" data-info>
+          <div class="h-40 rounded-lg bg-surface"></div>
+          <div class="h-64 rounded-lg bg-surface"></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

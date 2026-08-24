@@ -41,10 +41,13 @@ const hasGames = resolved.length > 0;
               href={`/games/${game.slug}`}
             >
               <span class="homepage-carousel__media">
+                {/* Eager, not lazy: the clone loop reveals off-screen cards on
+                    wrap, so deferring fetch caused a visible pop-in when
+                    scrolling backward quickly. */}
                 <img
                   src={game.library_capsule_url}
                   alt={`${game.name} box art`}
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                 />
               </span>
@@ -134,20 +137,50 @@ const hasGames = resolved.length > 0;
       return card.getBoundingClientRect().width + gap;
     };
 
-    // Build the loop for lists of 2+ cards.  Clones are `cloneNode` copies of
-    // the rendered cards, so they keep the Astro scope attributes; they are
-    // marked non-interactive so the canonical links stay the only real
-    // destinations.
+    // Clones are `cloneNode` copies of the rendered cards, so they keep the
+    // Astro scope attributes. They stay clickable/hoverable for pointer users
+    // (the same `<a href>`), but are removed from the keyboard tab order and the
+    // accessibility tree so canonical links remain the single announced/tabbable
+    // destination. `inert` was too strong — it also killed hover and click.
+    const cloneCard = (card: HTMLElement): HTMLElement => {
+      const clone = card.cloneNode(true) as HTMLElement;
+      clone.setAttribute("aria-hidden", "true");
+      clone.tabIndex = -1;
+      clone.dataset.carouselClone = "true";
+      return clone;
+    };
+
     let buffer = 0;
-    if (length >= 2) {
-      buffer = carouselCloneCount(length);
-      const cloneCard = (card: HTMLElement): HTMLElement => {
-        const clone = card.cloneNode(true) as HTMLElement;
-        clone.setAttribute("aria-hidden", "true");
-        clone.inert = true;
-        clone.dataset.carouselClone = "true";
-        return clone;
-      };
+
+    // (Re)build the clone buffer. With intrinsic `rem` card sizing the number
+    // of cards visible at once — and therefore the minimum clone buffer —
+    // depends on the current viewport, so it is measured here rather than
+    // hardcoded to a responsive tier. On a resize rebuild the visible logical
+    // card is preserved rather than snapping back to Game 1.
+    const buildLoop = (preservePosition: boolean): void => {
+      const previousIndex =
+        preservePosition && buffer > 0
+          ? Math.max(
+              0,
+              Math.min(
+                length - 1,
+                Math.round(track.scrollLeft / step()) - buffer,
+              ),
+            )
+          : 0;
+
+      for (const el of track.querySelectorAll<HTMLElement>(
+        "[data-carousel-clone]",
+      )) {
+        el.remove();
+      }
+      if (length < 2) {
+        buffer = 0;
+        return;
+      }
+
+      const visibleCount = Math.ceil(track.clientWidth / step());
+      buffer = carouselCloneCount(length, visibleCount);
 
       // Tail clones (the last `buffer` cards) prepend before the first
       // canonical card; head clones (the first `buffer` cards) append after the
@@ -159,8 +192,14 @@ const hasGames = resolved.length > 0;
         track.appendChild(cloneCard(card));
       }
 
-      // Start inside the canonical region (after the tail clones).
-      track.scrollLeft = buffer * step();
+      // Start inside the canonical region (after the tail clones). On a resize
+      // rebuild, restore the previously visible logical card.
+      const startIndex = preservePosition ? buffer + previousIndex : buffer;
+      track.scrollLeft = startIndex * step();
+    };
+
+    if (length >= 2) {
+      buildLoop(false);
     }
 
     // Vertically center the arrows on the Capsule region (the media), not the
@@ -228,6 +267,9 @@ const hasGames = resolved.length > 0;
     window.addEventListener("resize", () => {
       measureArrows();
       updateArrows();
+      if (length >= 2) {
+        buildLoop(true);
+      }
       scheduleSettle();
     });
     window.addEventListener("load", () => {
@@ -289,7 +331,10 @@ const hasGames = resolved.length > 0;
 
   .homepage-carousel__card {
     scroll-snap-align: start;
-    flex: 0 0 calc((100% - 1rem) / 2);
+    /* Intrinsic `rem` width so browser zoom scales the Capsules naturally
+       (SBGC-194). A viewport-fraction basis would keep cards at roughly the
+       same physical size under zoom. ~11rem ≈ two cards on a phone. */
+    flex: 0 0 11rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -301,13 +346,7 @@ const hasGames = resolved.length > 0;
 
   @media (min-width: 40rem) {
     .homepage-carousel__card {
-      flex-basis: calc((100% - 2rem) / 3);
-    }
-  }
-
-  @media (min-width: 64rem) {
-    .homepage-carousel__card {
-      flex-basis: calc((100% - 4rem) / 5);
+      flex-basis: 15rem;
     }
   }
 

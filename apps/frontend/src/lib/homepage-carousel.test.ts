@@ -91,8 +91,21 @@ describe("homepage carousel infinite-loop helpers (SBGC-191)", () => {
     expect(carouselCloneCount(2)).toBe(2);
   });
 
+  it("grows the buffer to cover the actual visible card count", () => {
+    // At a wide viewport more than 5 cards can be visible at once, so the
+    // buffer must grow beyond the fixed responsive-tier default.
+    expect(carouselCloneCount(10, 8)).toBe(8);
+    expect(carouselCloneCount(10, 3)).toBe(6);
+  });
+
+  it("caps the buffer at the list length", () => {
+    expect(carouselCloneCount(10, 20)).toBe(10);
+    expect(carouselCloneCount(4, 20)).toBe(4);
+  });
+
   it("keeps the clone count bounded for large lists", () => {
     expect(carouselCloneCount(100)).toBe(6);
+    expect(carouselCloneCount(100, 8)).toBe(8);
   });
 
   it("does not clone for single-card or empty lists", () => {

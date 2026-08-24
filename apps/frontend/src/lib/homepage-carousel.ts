@@ -79,13 +79,19 @@ export function previousCarouselIndex(index: number, length: number): number {
 /**
  * Number of boundary clones per side for a list of `length` cards.
  *
+ * `visibleCount` is the number of cards that can be visible at once at the
+ * current viewport. The loop needs at least that many clones on each side so
+ * the wrap stays seamless (the viewport is fully covered before the track's
+ * hard end). With intrinsic (`rem`) card sizing the visible count is no longer
+ * a fixed responsive tier, so it is supplied by the caller rather than assumed.
+ *
  * `0` for single-card (or empty) lists — no fake infinite movement.  Bounded
- * by `CAROUSEL_LOOP_BUFFER` so small lists never explode into dozens of
- * duplicates.
+ * by `length` so small lists never explode into dozens of duplicates.
  */
-export function carouselCloneCount(length: number): number {
+export function carouselCloneCount(length: number, visibleCount = 0): number {
   if (length <= 1) return 0;
-  return Math.min(CAROUSEL_LOOP_BUFFER, length);
+  const required = Math.max(CAROUSEL_LOOP_BUFFER, visibleCount);
+  return Math.min(required, length);
 }
 
 /**
