@@ -455,6 +455,55 @@ global).
 Do **not** make `<style is:global>` the default solution — prefer the narrowest
 safe boundary, including a selective `:global()` where appropriate.
 
+## Browser Interaction and Motion Architecture
+
+MyGameDNA stays Astro-first and framework-free: server-rendered HTML, scoped
+CSS, and small vanilla-JS islands for interaction. That philosophy extends to
+motion and runtime behavior.
+
+Principles:
+
+- **Astro/static rendering remains preferred.** Add interactivity only with a
+  concrete reason (`client:load`, `client:idle`, `client:visible`). Never
+  hydrate merely because hydration is available.
+- **Vanilla JS remains preferred for small interaction.** No carousel/gesture
+  library unless a Jira task explicitly introduces one.
+- **The real browser is the source of truth for browser timing.** Smooth
+  scrolling, scroll snapping, animation, gestures, runtime layout, and frame
+  timing must be validated in a real browser, not inferred from pure/synthetic
+  tests. See `.agents/skills/browser-interaction-engineering/SKILL.md`.
+- **One state owner where possible.** Enumerate every system that can mutate a
+  runtime state (native scroll, `scrollBy`, scroll snap, direct `scrollLeft`,
+  transforms, DOM reordering) and give each phase of interaction a single
+  authoritative owner. Do not assume browser features compose safely just
+  because each API is individually valid.
+- **High-frequency handlers avoid disruptive structural mutations.** `scroll`,
+  `pointermove`, `resize`, and rAF loops should do measurement and lightweight
+  visual state only. Structural work (teleporting `scrollLeft`, clone
+  normalization, reindexing, layout reset) belongs in the settled phase —
+  `scrollend`, `transitionend`, `animationend`, `pointerup`, or a justified
+  fallback. Continuous measurement and structural normalization are different
+  classes of work and must not share one handler.
+- **Semantic events over magic delays.** Prefer completion events to timing
+  guesses. If a debounce is required, isolate and document its lifecycle reason.
+- **Browser geometry may be fractional.** `getBoundingClientRect()`,
+  `scrollLeft`, and `calc()` can produce subpixel/DPR-dependent values. Use
+  documented tolerances where the semantic condition is approximate; an epsilon
+  is not automatically a root-cause fix.
+- **F2/F3 features require browser validation.** Risk classification lives in
+  `skills.md`; browser-state-dependent (F2) and motion/timing (F3) work needs
+  real-browser evidence, and F3 additionally needs a strategy comparison.
+- **Accessibility must survive runtime DOM duplication/reordering.** If an
+  interaction clones or reorders cards (e.g. an infinite carousel), clones must
+  not become duplicate tab stops or announcements; canonical elements remain
+  the real interactive destinations.
+- **Reduced motion is a first-class path.** `prefers-reduced-motion` handling is
+  not an afterthought; test it separately, never let it silently become the only
+  tested path.
+- **Astro scoping still applies to runtime-created/moved DOM.** The rules above
+  in "Astro CSS ownership and scoping" hold for any node the interaction creates
+  or reparents at runtime.
+
 ## API Layer
 
 Astro server routes consume Django through a shared server-side API client at `src/lib/server/api/`. The API layer owns base URL (`DJANGO_API_URL`), timeout (8s default), transport, and normalized error handling (`ApiResult<T>` with discriminated ok/failure). Ordinary browser code does not call Django directly by default. SBGC-72 added the game-detail boundary (`getGameDetail`, typed DTOs, `GameNotFoundError`/`BackendApiError`). See [`docs/frontend-api-layer.md`](frontend-api-layer.md).

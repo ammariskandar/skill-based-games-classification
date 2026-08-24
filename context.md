@@ -486,6 +486,13 @@ The user selects favourite games. Django calculates skill-profile similarity and
 11. Degrade gracefully when external services fail.
 12. Keep editorial and community viewpoints transparent.
 13. Keep Challenge and Reward profiles separate in data, APIs, visuals, rankings, and methodology.
+14. Browser interactions dependent on scrolling, animation, gestures, runtime
+    geometry, or timing must be validated against a real browser using the actual
+    runtime mechanism; pure/synthetic tests supplement but cannot substitute for
+    that evidence. F3 motion/timing features require a strategy comparison and
+    real-browser regression coverage. If the same interaction defect survives two
+    correction attempts, code changes stop for architecture and validation-harness
+    reassessment before further patches.
 
 ---
 

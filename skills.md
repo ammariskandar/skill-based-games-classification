@@ -45,7 +45,8 @@ Engineering / reasoning:
 - pre-merge/audit review → **code-review**;
 - domain concept/model design → **domain-modeling**;
 - module/service architecture → **codebase-design**;
-- external technical uncertainty → **research**.
+- external technical uncertainty → **research**;
+- browser scrolling/animation/gestures/runtime geometry/timing-sensitive frontend → **browser-interaction-engineering**.
 
 Continuity / documentation:
 
@@ -555,6 +556,54 @@ Public game pages and catalogue pages should have intentional:
 - not-found status behaviour.
 
 Do not create duplicate public URLs for the same game without canonicalisation or redirects.
+
+### 8.8 Frontend interaction risk classification and browser ground truth
+
+Every frontend ticket MUST be classified **before implementation** using the
+F0–F3 risk ladder (full definitions live in
+`.agents/skills/browser-interaction-engineering/SKILL.md`):
+
+- **F0 — Static presentation** (markup, typography, static cards, responsive
+  CSS, SSR display, static metadata). Unit/static tests + `astro check` + build
+  + visual review. Real-browser automation optional.
+- **F1 — Deterministic interaction** (modal/disclosure, form visibility,
+  conditional fields, simple click state, `localStorage` preference, explicit
+  class toggling). Unit/helper tests + focused browser smoke where visual
+  behavior matters.
+- **F2 — Browser-state-dependent interaction** (`scrollLeft`/`scrollTop`,
+  runtime DOM measurement, `ResizeObserver`/`IntersectionObserver`, image
+  `load`/`error`, geometry-dependent positioning). **Real-browser runtime
+  validation required.**
+- **F3 — Motion / timing / gesture / compositor-sensitive** (infinite carousel,
+  smooth scroll, scroll snap, drag/swipe, pointer movement, animation
+  synchronization, transition-dependent state, rAF loops). Requires architecture
+  strategy comparison + real-browser prototype + real-browser automated
+  regression + human visual validation where perceptual.
+
+SBGC-191 is the canonical F3 ticket. Do not treat F3 work like ordinary markup.
+
+**Hard gates (non-negotiable):**
+
+1. **Browser ground truth** — when correctness depends on animation, scrolling,
+   snapping, gestures, runtime layout, frame timing, rendering, or compositor
+   state, the real browser is the runtime source of truth. Pure/synthetic tools
+   (helper tests, jsdom, static HTML, manual `scrollLeft` mutation, virtual-time
+   Chrome, mocked scroll events) supplement but cannot substitute.
+2. **Harness-validity gate** — before trusting an automated harness for an
+   F2/F3 bug, prove it actually executes the mechanism under test. If
+   `human = FAIL` but `automation = PASS`, assume the harness may be invalid and
+   validate it **before** further production patches.
+3. **Two-strike stop-loss** — if the same user-visible interaction defect
+   survives **two correction attempts**, stop. No third substantially similar
+   patch without: freezing changes, recording the exact failure, validating the
+   harness, enumerating all state owners, challenging the architecture, and
+   comparing at least two alternative strategies (see the specialist skill).
+4. **F3 strategy gate** — compare at least two viable implementation strategies
+   before substantial coding.
+
+Load `.agents/skills/browser-interaction-engineering/SKILL.md` for the full
+manual (state ownership, continuous-vs-settled events, geometry/subpixel rules,
+debugging protocol, Playwright usage, completion checklist).
 
 ---
 

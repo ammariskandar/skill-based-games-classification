@@ -9,6 +9,12 @@ dist/
 .astro/
 .vercel/
 
+# Playwright (real-browser interaction tests)
+apps/frontend/test-results/
+apps/frontend/playwright-report/
+apps/frontend/blob-report/
+.playwright/
+
 # Python
 .venv/
 venv/
