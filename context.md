@@ -2554,6 +2554,23 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-24 — SBGC-79 record sorting and filtering validation
+
+- Human validation PASS for the full SBGC-79 sorting/filtering implementation:
+  primary sorts (A–Z, Z–A, recently added, Challenge/Reward Micro/Macro/Mystiko),
+  Source/Classification/dominant-category filters, the cover-last checkbox
+  (checked by default, composable with every sort, persists checked/unchecked),
+  pagination/reset preservation, and the conditional Profile control.
+- Final filter UI: a compact funnel **Filters** button (collapsed by default)
+  whose expanded/collapsed state persists in `localStorage`
+  (`mygamedna:catalogue-filters-expanded:v1`); the Profile dropdown appears only
+  for Micro/Macro/Mystiko sorts (defaulting to Challenge) and is normalized away
+  for other sorts.
+- Documented the Astro CSS-ownership/scoping guardrail in
+  `docs/frontend-architecture.md` and `MyGameDNA_ASSISTANT_OPERATING_RULES.md`
+  (classify local/child/runtime/global DOM; verify generated `data-astro-*`
+  scope before redesigning CSS; avoid reflexive wholesale `is:global`).
+
 ## 2026-08-24 — SBGC-79 Basic sorting and filtering
 
 - Extended the catalogue query with primary sorts (`name_asc`/`name_desc`/
