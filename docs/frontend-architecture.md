@@ -264,15 +264,19 @@ client router, no client-side fetch, no React/Vue/Svelte.
   (`/catalogue?page=N`; page 1 is the bare route).  Previous/Next are omitted or
   `aria-disabled` at the bounds; a page beyond the last renders a truthful empty
   state with a "Back to first page" link (never a fabricated page).
-- **Filter/sort controls (SBGC-79)** — `CatalogueFilters.astro` renders a compact
-  native GET form above the grid: Source, Classification, Profile, Sort,
-  Dominant category, and a "Show games without a cover as last on the list"
-  checkbox.  It is a plain `<form method="get">` of `<select>`/`<input
-  type="checkbox">`/`<button>` — no custom select, no SPA router.  The checkbox
-  is checked by default and submits an explicit `coverless_last=false` when
-  unchecked (hidden input + checkbox, checked-value-wins).  Applying starts from
-  page 1; pagination preserves the full query state via `catalogueHref`; Reset
-  preserves `q` and restores every default.
+- **Filter/sort controls (SBGC-79)** — a compact funnel **Filters** button
+  (collapsed by default) reveals a card with Source, Classification, Profile,
+  Sort, Dominant category, and a "Show games without a cover as last on the
+  list" checkbox — a plain `<form method="get">` of `<select>`/`<input
+  type="checkbox">`/`<button>` (no custom select, no SPA router).  The
+  disclosure (expanded/collapsed) persists in `localStorage`
+  (`mygamedna:catalogue-filters-expanded:v1`) across refresh/navigation.  The
+  **Profile** dropdown appears only for Micro/Macro/Mystiko sorts (defaulting to
+  Challenge) and is normalized away for other sorts.  The checkbox is checked by
+  default and submits an explicit `coverless_last=false` when unchecked (hidden
+  input + checkbox, checked-value-wins).  Applying starts from page 1;
+  pagination preserves the full query state via `catalogueHref`; Reset preserves
+  `q` and restores every default.
 - **Filtered-empty state** — when result-reducing filters (source/
   classification/dominant) exclude everything, the page shows "No games match the
   current filters." with a Reset-filters link that preserves `q`.
@@ -416,6 +420,40 @@ Standing MyGameDNA frontend rules (SBGC-73 onwards):
 - **TypeScript** — strict; no `any`/`as any`/`@ts-ignore` unless objectively unavoidable and documented.
 - **Slots** — named/default slots for genuinely flexible wrappers only; prefer typed props otherwise.
 - **Environment safety** — server-only env vars stay server-only; never leak backend/env settings into client JS; do not add env vars unless required.
+
+## Astro CSS ownership and scoping
+
+Before writing or debugging CSS, classify the target DOM, because Astro scoped
+styles only reach the nodes the current component renders directly:
+
+| DOM kind | Owner | Correct styling boundary |
+| --- | --- | --- |
+| **Local static DOM** | rendered directly by the current `.astro` component | scoped `<style>` |
+| **Child-component DOM** | owned/rendered by another Astro component | style at the owner boundary, or use explicitly bounded cross-boundary styling |
+| **Runtime DOM** | created by vanilla JS / `document.createElement` / dynamically inserted | do **not** assume Astro scope attributes exist; use a narrowly bounded `:global()` or intentional global styling where required |
+| **Application-global DOM** | truly site-wide | global stylesheet / intentionally global CSS |
+
+### Recurring failure mode
+
+Astro rewrites scoped selectors with generated `data-astro-*` scope attributes.
+The source CSS can look correct while the compiled selector cannot match the
+runtime node.  Dynamically-created nodes and child-owned markup are the common
+danger areas in MyGameDNA.  A known example is the SBGC-78 header autocomplete:
+its suggestion rows are built with `document.createElement` from browser
+TypeScript, so a component-scoped selector never attaches the generated scope
+attribute to those nodes and the thumbnail/row styles silently fail to apply.
+
+### Debugging preflight
+
+1. Identify **who owns** the target DOM (this component, a child, runtime JS, or
+global).
+2. Inspect the **rendered DOM** in the browser.
+3. Inspect whether the selector expects a generated `data-astro-*` scope attribute.
+4. Verify the target node actually carries the expected scope.
+5. Only then redesign the CSS/layout.
+
+Do **not** make `<style is:global>` the default solution — prefer the narrowest
+safe boundary, including a selective `:global()` where appropriate.
 
 ## API Layer
 

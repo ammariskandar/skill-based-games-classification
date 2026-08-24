@@ -80,6 +80,11 @@ const DOMINANT_IDS: readonly string[] = ["micro", "mystiko", "macro"];
 export const DEFAULT_CATALOGUE_SORT: CatalogueSort = "name_asc";
 export const DEFAULT_CATALOGUE_PROFILE: CatalogueProfile = "challenge";
 
+/** Whether a sort is a skill-score sort (Micro / Mystiko / Macro). */
+export function isSkillSort(sort: CatalogueSort): boolean {
+  return sort === "micro" || sort === "mystiko" || sort === "macro";
+}
+
 /** Normalized catalogue query state (defaults applied, invalid values dropped). */
 export interface CatalogueQueryState {
   q: string;
@@ -135,13 +140,18 @@ export function parseCatalogueQuery(
   // state — the exact mirror of the backend's
   // `"true" in request.GET.getlist("coverless_last")` contract.
   const coverValues = searchParams.getAll("coverless_last");
+  const sort = normalizeSort(searchParams.get("sort"));
   return {
     q: (searchParams.get("q") ?? "").trim(),
     page: parsePageParam(searchParams.get("page")),
     source: normalizeSource(searchParams.get("source")),
     classified: parseOptionalBool(searchParams.get("classified")),
-    sort: normalizeSort(searchParams.get("sort")),
-    profile: normalizeProfile(searchParams.get("profile")),
+    sort,
+    // Profile only matters for skill sorts; drop any irrelevant `profile`
+    // (e.g. `profile=reward` with `sort=name_asc`) back to the default.
+    profile: isSkillSort(sort)
+      ? normalizeProfile(searchParams.get("profile"))
+      : DEFAULT_CATALOGUE_PROFILE,
     dominant: normalizeDominant(searchParams.get("dominant")),
     coverlessLast: coverValues.length === 0 || coverValues.includes("true"),
   };

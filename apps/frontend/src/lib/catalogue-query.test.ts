@@ -12,6 +12,7 @@ import {
   catalogueHref,
   catalogueHrefFromState,
   catalogueNeedsNoindex,
+  isSkillSort,
   parseCatalogueQuery,
   type CatalogueQueryState,
 } from "./catalogue-presentation";
@@ -19,6 +20,35 @@ import {
 function parse(raw: string): CatalogueQueryState {
   return parseCatalogueQuery(new URLSearchParams(raw));
 }
+
+describe("isSkillSort", () => {
+  it("is true only for Micro/Mystiko/Macro", () => {
+    expect(isSkillSort("micro")).toBe(true);
+    expect(isSkillSort("mystiko")).toBe(true);
+    expect(isSkillSort("macro")).toBe(true);
+    expect(isSkillSort("name_asc")).toBe(false);
+    expect(isSkillSort("name_desc")).toBe(false);
+    expect(isSkillSort("recent")).toBe(false);
+  });
+});
+
+describe("profile normalization for non-skill sorts", () => {
+  it("drops an irrelevant profile for a non-skill sort", () => {
+    expect(parse("sort=name_asc&profile=reward").profile).toBe("challenge");
+    expect(parse("sort=name_desc&profile=reward").profile).toBe("challenge");
+    expect(parse("sort=recent&profile=reward").profile).toBe("challenge");
+  });
+
+  it("preserves the profile for a skill sort", () => {
+    expect(parse("sort=micro&profile=reward").profile).toBe("reward");
+    expect(parse("sort=mystiko&profile=challenge").profile).toBe("challenge");
+    expect(parse("sort=macro&profile=reward").profile).toBe("reward");
+  });
+
+  it("defaults the profile to challenge for a skill sort without one", () => {
+    expect(parse("sort=micro").profile).toBe("challenge");
+  });
+});
 
 describe("parseCatalogueQuery", () => {
   it("applies all defaults for an empty query", () => {
