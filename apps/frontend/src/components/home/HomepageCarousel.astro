@@ -101,6 +101,8 @@ const hasGames = resolved.length > 0;
 <script>
   import {
     assignCarouselEmphasis,
+    carouselCloneCount,
+    normalizeCarouselScroll,
     visibleCardsForViewport,
   } from "../../lib/homepage-carousel";
 
@@ -116,19 +118,57 @@ const hasGames = resolved.length > 0;
 
     const viewport = track.parentElement;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const cards = Array.from(
+
+    // Canonical cards are the real rendered Games; boundary clones are added
+    // around them to make the list circular.
+    const canonicalCards = Array.from(
       track.querySelectorAll<HTMLElement>("[data-carousel-card]"),
     );
+    const length = canonicalCards.length;
 
     const step = (): number => {
-      const card = cards[0];
-      if (!card) return Math.floor(track.clientWidth * 0.8);
+      const card = canonicalCards[0];
+      if (!card) return 0;
       const gap =
         parseFloat(
           getComputedStyle(track).columnGap || getComputedStyle(track).gap,
         ) || 0;
       return card.getBoundingClientRect().width + gap;
     };
+
+    // Build the loop for lists of 2+ cards.  Clones are `cloneNode` copies of
+    // the rendered cards, so they keep the Astro scope attributes; they are
+    // marked non-interactive so the canonical links stay the only real
+    // destinations.
+    let buffer = 0;
+    if (length >= 2) {
+      buffer = carouselCloneCount(length);
+      const cloneCard = (card: HTMLElement): HTMLElement => {
+        const clone = card.cloneNode(true) as HTMLElement;
+        clone.setAttribute("aria-hidden", "true");
+        clone.inert = true;
+        clone.dataset.carouselClone = "true";
+        return clone;
+      };
+
+      // Tail clones (the last `buffer` cards) prepend before the first
+      // canonical card; head clones (the first `buffer` cards) append after the
+      // last canonical card.
+      for (const card of canonicalCards.slice(length - buffer)) {
+        track.insertBefore(cloneCard(card), canonicalCards[0]);
+      }
+      for (const card of canonicalCards.slice(0, buffer)) {
+        track.appendChild(cloneCard(card));
+      }
+
+      // Start inside the canonical region (after the tail clones).
+      track.scrollLeft = buffer * step();
+    }
+
+    // All cards — canonical and clones — participate in positional emphasis.
+    const cards = Array.from(
+      track.querySelectorAll<HTMLElement>("[data-carousel-card]"),
+    );
 
     // Vertically center the arrows on the Capsule region (the media), not the
     // taller media + title card. `top: 50%` in CSS is the pre-JS fallback.
@@ -159,10 +199,29 @@ const hasGames = resolved.length > 0;
       });
     };
 
+    // Silently re-enter the canonical region when the scroll crosses a clone
+    // boundary, preserving the apparent visual position.  The reposition is
+    // instant (no animation) and idempotent.
+    const normalize = () => {
+      if (length < 2 || buffer === 0) return;
+      const current = track.scrollLeft;
+      const normalized = normalizeCarouselScroll(
+        current,
+        length,
+        buffer,
+        step(),
+      );
+      if (normalized !== current) {
+        track.scrollLeft = normalized;
+      }
+    };
+
+    // Infinite loop: arrows stay usable whenever the track can scroll; the only
+    // degenerate case is a track that cannot scroll at all (no overflow).
     const updateArrows = () => {
-      prev.disabled = track.scrollLeft <= 1;
-      next.disabled =
-        track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+      const canScroll = track.scrollWidth > track.clientWidth + 1;
+      prev.disabled = !canScroll;
+      next.disabled = !canScroll;
     };
 
     const refresh = () => {
@@ -179,6 +238,20 @@ const hasGames = resolved.length > 0;
       });
     };
 
+    // The loop wrap must not run while a smooth scroll is animating: writing
+    // `scrollLeft` mid-animation would cancel the `scrollBy` and could leave the
+    // carousel pinned on the same card. Debounce it so `normalize` only fires
+    // after the scroll has settled. The wrap itself stays an instant, invisible
+    // reposition (a clone and its canonical twin show the same cards).
+    let settleId = 0;
+    const scheduleSettle = () => {
+      window.clearTimeout(settleId);
+      settleId = window.setTimeout(() => {
+        normalize();
+        refresh();
+      }, 120);
+    };
+
     prev.addEventListener("click", () => {
       track.scrollBy({
         left: -step(),
@@ -192,18 +265,28 @@ const hasGames = resolved.length > 0;
       });
     });
 
-    track.addEventListener("scroll", schedule, { passive: true });
+    track.addEventListener(
+      "scroll",
+      () => {
+        schedule();
+        scheduleSettle();
+      },
+      { passive: true },
+    );
     window.addEventListener("resize", () => {
       measureArrows();
       schedule();
+      scheduleSettle();
     });
     window.addEventListener("load", () => {
       measureArrows();
       schedule();
+      scheduleSettle();
     });
 
     measureArrows();
     refresh();
+    normalize();
   })();
 </script>
 
