@@ -227,14 +227,15 @@ state (hero and Hades copy still render); a Hades failure omits the sample
 artwork while keeping the explanatory copy. Neither failure turns the homepage
 into a 500.
 
-### Game Catalogue (SBGC-77)
+### Game Catalogue (SBGC-77/SBGC-79)
 
 The catalogue (`/catalogue`) is **SSR/on-demand** (`export const prerender = false`) — it
 depends on live persisted Game data, so each request reads the current page from
-Django rather than building statically.  `catalogue.astro` fetches one page of
-the SBGC-76 catalogue DTO server-side via `getGameCatalogue({ page })` (page size
-left to Django's 24 default) and renders the result as plain HTML — no client
-router, no client-side fetch, no React/Vue/Svelte.
+Django rather than building statically.  `catalogue.astro` parses the full query
+state (`parseCatalogueQuery` in `src/lib/catalogue-presentation.ts`), fetches one
+page of the SBGC-76/SBGC-79 catalogue DTO server-side via `getGameCatalogue(...)`
+(page size left to Django's 24 default) and renders the result as plain HTML — no
+client router, no client-side fetch, no React/Vue/Svelte.
 
 - **Card** — `GameCatalogueCard.astro` renders one item as a single full-card
   `<a href="/games/{slug}">` (no nested links, no JS click handler): effective
@@ -263,6 +264,22 @@ router, no client-side fetch, no React/Vue/Svelte.
   (`/catalogue?page=N`; page 1 is the bare route).  Previous/Next are omitted or
   `aria-disabled` at the bounds; a page beyond the last renders a truthful empty
   state with a "Back to first page" link (never a fabricated page).
+- **Filter/sort controls (SBGC-79)** — a compact funnel **Filters** button
+  (collapsed by default) reveals a card with Source, Classification, Profile,
+  Sort, Dominant category, and a "Show games without a cover as last on the
+  list" checkbox — a plain `<form method="get">` of `<select>`/`<input
+  type="checkbox">`/`<button>` (no custom select, no SPA router).  The
+  disclosure (expanded/collapsed) persists in `localStorage`
+  (`mygamedna:catalogue-filters-expanded:v1`) across refresh/navigation.  The
+  **Profile** dropdown appears only for Micro/Macro/Mystiko sorts (defaulting to
+  Challenge) and is normalized away for other sorts.  The checkbox is checked by
+  default and submits an explicit `coverless_last=false` when unchecked (hidden
+  input + checkbox, checked-value-wins).  Applying starts from page 1;
+  pagination preserves the full query state via `catalogueHref`; Reset preserves
+  `q` and restores every default.
+- **Filtered-empty state** — when result-reducing filters (source/
+  classification/dominant) exclude everything, the page shows "No games match the
+  current filters." with a Reset-filters link that preserves `q`.
 - **States** — a Django/service failure renders a real HTTP 500 error state
   (never "0 games"); an empty catalogue renders a distinct empty state.
 - **No client loading state** — the initial render is SSR, so the browser's
@@ -272,7 +289,7 @@ router, no client-side fetch, no React/Vue/Svelte.
   the base `/catalogue` URL.  This is an accepted SBGC-77 limitation; a
   query-aware canonical helper is deferred.
 
-### Cover state and broken-cover ordering (SBGC-77 correction)
+### Cover state and broken-cover ordering (SBGC-77 correction + SBGC-79)
 
 Each card has a source-agnostic `data-cover-state` of `unknown` / `has-cover` /
 `no-cover`.  A card with no effective Capsule URL is `no-cover` immediately (no
@@ -281,17 +298,25 @@ native `<img>` `load`/`error` events are the **only** remote-health signal — n
 `fetch`, no `HEAD`, no `new Image()` probe, so there is no duplicate image
 request.  Cached images are settled via `img.complete`/`img.naturalWidth`.
 
-Confirmed `no-cover` cards are stably partitioned to the end of the **current
-rendered page** (working/unknown first, coverless last, each group preserving
-original API order) using a `requestAnimationFrame`-batched reorder.  This is a
-runtime enhancement only: it does **not** implement global cross-page
-"show games without a cover last" sorting, which belongs to SBGC-79 and must
-run before pagination in the backend.  A failed Capsule swaps to the local
-placeholder (no broken-image icon); the card is still treated as coverless for
-sorting even when a general-image fallback is shown.  A broken **general image**
-(no Capsule) also swaps to the placeholder via the same native `load`/`error`
-handling, so a Manual Game with a dead image URL never shows a broken-image
-icon.
+Cover handling now has two truthful layers (SBGC-79):
+
+- **Server / global (before pagination)** — Django partitions Games without an
+  effective Capsule URL after Games with one, using SBGC-190 effective-Capsule
+  semantics, whenever the cover-last checkbox is checked (default).  This is
+  globally correct across pages and composes with every primary sort.
+- **Browser / runtime (current page)** — a Capsule URL may exist yet fail
+  remotely; Django does not know that during the request.  The native `<img>`
+  still marks such a card `no-cover` and swaps in the local placeholder.  When
+  the checkbox is checked, confirmed broken-Capsule cards are re-partitioned to
+  the end of the current page (working/unknown first, coverless last, original
+  API order).  When the checkbox is unchecked, failure detection and the
+  placeholder still occur, but no reorder happens.
+
+A failed Capsule swaps to the local placeholder (no broken-image icon); the card
+is still treated as coverless for sorting even when a general-image fallback is
+shown.  A broken **general image** (no Capsule) also swaps to the placeholder via
+the same native `load`/`error` handling, so a Manual Game with a dead image URL
+never shows a broken-image icon.
 
 ### Header Search (SBGC-78)
 
@@ -329,8 +354,9 @@ never waits on autocomplete.
   there is no image-download storm.  Index failure keeps the input usable (Enter
   still submits) and shows a restrained "Suggestions unavailable".
 
-SBGC-79 (source/classification filters + sort controls) remains intentionally
-absent — no filter/sort controls and no disabled placeholders.
+SBGC-79 added the catalogue filter/sort controls (see "Game Catalogue"); the
+Header Search itself is unchanged and only consumes/extends `/catalogue` URL
+state via `catalogueHref`.
 
 ### SEO Metadata
 
@@ -394,6 +420,40 @@ Standing MyGameDNA frontend rules (SBGC-73 onwards):
 - **TypeScript** — strict; no `any`/`as any`/`@ts-ignore` unless objectively unavoidable and documented.
 - **Slots** — named/default slots for genuinely flexible wrappers only; prefer typed props otherwise.
 - **Environment safety** — server-only env vars stay server-only; never leak backend/env settings into client JS; do not add env vars unless required.
+
+## Astro CSS ownership and scoping
+
+Before writing or debugging CSS, classify the target DOM, because Astro scoped
+styles only reach the nodes the current component renders directly:
+
+| DOM kind | Owner | Correct styling boundary |
+| --- | --- | --- |
+| **Local static DOM** | rendered directly by the current `.astro` component | scoped `<style>` |
+| **Child-component DOM** | owned/rendered by another Astro component | style at the owner boundary, or use explicitly bounded cross-boundary styling |
+| **Runtime DOM** | created by vanilla JS / `document.createElement` / dynamically inserted | do **not** assume Astro scope attributes exist; use a narrowly bounded `:global()` or intentional global styling where required |
+| **Application-global DOM** | truly site-wide | global stylesheet / intentionally global CSS |
+
+### Recurring failure mode
+
+Astro rewrites scoped selectors with generated `data-astro-*` scope attributes.
+The source CSS can look correct while the compiled selector cannot match the
+runtime node.  Dynamically-created nodes and child-owned markup are the common
+danger areas in MyGameDNA.  A known example is the SBGC-78 header autocomplete:
+its suggestion rows are built with `document.createElement` from browser
+TypeScript, so a component-scoped selector never attaches the generated scope
+attribute to those nodes and the thumbnail/row styles silently fail to apply.
+
+### Debugging preflight
+
+1. Identify **who owns** the target DOM (this component, a child, runtime JS, or
+global).
+2. Inspect the **rendered DOM** in the browser.
+3. Inspect whether the selector expects a generated `data-astro-*` scope attribute.
+4. Verify the target node actually carries the expected scope.
+5. Only then redesign the CSS/layout.
+
+Do **not** make `<style is:global>` the default solution — prefer the narrowest
+safe boundary, including a selective `:global()` where appropriate.
 
 ## API Layer
 

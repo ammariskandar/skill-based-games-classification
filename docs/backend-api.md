@@ -108,6 +108,10 @@ soundtrack, unknown) are excluded from both `results` and `count`.
 | `q` | string | — | case-insensitive `name` substring search (trimmed; whitespace-only is no filter) |
 | `source` | `steam` / `manual` | — | restrict to one source; omitted means both |
 | `classified` | boolean | — | `true` = has a current published READY classification; `false` = no displayable scores |
+| `sort` | `name_asc` / `name_desc` / `recent` / `micro` / `mystiko` / `macro` | `name_asc` | primary sort (see below) |
+| `profile` | `challenge` / `reward` | `challenge` | explicit profile for `micro`/`mystiko`/`macro` sort and the `dominant` filter |
+| `dominant` | `micro` / `mystiko` / `macro` | — | dominant-category filter against the published current READY snapshot (strictly-highest wins; top-score ties match none) |
+| `coverless_last` | boolean | `true` | outer partition before pagination: Games without an effective Capsule go after Games with one |
 | `page` | positive int | `1` | 1-based page number |
 | `page_size` | positive int | `24` | results per page (max `100`) |
 
@@ -117,6 +121,39 @@ READY result retained after an engine/system failure); every other state —
 `NO_SNAPSHOT`, a current non-READY domain status, etc. — is `classified=false`.
 This matches the published-read semantics of the Game-detail endpoint and is
 driven by persisted state, never by a recalculation.
+
+### Primary sort
+
+`sort` selects the primary order; deterministic tie-breakers always apply.
+
+- `name_asc` (default) → `name ASC, id ASC`.
+- `name_desc` → `name DESC, id ASC`.
+- `recent` → `created_at DESC, name ASC, id ASC` (`recent` keys off
+  `Game.created_at`, **not** `release_date`).
+- `micro` / `mystiko` / `macro` → the selected `profile`'s published current
+  READY unified-integer score, highest first; Games without a usable READY
+  score sort after scored Games, then `name ASC, id ASC`.
+
+Score sorting reads `ClassificationSnapshot.unified_integer_{challenge,reward}`
+(canonical order `[micro, macro, mystiko]`) from the current READY snapshot only
+— never the editorial submission tables, never raw Method 1/2/3 results.
+
+### Dominant-category filter
+
+`dominant` filters against the selected `profile`'s published current READY
+snapshot.  Dominance is **strictly highest** (the canonical
+`classifications.skills.dominant_skill_category` rule): a top-score tie has no
+dominant category and therefore matches no `micro`/`mystiko`/`macro` filter.
+
+### Cover-last partition
+
+When `coverless_last=true` (the default), Games with an effective Capsule URL
+(Steam manual-override-else-Library-Capsule; Manual manual Capsule — SBGC-190)
+come before Games without one, **before** the count/pagination slice, so the
+policy is globally correct across pages.  This outer partition is applied on top
+of whichever primary sort is selected.  A general/header image is **not** a
+Capsule.  `coverless_last=false` removes the partition and lets the primary sort
+govern the whole population.
 
 ### Response envelope
 
@@ -147,11 +184,14 @@ driven by persisted state, never by a recalculation.
 ```
 
 `count` is the filtered count; `total_pages` is `0` when `count` is `0`.
-Ordering is deterministic (`name ASC, id ASC`).  A page beyond the final page
-returns `200` with `results: []`.  `image_url` and `library_capsule_url` are
-effective values (manual override first, Steam fallback — SBGC-190); the
-frontend never resolves override precedence.  `classification` is `null` when
-the Game has no displayable scores (no fake zero vectors).
+Ordering is deterministic: the default primary sort is `name ASC, id ASC`;
+skill sorts order by the published READY score descending with unscored Games
+last; and `coverless_last=true` applies a cover-last outer partition before
+pagination.  A page beyond the final page returns `200` with `results: []`.
+`image_url` and `library_capsule_url` are effective values (manual override
+first, Steam fallback — SBGC-190); the frontend never resolves override
+precedence.  `classification` is `null` when the Game has no displayable scores
+(no fake zero vectors).
 
 ## Public Game Detail — `GET /api/v1/games/{slug}`
 
@@ -435,10 +475,9 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **Game detail and homepage reads delivered; catalogue/search/ranking reads deferred.** SBGC-71
-  added `GET /api/v1/games/{slug}` and SBGC-189 added
-  `GET /api/v1/games/homepage`. Catalogue, search, and ranking read
-  endpoints remain deferred to SBGC-10/SBGC-11.
+- **Rankings reads deferred.** Game detail (SBGC-71), homepage (SBGC-189),
+  catalogue (SBGC-76/79), and search index (SBGC-78) reads are delivered.
+  The rankings read endpoints remain deferred to SBGC-11.
 - **No global authentication backend.** Session auth is opt-in per operation
   via `auth=django_auth`; there is no project-wide auth middleware.
 - **Method-not-allowed returns HTML.** Documented framework limitation

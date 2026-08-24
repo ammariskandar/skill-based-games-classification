@@ -2554,6 +2554,57 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-24 — SBGC-79 record sorting and filtering validation
+
+- Human validation PASS for the full SBGC-79 sorting/filtering implementation:
+  primary sorts (A–Z, Z–A, recently added, Challenge/Reward Micro/Macro/Mystiko),
+  Source/Classification/dominant-category filters, the cover-last checkbox
+  (checked by default, composable with every sort, persists checked/unchecked),
+  pagination/reset preservation, and the conditional Profile control.
+- Final filter UI: a compact funnel **Filters** button (collapsed by default)
+  whose expanded/collapsed state persists in `localStorage`
+  (`mygamedna:catalogue-filters-expanded:v1`); the Profile dropdown appears only
+  for Micro/Macro/Mystiko sorts (defaulting to Challenge) and is normalized away
+  for other sorts.
+- Documented the Astro CSS-ownership/scoping guardrail in
+  `docs/frontend-architecture.md` and `MyGameDNA_ASSISTANT_OPERATING_RULES.md`
+  (classify local/child/runtime/global DOM; verify generated `data-astro-*`
+  scope before redesigning CSS; avoid reflexive wholesale `is:global`).
+
+## 2026-08-24 — SBGC-79 Basic sorting and filtering
+
+- Extended the catalogue query with primary sorts (`name_asc`/`name_desc`/
+  `recent`/`micro`/`mystiko`/`macro`), an explicit Challenge/Reward `profile`,
+  a dominant-category filter, and a `coverless_last` outer partition — all in
+  `games/services/catalogue.py`, database-side and before pagination, on top of
+  `publicly_listable()`.
+- Skill sorting and the dominant filter read the published current READY
+  `ClassificationSnapshot` unified-integer arrays (canonical `[micro, macro,
+  mystiko]`) via JSON index subqueries — never the editorial submission tables.
+  `recent` keys off `Game.created_at` (not `release_date`); unscored Games sort
+  after scored Games with `name ASC, id ASC` tie-breakers.
+- Dominance is strictly-highest (a top-score tie has no dominant category and
+  matches no filter) — the canonical `classifications.skills.dominant_skill_category` rule.
+- Cover-last is a secondary invariant: an effective-Capsule presence annotation
+  (SBGC-190 semantics; a general image is not a Capsule) partitions Games before
+  the count/page slice, so it is globally correct across pages and composes with
+  every primary sort.  `coverless_last=false` removes the partition.
+- Frontend: `CatalogueFilters.astro` native GET form (Source, Classification,
+  Profile, Sort, Dominant category, cover-last checkbox — checked by default),
+  `parseCatalogueQuery`/`catalogueHref`/`catalogueHrefFromState`/
+  `catalogueNeedsNoindex` in `catalogue-presentation.ts`, and `getGameCatalogue`
+  extended in the API client.  Pagination/reset preserve the full state; reset
+  keeps `q`; search/filter/non-default-sort pages are `noindex, follow`.
+- Runtime broken-Capsule handling stays source-agnostic and SBGC-77-compatible:
+  the native `<img>` still detects failures and swaps the placeholder, but the
+  current-page reorder now runs only when the cover-last checkbox is checked.
+- Validation: backend 993 OK (10 skipped); Ruff check+format clean; BasedPyright
+  0/0/0 on changed files; `manage.py check` + `makemigrations --check` clean (no
+  migration).  Frontend 300 OK; `astro check` 0 errors; build/lint/format/
+  `git diff --check` clean.  `docs/backend-api.md`,
+  `docs/frontend-architecture.md`, `docs/frontend-api-layer.md` updated.
+  Human verification pending (3 checks).
+
 ## 2026-08-23 — SBGC-78 Build search experience
 
 - Added `GET /api/v1/games/search-index` — the complete compact public search

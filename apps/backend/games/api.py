@@ -605,9 +605,11 @@ def game_search_index(request):
     summary="List public games",
     description=(
         "Return a deterministic paginated list of publicly-listed base Games. "
-        "Supports name search, source filter, classification filter, and "
-        "pagination.  Reads persisted state only — never contacts Steam and "
-        "never recalculates classification."
+        "Supports name search, source filter, classification filter, dominant "
+        "skill-category filter, primary sorting (name, recently added, or a "
+        "Challenge/Reward Micro/Mystiko/Macro score), an optional cover-last "
+        "outer partition, and pagination.  Reads persisted state only — never "
+        "contacts Steam and never recalculates classification."
     ),
     url_name="game-catalogue",
 )
@@ -616,13 +618,30 @@ def game_catalogue(
     q: str | None = None,
     source: Literal["steam", "manual"] | None = None,
     classified: bool | None = None,
+    sort: Literal[
+        "name_asc", "name_desc", "recent", "micro", "mystiko", "macro"
+    ] = "name_asc",
+    profile: Literal["challenge", "reward"] = "challenge",
+    dominant: Literal["micro", "mystiko", "macro"] | None = None,
     page: int = Query(default=1, ge=1),  # pyright: ignore[reportCallIssue]
     page_size: int = Query(default=24, ge=1, le=100),  # pyright: ignore[reportCallIssue]
 ):
+    # The cover-last checkbox submits `coverless_last=true` when checked and
+    # `coverless_last=false` (hidden input) when unchecked; a checked checkbox
+    # therefore produces both values, where the explicit `true` must win.  Read
+    # the raw value list so the checked-value-wins contract holds and absence
+    # falls back to the default `true`.
+    raw_cover = request.GET.getlist("coverless_last")
+    coverless_last = "true" in raw_cover if raw_cover else True
+
     catalogue = CatalogueQuery(
         q=q.strip() if q and q.strip() else None,
         source=SourceType(source) if source else None,
         classified=classified,
+        sort=sort,
+        profile=profile,
+        dominant=dominant,
+        coverless_last=coverless_last,
         page=page,
         page_size=page_size,
     )

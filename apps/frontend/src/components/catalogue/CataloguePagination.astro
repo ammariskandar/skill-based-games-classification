@@ -1,14 +1,17 @@
 ---
-import { catalogueHref } from "../../lib/catalogue-presentation";
+import {
+  catalogueHrefFromState,
+  type CatalogueQueryState,
+} from "../../lib/catalogue-presentation";
 
 interface Props {
   page: number;
   totalPages: number;
-  /** Preserve the active search query across pagination (SBGC-78). */
-  q?: string;
+  /** Full active query state so pagination preserves filters/sort/search. */
+  state: CatalogueQueryState;
 }
 
-const { page, totalPages, q } = Astro.props;
+const { page, totalPages, state } = Astro.props;
 const hasPrevious = page > 1;
 const hasNext = page < totalPages;
 ---
@@ -18,7 +21,7 @@ const hasNext = page < totalPages;
     hasPrevious ? (
       <a
         class="catalogue-pagination__link"
-        href={catalogueHref({ page: page - 1, q })}
+        href={catalogueHrefFromState(state, page - 1)}
       >
         Previous
       </a>
@@ -40,7 +43,7 @@ const hasNext = page < totalPages;
     hasNext ? (
       <a
         class="catalogue-pagination__link"
-        href={catalogueHref({ page: page + 1, q })}
+        href={catalogueHrefFromState(state, page + 1)}
       >
         Next
       </a>

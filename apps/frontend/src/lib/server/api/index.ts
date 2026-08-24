@@ -9,6 +9,9 @@ export {
   getHomepageCarousel,
 } from "./games";
 export type {
+  CatalogueDominant,
+  CatalogueProfile,
+  CatalogueSort,
   ClassificationProfile,
   ClassificationRegime,
   GameCatalogueClassification,

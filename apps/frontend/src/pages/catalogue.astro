@@ -2,12 +2,15 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import GameCatalogueCard from "../components/catalogue/GameCatalogueCard.astro";
 import CataloguePagination from "../components/catalogue/CataloguePagination.astro";
+import CatalogueFilters from "../components/catalogue/CatalogueFilters.astro";
 import EmptyState from "../components/ui/EmptyState.astro";
 import ErrorState from "../components/ui/ErrorState.astro";
 import {
   catalogueHref,
+  catalogueHrefFromState,
+  catalogueNeedsNoindex,
   formatResultSummary,
-  parsePageParam,
+  parseCatalogueQuery,
 } from "../lib/catalogue-presentation";
 import {
   getGameCatalogue,
@@ -18,41 +21,62 @@ import {
 // statically, so each request reads the current page from Django.
 export const prerender = false;
 
-const page = parsePageParam(Astro.url.searchParams.get("page"));
-const rawQ = Astro.url.searchParams.get("q");
-const q = rawQ ? rawQ.trim() : "";
+const state = parseCatalogueQuery(Astro.url.searchParams);
 
 type PageState =
   | { kind: "ready"; catalogue: GameCatalogueResponse }
   | { kind: "service-error" };
 
-let state: PageState;
+let pageState: PageState;
 try {
-  state = {
+  pageState = {
     kind: "ready",
-    catalogue: await getGameCatalogue({ page, q: q || undefined }),
+    catalogue: await getGameCatalogue({
+      page: state.page,
+      q: state.q || undefined,
+      source: state.source ?? undefined,
+      classified: state.classified ?? undefined,
+      sort: state.sort,
+      profile: state.profile,
+      dominant: state.dominant ?? undefined,
+      coverlessLast: state.coverlessLast,
+    }),
   };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service
   // is unavailable — never "no games found".
   Astro.response.status = 500;
-  state = { kind: "service-error" };
+  pageState = { kind: "service-error" };
 }
 
-const catalogue = state.kind === "ready" ? state.catalogue : null;
+const catalogue = pageState.kind === "ready" ? pageState.catalogue : null;
 const count = catalogue?.count ?? 0;
 const totalPages = catalogue?.total_pages ?? 0;
 const games = catalogue?.results ?? [];
 const summary =
   catalogue !== null
-    ? formatResultSummary(count, page, catalogue.page_size)
+    ? formatResultSummary(count, state.page, catalogue.page_size)
     : "";
 
-const searching = q !== "";
-const heading = searching ? `Search results for “${q}”` : "Catalogue";
-// Search result pages are ephemeral query states — indexable base catalogue,
-// not an infinite set of crawled query URLs.
-const robots = searching ? "noindex, follow" : undefined;
+const searching = state.q !== "";
+// Result-reducing filters (source/classification/dominant) — used to pick the
+// truthful filtered-empty state. Sort/profile/cover-last do not reduce count.
+const hasResultFilters =
+  state.source !== null || state.classified !== null || state.dominant !== null;
+// Whether the filter panel should open on first paint (any non-default
+// filter/sort/cover-last state).
+const filtersActive =
+  state.source !== null ||
+  state.classified !== null ||
+  state.sort !== "name_asc" ||
+  state.profile !== "challenge" ||
+  state.dominant !== null ||
+  !state.coverlessLast;
+
+const heading = searching ? `Search results for “${state.q}”` : "Catalogue";
+// Search/filter/non-default sort states are ephemeral query pages — index the
+// base catalogue only, not an infinite set of crawled facet URLs.
+const robots = catalogueNeedsNoindex(state) ? "noindex, follow" : undefined;
 
 // Canonical: the shared SEO helper accepts only a pathname (it strips query
 // strings), so every catalogue page intentionally canonicalizes to the base
@@ -70,7 +94,7 @@ const robots = searching ? "noindex, follow" : undefined;
   {
     searching ? (
       <p class="mt-2 max-w-2xl text-muted">
-        Matching public Games by name for “{q}”.
+        Matching public Games by name for “{state.q}”.
       </p>
     ) : (
       <p class="mt-2 max-w-2xl text-muted">
@@ -81,14 +105,20 @@ const robots = searching ? "noindex, follow" : undefined;
   }
 
   {
-    state.kind === "service-error" ? (
+    pageState.kind === "ready" && (
+      <CatalogueFilters state={state} open={filtersActive} />
+    )
+  }
+
+  {
+    pageState.kind === "service-error" ? (
       <ErrorState
         title="The catalogue is temporarily unavailable."
         message="Please try again in a moment."
         headingLevel="h2"
       />
     ) : searching && count === 0 ? (
-      <EmptyState title={`No games found for “${q}”.`}>
+      <EmptyState title={`No games found for “${state.q}”.`}>
         <a
           href={catalogueHref()}
           class="text-sm font-medium text-blue hover:underline"
@@ -96,12 +126,21 @@ const robots = searching ? "noindex, follow" : undefined;
           View full catalogue
         </a>
       </EmptyState>
+    ) : hasResultFilters && count === 0 ? (
+      <EmptyState title="No games match the current filters.">
+        <a
+          href={catalogueHref({ q: state.q || undefined })}
+          class="text-sm font-medium text-blue hover:underline"
+        >
+          Reset filters
+        </a>
+      </EmptyState>
     ) : count === 0 ? (
       <EmptyState title="No games are currently available in the catalogue." />
     ) : games.length === 0 ? (
       <EmptyState title="No games are available on this page.">
         <a
-          href={catalogueHref({ page: 1, q: q || undefined })}
+          href={catalogueHrefFromState(state, 1)}
           class="text-sm font-medium text-blue hover:underline"
         >
           Back to first page
@@ -111,7 +150,11 @@ const robots = searching ? "noindex, follow" : undefined;
       <>
         <p class="mt-6 text-sm text-muted">{summary}</p>
 
-        <ul class="catalogue-grid mt-6 list-none" data-catalogue-grid>
+        <ul
+          class="catalogue-grid mt-6 list-none"
+          data-catalogue-grid
+          data-cover-last={state.coverlessLast ? "true" : "false"}
+        >
           {games.map((game, index) => (
             <li>
               <GameCatalogueCard game={game} eager={index < 4} index={index} />
@@ -121,9 +164,9 @@ const robots = searching ? "noindex, follow" : undefined;
 
         {totalPages > 1 && (
           <CataloguePagination
-            page={page}
+            page={state.page}
             totalPages={totalPages}
-            q={q || undefined}
+            state={state}
           />
         )}
       </>
@@ -141,6 +184,11 @@ const robots = searching ? "noindex, follow" : undefined;
 
   const grid = document.querySelector<HTMLElement>("[data-catalogue-grid]");
   if (grid) {
+    // Runtime cover-last is an enhancement over the backend's global
+    // no-Capsule partition: it moves confirmed broken-Capsule cards to the end
+    // of the CURRENT page. It only runs when the cover-last checkbox is on.
+    const coverLast = grid.dataset.coverLast === "true";
+
     const cards = Array.from(
       grid.querySelectorAll<HTMLElement>("[data-catalogue-index]"),
     );
@@ -177,7 +225,7 @@ const robots = searching ? "noindex, follow" : undefined;
         showPlaceholder();
         if (!isCover) return;
         card.dataset.coverState = "no-cover";
-        scheduler.schedule();
+        if (coverLast) scheduler.schedule();
       };
       const markHasCover = () => {
         if (isCover) card.dataset.coverState = "has-cover";
