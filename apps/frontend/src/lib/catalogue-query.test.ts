@@ -276,4 +276,15 @@ describe("coverless_last round-trip (form + href)", () => {
     expect(reparsed.coverlessLast).toBe(false);
     expect(reparsed.page).toBe(2);
   });
+
+  it("Reset (q only) restores coverlessLast to the default checked state", () => {
+    // From an unchecked state, the Reset link keeps only `q`, so coverless_last
+    // is absent and parses back to the checked default.
+    const resetHref = catalogueHref({ q: "portal" });
+    expect(resetHref).toBe("/catalogue?q=portal");
+    expect(
+      parseCatalogueQuery(new URLSearchParams(resetHref.split("?")[1] ?? ""))
+        .coverlessLast,
+    ).toBe(true);
+  });
 });

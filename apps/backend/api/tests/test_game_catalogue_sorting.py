@@ -15,6 +15,7 @@ from classifications.models import CalculationEpoch, ClassificationSnapshot
 from django.test import Client, TestCase
 from django.utils import timezone
 from games.models import ContentType, Game, ListingStatus, SourceType
+from games.services.catalogue import CatalogueQuery, get_game_catalogue
 
 _app_id = 3_000_000
 
@@ -292,6 +293,83 @@ class CompositionTests(TestCase):
         )
         self.assertEqual(_slugs(r), ["persona-4-golden"])
 
+    def test_q_plus_skill_sort(self):
+        # portal-2 has the highest Micro but must be excluded by `q`.
+        a = _game("elden-ring-2", name="Elden Ring 2")
+        _snapshot(a, unified_integer_challenge=[90, 5, 5])
+        b = _game("elden-ring", name="ELDEN RING")
+        _snapshot(b, unified_integer_challenge=[70, 20, 10])
+        c = _game("portal-2", name="Portal 2")
+        _snapshot(c, unified_integer_challenge=[99, 0, 1])
+
+        r = _get(q="elden", sort="micro", profile="challenge")
+        self.assertEqual(_slugs(r), ["elden-ring-2", "elden-ring"])
+
+    def test_source_plus_skill_sort_plus_profile(self):
+        a = _game("steam-high", name="Steam High")
+        _snapshot(a, unified_integer_reward=[90, 5, 5])
+        b = _manual("manual-higher", name="Manual Higher")
+        _snapshot(b, unified_integer_reward=[95, 2, 3])
+        c = _game("steam-low", name="Steam Low")
+        _snapshot(c, unified_integer_reward=[10, 80, 10])
+
+        r = _get(source="steam", sort="micro", profile="reward")
+        self.assertEqual(_slugs(r), ["steam-high", "steam-low"])
+
+    def test_classified_plus_dominant_plus_profile(self):
+        micro = _game("micro", name="Micro")
+        _snapshot(micro, unified_integer_reward=[70, 20, 10])
+        macro = _game("macro", name="Macro")
+        _snapshot(macro, unified_integer_reward=[20, 70, 10])
+        _game("bare", name="Bare")
+
+        r = _get(classified="true", dominant="micro", profile="reward")
+        self.assertEqual(_slugs(r), ["micro"])
+
+    def test_combination_paginates_correctly(self):
+        for slug, vec in [
+            ("p-0", [50, 30, 20]),
+            ("p-1", [60, 20, 20]),
+            ("p-2", [70, 20, 10]),
+            ("p-3", [80, 10, 10]),
+        ]:
+            g = _game(slug, name=slug.replace("-", " ").title())
+            _snapshot(g, unified_integer_challenge=vec)
+        m = _manual("manual-extra", name="Manual Extra")
+        _snapshot(m, unified_integer_challenge=[99, 0, 1])
+
+        slugs = _all_slugs(
+            page_size=2,
+            source="steam",
+            classified="true",
+            dominant="micro",
+            profile="challenge",
+            sort="micro",
+        )
+        # Micro high→low: p-3 (80), p-2 (70), p-1 (60), p-0 (50); manual excluded.
+        self.assertEqual(slugs, ["p-3", "p-2", "p-1", "p-0"])
+
+
+class CatalogueQueryCountSortingTests(TestCase):
+    def test_skill_sort_dominant_coverless_stay_bounded(self):
+        for i in range(6):
+            g = _game(f"qc-{i}", name=f"QC {i}")
+            _snapshot(g, unified_integer_challenge=[51, 31, 18])
+
+        with self.assertNumQueries(3):
+            result = get_game_catalogue(
+                CatalogueQuery(
+                    page=1,
+                    page_size=5,
+                    sort="micro",
+                    profile="challenge",
+                    dominant="micro",
+                    coverless_last=True,
+                )
+            )
+
+        self.assertEqual(len(result.games), 5)
+
 
 class CoverLastTests(TestCase):
     def test_covered_before_coverless_across_pages_name_asc(self):
@@ -340,6 +418,21 @@ class CoverLastTests(TestCase):
         # coverless (b=50).
         self.assertEqual(
             _all_slugs(page_size=2, sort="micro", profile="challenge"),
+            ["a", "c", "b"],
+        )
+
+    def test_covered_before_coverless_reward_skill_sort(self):
+        a = _game("a", name="A", library_capsule_url="https://cdn.example.com/a.jpg")
+        b = _game("b", name="B")
+        c = _game("c", name="C", library_capsule_url="https://cdn.example.com/c.jpg")
+        _snapshot(a, unified_integer_reward=[90, 5, 5])
+        _snapshot(b, unified_integer_reward=[50, 30, 20])
+        _snapshot(c, unified_integer_reward=[10, 80, 10])
+
+        # reward micro high→low within each group: covered (a=90, c=10) then
+        # coverless (b=50).
+        self.assertEqual(
+            _all_slugs(page_size=2, sort="micro", profile="reward"),
             ["a", "c", "b"],
         )
 

@@ -2554,6 +2554,28 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-24 — SBGC-80 Test search and listing behaviour
+
+- Automated cross-feature verification (no human testing) for the SBGC-10
+  search/listing epic.  Confirmed the SBGC-76–79 chain composes correctly
+  across search, catalogue, filters, sorting, pagination, cover ordering, and
+  URL state, and that no production defect exists.
+- Added focused composition/regression coverage (no production changes):
+  backend combined-filter tests (`q`+sort, source+skill-sort+profile,
+  classified+dominant+profile, filter-combination pagination), a Reward
+  skill-sort coverless-last invariant, and a bounded query-count test for the
+  SBGC-79 sort/dominant/cover-last annotations (still 3 queries, no per-Game
+  classification N+1); frontend an explicit Reset-restores-`coverless_last`
+  round-trip test.
+- Reused existing SBGC-76/77/78/79 tests (eligibility, search, source,
+  classified, pagination, search index, matcher, loader/cache in-flight reuse,
+  sorting, dominant, coverless-last, URL state, CoverState) without duplication.
+- Validation: backend catalogue/search-index/sorting 73 OK; frontend focused
+  suites 108 OK; Ruff + format + BasedPyright + `manage.py check` +
+  `makemigrations --check` + ESLint + Prettier + `git diff --check` clean.  No
+  full backend/PostgreSQL/live-Steam/statistical/browser-E2E runs (out of scope).
+- SBGC-10 Game Search & Listings epic implementation and testing complete.
+
 ## 2026-08-24 — SBGC-79 record sorting and filtering validation
 
 - Human validation PASS for the full SBGC-79 sorting/filtering implementation:
