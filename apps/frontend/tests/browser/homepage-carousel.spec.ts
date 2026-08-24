@@ -1,12 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Real-browser regression for the SBGC-189/191 homepage carousel (SBGC-192).
+ * Real-browser regression for the SBGC-189/191 homepage carousel (SBGC-192) plus
+ * the SBGC-193 simplified lighting contract.
  *
  * This suite proves, in a real Chromium runtime with real smooth-scroll timing,
  * that the carousel loops indefinitely in both directions without reaching a
- * permanent physical boundary. It intentionally does not assert brightness or
- * other perceptual properties — those remain human-validated.
+ * permanent physical boundary, and that the default/hover brightness contract
+ * (65% default, 100% hover/focus) holds. It asserts computed styles, not pixels,
+ * so it avoids fragile screenshot comparisons.
  *
  * The fixture page (`/dev/carousel`) renders the real `HomepageCarousel`
  * component with 10 static games, so no Django backend or Steam network access
@@ -178,4 +180,63 @@ test("loops at a smaller supported viewport", async ({ page }) => {
     await waitForSettle(page);
     expect(await flushName(page)).toBe(name((k % GAME_COUNT) + 1));
   }
+});
+
+test("cards are uniformly dimmed and hover reveals full brightness", async ({
+  page,
+}) => {
+  await open(page);
+
+  // Every visible canonical card renders at brightness(0.65).
+  const defaultBrightness = await page.evaluate(() => {
+    const track = document.querySelector<HTMLElement>("[data-carousel-track]")!;
+    const trackRect = track.getBoundingClientRect();
+    return Array.from(
+      track.querySelectorAll<HTMLElement>(
+        "[data-carousel-card]:not([data-carousel-clone])",
+      ),
+    )
+      .filter((card) => {
+        const r = card.getBoundingClientRect();
+        return r.right > trackRect.left && r.left < trackRect.right;
+      })
+      .map((card) => {
+        const img = card.querySelector<HTMLImageElement>("img")!;
+        const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
+        return m ? Number.parseFloat(m[1]) : Number.NaN;
+      });
+  });
+
+  expect(defaultBrightness.length).toBeGreaterThan(0);
+  for (const b of defaultBrightness) expect(b).toBeCloseTo(0.65, 2);
+
+  // Hover a canonical card: full brightness + slight enlargement.
+  const card = page
+    .locator("[data-carousel-card]:not([data-carousel-clone])")
+    .first();
+  await card.hover();
+  await page.waitForTimeout(300); // let the filter/transform transitions settle
+
+  const hovered = await card.evaluate((el) => {
+    const img = el.querySelector<HTMLImageElement>("img")!;
+    const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
+    return {
+      brightness: m ? Number.parseFloat(m[1]) : Number.NaN,
+      transform: getComputedStyle(el).transform,
+    };
+  });
+
+  expect(hovered.brightness).toBeCloseTo(1, 2);
+  expect(hovered.transform).toContain("1.02");
+
+  // Move the pointer away: the card returns to default brightness.
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(300);
+
+  const restored = await card.evaluate((el) => {
+    const img = el.querySelector<HTMLImageElement>("img")!;
+    const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
+    return m ? Number.parseFloat(m[1]) : Number.NaN;
+  });
+  expect(restored).toBeCloseTo(0.65, 2);
 });

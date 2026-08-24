@@ -41,45 +41,6 @@ export function carouselScrollStep(cardWidth: number, gap: number): number {
   return cardWidth + gap;
 }
 
-/** Positional emphasis level for a carousel card (SBGC-189 correction). */
-export type CarouselEmphasis = "full" | "intermediate" | "darkest";
-
-/**
- * Map a card's distance-from-center rank to its emphasis level.
- *
- * `stepsFromCenter` is the number of distinct distance bands between a card
- * and the viewport-center card (0 = the centered card). `visibleCount` selects
- * the band structure for the current responsive tier:
- * - 5 visible → full / intermediate / darkest
- * - 3 visible → full / darkest
- * - 2 visible → full / darkest (nearest center is full)
- * - 1 visible → full
- */
-export function carouselEmphasis(
-  stepsFromCenter: number,
-  visibleCount: number,
-): CarouselEmphasis {
-  if (stepsFromCenter <= 0) return "full";
-  if (visibleCount >= 5 && stepsFromCenter === 1) return "intermediate";
-  return "darkest";
-}
-
-/**
- * Assign emphasis to each card from its rounded pixel distance to the viewport
- * center. Cards are ranked by distinct distance so symmetric cards share a
- * level. This is positional (recomputed on every scroll/resize), never
- * coupled to the card's permanent array index.
- */
-export function assignCarouselEmphasis(
-  distances: number[],
-  visibleCount: number,
-): CarouselEmphasis[] {
-  const ladder = Array.from(new Set(distances)).sort((a, b) => a - b);
-  return distances.map((d) =>
-    carouselEmphasis(ladder.indexOf(d), visibleCount),
-  );
-}
-
 // ── SBGC-191 infinite-loop helpers ─────────────────────────────────────────
 
 /** Widest responsive tier — the maximum number of cards visible at once. */

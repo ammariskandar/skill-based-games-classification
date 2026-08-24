@@ -213,7 +213,8 @@ The carousel is full-bleed (it breaks out of `shell-gutter`), uses CSS
 `scroll-snap` plus a small vanilla TypeScript controller (Previous/Next buttons,
 no autoplay, no framework), shows 5 capsules on desktop and fewer on smaller
 screens, and respects `prefers-reduced-motion`. Each card links Capsule and title
-to `/games/{slug}`.
+to `/games/{slug}`. Capsule artwork is uniformly dimmed to `brightness(0.65)` and
+brightens to `brightness(1)` on hover or keyboard focus (SBGC-193).
 
 The Hades showcase reuses `GameImage.astro` (the SBGC-184 Hero + Capsule +
 classification-visualization-slot composition) as the left column of a
