@@ -6,9 +6,11 @@ import {
 
 interface Props {
   state: CatalogueQueryState;
+  /** Open the panel on first paint (active filter/sort state). */
+  open?: boolean;
 }
 
-const { state } = Astro.props;
+const { state, open = false } = Astro.props;
 
 // Reset preserves the active search query but restores every filter/sort
 // default (including the checked cover-last checkbox).
@@ -22,111 +24,196 @@ const dominantId = "catalogue-dominant";
 const coverlessId = "catalogue-coverless-last";
 ---
 
-<form method="get" action="/catalogue" class="catalogue-filters">
-  <input type="hidden" name="q" value={state.q} />
+<details class="catalogue-filters" open={open}>
+  <summary class="catalogue-filters__toggle">
+    <svg
+      aria-hidden="true"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+    </svg>
+    <span>Filter</span>
+  </summary>
 
-  <div class="catalogue-filters__field">
-    <label for={sourceId}>Source</label>
-    <select id={sourceId} name="source">
-      <option value="">All sources</option>
-      <option value="steam" selected={state.source === "steam"}>Steam</option>
-      <option value="manual" selected={state.source === "manual"}>Manual</option
-      >
-    </select>
-  </div>
+  <form method="get" action="/catalogue" class="catalogue-filters__form">
+    <input type="hidden" name="q" value={state.q} />
 
-  <div class="catalogue-filters__field">
-    <label for={classificationId}>Classification</label>
-    <select id={classificationId} name="classified">
-      <option value="">All</option>
-      <option value="true" selected={state.classified === true}
-        >Classified</option
-      >
-      <option value="false" selected={state.classified === false}>
-        Not classified
-      </option>
-    </select>
-  </div>
+    <div class="catalogue-filters__row">
+      <div class="catalogue-filters__controls">
+        <div class="catalogue-filters__field">
+          <label for={sourceId}>Source</label>
+          <select id={sourceId} name="source">
+            <option value="">All sources</option>
+            <option value="steam" selected={state.source === "steam"}>
+              Steam
+            </option>
+            <option value="manual" selected={state.source === "manual"}>
+              Manual
+            </option>
+          </select>
+        </div>
 
-  <div class="catalogue-filters__field">
-    <label for={profileId}>Profile</label>
-    <select id={profileId} name="profile">
-      <option value="challenge" selected={state.profile === "challenge"}>
-        Challenge
-      </option>
-      <option value="reward" selected={state.profile === "reward"}
-        >Reward</option
-      >
-    </select>
-  </div>
+        <div class="catalogue-filters__field">
+          <label for={classificationId}>Classification</label>
+          <select id={classificationId} name="classified">
+            <option value="">All</option>
+            <option value="true" selected={state.classified === true}>
+              Classified
+            </option>
+            <option value="false" selected={state.classified === false}>
+              Not classified
+            </option>
+          </select>
+        </div>
 
-  <div class="catalogue-filters__field">
-    <label for={sortId}>Sort</label>
-    <select id={sortId} name="sort">
-      <option value="name_asc" selected={state.sort === "name_asc"}>
-        Name (A–Z)
-      </option>
-      <option value="name_desc" selected={state.sort === "name_desc"}>
-        Name (Z–A)
-      </option>
-      <option value="recent" selected={state.sort === "recent"}>
-        Recently added
-      </option>
-      <option value="micro" selected={state.sort === "micro"}
-        >Micro score</option
-      >
-      <option value="mystiko" selected={state.sort === "mystiko"}>
-        Mystiko score
-      </option>
-      <option value="macro" selected={state.sort === "macro"}
-        >Macro score</option
-      >
-    </select>
-  </div>
+        <div class="catalogue-filters__field">
+          <label for={profileId}>Profile</label>
+          <select id={profileId} name="profile">
+            <option value="challenge" selected={state.profile === "challenge"}>
+              Challenge
+            </option>
+            <option value="reward" selected={state.profile === "reward"}>
+              Reward
+            </option>
+          </select>
+        </div>
 
-  <div class="catalogue-filters__field">
-    <label for={dominantId}>Dominant category</label>
-    <select id={dominantId} name="dominant">
-      <option value="">All categories</option>
-      <option value="micro" selected={state.dominant === "micro"}>Micro</option>
-      <option value="mystiko" selected={state.dominant === "mystiko"}>
-        Mystiko
-      </option>
-      <option value="macro" selected={state.dominant === "macro"}>Macro</option>
-    </select>
-  </div>
+        <div class="catalogue-filters__field">
+          <label for={sortId}>Sort</label>
+          <select id={sortId} name="sort">
+            <option value="name_asc" selected={state.sort === "name_asc"}>
+              Name (A–Z)
+            </option>
+            <option value="name_desc" selected={state.sort === "name_desc"}>
+              Name (Z–A)
+            </option>
+            <option value="recent" selected={state.sort === "recent"}>
+              Recently added
+            </option>
+            <option value="micro" selected={state.sort === "micro"}>
+              Micro score
+            </option>
+            <option value="mystiko" selected={state.sort === "mystiko"}>
+              Mystiko score
+            </option>
+            <option value="macro" selected={state.sort === "macro"}>
+              Macro score
+            </option>
+          </select>
+        </div>
 
-  <div class="catalogue-filters__check">
-    <input type="hidden" name="coverless_last" value="false" />
-    <input
-      type="checkbox"
-      id={coverlessId}
-      name="coverless_last"
-      value="true"
-      checked={state.coverlessLast}
-    />
-    <label for={coverlessId}>
-      Show games without a cover as last on the list
-    </label>
-  </div>
+        <div class="catalogue-filters__field">
+          <label for={dominantId}>Dominant category</label>
+          <select id={dominantId} name="dominant">
+            <option value="">All categories</option>
+            <option value="micro" selected={state.dominant === "micro"}>
+              Micro
+            </option>
+            <option value="mystiko" selected={state.dominant === "mystiko"}>
+              Mystiko
+            </option>
+            <option value="macro" selected={state.dominant === "macro"}>
+              Macro
+            </option>
+          </select>
+        </div>
+      </div>
 
-  <div class="catalogue-filters__actions">
-    <button type="submit" class="catalogue-filters__apply">Apply</button>
-    <a href={resetHref} class="catalogue-filters__reset">Reset filters</a>
-  </div>
-</form>
+      <div class="catalogue-filters__actions">
+        <button type="submit" class="catalogue-filters__apply">Apply</button>
+        <a href={resetHref} class="catalogue-filters__reset">Reset filters</a>
+      </div>
+    </div>
+
+    <div class="catalogue-filters__check">
+      <input type="hidden" name="coverless_last" value="false" />
+      <input
+        type="checkbox"
+        id={coverlessId}
+        name="coverless_last"
+        value="true"
+        checked={state.coverlessLast}
+      />
+      <label for={coverlessId}>
+        Show games without a cover as last on the list
+      </label>
+    </div>
+  </form>
+</details>
 
 <style>
   .catalogue-filters {
+    margin-top: 1.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+
+  .catalogue-filters__toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .catalogue-filters__toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .catalogue-filters__toggle:hover {
+    background: var(--color-surface-2);
+  }
+
+  .catalogue-filters__toggle:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: -2px;
+  }
+
+  .catalogue-filters__toggle svg {
+    color: var(--color-muted);
+  }
+
+  .catalogue-filters__form {
+    padding: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .catalogue-filters__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+
+  .catalogue-filters__controls {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 0.75rem 1rem;
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
+  }
+
+  .catalogue-filters__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+    padding-bottom: 0.4375rem;
   }
 
   .catalogue-filters__field {
@@ -166,28 +253,22 @@ const coverlessId = "catalogue-coverless-last";
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding-bottom: 0.4375rem;
+    margin-top: 0.75rem;
   }
 
   .catalogue-filters__check input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin: 0;
     accent-color: var(--color-blue);
   }
 
   .catalogue-filters__check label {
     text-transform: none;
     letter-spacing: normal;
-    font-size: 0.875rem;
-    color: var(--color-text);
+    font-size: 0.8125rem;
+    color: var(--color-muted);
     cursor: pointer;
-  }
-
-  .catalogue-filters__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding-bottom: 0.4375rem;
   }
 
   .catalogue-filters__apply {
@@ -207,6 +288,7 @@ const coverlessId = "catalogue-coverless-last";
     font-weight: 500;
     color: var(--color-muted);
     text-decoration: none;
+    white-space: nowrap;
   }
 
   .catalogue-filters__reset:hover {

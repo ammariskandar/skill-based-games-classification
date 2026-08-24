@@ -63,6 +63,15 @@ const searching = state.q !== "";
 // truthful filtered-empty state. Sort/profile/cover-last do not reduce count.
 const hasResultFilters =
   state.source !== null || state.classified !== null || state.dominant !== null;
+// Whether the filter panel should open on first paint (any non-default
+// filter/sort/cover-last state).
+const filtersActive =
+  state.source !== null ||
+  state.classified !== null ||
+  state.sort !== "name_asc" ||
+  state.profile !== "challenge" ||
+  state.dominant !== null ||
+  !state.coverlessLast;
 
 const heading = searching ? `Search results for “${state.q}”` : "Catalogue";
 // Search/filter/non-default sort states are ephemeral query pages — index the
@@ -95,7 +104,11 @@ const robots = catalogueNeedsNoindex(state) ? "noindex, follow" : undefined;
     )
   }
 
-  {pageState.kind === "ready" && <CatalogueFilters state={state} />}
+  {
+    pageState.kind === "ready" && (
+      <CatalogueFilters state={state} open={filtersActive} />
+    )
+  }
 
   {
     pageState.kind === "service-error" ? (

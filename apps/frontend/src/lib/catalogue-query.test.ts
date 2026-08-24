@@ -185,3 +185,65 @@ describe("catalogueNeedsNoindex", () => {
     expect(catalogueNeedsNoindex({ ...base, coverlessLast: false })).toBe(true);
   });
 });
+
+describe("coverless_last round-trip (form + href)", () => {
+  const parseHref = (params: Parameters<typeof catalogueHref>[0]) =>
+    parseCatalogueQuery(
+      new URLSearchParams(catalogueHref(params).split("?")[1] ?? ""),
+    );
+
+  it("treats duplicate coverless_last=false&true as checked", () => {
+    const state = parse(
+      "sort=mystiko&profile=challenge&coverless_last=false&coverless_last=true",
+    );
+    expect(state.coverlessLast).toBe(true);
+    expect(state.sort).toBe("mystiko");
+  });
+
+  it("defaults checked with an alternate sort", () => {
+    const state = parse("sort=mystiko&profile=challenge");
+    expect(state.coverlessLast).toBe(true);
+    expect(state.sort).toBe("mystiko");
+  });
+
+  it("unchecked with an alternate sort", () => {
+    const state = parse("sort=mystiko&profile=challenge&coverless_last=false");
+    expect(state.coverlessLast).toBe(false);
+    expect(state.sort).toBe("mystiko");
+  });
+
+  it("sort change preserves checked via href round-trip", () => {
+    const state = parseHref({ sort: "mystiko", coverlessLast: true });
+    expect(state.sort).toBe("mystiko");
+    expect(state.coverlessLast).toBe(true);
+  });
+
+  it("sort change preserves unchecked via href round-trip", () => {
+    const state = parseHref({ sort: "mystiko", coverlessLast: false });
+    expect(state.sort).toBe("mystiko");
+    expect(state.coverlessLast).toBe(false);
+  });
+
+  it("repeatedly toggles checked ↔ unchecked", () => {
+    expect(parseHref({ coverlessLast: false }).coverlessLast).toBe(false);
+    expect(parseHref({ coverlessLast: true }).coverlessLast).toBe(true);
+    expect(parseHref({ coverlessLast: false }).coverlessLast).toBe(false);
+    expect(parseHref({ coverlessLast: true }).coverlessLast).toBe(true);
+  });
+
+  it("pagination preserves the full state via catalogueHrefFromState", () => {
+    const state = parse("sort=recent&source=steam&coverless_last=false");
+    const href = catalogueHrefFromState(state, 2);
+    expect(href).toContain("coverless_last=false");
+    expect(href).toContain("sort=recent");
+    expect(href).toContain("page=2");
+
+    const reparsed = parseCatalogueQuery(
+      new URLSearchParams(href.split("?")[1] ?? ""),
+    );
+    expect(reparsed.sort).toBe("recent");
+    expect(reparsed.source).toBe("steam");
+    expect(reparsed.coverlessLast).toBe(false);
+    expect(reparsed.page).toBe(2);
+  });
+});

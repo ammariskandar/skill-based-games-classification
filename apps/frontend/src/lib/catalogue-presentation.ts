@@ -129,6 +129,12 @@ function normalizeSource(raw: string | null): GameSource | null {
 export function parseCatalogueQuery(
   searchParams: URLSearchParams,
 ): CatalogueQueryState {
+  // A checked cover-last checkbox submits `coverless_last=true` alongside a
+  // hidden `coverless_last=false`, so the key may appear twice.  Treat an
+  // explicit `true` anywhere as checked and absence as the default checked
+  // state — the exact mirror of the backend's
+  // `"true" in request.GET.getlist("coverless_last")` contract.
+  const coverValues = searchParams.getAll("coverless_last");
   return {
     q: (searchParams.get("q") ?? "").trim(),
     page: parsePageParam(searchParams.get("page")),
@@ -137,7 +143,7 @@ export function parseCatalogueQuery(
     sort: normalizeSort(searchParams.get("sort")),
     profile: normalizeProfile(searchParams.get("profile")),
     dominant: normalizeDominant(searchParams.get("dominant")),
-    coverlessLast: searchParams.get("coverless_last") !== "false",
+    coverlessLast: coverValues.length === 0 || coverValues.includes("true"),
   };
 }
 
