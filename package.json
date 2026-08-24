@@ -12,6 +12,8 @@
     "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "test:frontend": "npm run test --workspace=apps/frontend",
+    "test:frontend:browser": "npm run test:browser --workspace=apps/frontend",
+    "test:frontend:browser:carousel": "npm run test:browser:carousel --workspace=apps/frontend",
     "test:backend": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput",
     "test:backend:discovery": "scripts/backend-test-discovery.sh",
     "test:backend:reverse": "apps/backend/.venv/bin/python apps/backend/manage.py test apps/backend --settings=config.settings.test --noinput --reverse",

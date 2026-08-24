@@ -2,3 +2,6 @@ dist
 .astro
 .vercel
 node_modules
+playwright-report
+blob-report
+test-results

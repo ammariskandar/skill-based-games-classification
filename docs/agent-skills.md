@@ -26,6 +26,7 @@ intentionally does **not** duplicate the skill bodies.
 | `domain-modeling` | `.agents/skills/domain-modeling/SKILL.md` | Build/sharpen the project's domain model and ADR/context records. |
 | `codebase-design` | `.agents/skills/codebase-design/SKILL.md` | Deep-module design vocabulary: interfaces, seams, dependency direction. |
 | `research` | `.agents/skills/research/SKILL.md` | Investigate a question against primary sources; write source-backed notes. |
+| `browser-interaction-engineering` | `.agents/skills/browser-interaction-engineering/SKILL.md` | Discipline for F2/F3 frontend work that depends on real browser runtime state (scrolling, animation, gestures, geometry, timing). |
 
 ### Continuity / documentation
 
@@ -48,6 +49,8 @@ intentionally does **not** duplicate the skill bodies.
 - **`codebase-design`** — substantial new modules/services, dependency
   direction, seams, interface design.
 - **`research`** — external/upstream documentation or semantics are uncertain.
+- **`browser-interaction-engineering`** — frontend work depending on scrolling,
+  animation, gestures, runtime geometry, or timing (F2/F3 risk).
 - **`handoff`** — context compaction or transferring work between agents.
 - **`writing-for-agents`** — agent-facing docs, handovers, AGENTS.md guidance.
 - **`wizard`** — concise manual human operational verification (Admin,
@@ -136,6 +139,15 @@ note:
   `improve-codebase-architecture`, `resolving-merge-conflicts`, `ask-matt`,
   `triage`, `teach`, `to-questionnaire`, `wait-what`, generic grilling and
   in-progress/deprecated skills) were **not** imported.
+
+### browser-interaction-engineering
+
+- Authored locally for SBGC-192. Not vendored from an upstream repository.
+- Path: `.agents/skills/browser-interaction-engineering/SKILL.md`.
+- Motivation: the SBGC-191 infinite-carousel incident (see
+  `docs/postmortems/SBGC-191-infinite-carousel.md`) exposed that browser
+  interaction work needs explicit risk classification, real-browser ground
+  truth, harness qualification, and a two-strike stop-loss.
 
 ## Intentionally omitted (all sources)
 

@@ -1,0 +1,32 @@
+---
+import HomepageCarousel from "../../components/home/HomepageCarousel.astro";
+import type { HomepageCarouselCard } from "../../lib/server/api";
+
+// Dev-only test fixture. Renders the real HomepageCarousel with static data so
+// the Playwright browser suite (apps/frontend/tests/browser) can exercise the
+// infinite-loop interaction without the Django backend or Steam network access.
+// Not linked from any production page.
+export const prerender = true;
+
+const placeholder = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="360"></svg>',
+)}`;
+
+const games: HomepageCarouselCard[] = Array.from({ length: 10 }, (_, i) => ({
+  slug: `fixture-game-${i + 1}`,
+  name: `Fixture Game ${i + 1}`,
+  library_capsule_url: placeholder,
+}));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carousel fixture</title>
+  </head>
+  <body>
+    <HomepageCarousel games={games} />
+  </body>
+</html>

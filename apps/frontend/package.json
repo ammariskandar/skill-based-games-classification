@@ -15,7 +15,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:browser": "playwright test",
+    "test:browser:carousel": "playwright test homepage-carousel"
   },
   "dependencies": {
     "@astrojs/vercel": "^11.0.3",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/d3": "^7.4.3",
     "eslint": "^10.7.0",
