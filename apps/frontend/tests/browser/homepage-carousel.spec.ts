@@ -210,33 +210,77 @@ test("cards are uniformly dimmed and hover reveals full brightness", async ({
   expect(defaultBrightness.length).toBeGreaterThan(0);
   for (const b of defaultBrightness) expect(b).toBeCloseTo(0.65, 2);
 
-  // Hover a canonical card: full brightness + slight enlargement.
+  // Hover a clearly-visible middle card (not the flush card at the left edge),
+  // so Playwright's scroll-into-view does not nudge the carousel and trigger the
+  // loop normalization mid-test.
   const card = page
     .locator("[data-carousel-card]:not([data-carousel-clone])")
-    .first();
+    .nth(2);
+
+  const brightness = () =>
+    card.evaluate((el) => {
+      const img = el.querySelector<HTMLImageElement>("img")!;
+      const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
+      return m ? Number.parseFloat(m[1]) : Number.NaN;
+    });
+
+  const transform = () => card.evaluate((el) => getComputedStyle(el).transform);
+
+  // Hover: full brightness + slight enlargement (poll until both transitions
+  // fully settle, rather than using a fixed delay that can race under load).
   await card.hover();
-  await page.waitForTimeout(300); // let the filter/transform transitions settle
+  await expect.poll(brightness, { timeout: 3000 }).toBeCloseTo(1, 2);
+  await expect.poll(transform, { timeout: 3000 }).toContain("1.02");
 
-  const hovered = await card.evaluate((el) => {
-    const img = el.querySelector<HTMLImageElement>("img")!;
-    const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
-    return {
-      brightness: m ? Number.parseFloat(m[1]) : Number.NaN,
-      transform: getComputedStyle(el).transform,
-    };
-  });
-
-  expect(hovered.brightness).toBeCloseTo(1, 2);
-  expect(hovered.transform).toContain("1.02");
-
-  // Move the pointer away: the card returns to default brightness.
+  // Unhover: returns to default dimmed brightness.
   await page.mouse.move(0, 0);
-  await page.waitForTimeout(300);
+  await expect.poll(brightness, { timeout: 3000 }).toBeCloseTo(0.65, 2);
+});
 
-  const restored = await card.evaluate((el) => {
-    const img = el.querySelector<HTMLImageElement>("img")!;
-    const m = /brightness\(([^)]+)\)/.exec(getComputedStyle(img).filter);
-    return m ? Number.parseFloat(m[1]) : Number.NaN;
-  });
-  expect(restored).toBeCloseTo(0.65, 2);
+test("cards use intrinsic rem sizing so browser zoom scales them", async ({
+  page,
+}) => {
+  const cardWidth = () =>
+    page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>(
+        "[data-carousel-card]:not([data-carousel-clone])",
+      );
+      return card ? card.getBoundingClientRect().width : null;
+    });
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page);
+  const widthAt1280 = await cardWidth();
+
+  // 1024px CSS viewport ≈ 125% browser zoom on a 1280px display.
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await waitForSettle(page);
+  const widthAt1024 = await cardWidth();
+
+  expect(widthAt1280).not.toBeNull();
+  expect(widthAt1024).not.toBeNull();
+  // A fixed `rem` basis keeps the rendered CSS width constant across viewport
+  // widths, which is what makes browser zoom scale the card physically. A
+  // viewport-fraction basis (the old calc((100% - …)/N)) would shrink here.
+  expect(widthAt1024!).toBeCloseTo(widthAt1280!, 0);
+  // Desktop tier ≈ 15rem = 240px at the default 16px root.
+  expect(widthAt1024!).toBeGreaterThan(225);
+  expect(widthAt1024!).toBeLessThan(255);
+});
+
+test("loops forward across multiple wraps at a wide viewport", async ({
+  page,
+}) => {
+  // A wide viewport shows more than the fixed 5-card desktop tier, which used
+  // to leave the clone buffer too small and stall forward looping at the
+  // physical end of the track.
+  await page.setViewportSize({ width: 1920, height: 800 });
+  await open(page);
+  expect(await flushName(page)).toBe(name(1));
+
+  for (let k = 1; k <= 12; k++) {
+    await page.click("[data-carousel-next]");
+    await waitForSettle(page);
+    expect(await flushName(page)).toBe(name((k % GAME_COUNT) + 1));
+  }
 });
