@@ -177,3 +177,69 @@ export function calculatePageSize(
   if (step <= 0) return 1;
   return Math.max(1, Math.floor((availableHeight + gap) / step));
 }
+
+/** Minimal identity shape shared by ranking rows and detail results. */
+export interface RankingSelectionItem {
+  slug: string;
+  name: string;
+}
+
+/**
+ * Resolve the Game shown in the detail pane from URL state (SBGC-83).
+ *
+ * A requested slug that is present on the active page wins; otherwise a
+ * separately-resolved detail (e.g. ``getGameDetail``) is used.  When neither
+ * resolves — a deleted/stale/unclassifiable ``?game=`` slug — the top-ranked
+ * item is returned so the pane never shows a broken or empty selection.
+ * ``null`` is returned only when there is no request and no data at all.
+ */
+export function resolveRankingSelection(
+  requestedGame: string | null,
+  results: readonly RankingSelectionItem[],
+  resolvedDetail: RankingSelectionItem | null,
+): RankingSelectionItem | null {
+  if (requestedGame === null) return null;
+  const inPage = results.find((game) => game.slug === requestedGame);
+  if (inPage) return { slug: inPage.slug, name: inPage.name };
+  if (resolvedDetail)
+    return { slug: resolvedDetail.slug, name: resolvedDetail.name };
+  if (results.length > 0)
+    return { slug: results[0].slug, name: results[0].name };
+  return null;
+}
+
+/** Classify the rankings empty state for truthful SSR rendering (SBGC-83). */
+export type RankingsEmptyKind = "no-games" | "page-empty" | null;
+
+/**
+ * ``no-games`` when nothing is ranked at all, ``page-empty`` when an
+ * out-of-range page slice has no rows, or ``null`` for a populated list.
+ */
+export function rankingsEmptyKind(
+  count: number,
+  resultsCount: number,
+): RankingsEmptyKind {
+  if (count === 0) return "no-games";
+  if (resultsCount === 0) return "page-empty";
+  return null;
+}
+
+/**
+ * Normalize a raw ``page_size`` query value to a safe integer.
+ *
+ * ``null``/non-numeric/non-positive values fall back to ``fallback``; values
+ * above ``max`` are clamped.  Used by the same-origin rankings proxy, never by
+ * shareable URL state.
+ */
+export function normalizePageSize(
+  raw: string | null,
+  fallback: number,
+  max: number,
+): number {
+  if (raw === null) return fallback;
+  const trimmed = raw.trim();
+  if (!/^[0-9]+$/.test(trimmed)) return fallback;
+  const value = Number(trimmed);
+  if (!Number.isSafeInteger(value) || value < 1) return fallback;
+  return Math.min(value, max);
+}

@@ -1,7 +1,10 @@
 import type { APIRoute } from "astro";
 
 import { getGameRankings } from "../../lib/server/api";
-import { parseRankingsState } from "../../lib/rankings-state";
+import {
+  normalizePageSize,
+  parseRankingsState,
+} from "../../lib/rankings-state";
 
 /**
  * Same-origin proxy for the SBGC-81 public Game ranking endpoint.
@@ -16,18 +19,16 @@ import { parseRankingsState } from "../../lib/rankings-state";
  */
 export const prerender = false;
 
-function parsePageSize(raw: string | null): number {
-  if (raw === null) return 5;
-  const trimmed = raw.trim();
-  if (!/^[0-9]+$/.test(trimmed)) return 5;
-  const value = Number(trimmed);
-  if (!Number.isSafeInteger(value) || value < 1) return 5;
-  return Math.min(value, 50);
-}
+const DEFAULT_PAGE_SIZE = 5;
+const MAX_PAGE_SIZE = 50;
 
 export const GET: APIRoute = async ({ url }) => {
   const state = parseRankingsState(url.searchParams);
-  const pageSize = parsePageSize(url.searchParams.get("page_size"));
+  const pageSize = normalizePageSize(
+    url.searchParams.get("page_size"),
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  );
 
   try {
     const data = await getGameRankings({
