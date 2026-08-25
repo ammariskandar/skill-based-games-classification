@@ -103,7 +103,9 @@ const hasGames = resolved.length > 0;
 
 <script>
   import {
+    CAROUSEL_AUTOSCROLL_MS,
     carouselCloneCount,
+    createCarouselAutoscroll,
     normalizeCarouselScroll,
   } from "../../lib/homepage-carousel";
 
@@ -233,10 +235,12 @@ const hasGames = resolved.length > 0;
 
     // Infinite loop: arrows stay usable whenever the track can scroll; the only
     // degenerate case is a track that cannot scroll at all (no overflow).
-    const updateArrows = () => {
-      const canScroll = track.scrollWidth > track.clientWidth + 1;
-      prev.disabled = !canScroll;
-      next.disabled = !canScroll;
+    const canScroll = (): boolean => track.scrollWidth > track.clientWidth + 1;
+
+    const updateArrows = (): void => {
+      const scrollable = canScroll();
+      prev.disabled = !scrollable;
+      next.disabled = !scrollable;
     };
 
     // The loop wrap must not run while a smooth scroll is animating: writing
@@ -250,17 +254,53 @@ const hasGames = resolved.length > 0;
       settleId = window.setTimeout(normalize, 120);
     };
 
-    prev.addEventListener("click", () => {
-      track.scrollBy({
-        left: -step(),
-        behavior: reduceMotion.matches ? "auto" : "smooth",
-      });
-    });
-    next.addEventListener("click", () => {
+    // The single source of truth for "advance one card". Both the arrows and the
+    // autoscroll timer call these, so autoscroll is exactly equivalent to a Next
+    // click (same distance, smooth/reduced-motion behavior, and normalization).
+    const advanceNext = (): void => {
       track.scrollBy({
         left: step(),
         behavior: reduceMotion.matches ? "auto" : "smooth",
       });
+    };
+    const advancePrev = (): void => {
+      track.scrollBy({
+        left: -step(),
+        behavior: reduceMotion.matches ? "auto" : "smooth",
+      });
+    };
+
+    // Autoscroll is paused whenever the pointer is inside the interactive
+    // viewport, keyboard focus is inside it, the page is hidden, or the user
+    // prefers reduced motion. A single timer owns the cadence; `schedule()` is
+    // idempotent so pointer/focus/resize/visibility churn can never stack timers.
+    let pointerInside = false;
+    let focusInside = false;
+
+    const canAutoscroll = (): boolean =>
+      length >= 2 &&
+      canScroll() &&
+      !reduceMotion.matches &&
+      !document.hidden &&
+      !pointerInside &&
+      !focusInside;
+
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: canAutoscroll,
+      onAdvance: advanceNext,
+    });
+
+    prev.addEventListener("click", () => {
+      advancePrev();
+      // Manual interaction cancels any pending autoscroll and re-syncs the timer
+      // to the current eligibility (pointer/focus are inside, so it stays paused
+      // until the user leaves, which then starts a fresh countdown).
+      autoscroll.schedule();
+    });
+    next.addEventListener("click", () => {
+      advanceNext();
+      autoscroll.schedule();
     });
 
     track.addEventListener("scroll", scheduleSettle, { passive: true });
@@ -278,9 +318,47 @@ const hasGames = resolved.length > 0;
       scheduleSettle();
     });
 
+    if (viewport) {
+      viewport.addEventListener("pointerenter", () => {
+        pointerInside = true;
+        autoscroll.cancel();
+      });
+      viewport.addEventListener("pointerleave", () => {
+        pointerInside = false;
+        autoscroll.schedule();
+      });
+
+      viewport.addEventListener("focusin", (event) => {
+        // Pause only for keyboard focus (`:focus-visible`). A mouse-click also
+        // leaves the arrow buttons focused, and treating that as "keyboard focus"
+        // would disable autoscroll until the user clicks elsewhere — the wrong
+        // outcome after an ordinary manual Next/Prev click.
+        if (
+          event.target instanceof HTMLElement &&
+          event.target.matches(":focus-visible")
+        ) {
+          focusInside = true;
+          autoscroll.cancel();
+        }
+      });
+      viewport.addEventListener("focusout", () => {
+        focusInside = false;
+        autoscroll.schedule();
+      });
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        autoscroll.cancel();
+      } else {
+        autoscroll.schedule();
+      }
+    });
+
     measureArrows();
     updateArrows();
     normalize();
+    autoscroll.schedule();
   })();
 </script>
 

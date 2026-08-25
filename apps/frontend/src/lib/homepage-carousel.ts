@@ -126,3 +126,62 @@ export function normalizeCarouselScroll(
   if (scrollLeft < canonicalStart - epsilon) return scrollLeft + length * step;
   return scrollLeft;
 }
+
+// ── SBGC-195 autoscroll helpers ────────────────────────────────────────────
+
+/** Autoscroll cadence: one Next-equivalent advance per interval. */
+export const CAROUSEL_AUTOSCROLL_MS = 4500;
+
+export interface CarouselAutoscroll {
+  /** (Re)start the countdown. Idempotent — cancels any pending timer first. */
+  schedule(): void;
+  /** Cancel any pending timer. */
+  cancel(): void;
+  /** True while a timer is pending. */
+  readonly pending: boolean;
+}
+
+/**
+ * Single-timer autoscroll controller.  Owns exactly one `setTimeout` at a time
+ * so the carousel can never be advanced by two competing timers.  `isEligible`
+ * is re-checked both when scheduling and at fire time, so a pause that races the
+ * timer (a late pointer/focus enter, or a reduced-motion/visibility change after
+ * scheduling) can never advance the carousel.
+ *
+ * The DOM side effect (scrolling) lives in `onAdvance`; this helper only owns the
+ * scheduling lifecycle, which keeps it unit-testable with fake timers.
+ */
+export function createCarouselAutoscroll(opts: {
+  intervalMs: number;
+  isEligible: () => boolean;
+  onAdvance: () => void;
+}): CarouselAutoscroll {
+  const { intervalMs, isEligible, onAdvance } = opts;
+  let timerId = 0;
+
+  const cancel = (): void => {
+    if (timerId !== 0) {
+      clearTimeout(timerId);
+      timerId = 0;
+    }
+  };
+
+  const schedule = (): void => {
+    cancel();
+    if (!isEligible()) return;
+    timerId = setTimeout(() => {
+      timerId = 0;
+      if (!isEligible()) return;
+      onAdvance();
+      schedule();
+    }, intervalMs);
+  };
+
+  return {
+    schedule,
+    cancel,
+    get pending() {
+      return timerId !== 0;
+    },
+  };
+}

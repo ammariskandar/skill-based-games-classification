@@ -92,6 +92,25 @@ async function open(page: Page): Promise<void> {
   await waitForSettle(page);
 }
 
+/** Move the pointer below the carousel so autoscroll is eligible (SBGC-195). */
+async function movePointerOutside(page: Page): Promise<void> {
+  const viewport = page.viewportSize();
+  const y = viewport ? viewport.height - 5 : 715;
+  await page.mouse.move(10, y);
+}
+
+/**
+ * Wait until the flush card becomes `expected`, driven by the autoscroll timer.
+ * The interval is 4.5s; the 7s timeout leaves room for the smooth scroll and
+ * loop-normalization settle after the timer fires.
+ */
+async function waitForAutoscrollAdvance(
+  page: Page,
+  expected: string,
+): Promise<void> {
+  await expect.poll(() => flushName(page), { timeout: 7000 }).toBe(expected);
+}
+
 test("harness proof: smooth scroll produces intermediate motion", async ({
   page,
 }) => {
@@ -283,4 +302,120 @@ test("loops forward across multiple wraps at a wide viewport", async ({
     await waitForSettle(page);
     expect(await flushName(page)).toBe(name((k % GAME_COUNT) + 1));
   }
+});
+
+test("autoscroll advances one card every 4.5s when idle", async ({ page }) => {
+  await open(page);
+  await movePointerOutside(page);
+  expect(await flushName(page)).toBe(name(1));
+
+  await waitForAutoscrollAdvance(page, name(2));
+  await waitForAutoscrollAdvance(page, name(3));
+});
+
+test("autoscroll pauses while hovering and resumes with a fresh countdown", async ({
+  page,
+}) => {
+  await open(page);
+  await movePointerOutside(page);
+  expect(await flushName(page)).toBe(name(1));
+
+  // Hover a visible card: autoscroll must pause for longer than the interval.
+  await page
+    .locator("[data-carousel-card]:not([data-carousel-clone])")
+    .nth(2)
+    .hover();
+  await page.waitForTimeout(5000); // > 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  // Leaving starts a fresh countdown, not an immediate advance.
+  await movePointerOutside(page);
+  await page.waitForTimeout(3000); // < 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  await waitForAutoscrollAdvance(page, name(2));
+});
+
+test("autoscroll pauses while keyboard focus is inside", async ({ page }) => {
+  await open(page);
+  await movePointerOutside(page);
+  expect(await flushName(page)).toBe(name(1));
+
+  // Tab into the carousel: real keyboard focus sets `:focus-visible`, which is
+  // what pauses autoscroll (a programmatic `.focus()` would not).
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(5000); // > 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  await page.evaluate(() =>
+    (document.activeElement as HTMLElement | null)?.blur(),
+  );
+  await page.waitForTimeout(3000); // < 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  await waitForAutoscrollAdvance(page, name(2));
+});
+
+test("reduced-motion disables autoscroll but manual arrows still work", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page);
+  await movePointerOutside(page);
+
+  await page.waitForTimeout(5000); // > 4.5s
+  expect(await flushName(page)).toBe(name(1)); // no automatic movement
+
+  await page.click("[data-carousel-next]");
+  await waitForSettle(page);
+  expect(await flushName(page)).toBe(name(2));
+});
+
+test("autoscroll loops across the logical end", async ({ page }) => {
+  await open(page);
+
+  // Pre-position to Game 9 via manual clicks (the pointer sits over the Next
+  // button during this phase, which pauses autoscroll).
+  for (let k = 1; k <= 8; k++) {
+    await page.click("[data-carousel-next]");
+    await waitForSettle(page);
+  }
+  expect(await flushName(page)).toBe(name(9));
+
+  // Autoscroll advances 9 → 10 → 1 → 2 → 3 across the wrap.
+  await movePointerOutside(page);
+  await waitForAutoscrollAdvance(page, name(10));
+  await waitForAutoscrollAdvance(page, name(1));
+  await waitForAutoscrollAdvance(page, name(2));
+  await waitForAutoscrollAdvance(page, name(3));
+});
+
+test("autoscroll pauses while the page is hidden and resumes fresh", async ({
+  page,
+}) => {
+  await open(page);
+  await movePointerOutside(page);
+  expect(await flushName(page)).toBe(name(1));
+
+  // Chromium cannot truly background a tab, so simulate the visibility lifecycle
+  // by flagging the document hidden and dispatching the event the component
+  // listens for.
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", {
+      value: true,
+      configurable: true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(5000); // > 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  await page.evaluate(() => {
+    delete (document as { hidden?: boolean }).hidden;
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(3000); // < 4.5s
+  expect(await flushName(page)).toBe(name(1));
+
+  await waitForAutoscrollAdvance(page, name(2));
 });

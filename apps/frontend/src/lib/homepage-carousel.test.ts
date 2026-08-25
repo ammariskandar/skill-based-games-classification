@@ -2,14 +2,16 @@
  * Homepage carousel layout contract tests — SBGC-189.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  CAROUSEL_AUTOSCROLL_MS,
   CAROUSEL_BREAKPOINTS,
   CAROUSEL_LOOP_BUFFER,
   CAROUSEL_MAX_VISIBLE,
   carouselCloneCount,
   carouselScrollStep,
+  createCarouselAutoscroll,
   nextCarouselIndex,
   normalizeCarouselScroll,
   previousCarouselIndex,
@@ -146,5 +148,137 @@ describe("homepage carousel infinite-loop helpers (SBGC-191)", () => {
     const step = 236.4;
     // Just inside the tail-clone region (well below canonicalStart 1418.4).
     expect(normalizeCarouselScroll(1000, 10, 6, step)).toBe(3364);
+  });
+});
+
+describe("carousel autoscroll controller (SBGC-195)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("advances exactly once per interval", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => true,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    expect(autoscroll.pending).toBe(true);
+    expect(onAdvance).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS - 1);
+    expect(onAdvance).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it("reschedules after each advance for a continuous cadence", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => true,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps at most one pending timer across repeated schedules", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => true,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    autoscroll.schedule();
+    autoscroll.schedule();
+
+    // Only the most recent timer survives, so one interval still advances once.
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not schedule when ineligible", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => false,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    expect(autoscroll.pending).toBe(false);
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).not.toHaveBeenCalled();
+  });
+
+  it("re-checks eligibility at fire time so a late pause never advances", () => {
+    const onAdvance = vi.fn();
+    let eligible = true;
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => eligible,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    eligible = false; // pause after scheduling but before the timer fires
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).not.toHaveBeenCalled();
+    expect(autoscroll.pending).toBe(false);
+  });
+
+  it("cancel clears a pending timer", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => true,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    expect(autoscroll.pending).toBe(true);
+
+    autoscroll.cancel();
+    expect(autoscroll.pending).toBe(false);
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS);
+    expect(onAdvance).not.toHaveBeenCalled();
+  });
+
+  it("schedule after cancel restarts a fresh full interval", () => {
+    const onAdvance = vi.fn();
+    const autoscroll = createCarouselAutoscroll({
+      intervalMs: CAROUSEL_AUTOSCROLL_MS,
+      isEligible: () => true,
+      onAdvance,
+    });
+
+    autoscroll.schedule();
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS - 100);
+    autoscroll.cancel();
+    autoscroll.schedule(); // fresh countdown, not the 100ms remainder
+
+    vi.advanceTimersByTime(CAROUSEL_AUTOSCROLL_MS - 1);
+    expect(onAdvance).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(onAdvance).toHaveBeenCalledTimes(1);
   });
 });
