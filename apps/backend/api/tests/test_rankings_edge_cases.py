@@ -164,13 +164,19 @@ class UnifiedHalfIntegerPrecisionTests(TestCase):
         # Unified micro: a = (75+74)/2 = 74.5, b = (80+60)/2 = 70,
         # c = (70+65)/2 = 67.5 — distinct and orderable without truncation.
         _snapshot(
-            a, unified_integer_challenge=[75, 10, 10], unified_integer_reward=[74, 10, 10]
+            a,
+            unified_integer_challenge=[75, 10, 10],
+            unified_integer_reward=[74, 10, 10],
         )
         _snapshot(
-            b, unified_integer_challenge=[80, 10, 10], unified_integer_reward=[60, 10, 10]
+            b,
+            unified_integer_challenge=[80, 10, 10],
+            unified_integer_reward=[60, 10, 10],
         )
         _snapshot(
-            c, unified_integer_challenge=[70, 10, 10], unified_integer_reward=[65, 10, 10]
+            c,
+            unified_integer_challenge=[70, 10, 10],
+            unified_integer_reward=[65, 10, 10],
         )
 
         r = _get(profile="unified", dimension="micro")
