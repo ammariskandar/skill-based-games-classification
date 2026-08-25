@@ -5,6 +5,7 @@ HTTP endpoints against a **local** Django development server.
 
 - `Skill-Based Games Classification.postman_collection.json` — Steam import/refresh collection (SBGC-57)
 - `Game Catalogue API.postman_collection.json` — public Game catalogue collection (SBGC-76)
+- `Game Rankings API.postman_collection.json` — public Game rankings collection (SBGC-81)
 - `local.postman_environment.json` — local environment (no secrets committed)
 
 ## What this covers
@@ -185,3 +186,28 @@ Three folders map to the three SBGC-76 human checks:
 
 Run it with the catalogue collection's own `base_url` variable (or reuse the
 existing local environment).  No credentials are needed.
+
+## Game Rankings collection
+
+The separate `Game Rankings API.postman_collection.json` collection exercises
+the **public, read-only** SBGC-81 rankings endpoint:
+
+```text
+GET /api/v1/rankings/
+```
+
+It needs **no authentication, CSRF, or Steam** — only a running local Django
+development server and the `base_url` variable from `local.postman_environment.json`.
+
+Five folders map to the five SBGC-81 human checks:
+
+| Folder | Requests |
+|--------|----------|
+| `01 Unified` | Unified Micro descending (defaults) — envelope shape + descending order |
+| `02 Challenge & Reward` | Challenge Macro ascending; Reward Mystiko descending |
+| `03 Dominant Filter` | Unified Micro dominant-category filter |
+| `04 Pagination` | `page=2&page_size=5` pagination |
+| `05 Validation` | invalid `profile` → 422 `VALIDATION_ERROR` |
+
+Unified scores are `(Challenge + Reward) / 2` and may be `.5`; the collection
+asserts numeric scores without rounding.

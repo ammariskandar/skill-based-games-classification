@@ -193,6 +193,78 @@ first, Steam fallback — SBGC-190); the frontend never resolves override
 precedence.  `classification` is `null` when the Game has no displayable scores
 (no fake zero vectors).
 
+## Game Rankings — `GET /api/v1/rankings/`
+
+Returns a deterministic, paginated ranking of publicly-listed base Games that
+have a current READY `ClassificationSnapshot` with the score data required for
+the requested profile.  It is **read-only**: never contacts Steam, never probes
+images, never recalculates classification.  Draft/archived and non-game content,
+Games without a current READY snapshot, and Games missing the required score
+data are excluded from both `results` and `count`.  Missing Hero artwork does
+not exclude an otherwise rankable Game.
+
+### Query parameters
+
+| Parameter | Type | Default | Meaning |
+|-----------|------|---------|---------|
+| `profile` | `unified` / `challenge` / `reward` | `unified` | ranking profile (see below) |
+| `dimension` | `micro` / `mystiko` / `macro` | `micro` | skill dimension to rank by |
+| `direction` | `desc` / `asc` | `desc` | score order (high→low or low→high) |
+| `dominant` | `micro` / `mystiko` / `macro` | — | dominant-category filter (strictly-highest; top-score ties match none) |
+| `page` | positive int | `1` | 1-based page number |
+| `page_size` | positive int | `24` | results per page (max `100`) |
+
+### Profile semantics
+
+- `challenge` — the selected dimension of
+  `ClassificationSnapshot.unified_integer_challenge`.
+- `reward` — the selected dimension of
+  `ClassificationSnapshot.unified_integer_reward`.
+- `unified` — a presentation-only profile equal to
+  `(challenge + reward) / 2` for the selected dimension.  It is **not** a
+  separate persisted classification.
+
+The canonical vector order is `[micro, macro, mystiko]`.  Unified scores may be
+a whole number (e.g. `80 + 60 → 70`) or `.5` (e.g. `80 + 55 → 67.5`); `.5` is
+never rounded away.  Database-side ordering uses the doubled integer
+`challenge + reward`, so Unified ordering is integer-exact; the public `score`
+is halved only when serialized.
+
+### Dominant-category filter
+
+`dominant` filters against the selected `profile`'s published current READY
+snapshot.  For `challenge`/`reward`, dominance is the strictly-highest of the
+three dimensions; for `unified`, dominance is the strictly-highest of the three
+summed dimensions (`challenge_micro + reward_micro`, and so on).  A top-score
+tie has no dominant category and matches no filter.  Filtering happens before
+ordering and pagination.
+
+### Response envelope
+
+```json
+{
+  "count": 30,
+  "page": 1,
+  "page_size": 24,
+  "total_pages": 2,
+  "results": [
+    {"slug": "hades", "name": "Hades", "hero_url": "https://...", "score": 70},
+    {"slug": "portal-2", "name": "Portal 2", "hero_url": "", "score": 67.5}
+  ]
+}
+```
+
+- `score` is the selected profile's dimension score: an integer for
+  `challenge`/`reward`, and `(challenge + reward) / 2` for `unified` (an
+  integer or a `.5` value).
+- `hero_url` is the effective Hero artwork (Steam
+  `manual_hero_url || library_hero_url`; Manual `manual_hero_url` — SBGC-190).
+  It is an empty string for a Game with no Hero; such Games are still ranked.
+- Ordering is deterministic: `score` (selected direction) → `name ASC` → `id ASC`.
+  Only the score reverses for `asc`; name/id tie-breakers stay ascending.
+- `count` is the filtered count; `total_pages` is `0` when `count` is `0`.
+  A page beyond the final page returns `200` with `results: []`.
+
 ## Public Game Detail — `GET /api/v1/games/{slug}`
 
 Returns the normalized public identity and persisted metadata for one
@@ -475,9 +547,6 @@ and standard error-response declarations.
 
 ## Limitations
 
-- **Rankings reads deferred.** Game detail (SBGC-71), homepage (SBGC-189),
-  catalogue (SBGC-76/79), and search index (SBGC-78) reads are delivered.
-  The rankings read endpoints remain deferred to SBGC-11.
 - **No global authentication backend.** Session auth is opt-in per operation
   via `auth=django_auth`; there is no project-wide auth middleware.
 - **Method-not-allowed returns HTML.** Documented framework limitation

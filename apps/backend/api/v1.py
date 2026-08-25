@@ -8,6 +8,7 @@ and attaches standard exception handlers.
 from classifications.api import router as classifications_router
 from django.conf import settings
 from games.api import router as games_router
+from games.rankings_api import router as rankings_router
 from ninja import NinjaAPI
 
 from api.errors import register_handlers
@@ -35,3 +36,4 @@ register_handlers(api)
 api.add_router("", system_router)
 api.add_router("/games/", games_router)
 api.add_router("/classifications/", classifications_router)
+api.add_router("/rankings/", rankings_router)
