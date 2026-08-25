@@ -15,6 +15,9 @@ interface Props {
   jsonLd?: string;
   /** Discovery routes enable a low-priority background Search-index preload. */
   preloadGameSearchIndex?: boolean;
+  /** App-shell routes (e.g. Rankings) fill the viewport between the Header and
+   * Footer with no document-level scrollbar.  Opt-in only. */
+  viewportContained?: boolean;
 }
 
 const DEFAULT_DESCRIPTION =
@@ -27,6 +30,16 @@ const titleTemplate = Astro.props.title
 const description = Astro.props.description ?? DEFAULT_DESCRIPTION;
 
 const preloadSearch = Astro.props.preloadGameSearchIndex ?? false;
+
+const viewportContained = Astro.props.viewportContained ?? false;
+
+const bodyClass = viewportContained
+  ? "flex h-dvh flex-col overflow-hidden bg-bg text-text antialiased"
+  : "min-h-screen bg-bg text-text antialiased";
+
+const mainClass = viewportContained
+  ? "shell-gutter flex min-h-0 flex-1"
+  : "shell-gutter py-8 sm:py-12";
 
 const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
 const canonicalUrl = Astro.props.canonicalPath
@@ -83,7 +96,7 @@ const twitterCard = image ? "summary_large_image" : "summary";
     <GoogleAnalytics />
   </head>
   <body
-    class="min-h-screen bg-bg text-text antialiased"
+    class={bodyClass}
     data-preload-search={preloadSearch ? "true" : "false"}
   >
     <a
@@ -95,7 +108,7 @@ const twitterCard = image ? "summary_large_image" : "summary";
 
     <Header />
 
-    <main id="main-content" class="shell-gutter py-8 sm:py-12">
+    <main id="main-content" class={mainClass}>
       <slot />
     </main>
 

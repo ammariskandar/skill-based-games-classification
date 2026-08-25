@@ -1,0 +1,125 @@
+---
+import { gameHref } from "../../lib/catalogue-presentation";
+
+interface Props {
+  selectedGame: { slug: string; name: string } | null;
+}
+
+const { selectedGame } = Astro.props;
+---
+
+{
+  selectedGame === null ? (
+    <div class="rankings-detail rankings-detail--empty" data-rankings-detail>
+      <p class="rankings-detail__empty">
+        Select one of the games to see details
+      </p>
+    </div>
+  ) : (
+    <div class="rankings-detail" data-rankings-detail>
+      <h2 class="rankings-detail__heading">{selectedGame.name}</h2>
+
+      <div class="rankings-detail__region" aria-hidden="true">
+        <span class="rankings-detail__region-label">Radar / Dominant type</span>
+      </div>
+
+      <div class="rankings-detail__actions">
+        <a
+          href={gameHref(selectedGame.slug)}
+          class="rankings-detail__view"
+          data-rankings-view
+        >
+          View Game
+        </a>
+      </div>
+
+      <div class="rankings-detail__region" aria-hidden="true">
+        <span class="rankings-detail__region-label">Similar games</span>
+      </div>
+    </div>
+  )
+}
+
+<style is:global>
+  .rankings-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .rankings-detail--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .rankings-detail__empty {
+    max-width: 16rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-muted);
+  }
+
+  .rankings-detail__heading {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  /* Placeholder shell for future radar/Dominant-type and similar-games work.
+     Truthful empty surface — no fake radar, no fake recommendations. */
+  .rankings-detail__region {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 6rem;
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .rankings-detail__region-label {
+    font-size: 0.8125rem;
+    color: var(--color-dim);
+  }
+
+  .rankings-detail__actions {
+    display: flex;
+  }
+
+  .rankings-detail__view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-sm);
+    transition: background-color 0.15s ease;
+  }
+
+  .rankings-detail__view:hover {
+    background: var(--color-surface-3);
+  }
+
+  .rankings-detail__view:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rankings-detail__view {
+      transition: none;
+    }
+  }
+</style>

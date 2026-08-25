@@ -1,0 +1,92 @@
+---
+interface Props {
+  count?: number;
+}
+
+const { count = 5 } = Astro.props;
+---
+
+<div class="rankings-skeleton" data-rankings-skeleton hidden>
+  {
+    Array.from({ length: count }).map(() => (
+      <div class="rankings-skeleton__row" aria-hidden="true">
+        <span class="rankings-skeleton__media" />
+        <span class="rankings-skeleton__name" />
+        <span class="rankings-skeleton__score" />
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .rankings-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  /* The `hidden` attribute is a UA-level `display: none`; make it explicit so
+     `display: flex` above never overrides it. */
+  .rankings-skeleton[hidden] {
+    display: none;
+  }
+
+  .rankings-skeleton__row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .rankings-skeleton__media {
+    flex: none;
+    width: 6rem;
+    aspect-ratio: 460 / 215;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-3);
+  }
+
+  .rankings-skeleton__name {
+    flex: 1 1 auto;
+    height: 0.9375rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-3);
+  }
+
+  .rankings-skeleton__score {
+    flex: none;
+    width: 2.25rem;
+    height: 1.0625rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-3);
+  }
+
+  /* Shimmer only for non-reduced-motion users; reduced-motion gets a static
+     skeleton. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rankings-skeleton__media,
+    .rankings-skeleton__name,
+    .rankings-skeleton__score {
+      background: linear-gradient(
+        90deg,
+        var(--color-surface-3) 25%,
+        var(--color-surface-2) 50%,
+        var(--color-surface-3) 75%
+      );
+      background-size: 200% 100%;
+      animation: rankings-shimmer 1.5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes rankings-shimmer {
+    from {
+      background-position: 200% 0;
+    }
+
+    to {
+      background-position: -200% 0;
+    }
+  }
+</style>
