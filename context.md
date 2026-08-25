@@ -823,6 +823,8 @@ A future implementation MAY split this into separate `ChallengeProfile` and `Rew
 
 May include dominant Challenge dimension, dominant Reward dimension, tied dimensions, separate vector representations, formatted values, and ranking positions. Derivation SHOULD live in one backend service/query layer, not be duplicated in templates.
 
+SBGC-81 delivers the public ranking read (`GET /api/v1/rankings/`) over these published values. Challenge/Reward read the current READY snapshot's `unified_integer_*` arrays (canonical `[micro, macro, mystiko]`); Unified is a presentation-only `(Challenge + Reward) / 2` (`.5` preserved) and is never persisted. See `docs/backend-api.md` for profile/direction/eligibility/tie/dominance/pagination semantics.
+
 ## 13.4 `ClassificationSubmission` — final only
 
 ```text

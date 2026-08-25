@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "Game Rankings API",
+    "description": "Postman collection for the SBGC-81 public Game rankings endpoint (`GET /api/v1/rankings/`). Covers the five human checks: Unified Micro desc, Challenge Macro asc, Reward Mystiko desc, one dominant filter, and one paginated request, plus an invalid-enum validation check. Public read-only — no authentication, no Steam, no CSRF. Requires a locally running Django development server and the `base_url` variable from `local.postman_environment.json`. Unified scores may be `.5`; this is expected and not rounded.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Unified",
+      "item": [
+        {
+          "name": "Unified Micro desc (defaults)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('envelope has pagination fields', function () {",
+                  "    pm.expect(body).to.have.property('count');",
+                  "    pm.expect(body).to.have.property('page');",
+                  "    pm.expect(body).to.have.property('page_size');",
+                  "    pm.expect(body).to.have.property('total_pages');",
+                  "    pm.expect(body).to.have.property('results');",
+                  "});",
+                  "pm.test('defaults are page 1 and page_size 24', function () {",
+                  "    pm.expect(body.page).to.eql(1);",
+                  "    pm.expect(body.page_size).to.eql(24);",
+                  "});",
+                  "pm.test('each item exposes the ranking keys', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(item).to.have.property('slug');",
+                  "        pm.expect(item).to.have.property('name');",
+                  "        pm.expect(item).to.have.property('hero_url');",
+                  "        pm.expect(item).to.have.property('score');",
+                  "    });",
+                  "});",
+                  "pm.test('score is a number', function () {",
+                  "    body.results.forEach(function (item) {",
+                  "        pm.expect(typeof item.score).to.eql('number');",
+                  "    });",
+                  "});",
+                  "pm.test('scores are descending (non-increasing)', function () {",
+                  "    const scores = body.results.map(function (r) { return r.score; });",
+                  "    for (let i = 1; i < scores.length; i++) {",
+                  "        pm.expect(scores[i - 1] >= scores[i]).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""]
+            },
+            "description": "Fetches the default ranking (Unified profile, Micro dimension, descending). Asserts the envelope shape, the ranking item keys, numeric scores, and descending order."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Challenge & Reward",
+      "item": [
+        {
+          "name": "Challenge Macro asc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('scores are ascending (non-decreasing)', function () {",
+                  "    const scores = body.results.map(function (r) { return r.score; });",
+                  "    for (let i = 1; i < scores.length; i++) {",
+                  "        pm.expect(scores[i - 1] <= scores[i]).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/?profile=challenge&dimension=macro&direction=asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""],
+              "query": [
+                { "key": "profile", "value": "challenge" },
+                { "key": "dimension", "value": "macro" },
+                { "key": "direction", "value": "asc" }
+              ]
+            },
+            "description": "Fetches the Challenge Macro ranking in ascending order and asserts the scores are non-decreasing."
+          },
+          "response": []
+        },
+        {
+          "name": "Reward Mystiko desc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('scores are descending (non-increasing)', function () {",
+                  "    const scores = body.results.map(function (r) { return r.score; });",
+                  "    for (let i = 1; i < scores.length; i++) {",
+                  "        pm.expect(scores[i - 1] >= scores[i]).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/?profile=reward&dimension=mystiko&direction=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""],
+              "query": [
+                { "key": "profile", "value": "reward" },
+                { "key": "dimension", "value": "mystiko" },
+                { "key": "direction", "value": "desc" }
+              ]
+            },
+            "description": "Fetches the Reward Mystiko ranking in descending order and asserts the scores are non-increasing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Dominant Filter",
+      "item": [
+        {
+          "name": "Unified Micro dominant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('count is a non-negative integer', function () {",
+                  "    pm.expect(Number.isInteger(body.count)).to.be.true;",
+                  "    pm.expect(body.count).to.be.at.least(0);",
+                  "});",
+                  "pm.test('results length matches count and page_size', function () {",
+                  "    pm.expect(body.results.length).to.be.at.most(body.page_size);",
+                  "    pm.expect(body.results.length).to.be.at.most(body.count);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/?profile=unified&dominant=micro",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""],
+              "query": [
+                { "key": "profile", "value": "unified" },
+                { "key": "dominant", "value": "micro" }
+              ]
+            },
+            "description": "Fetches the Unified ranking filtered to Games whose summed Challenge+Reward Micro dimension is strictly highest. Asserts the response is well-formed (count may be 0 when no Game has a dominant category)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Pagination",
+      "item": [
+        {
+          "name": "Paginated (page 2, size 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('page and page_size reflect the request', function () {",
+                  "    pm.expect(body.page).to.eql(2);",
+                  "    pm.expect(body.page_size).to.eql(5);",
+                  "});",
+                  "pm.test('results length does not exceed page_size', function () {",
+                  "    pm.expect(Array.isArray(body.results)).to.be.true;",
+                  "    pm.expect(body.results.length).to.be.at.most(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/?page=2&page_size=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""],
+              "query": [
+                { "key": "page", "value": "2" },
+                { "key": "page_size", "value": "5" }
+              ]
+            },
+            "description": "Fetches page 2 with page_size 5 and asserts the pagination fields reflect the request (results length at most 5)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Validation",
+      "item": [
+        {
+          "name": "Invalid profile → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 422', function () {",
+                  "    pm.expect(pm.response.code).to.eql(422);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('error code is VALIDATION_ERROR', function () {",
+                  "    pm.expect(body.error.code).to.eql('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rankings/?profile=bogus",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "rankings", ""],
+              "query": [
+                { "key": "profile", "value": "bogus" }
+              ]
+            },
+            "description": "Sends an invalid `profile` value and asserts the standard 422 validation envelope (not a silent fallback)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

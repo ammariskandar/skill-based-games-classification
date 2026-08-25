@@ -32,19 +32,19 @@ from dataclasses import dataclass
 
 from classifications.calculations.results import READY
 from classifications.models import ClassificationSnapshot
+from classifications.services.published import (
+    published_score,
+    published_snapshot_exists,
+)
 from classifications.skills import EditorialProfile, SkillCategory
 from django.db import models
 from django.db.models import (
     BooleanField,
     Case,
     CharField,
-    Exists,
     F,
-    IntegerField,
-    OuterRef,
     Prefetch,
     Q,
-    Subquery,
     Value,
     When,
 )
@@ -61,21 +61,6 @@ class CatalogueSort(models.TextChoices):
     MICRO = "micro", "Micro"
     MYSTIKO = "mystiko", "Mystiko"
     MACRO = "macro", "Macro"
-
-
-# Frozen canonical profile order for the unified integer arrays
-# ``[micro, macro, mystiko]`` (PROFILE_DISPLAY_ORDER).  Index lookup is pinned
-# here rather than inferred from display order.
-_SKILL_INDEX: dict[str, int] = {
-    SkillCategory.MICRO: 0,
-    SkillCategory.MACRO: 1,
-    SkillCategory.MYSTIKO: 2,
-}
-
-_PROFILE_FIELD: dict[str, str] = {
-    EditorialProfile.CHALLENGE: "unified_integer_challenge",
-    EditorialProfile.REWARD: "unified_integer_reward",
-}
 
 
 @dataclass(frozen=True)
@@ -145,28 +130,6 @@ def _validate_query(query: CatalogueQuery) -> None:
         )
 
 
-def _published_score(profile: str, category: str) -> Subquery:
-    """Subquery for one published READY unified integer score.
-
-    Extracts a single array element from the current READY snapshot's
-    ``unified_integer_{profile}`` JSON list (canonical order
-    ``[micro, macro, mystiko]``).  Returns ``NULL`` when no current READY
-    snapshot exists — i.e. the Game has no usable public score.
-    """
-    field = _PROFILE_FIELD[profile]
-    index = _SKILL_INDEX[category]
-    return Subquery(
-        ClassificationSnapshot.objects.filter(
-            game=OuterRef("pk"),
-            is_current=True,
-            status=READY,
-        )
-        .order_by()
-        .values(f"{field}__{index}")[:1],
-        output_field=IntegerField(),
-    )
-
-
 def _has_capsule_expression() -> Case:
     """Boolean annotation: does the Game have an effective Capsule URL?
 
@@ -217,13 +180,7 @@ def get_game_catalogue(query: CatalogueQuery) -> CataloguePage:
         qs = qs.manual()
 
     if query.classified is not None:
-        has_ready = Exists(
-            ClassificationSnapshot.objects.filter(
-                game=OuterRef("pk"),
-                is_current=True,
-                status=READY,
-            )
-        )
+        has_ready = published_snapshot_exists()
         qs = qs.filter(has_ready) if query.classified else qs.exclude(has_ready)
 
     # Dominant-category filter (published current READY snapshot).  Strictly
@@ -232,9 +189,9 @@ def get_game_catalogue(query: CatalogueQuery) -> CataloguePage:
     if query.dominant is not None:
         qs = (
             qs.annotate(
-                _cat_micro=_published_score(query.profile, SkillCategory.MICRO),
-                _cat_macro=_published_score(query.profile, SkillCategory.MACRO),
-                _cat_mystiko=_published_score(query.profile, SkillCategory.MYSTIKO),
+                _cat_micro=published_score(query.profile, SkillCategory.MICRO),
+                _cat_macro=published_score(query.profile, SkillCategory.MACRO),
+                _cat_mystiko=published_score(query.profile, SkillCategory.MYSTIKO),
             )
             .annotate(
                 _dominant=Case(
@@ -266,7 +223,7 @@ def get_game_catalogue(query: CatalogueQuery) -> CataloguePage:
         CatalogueSort.MYSTIKO,
         CatalogueSort.MACRO,
     ):
-        qs = qs.annotate(_score=_published_score(query.profile, query.sort))
+        qs = qs.annotate(_score=published_score(query.profile, query.sort))
         primary_order = [F("_score").desc(nulls_last=True), "name", "id"]
     elif query.sort == CatalogueSort.NAME_DESC:
         primary_order = ["-name", "id"]
