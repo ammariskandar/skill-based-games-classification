@@ -56,6 +56,10 @@ const { selectedGame } = Astro.props;
     width: 100%;
     min-width: 0;
     height: 100%;
+    /* Give the title clearance from the fixed header and keep the lower
+       placeholder from colliding with the footer inside the viewport shell. */
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
     overflow-y: auto;
   }
 
