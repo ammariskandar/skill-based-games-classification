@@ -359,6 +359,42 @@ SBGC-79 added the catalogue filter/sort controls (see "Game Catalogue"); the
 Header Search itself is unchanged and only consumes/extends `/catalogue` URL
 state via `catalogueHref`.
 
+### Rankings (SBGC-82)
+
+`/rankings` is a **viewport-contained, URL-driven ranking application**, not a
+catalogue-style browsing page.  It is SSR/on-demand and reads the SBGC-81 public
+ranking DTO (`GET /api/v1/rankings/`) server-side; Django owns score derivation,
+ordering, and pagination, and the frontend never recomputes a score (Unified
+`.5` is rounded for display only, never for sorting).
+
+- **Shell** — `BaseLayout` gains an opt-in `viewportContained` prop that makes the
+  `<body>` a fixed-height flex column and the `<main>` a flex-growing region, so
+  the Rankings application fills the Header→Footer space with no document-level
+  scrollbar.  Header and Footer behaviour are otherwise unchanged.
+- **URL state** — `profile`, `dimension`, `direction`, `page`, and the selected
+  `game` slug are URL parameters (`src/lib/rankings-state.ts`); defaults are
+  omitted so bare `/rankings` is the canonical default (Unified, Micro
+  High→Low, page 1, no selection).  Non-default states are `noindex`.
+- **Controls** — three semantic anchor tabs (Unified/Challenge/Reward) and one
+  sort `<select>` (six dimension×direction choices); both are progressive
+  enhancements over ordinary links/navigation.
+- **Rows** — Hero + name + score only, no ordinal rank numbers; a row is a
+  `<button>` (not a link) and selecting it updates the right detail pane and
+  the URL without navigating.
+- **Detail pane** — a permanent shell (empty state, or a placeholder
+  radar/Dominant-type region + a `View Game` link to `/games/{slug}` + a
+  placeholder similar-games region); no radar/recommendation logic is
+  implemented under SBGC-82.
+- **Transitions** — tab/sort/page changes fetch the same-origin proxy
+  `/api/rankings` (`src/pages/api/rankings.ts` → `getGameRankings`) and swap the
+  list with a shimmer skeleton; the browser never calls Django directly.
+- **Dynamic page size** — the client measures the ranking-list region height and
+  row geometry and recomputes the page size (`calculatePageSize`), resetting to
+  page 1 when it changes; `page_size` is never part of shareable URL state.
+- **Runtime DOM** — ranking rows and the detail pane are replaced at runtime, so
+  their styles are `is:global` (a deliberate scoping boundary); the static
+  controls keep scoped styles.
+
 ### SEO Metadata
 
 `BaseLayout.astro` owns default `<title>`, `<meta name="description">`, Open Graph, Twitter card, canonical URL, and `<meta name="robots">`. Each page overrides title and description via props. Canonical URL is constructed from `PUBLIC_SITE_URL` with a safe local fallback.

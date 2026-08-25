@@ -153,6 +153,19 @@ and layers a memory cache, a versioned `sessionStorage` cache (15-minute TTL),
 and a single in-flight Promise (so background preload and explicit Search open
 never issue a duplicate request).
 
+### Rankings route (SBGC-82)
+
+`getGameRankings()` (in `games.ts`) fetches the SBGC-81 public ranking DTO
+(`GET /api/v1/rankings/`) with `profile`/`dimension`/`direction`/`page`/
+`pageSize` — Django owns score derivation, ordering, and pagination; the
+frontend only renders the supplied score (Unified `.5` is rounded for display
+only, never for sorting).  The same-origin proxy `/api/rankings` (in
+`src/pages/api/rankings.ts`) normalizes the parameters and delegates to
+`getGameRankings` so the browser never calls Django directly; `page_size` is
+viewport-derived and accepted by the proxy but is never part of shareable URL
+state.  A service failure returns `503` `SERVICE_UNAVAILABLE`; the route renders
+a truthful error state, never an empty ranking.
+
 ### Game-detail state matrix (SBGC-74)
 
 | Upstream outcome | `getGameDetail` result | Page result |

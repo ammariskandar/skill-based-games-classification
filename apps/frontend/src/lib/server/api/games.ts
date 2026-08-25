@@ -106,6 +106,43 @@ export interface GameSearchIndexResponse {
   games: GameSearchIndexItem[];
 }
 
+/** Ranking profile: the two editorial profiles plus the presentation Unified view. */
+export type RankingProfile = "unified" | "challenge" | "reward";
+
+/** Skill dimension for a ranking. */
+export type RankingDimension = "micro" | "macro" | "mystiko";
+
+/** Ranking score order. */
+export type RankingDirection = "desc" | "asc";
+
+/** One public ranking row (SBGC-81).  `score` is integer for Challenge/Reward
+ * and `(Challenge + Reward) / 2` for Unified (may be `.5`). */
+export interface RankingItem {
+  slug: string;
+  name: string;
+  hero_url: string;
+  score: number;
+}
+
+/** Paginated public ranking envelope (SBGC-81). */
+export interface RankingResponse {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: RankingItem[];
+}
+
+/** Ranking request inputs (SBGC-81).  `pageSize` is viewport-derived and is
+ * never part of shareable URL state. */
+export interface RankingQuery {
+  profile?: RankingProfile;
+  dimension?: RankingDimension;
+  direction?: RankingDirection;
+  page?: number;
+  pageSize?: number;
+}
+
 /** Primary catalogue sort identifiers (SBGC-79). */
 export type CatalogueSort =
   "name_asc" | "name_desc" | "recent" | "micro" | "mystiko" | "macro";
@@ -225,6 +262,33 @@ export async function getGameSearchIndex(): Promise<GameSearchIndexItem[]> {
   );
   if (result.ok) {
     if ("data" in result) return result.data.games;
+    throw new BackendApiError("Unexpected empty response from the API.");
+  }
+  throw new BackendApiError(result.error.message, result);
+}
+
+/**
+ * Fetch one page of the public Game ranking from Django (SBGC-81).
+ *
+ * Django owns eligibility, profile/dimension/direction score derivation,
+ * dominance, ordering, and pagination; the frontend only renders the score it
+ * is given and never recomputes Unified.
+ */
+export async function getGameRankings(
+  query: RankingQuery = {},
+): Promise<RankingResponse> {
+  const params: Record<string, string> = {};
+  if (query.profile !== undefined) params.profile = query.profile;
+  if (query.dimension !== undefined) params.dimension = query.dimension;
+  if (query.direction !== undefined) params.direction = query.direction;
+  if (query.page !== undefined) params.page = String(query.page);
+  if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
+
+  const result = await getJSON<RankingResponse>("/api/v1/rankings/", {
+    params,
+  });
+  if (result.ok) {
+    if ("data" in result) return result.data;
     throw new BackendApiError("Unexpected empty response from the API.");
   }
   throw new BackendApiError(result.error.message, result);

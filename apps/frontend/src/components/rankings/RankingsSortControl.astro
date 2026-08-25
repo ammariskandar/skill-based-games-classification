@@ -1,0 +1,64 @@
+---
+import { SORT_OPTIONS, sortKeyFor } from "../../lib/rankings-state";
+import type { RankingsState } from "../../lib/rankings-state";
+
+interface Props {
+  state: RankingsState;
+}
+
+const { state } = Astro.props;
+const currentKey = sortKeyFor(state.dimension, state.direction);
+---
+
+<label class="rankings-sort">
+  <span class="rankings-sort__label" id="rankings-sort-label">Sort</span>
+  <select
+    class="rankings-sort__select"
+    data-rankings-sort
+    aria-labelledby="rankings-sort-label"
+  >
+    {
+      SORT_OPTIONS.map((option) => {
+        const key = sortKeyFor(option.dimension, option.direction);
+        return (
+          <option value={key} selected={key === currentKey}>
+            {option.label}
+          </option>
+        );
+      })
+    }
+  </select>
+</label>
+
+<style>
+  .rankings-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rankings-sort__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .rankings-sort__select {
+    appearance: none;
+    padding: 0.375rem 2rem 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--color-text);
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    cursor: pointer;
+  }
+
+  .rankings-sort__select:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+</style>

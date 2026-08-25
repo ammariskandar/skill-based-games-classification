@@ -5,6 +5,7 @@ export {
   GameNotFoundError,
   getGameCatalogue,
   getGameDetail,
+  getGameRankings,
   getGameSearchIndex,
   getHomepageCarousel,
 } from "./games";
@@ -26,6 +27,12 @@ export type {
   GameSource,
   HomepageCarouselCard,
   HomepageCarouselResponse,
+  RankingDimension,
+  RankingDirection,
+  RankingItem,
+  RankingProfile,
+  RankingQuery,
+  RankingResponse,
 } from "./games";
 export type {
   ApiError,

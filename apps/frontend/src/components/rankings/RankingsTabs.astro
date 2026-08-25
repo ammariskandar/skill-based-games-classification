@@ -1,0 +1,79 @@
+---
+import {
+  PROFILE_LABELS,
+  RANKING_PROFILES,
+  rankingsHref,
+} from "../../lib/rankings-state";
+import type { RankingsState } from "../../lib/rankings-state";
+
+interface Props {
+  state: RankingsState;
+}
+
+const { state } = Astro.props;
+---
+
+<nav class="rankings-tabs" aria-label="Ranking profile" data-rankings-tabs>
+  {
+    RANKING_PROFILES.map((profile) => {
+      const active = profile === state.profile;
+      // Changing tab starts the new profile at page 1; the selected Game is
+      // independent and is preserved in the URL.
+      const href = rankingsHref({ ...state, profile, page: 1 });
+      return (
+        <a
+          href={href}
+          aria-current={active ? "page" : undefined}
+          data-rankings-tab
+          data-profile={profile}
+          class:list={["rankings-tabs__tab", active && "is-active"]}
+        >
+          {PROFILE_LABELS[profile]}
+        </a>
+      );
+    })
+  }
+</nav>
+
+<style>
+  .rankings-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .rankings-tabs__tab {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .rankings-tabs__tab:hover {
+    color: var(--color-text);
+  }
+
+  .rankings-tabs__tab.is-active {
+    color: var(--color-text);
+    border-bottom-color: var(--color-blue);
+  }
+
+  .rankings-tabs__tab:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rankings-tabs__tab {
+      transition: none;
+    }
+  }
+</style>

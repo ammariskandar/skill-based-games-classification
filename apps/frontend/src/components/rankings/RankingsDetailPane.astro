@@ -1,0 +1,176 @@
+---
+import { gameHref } from "../../lib/catalogue-presentation";
+
+interface Props {
+  selectedGame: { slug: string; name: string } | null;
+}
+
+const { selectedGame } = Astro.props;
+---
+
+{
+  selectedGame === null ? (
+    <div class="rankings-detail rankings-detail--empty" data-rankings-detail>
+      <p class="rankings-detail__empty">
+        Select one of the games to see details
+      </p>
+    </div>
+  ) : (
+    <div class="rankings-detail" data-rankings-detail>
+      <h2 class="rankings-detail__heading">{selectedGame.name}</h2>
+
+      <div class="rankings-detail__upper" aria-hidden="true">
+        <div class="rankings-detail__region">
+          <span class="rankings-detail__region-label">Radar</span>
+        </div>
+        <div class="rankings-detail__region">
+          <span class="rankings-detail__region-label">Dominant Type</span>
+        </div>
+      </div>
+
+      <div class="rankings-detail__actions">
+        <a
+          href={gameHref(selectedGame.slug)}
+          class="rankings-detail__view"
+          data-rankings-view
+        >
+          View Game <span aria-hidden="true">&gt;&gt;</span>
+        </a>
+      </div>
+
+      <div
+        class="rankings-detail__region rankings-detail__region--grow"
+        aria-hidden="true"
+      >
+        <span class="rankings-detail__region-label">Suggested Games</span>
+      </div>
+    </div>
+  )
+}
+
+<style is:global>
+  .rankings-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    /* Give the title clearance from the fixed header and keep the lower
+       placeholder from colliding with the footer inside the viewport shell. */
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .rankings-detail--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .rankings-detail__empty {
+    max-width: 16rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-muted);
+  }
+
+  .rankings-detail__heading {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  /* Two side-by-side placeholder shells for the future Radar + Dominant Type. */
+  .rankings-detail__upper {
+    display: flex;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  /* Placeholder shell for future radar/Dominant-type and similar-games work.
+     Truthful empty surface — no fake radar, no fake recommendations. */
+  .rankings-detail__region {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 12rem;
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  /* The upper placeholders are massive, near-square shells that split the
+     pane width and scale their height from it. */
+  .rankings-detail__upper .rankings-detail__region {
+    flex: 1 1 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  .rankings-detail__region--grow {
+    flex: 1 1 auto;
+    min-height: 12rem;
+  }
+
+  .rankings-detail__region-label {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-dim);
+    text-align: center;
+  }
+
+  .rankings-detail__actions {
+    display: flex;
+  }
+
+  .rankings-detail__view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-sm);
+    transition: background-color 0.15s ease;
+  }
+
+  .rankings-detail__view:hover {
+    background: var(--color-surface-3);
+  }
+
+  .rankings-detail__view:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  /* Stack the two upper placeholders once the pane is narrow; they fall back
+     to a fixed height rather than full-width squares. */
+  @media (max-width: 40rem) {
+    .rankings-detail__upper {
+      flex-direction: column;
+    }
+
+    .rankings-detail__upper .rankings-detail__region {
+      flex: 0 0 auto;
+      width: 100%;
+      aspect-ratio: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rankings-detail__view {
+      transition: none;
+    }
+  }
+</style>

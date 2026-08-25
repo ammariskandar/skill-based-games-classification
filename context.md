@@ -573,6 +573,12 @@ Preferred request path:
 Browser → Astro → Django API → PostgreSQL / Steam
 ```
 
+The `/rankings` page (SBGC-82) follows this model as an SSR/on-demand,
+viewport-contained ranking application over the SBGC-81 ranking read: three
+profile tabs, one sort control, selection-driven detail pane, client-side page
+transitions via a same-origin proxy, and a viewport-driven page size.  See
+`docs/frontend-architecture.md` → "Rankings (SBGC-82)".
+
 Astro MUST NOT duplicate authoritative validation, classification, moderation, or recommendation logic.
 
 ---
