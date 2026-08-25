@@ -249,12 +249,22 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       )}</h2><div class="rankings-detail__upper" aria-hidden="true"><div class="rankings-detail__region"><span class="rankings-detail__region-label">Radar</span></div><div class="rankings-detail__region"><span class="rankings-detail__region-label">Dominant Type</span></div></div><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__region rankings-detail__region--grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
     };
 
+    // Present the skeleton only after a short delay so a fast transition never
+    // flashes it.  A single owned timer is reused across transitions, and it is
+    // cancelled as soon as the request settles (fast or superseded).
+    const SKELETON_DELAY_MS = 300;
+    let skeletonTimer = 0;
+
     const showSkeleton = (): void => {
-      skeleton.hidden = false;
-      list.hidden = true;
+      window.clearTimeout(skeletonTimer);
+      skeletonTimer = window.setTimeout(() => {
+        skeleton.hidden = false;
+        list.hidden = true;
+      }, SKELETON_DELAY_MS);
     };
 
     const hideSkeleton = (): void => {
+      window.clearTimeout(skeletonTimer);
       skeleton.hidden = true;
       list.hidden = false;
     };

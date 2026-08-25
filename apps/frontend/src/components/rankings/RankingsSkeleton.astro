@@ -31,6 +31,23 @@ const { count = 5 } = Astro.props;
     display: none;
   }
 
+  /* Once the presentation delay elapses, fade the skeleton in instead of
+     popping it into view.  Reduced-motion users keep a static (instant)
+     skeleton. */
+  .rankings-skeleton:not([hidden]) {
+    animation: rankings-skeleton-fade 200ms ease;
+  }
+
+  @keyframes rankings-skeleton-fade {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
   .rankings-skeleton__row {
     display: flex;
     align-items: center;
@@ -87,6 +104,12 @@ const { count = 5 } = Astro.props;
 
     to {
       background-position: -200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rankings-skeleton:not([hidden]) {
+      animation: none;
     }
   }
 </style>
