@@ -10,8 +10,10 @@ import EmptyState from "../components/ui/EmptyState.astro";
 import ErrorState from "../components/ui/ErrorState.astro";
 import {
   parseRankingsState,
+  rankingsEmptyKind,
   rankingsHref,
   rankingsNeedsNoindex,
+  resolveRankingSelection,
 } from "../lib/rankings-state";
 import {
   getGameDetail,
@@ -46,22 +48,26 @@ try {
     pageSize: SSR_PAGE_SIZE,
   });
 
-  let selectedGame: { slug: string; name: string } | null = null;
-  if (state.game !== null) {
-    // Prefer the already-loaded row; otherwise resolve the name for the detail
-    // pane without downloading a second ranking page.
-    const inPage = ranking.results.find((game) => game.slug === state.game);
-    if (inPage) {
-      selectedGame = { slug: inPage.slug, name: inPage.name };
-    } else {
-      try {
-        const detail = await getGameDetail(state.game);
-        selectedGame = { slug: detail.game.slug, name: detail.game.name };
-      } catch {
-        selectedGame = null;
-      }
+  // Resolve the detail-pane selection.  A requested slug already on the page
+  // wins; otherwise try the game-detail endpoint, and fall back to the
+  // top-ranked row when the slug cannot be resolved at all (SBGC-83).
+  let resolvedDetail: { slug: string; name: string } | null = null;
+  if (
+    state.game !== null &&
+    !ranking.results.some((game) => game.slug === state.game)
+  ) {
+    try {
+      const detail = await getGameDetail(state.game);
+      resolvedDetail = { slug: detail.game.slug, name: detail.game.name };
+    } catch {
+      resolvedDetail = null;
     }
   }
+  const selectedGame = resolveRankingSelection(
+    state.game,
+    ranking.results,
+    resolvedDetail,
+  );
 
   pageState = { kind: "ready", ranking, selectedGame };
 } catch {
@@ -76,6 +82,7 @@ const selectedGame = pageState.kind === "ready" ? pageState.selectedGame : null;
 const games = ranking?.results ?? [];
 const count = ranking?.count ?? 0;
 const totalPages = ranking?.total_pages ?? 0;
+const emptyKind = rankingsEmptyKind(count, games.length);
 
 // Base /rankings is the default state and stays indexable; every non-default
 // query state is a transient view (noindex).
@@ -97,12 +104,12 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         message="Please try again in a moment."
         headingLevel="h1"
       />
-    ) : count === 0 ? (
+    ) : emptyKind === "no-games" ? (
       <EmptyState
         title="No games are currently ranked."
         description="Rankings will appear once games have published skill classifications."
       />
-    ) : games.length === 0 ? (
+    ) : emptyKind === "page-empty" ? (
       <EmptyState title="No games are available on this page.">
         <a
           href={rankingsHref({ ...state, page: 1 })}
@@ -116,6 +123,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         class="rankings"
         data-rankings
         data-page-size={SSR_PAGE_SIZE}
+        data-selected-slug={selectedGame?.slug ?? ""}
         data-selected-name={selectedGame?.name ?? ""}
       >
         <div class="rankings__controls">
@@ -128,6 +136,18 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
           data-rankings-list-region
           aria-label="Ranking list"
         >
+          <div class="rankings__error" data-rankings-error role="alert" hidden>
+            <p class="rankings__error-message">
+              Rankings couldn't be updated. Please try again.
+            </p>
+            <button
+              type="button"
+              class="rankings__error-retry"
+              data-rankings-retry
+            >
+              Retry
+            </button>
+          </div>
           <RankingsSkeleton count={SSR_PAGE_SIZE} />
           <ul class="rankings__rows" data-rankings-list>
             {games.map((game, index) => (
@@ -164,6 +184,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
     sortKeyFor,
   } from "../lib/rankings-state";
   import type { RankingProfile } from "../lib/rankings-state";
+  import { createRankingsLoader } from "../lib/rankings-load";
 
   (() => {
     const root = document.querySelector<HTMLElement>("[data-rankings]");
@@ -178,6 +199,12 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
     );
     const detailPane = root.querySelector<HTMLElement>(
       "[data-rankings-detail-pane]",
+    );
+    const errorRegion = root.querySelector<HTMLElement>(
+      "[data-rankings-error]",
+    );
+    const retryButton = root.querySelector<HTMLButtonElement>(
+      "[data-rankings-retry]",
     );
     const tabs = Array.from(
       root.querySelectorAll<HTMLAnchorElement>("[data-rankings-tab]"),
@@ -194,9 +221,16 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
     let state = parseRankingsState(new URLSearchParams(window.location.search));
     let pageSize = Number(root.dataset.pageSize) || 5;
-    let selectedGame: { slug: string; name: string } | null = state.game
-      ? { slug: state.game, name: root.dataset.selectedName ?? state.game }
+    const resolvedSlug = root.dataset.selectedSlug ?? "";
+    let selectedGame: { slug: string; name: string } | null = resolvedSlug
+      ? { slug: resolvedSlug, name: root.dataset.selectedName ?? resolvedSlug }
       : null;
+    // The server may have fallen back from an unresolvable `?game=` slug to the
+    // top-ranked item; align the client URL state with that resolved selection
+    // so subsequent pushState URLs stay canonical (SBGC-83).
+    if (state.game !== (resolvedSlug || null)) {
+      state = { ...state, game: resolvedSlug || null };
+    }
 
     const escapeHtml = (value: string): string =>
       value.replace(/[&<>"']/g, (ch) => {
@@ -305,59 +339,87 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       }
     };
 
-    let inflight = 0;
+    // Single-owner transition loader: owns the in-flight request-id guard so a
+    // slow/earlier response can never overwrite a newer one (SBGC-83).
+    const runLoad = createRankingsLoader((url) => fetch(url));
+
+    const showError = (): void => {
+      if (errorRegion) errorRegion.hidden = false;
+    };
+
+    const hideError = (): void => {
+      if (errorRegion) errorRegion.hidden = true;
+    };
+
+    let lastFailedLoad: {
+      target: typeof state;
+      pageSize: number;
+      replace: boolean;
+    } | null = null;
 
     const load = async (
       target: typeof state,
       targetPageSize: number,
       replace = false,
     ): Promise<void> => {
-      const id = ++inflight;
+      lastFailedLoad = { target, pageSize: targetPageSize, replace };
+      hideError();
       showSkeleton();
-      try {
-        const params = new URLSearchParams({
-          profile: target.profile,
-          dimension: target.dimension,
-          direction: target.direction,
-          page: String(target.page),
-          page_size: String(targetPageSize),
-        });
-        const response = await fetch(`/api/rankings?${params.toString()}`);
-        if (!response.ok) throw new Error("ranking fetch failed");
-        const data = await response.json();
-        if (id !== inflight) return;
 
-        state = { ...target, page: data.page };
-        pageSize = data.page_size;
-        list.innerHTML = data.results.map(rowHtml).join("");
+      const outcome = await runLoad({
+        profile: target.profile,
+        dimension: target.dimension,
+        direction: target.direction,
+        page: target.page,
+        pageSize: targetPageSize,
+      });
 
-        // Refresh the selected game's name if it is on the new page; otherwise
-        // keep the in-memory name (selection is independent of page).
-        if (selectedGame) {
-          const onPage = data.results.find(
-            (r: { slug: string }) => r.slug === selectedGame!.slug,
-          );
-          if (onPage) selectedGame = { slug: onPage.slug, name: onPage.name };
-        }
+      // A superseded request must not touch the shared UI state.
+      if (outcome.kind === "stale") return;
 
-        renderControls(state);
-        renderPagination(state, data.total_pages);
+      if (outcome.kind === "error") {
+        // Keep the previously rendered list intact and offer an inline retry.
         hideSkeleton();
-        const url = rankingsHref({
-          ...state,
-          game: selectedGame?.slug ?? null,
-        });
-        // Page-size recalculation is not user navigation — replace, don't push.
-        if (replace) history.replaceState({}, "", url);
-        else history.pushState({}, "", url);
-      } catch {
-        // Fall back to a server render of the target state.
-        window.location.href = rankingsHref({
-          ...target,
-          game: selectedGame?.slug ?? null,
-        });
+        showError();
+        return;
       }
+
+      const data = outcome.data;
+      state = { ...target, page: data.page };
+      pageSize = data.page_size;
+      list.innerHTML = data.results.map(rowHtml).join("");
+
+      // Refresh the selected game's name if it is on the new page; otherwise
+      // keep the in-memory name (selection is independent of page).
+      if (selectedGame) {
+        const onPage = data.results.find(
+          (r: { slug: string }) => r.slug === selectedGame!.slug,
+        );
+        if (onPage) selectedGame = { slug: onPage.slug, name: onPage.name };
+      }
+
+      renderControls(state);
+      renderPagination(state, data.total_pages);
+      hideSkeleton();
+      const url = rankingsHref({
+        ...state,
+        game: selectedGame?.slug ?? null,
+      });
+      // Page-size recalculation is not user navigation — replace, don't push.
+      if (replace) history.replaceState({}, "", url);
+      else history.pushState({}, "", url);
     };
+
+    if (retryButton) {
+      retryButton.addEventListener("click", () => {
+        if (!lastFailedLoad) return;
+        void load(
+          lastFailedLoad.target,
+          lastFailedLoad.pageSize,
+          lastFailedLoad.replace,
+        );
+      });
+    }
 
     const pushSelection = (): void => {
       history.pushState(
@@ -515,6 +577,59 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
   .rankings__rows[hidden] {
     display: none;
+  }
+
+  .rankings__error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.625rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .rankings__error[hidden] {
+    display: none;
+  }
+
+  .rankings__error-message {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .rankings__error-retry {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .rankings__error-retry:hover {
+    background: var(--color-surface-3);
+  }
+
+  .rankings__error-retry:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rankings__error-retry {
+      transition: none;
+    }
   }
 
   .rankings__pagination {
