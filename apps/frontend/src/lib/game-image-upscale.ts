@@ -185,3 +185,94 @@ export type TransitionMode = "crossfade" | "wipe";
 export function transitionMode(assetRole: AssetRole): TransitionMode {
   return assetRole === "library-capsule" ? "crossfade" : "wipe";
 }
+
+/* ── SBGC-202: feature gate, environmental gating, byte-bounded cache ── */
+
+/** Automatic WebSR upscaling is disabled by default and enabled only via the
+ * explicit public build flag `PUBLIC_ENABLE_IMAGE_UPSCALE === "true"`. */
+export function isImageUpscalingEnabled(
+  raw: string | boolean | undefined,
+): boolean {
+  return raw === "true" || raw === true;
+}
+
+/** Total byte ceiling for cached enhanced images (25 MiB). */
+export const MAX_ENHANCED_CACHE_BYTES = 25 * 1024 * 1024;
+
+/** A cache entry carrying an estimated byte size for byte-bounded LRU. */
+export interface SizedCacheEntry extends LruCacheEntry {
+  size: number;
+}
+
+/**
+ * Plan which cache keys to evict so the resulting store respects both the
+ * entry-count cap and the byte ceiling.  Eviction is oldest-first (LRU by
+ * `lastAccessedAt`).  A single entry larger than `maxBytes` is evicted.
+ */
+export function planCacheEvictions(
+  existing: SizedCacheEntry[],
+  incoming: SizedCacheEntry,
+  maxEntries: number,
+  maxBytes: number,
+): string[] {
+  const combined = [
+    ...existing.filter((entry) => entry.key !== incoming.key),
+    incoming,
+  ].sort((a, b) => a.lastAccessedAt - b.lastAccessedAt);
+
+  const evicted: string[] = [];
+  const remaining = [...combined];
+
+  while (remaining.length > maxEntries) {
+    const removed = remaining.shift();
+    if (removed) evicted.push(removed.key);
+  }
+
+  let totalBytes = remaining.reduce((sum, entry) => sum + entry.size, 0);
+  while (remaining.length > 0 && totalBytes > maxBytes) {
+    const removed = remaining.shift();
+    if (removed) {
+      evicted.push(removed.key);
+      totalBytes -= removed.size;
+    }
+  }
+
+  return evicted;
+}
+
+/** Environmental gates that must all pass before inference may run. */
+export interface InferenceGates {
+  isIntersecting: boolean;
+  isVisible: boolean;
+  saveData: boolean;
+}
+
+/** Inference runs only when in view, foregrounded, and not data-saver. */
+export function shouldRunInference(gates: InferenceGates): boolean {
+  return gates.isIntersecting && gates.isVisible && !gates.saveData;
+}
+
+/** Race a promise against a timeout.  On timeout, calls `onTimeout` (the caller
+ * should terminate the worker) and rejects; on settle, clears the timer. */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  onTimeout: () => void,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      onTimeout();
+      reject(new Error(`timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}

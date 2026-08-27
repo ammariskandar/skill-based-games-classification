@@ -1,5 +1,6 @@
 ---
 import { resolveGameImageLayout } from "../../lib/game-image-layout";
+import { isImageUpscalingEnabled } from "../../lib/game-image-upscale";
 import { isSteamCdnUrl } from "../../lib/steam-cdn";
 
 interface Props {
@@ -49,6 +50,11 @@ const foregroundCrossorigin = isSteamCdnUrl(foregroundSrc)
   ? "anonymous"
   : undefined;
 const isDev = import.meta.env.DEV;
+// Automatic WebSR upscaling is disabled by default (SBGC-202). The `<script>` is
+// only emitted when this public flag is explicitly enabled.
+const upscalingEnabled = isImageUpscalingEnabled(
+  import.meta.env.PUBLIC_ENABLE_IMAGE_UPSCALE,
+);
 ---
 
 {
@@ -74,6 +80,7 @@ const isDev = import.meta.env.DEV;
               data-asset-role={foregroundRole}
               data-game-slug={slug}
               data-source-url={foregroundSrc}
+              data-upscale-status={upscalingEnabled ? "pending" : "disabled"}
             >
               <img
                 src={foregroundSrc}
@@ -139,6 +146,7 @@ const isDev = import.meta.env.DEV;
   import { mountGameImageEnhancer } from "../../lib/game-image-upscale-client";
   import type { AssetRole } from "../../lib/game-image-upscale";
 
+  const handles = new Set<{ disconnect: () => void }>();
   for (const root of document.querySelectorAll<HTMLElement>(
     "[data-game-image-enhance]",
   )) {
@@ -146,14 +154,23 @@ const isDev = import.meta.env.DEV;
     const assetRole = root.dataset.assetRole;
     const sourceUrl = root.dataset.sourceUrl;
     if (gameSlug && assetRole && sourceUrl) {
-      mountGameImageEnhancer({
-        root,
-        gameSlug,
-        assetRole: assetRole as AssetRole,
-        sourceUrl,
-      });
+      handles.add(
+        mountGameImageEnhancer({
+          root,
+          gameSlug,
+          assetRole: assetRole as AssetRole,
+          sourceUrl,
+        }),
+      );
     }
   }
+
+  // Tear down workers/observers on page transitions so no stale bitmap can
+  // commit to a navigated-away document.
+  window.addEventListener("pagehide", () => {
+    for (const handle of handles) handle.disconnect();
+    handles.clear();
+  });
 </script>
 
 <style>
