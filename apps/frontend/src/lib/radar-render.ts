@@ -54,6 +54,17 @@ const escapeHtml = (value: string): string =>
 const unavailableHtml = (className: string): string =>
   `<div class="radar-chart radar-chart--unavailable${className}" role="img" aria-label="Skill classification unavailable"><div class="radar-chart__unavailable"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.5" /><path d="M21 15l-5-5L5 20" /></svg><span>Classification unavailable</span></div></div>`;
 
+/**
+ * Horizontal anchor for a spoke label so its leading/trailing glyph sits on the
+ * spoke tip and the text flows outward (never into the chart).
+ */
+function textAnchorFor(angleDegrees: number): "start" | "middle" | "end" {
+  const radians = (angleDegrees * Math.PI) / 180;
+  const x = Math.sin(radians);
+  if (Math.abs(x) < 1e-9) return "middle";
+  return x > 0 ? "start" : "end";
+}
+
 export function buildRadarHtml(data: RadarRenderData): string {
   const {
     challenge,
@@ -72,26 +83,46 @@ export function buildRadarHtml(data: RadarRenderData): string {
   }
 
   const center: Point = { x: size / 2, y: size / 2 };
-  const maxRadius = size / 2 - 40;
-  const labelRadius = maxRadius + 26;
+  const maxRadius = size / 2 - 48;
+  const labelRadius = maxRadius + 24;
+
+  // The outermost ring is the highest score across present profiles, rounded
+  // up to the nearest 10; inner rings are linear divisions of that maximum.
+  const scores: number[] = [];
+  if (challenge) {
+    scores.push(challenge.micro, challenge.mystiko, challenge.macro);
+  }
+  if (reward) {
+    scores.push(reward.micro, reward.mystiko, reward.macro);
+  }
+  const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+  const maxScore = Math.max(10, Math.ceil(highestScore / 10) * 10);
+
+  // `getSpokePoints` maps `score / 100` to a radius; scale the radius so that
+  // `maxScore` (not 100) lands on the outermost ring.
+  const dataMaxRadius = maxRadius * (100 / maxScore);
 
   const challengePath =
     challenge === null
       ? ""
       : generateSplinePath(
-          getSpokePoints(challenge, "challenge", center, maxRadius),
+          getSpokePoints(challenge, "challenge", center, dataMaxRadius),
         );
   const rewardPath =
     reward === null
       ? ""
-      : generateSplinePath(getSpokePoints(reward, "reward", center, maxRadius));
+      : generateSplinePath(
+          getSpokePoints(reward, "reward", center, dataMaxRadius),
+        );
 
-  const gridRadii = [0.1, 0.3, 0.6, 0.8, 1].map((factor) => factor * maxRadius);
+  const gridRadii = [0.2, 0.4, 0.6, 0.8, 1].map((factor) => factor * maxRadius);
 
   const spokes = SPOKES.map((spoke) => {
     const profile = spoke.kind === "challenge" ? challenge : reward;
     const score = profile ? profile[spoke.dimension] : 0;
     const dimension = DIMENSIONS[spoke.dimension];
+    const textAnchor = textAnchorFor(spoke.angleDegrees);
+    const symbolFirst = textAnchor !== "end";
     return {
       kind: spoke.kind,
       dimension: spoke.dimension,
@@ -100,7 +131,7 @@ export function buildRadarHtml(data: RadarRenderData): string {
       vertex: polarToCartesian(
         center.x,
         center.y,
-        (score / 100) * maxRadius,
+        (score / maxScore) * maxRadius,
         spoke.angleDegrees,
       ),
       label: polarToCartesian(
@@ -110,7 +141,10 @@ export function buildRadarHtml(data: RadarRenderData): string {
         spoke.angleDegrees,
       ),
       colorVar: `--color-${dimension.token}`,
-      labelText: `${dimension.symbol} ${dimension.label}`,
+      labelText: symbolFirst
+        ? `${dimension.symbol} ${dimension.label}`
+        : `${dimension.label} ${dimension.symbol}`,
+      textAnchor,
     };
   });
 
@@ -132,7 +166,7 @@ export function buildRadarHtml(data: RadarRenderData): string {
   const labelHtml = spokes
     .map(
       (spoke) =>
-        `<text class="radar-axis-label" x="${spoke.label.x}" y="${spoke.label.y}" text-anchor="middle" dominant-baseline="middle" style="fill: var(${spoke.colorVar});">${spoke.labelText}</text>`,
+        `<text class="radar-axis-label" x="${spoke.label.x}" y="${spoke.label.y}" text-anchor="${spoke.textAnchor}" dominant-baseline="middle" style="fill: var(${spoke.colorVar});">${spoke.labelText}</text>`,
     )
     .join("");
 
