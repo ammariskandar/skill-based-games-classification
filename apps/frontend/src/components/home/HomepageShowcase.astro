@@ -1,13 +1,17 @@
 ---
 import GameImage from "../game/GameImage.astro";
 import type { GameDetailGame } from "../../lib/server/api";
+import type { SkillProfileVector } from "../../lib/skill-dimensions";
 
 interface Props {
   /** `null` means Hades could not be resolved; the copy still renders. */
   game: GameDetailGame | null;
+  /** Validated radar profile vectors, or null when unclassified. */
+  challenge: SkillProfileVector | null;
+  reward: SkillProfileVector | null;
 }
 
-const { game } = Astro.props;
+const { game, challenge, reward } = Astro.props;
 ---
 
 <section class="homepage-showcase" aria-labelledby="homepage-showcase-heading">
@@ -22,6 +26,8 @@ const { game } = Astro.props;
             source={game.source}
             libraryHeroUrl={game.library_hero_url}
             libraryCapsuleUrl={game.library_capsule_url}
+            challenge={challenge}
+            reward={reward}
           />
         ) : (
           <div
