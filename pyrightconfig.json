@@ -4,7 +4,7 @@
   "pythonVersion": "3.12",
   "include": ["apps/backend"],
   "exclude": [
-    "apps/backend/.venv",
+    "apps/backend/.venv*",
     "**/__pycache__",
     "apps/backend/**/migrations",
     "apps/backend/staticfiles",

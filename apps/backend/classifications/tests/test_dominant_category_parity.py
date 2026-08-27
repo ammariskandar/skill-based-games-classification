@@ -153,29 +153,31 @@ class DominantCategorySqlParityTests(TestCase):
             with self.subTest(micro=micro, mystiko=mystiko, macro=macro):
                 game = _game(f"sql-{micro}-{mystiko}-{macro}")
                 _snapshot(game, challenge=_canonical(micro, mystiko, macro))
-                self.assertEqual(_annotated(game)._dominant, expected)
+                self.assertEqual(_annotated(game)._dominant, expected)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_sql_reward_profile_parity(self):
         game = _game("sql-reward")
         # reward micro=80, macro=10, mystiko=10 → micro is strictly dominant.
         _snapshot(game, reward=[80, 10, 10])
+        annotated = _annotated(game, profile="reward")
         self.assertEqual(
-            _annotated(game, profile="reward")._dominant, SkillCategory.MICRO
+            annotated._dominant,  # pyright: ignore[reportAttributeAccessIssue]
+            SkillCategory.MICRO,
         )
 
     def test_sql_zero_vector_returns_none(self):
         game = _game("sql-zero")
         _snapshot(game, challenge=[0, 0, 0])
-        self.assertIsNone(_annotated(game)._dominant)
+        self.assertIsNone(_annotated(game)._dominant)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_sql_three_way_tie_returns_none(self):
         game = _game("sql-tie")
         _snapshot(game, challenge=[33, 33, 33])
-        self.assertIsNone(_annotated(game)._dominant)
+        self.assertIsNone(_annotated(game)._dominant)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_sql_missing_snapshot_returns_none(self):
         game = _game("sql-missing")
-        self.assertIsNone(_annotated(game)._dominant)
+        self.assertIsNone(_annotated(game)._dominant)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 # ---------------------------------------------------------------------------
