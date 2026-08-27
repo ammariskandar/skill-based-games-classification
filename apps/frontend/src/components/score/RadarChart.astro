@@ -1,0 +1,397 @@
+---
+import {
+  DIMENSIONS,
+  type SkillProfileKind,
+  type SkillProfileVector,
+} from "../../lib/skill-dimensions";
+import {
+  SPOKES,
+  generateSplinePath,
+  getSpokePoints,
+  polarToCartesian,
+  type Point,
+} from "../../lib/radar-geometry";
+
+interface Props {
+  challenge: SkillProfileVector | null;
+  reward: SkillProfileVector | null;
+  initialProfile?: SkillProfileKind;
+  size?: number;
+  class?: string;
+}
+
+const {
+  challenge,
+  reward,
+  initialProfile = "challenge",
+  size = 320,
+} = Astro.props;
+
+const hasChallenge = challenge !== null;
+const hasReward = reward !== null;
+
+const center: Point = { x: size / 2, y: size / 2 };
+const maxRadius = size / 2 - 24;
+const labelRadius = maxRadius + 16;
+
+const challengePath = hasChallenge
+  ? generateSplinePath(
+      getSpokePoints(
+        challenge as SkillProfileVector,
+        "challenge",
+        center,
+        maxRadius,
+      ),
+    )
+  : "";
+
+const rewardPath = hasReward
+  ? generateSplinePath(
+      getSpokePoints(reward as SkillProfileVector, "reward", center, maxRadius),
+    )
+  : "";
+
+const gridRadii = [0.25, 0.5, 0.75, 1].map((factor) => factor * maxRadius);
+
+const spokes = SPOKES.map((spoke) => {
+  const profile = spoke.kind === "challenge" ? challenge : reward;
+  const score = profile ? profile[spoke.dimension] : 0;
+  const dimension = DIMENSIONS[spoke.dimension];
+  return {
+    kind: spoke.kind,
+    dimension: spoke.dimension,
+    angleDegrees: spoke.angleDegrees,
+    hasProfile: profile !== null,
+    score,
+    vertex: polarToCartesian(
+      center.x,
+      center.y,
+      (score / 100) * maxRadius,
+      spoke.angleDegrees,
+    ),
+    endpoint: polarToCartesian(
+      center.x,
+      center.y,
+      maxRadius,
+      spoke.angleDegrees,
+    ),
+    label: polarToCartesian(
+      center.x,
+      center.y,
+      labelRadius,
+      spoke.angleDegrees,
+    ),
+    colorVar: `--color-${dimension.token}`,
+    labelText: `${dimension.symbol} ${dimension.label}`,
+  };
+});
+
+function describeProfile(profile: SkillProfileVector | null): string {
+  if (!profile) return "unavailable";
+  return `Micro ${profile.micro}%, Mystiko ${profile.mystiko}%, Macro ${profile.macro}%`;
+}
+
+const ariaLabel = `Dual-profile skill radar. Challenge: ${describeProfile(challenge)}. Reward: ${describeProfile(reward)}.`;
+---
+
+{
+  !hasChallenge && !hasReward ? (
+    <div
+      class:list={["radar-chart radar-chart--unavailable", Astro.props.class]}
+      role="img"
+      aria-label="Skill classification unavailable"
+    >
+      <div class="radar-chart__unavailable">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <circle cx="8.5" cy="10" r="1.5" />
+          <path d="M21 15l-5-5L5 20" />
+        </svg>
+        <span>Classification unavailable</span>
+      </div>
+    </div>
+  ) : (
+    <div
+      class:list={["radar-chart", Astro.props.class]}
+      data-radar-chart
+      data-size={size}
+      data-initial-profile={initialProfile}
+    >
+      <svg
+        class="radar-chart__svg"
+        viewBox={`0 0 ${size} ${size}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <defs>
+          <filter id="radar-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <radialGradient id="radar-fill" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" style={`stop-color: var(--color-micro);`} />
+            <stop offset="50%" style={`stop-color: var(--color-mystiko);`} />
+            <stop offset="100%" style={`stop-color: var(--color-macro);`} />
+          </radialGradient>
+        </defs>
+
+        <g class="radar-grid">
+          {gridRadii.map((radius) => (
+            <circle
+              class="radar-grid-circle"
+              cx={center.x}
+              cy={center.y}
+              r={radius}
+            />
+          ))}
+          {spokes.map((spoke) => (
+            <line
+              class="radar-spoke"
+              x1={center.x}
+              y1={center.y}
+              x2={spoke.endpoint.x}
+              y2={spoke.endpoint.y}
+              style={`stroke: var(${spoke.colorVar});`}
+            />
+          ))}
+        </g>
+
+        <g class="radar-labels">
+          {spokes.map((spoke) => (
+            <text
+              class="radar-axis-label"
+              x={spoke.label.x}
+              y={spoke.label.y}
+              text-anchor="middle"
+              dominant-baseline="middle"
+              style={`fill: var(${spoke.colorVar});`}
+            >
+              {spoke.labelText}
+            </text>
+          ))}
+        </g>
+
+        <g class="radar-layers" data-radar-layers>
+          <g class="radar-polygons" data-radar-polygons>
+            {hasChallenge && (
+              <path
+                class={`radar-polygon radar-polygon-challenge ${
+                  initialProfile === "challenge"
+                    ? "radar-polygon--active"
+                    : "radar-polygon--inactive"
+                }`}
+                d={challengePath}
+              />
+            )}
+            {hasReward && (
+              <path
+                class={`radar-polygon radar-polygon-reward ${
+                  initialProfile === "reward"
+                    ? "radar-polygon--active"
+                    : "radar-polygon--inactive"
+                }`}
+                d={rewardPath}
+              />
+            )}
+          </g>
+          <g class="radar-nodes">
+            {spokes
+              .filter((spoke) => spoke.hasProfile)
+              .map((spoke) => (
+                <circle
+                  class="radar-vertex-node"
+                  cx={spoke.vertex.x}
+                  cy={spoke.vertex.y}
+                  r={4}
+                  style={`fill: var(${spoke.colorVar});`}
+                />
+              ))}
+          </g>
+        </g>
+      </svg>
+
+      <div
+        class="radar-toggle-group"
+        role="group"
+        aria-label="Active Radar Profile"
+      >
+        <button
+          type="button"
+          class="radar-toggle-button"
+          data-profile-toggle="challenge"
+          aria-pressed={initialProfile === "challenge"}
+          disabled={!hasChallenge}
+        >
+          Challenge Profile
+        </button>
+        <button
+          type="button"
+          class="radar-toggle-button"
+          data-profile-toggle="reward"
+          aria-pressed={initialProfile === "reward"}
+          disabled={!hasReward}
+        >
+          Reward Profile
+        </button>
+      </div>
+    </div>
+  )
+}
+
+<script>
+  import { initRadarChart } from "../../lib/radar-controller";
+
+  const cleanups: Array<() => void> = [];
+
+  function mountAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-radar-chart]")
+      .forEach((el) => {
+        if (el.hasAttribute("data-radar-initialized")) return;
+        el.setAttribute("data-radar-initialized", "");
+        cleanups.push(initRadarChart(el));
+      });
+  }
+
+  function unmountAll() {
+    for (const cleanup of cleanups) cleanup();
+    cleanups.length = 0;
+  }
+
+  document.addEventListener("astro:page-load", mountAll);
+  window.addEventListener("pagehide", unmountAll);
+  mountAll();
+</script>
+
+<style>
+  .radar-chart {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .radar-chart__svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+  }
+
+  .radar-chart--unavailable {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .radar-chart__unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+  }
+
+  .radar-chart__unavailable svg {
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-dim);
+  }
+
+  .radar-grid-circle {
+    fill: none;
+    stroke: var(--color-chart-grid);
+    stroke-width: 0.5;
+    stroke-dasharray: 2 4;
+  }
+
+  .radar-spoke {
+    stroke-width: 1;
+    stroke-opacity: 0.4;
+  }
+
+  .radar-axis-label {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .radar-polygon {
+    fill: url(#radar-fill);
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    transition:
+      fill-opacity 0.2s ease,
+      stroke 0.2s ease,
+      stroke-width 0.2s ease;
+  }
+
+  .radar-polygon--active {
+    fill-opacity: 0.35;
+    stroke: var(--color-chart-fg);
+    stroke-width: 2.5;
+    filter: url(#radar-glow);
+  }
+
+  .radar-polygon--inactive {
+    fill-opacity: 0.12;
+    stroke: var(--color-chart-muted);
+    stroke-width: 1.5;
+    filter: none;
+  }
+
+  .radar-vertex-node {
+    stroke: var(--color-chart-bg);
+    stroke-width: 1.5;
+    cursor: pointer;
+  }
+
+  .radar-vertex-node--hovered {
+    filter: url(#radar-glow);
+  }
+
+  .radar-toggle-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    padding: 0.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .radar-toggle-button {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    border-radius: var(--radius-sm);
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .radar-toggle-button[aria-pressed="true"] {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
+  .radar-toggle-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+</style>
