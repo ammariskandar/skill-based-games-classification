@@ -222,3 +222,75 @@ export function validateSkillProfile(input: unknown): SkillProfileValidation {
     },
   };
 }
+
+/* ── radar accessibility helpers (SBGC-86) ── */
+
+export interface RadarSummaryRow {
+  profile: SkillProfileKind;
+  label: string;
+  micro: number;
+  mystiko: number;
+  macro: number;
+}
+
+/** Human-readable radar vertex/tooltip label, e.g. "Challenge Micro". */
+export function buildVertexLabel(
+  kind: SkillProfileKind,
+  dimension: DimensionId,
+): string {
+  const profile = kind.charAt(0).toUpperCase() + kind.slice(1);
+  return `${profile} ${DIMENSIONS[dimension].label}`;
+}
+
+/** Screen-reader label for a focusable radar vertex, e.g. "Challenge Micro: 45". */
+export function buildVertexAriaLabel(
+  kind: SkillProfileKind,
+  dimension: DimensionId,
+  score: number,
+): string {
+  return `${buildVertexLabel(kind, dimension)}: ${score}`;
+}
+
+/** Accessible `<title>` text for the radar SVG. */
+export function buildRadarTitle(gameTitle?: string): string {
+  return gameTitle
+    ? `${gameTitle} Skill Classification Radar`
+    : "Skill Classification Radar Chart";
+}
+
+/** Accessible `<desc>` text summarising the available profiles and scores. */
+export function buildRadarDescription(
+  challenge: SkillProfileVector | null,
+  reward: SkillProfileVector | null,
+): string {
+  const parts: string[] = [];
+  if (challenge) {
+    parts.push(
+      `Challenge profile (Micro: ${challenge.micro}, Mystiko: ${challenge.mystiko}, Macro: ${challenge.macro})`,
+    );
+  }
+  if (reward) {
+    parts.push(
+      `Reward profile (Micro: ${reward.micro}, Mystiko: ${reward.mystiko}, Macro: ${reward.macro})`,
+    );
+  }
+  if (parts.length === 0) {
+    return "Radar chart with no available skill classification profiles.";
+  }
+  return `Radar chart depicting ${parts.join(" and ")}.`;
+}
+
+/** Structured rows for the visually-hidden screen-reader data table. */
+export function buildRadarSummaryRows(
+  challenge: SkillProfileVector | null,
+  reward: SkillProfileVector | null,
+): RadarSummaryRow[] {
+  const rows: RadarSummaryRow[] = [];
+  if (challenge) {
+    rows.push({ profile: "challenge", label: "Challenge", ...challenge });
+  }
+  if (reward) {
+    rows.push({ profile: "reward", label: "Reward", ...reward });
+  }
+  return rows;
+}
