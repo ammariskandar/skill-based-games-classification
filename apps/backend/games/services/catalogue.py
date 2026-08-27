@@ -33,6 +33,7 @@ from dataclasses import dataclass
 from classifications.calculations.results import READY
 from classifications.models import ClassificationSnapshot
 from classifications.services.published import (
+    published_dominant_category,
     published_score,
     published_snapshot_exists,
 )
@@ -41,7 +42,6 @@ from django.db import models
 from django.db.models import (
     BooleanField,
     Case,
-    CharField,
     F,
     Prefetch,
     Q,
@@ -193,27 +193,7 @@ def get_game_catalogue(query: CatalogueQuery) -> CataloguePage:
                 _cat_macro=published_score(query.profile, SkillCategory.MACRO),
                 _cat_mystiko=published_score(query.profile, SkillCategory.MYSTIKO),
             )
-            .annotate(
-                _dominant=Case(
-                    When(
-                        condition=Q(_cat_micro__gt=F("_cat_macro"))
-                        & Q(_cat_micro__gt=F("_cat_mystiko")),
-                        then=Value(SkillCategory.MICRO),
-                    ),
-                    When(
-                        condition=Q(_cat_macro__gt=F("_cat_micro"))
-                        & Q(_cat_macro__gt=F("_cat_mystiko")),
-                        then=Value(SkillCategory.MACRO),
-                    ),
-                    When(
-                        condition=Q(_cat_mystiko__gt=F("_cat_micro"))
-                        & Q(_cat_mystiko__gt=F("_cat_macro")),
-                        then=Value(SkillCategory.MYSTIKO),
-                    ),
-                    default=Value(None),
-                    output_field=CharField(),
-                ),
-            )
+            .annotate(_dominant=published_dominant_category())
             .filter(_dominant=query.dominant)
         )
 

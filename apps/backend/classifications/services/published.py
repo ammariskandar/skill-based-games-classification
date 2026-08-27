@@ -12,10 +12,22 @@ classification.
 
 from __future__ import annotations
 
-from django.db.models import Exists, IntegerField, OuterRef, Subquery
+from django.db.models import (
+    Case,
+    CharField,
+    Exists,
+    F,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
 
 from classifications.calculations.results import READY
 from classifications.models import ClassificationSnapshot
+from classifications.skills import SkillCategory
 
 # Canonical array order ``[micro, macro, mystiko]`` (PROFILE_DISPLAY_ORDER).
 # Index lookup is pinned here rather than inferred from display order.
@@ -62,4 +74,33 @@ def published_snapshot_exists() -> Exists:
             is_current=True,
             status=READY,
         )
+    )
+
+
+def published_dominant_category() -> Case:
+    """Strict-dominance Case/When over the ``_cat_micro``/``_cat_macro``/
+    ``_cat_mystiko`` annotations (produced by ``published_score``).
+
+    A category is dominant iff its score is strictly greater than both other
+    categories; any top-score tie (or a missing score, which annotates NULL)
+    yields ``None``.  Callers must annotate the ``_cat_*`` aliases first.
+    """
+    return Case(
+        When(
+            condition=Q(_cat_micro__gt=F("_cat_macro"))
+            & Q(_cat_micro__gt=F("_cat_mystiko")),
+            then=Value(SkillCategory.MICRO),
+        ),
+        When(
+            condition=Q(_cat_macro__gt=F("_cat_micro"))
+            & Q(_cat_macro__gt=F("_cat_mystiko")),
+            then=Value(SkillCategory.MACRO),
+        ),
+        When(
+            condition=Q(_cat_mystiko__gt=F("_cat_micro"))
+            & Q(_cat_mystiko__gt=F("_cat_macro")),
+            then=Value(SkillCategory.MYSTIKO),
+        ),
+        default=Value(None),
+        output_field=CharField(),
     )
