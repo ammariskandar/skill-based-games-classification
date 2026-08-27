@@ -16,10 +16,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from classifications.services.published import published_score
+from classifications.services.published import (
+    published_dominant_category,
+    published_score,
+)
 from classifications.skills import SkillCategory
 from django.db import models
-from django.db.models import Case, CharField, F, Q, Value, When
 
 from games.models import Game
 
@@ -120,33 +122,6 @@ def _category_score_expressions(profile: str) -> dict[str, object]:
     return {category: published_score(profile, category) for category in _CATEGORIES}
 
 
-def _dominant_case() -> Case:
-    """Strict-highest dominant category Case/When over the ``_cat_*`` annotations.
-
-    Top-score ties (or missing scores) yield ``None``, matching the catalogue's
-    dominant-category semantics (SBGC-79).
-    """
-    return Case(
-        When(
-            condition=Q(_cat_micro__gt=F("_cat_macro"))
-            & Q(_cat_micro__gt=F("_cat_mystiko")),
-            then=Value(SkillCategory.MICRO),
-        ),
-        When(
-            condition=Q(_cat_macro__gt=F("_cat_micro"))
-            & Q(_cat_macro__gt=F("_cat_mystiko")),
-            then=Value(SkillCategory.MACRO),
-        ),
-        When(
-            condition=Q(_cat_mystiko__gt=F("_cat_micro"))
-            & Q(_cat_mystiko__gt=F("_cat_macro")),
-            then=Value(SkillCategory.MYSTIKO),
-        ),
-        default=Value(None),
-        output_field=CharField(),
-    )
-
-
 def _public_score(sort_score: int, profile: str) -> int | float:
     """Public score from the annotated sort score.
 
@@ -185,7 +160,7 @@ def get_rankings(query: RankingQuery) -> RankingPage:
                 _cat_macro=category_scores[SkillCategory.MACRO],
                 _cat_mystiko=category_scores[SkillCategory.MYSTIKO],
             )
-            .annotate(_dominant=_dominant_case())
+            .annotate(_dominant=published_dominant_category())
             .filter(_dominant=query.dominant)
         )
 

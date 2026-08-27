@@ -15,7 +15,6 @@ from classifications.models import (
     EditorialClassification,
     RewardProfile,
 )
-from classifications.skills import EditorialProfile, SkillCategory
 from django.contrib.auth.models import User
 from django.core.management import CommandError, call_command
 from django.test import TestCase, override_settings
@@ -105,7 +104,10 @@ class FirstRunTests(TestCase):
         self.assertIn("board game", chess.description)
 
     def test_complete_classifications_exist(self):
-        qs = Game.objects.editorially_classified()
+        qs = EditorialClassification.objects.filter(
+            challenge_profile__isnull=False,
+            reward_profile__isnull=False,
+        )
         self.assertGreaterEqual(qs.count(), 4)
 
     def test_classification_updated_by(self):
@@ -306,30 +308,6 @@ class QueryHelperSmokeTests(TestCase):
 
     def test_manual_returns_results(self):
         self.assertGreater(Game.objects.manual().count(), 0)
-
-    def test_classified_returns_results(self):
-        self.assertGreater(Game.objects.editorially_classified().count(), 0)
-
-    def test_dominant_annotation_returns_results(self):
-        qs = Game.objects.with_dominant_skill_categories()
-        self.assertGreater(qs.count(), 0)
-        some_non_none = any(g.challenge_dominant_skill_category is not None for g in qs)
-        self.assertTrue(some_non_none)
-
-    def test_score_filter_returns_results(self):
-        qs = Game.objects.filter_by_editorial_score(
-            profile=EditorialProfile.CHALLENGE,
-            category=SkillCategory.MICRO,
-            minimum=0,
-        )
-        self.assertGreater(qs.count(), 0)
-
-    def test_score_sort_returns_results(self):
-        qs = Game.objects.order_by_editorial_score(
-            profile=EditorialProfile.CHALLENGE,
-            category=SkillCategory.MICRO,
-        )
-        self.assertGreater(qs.count(), 0)
 
 
 # ---------------------------------------------------------------------------
