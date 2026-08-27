@@ -7,6 +7,9 @@ export type DimensionId = (typeof DIMENSION_IDS)[number];
 export const PROFILE_TYPES = ["challenge", "reward"] as const;
 export type ProfileType = (typeof PROFILE_TYPES)[number];
 
+/** Canonical profile-axis name used by the dual-profile radar (SBGC-85). */
+export type SkillProfileKind = ProfileType;
+
 export interface DimensionDef {
   id: DimensionId;
   label: string;
