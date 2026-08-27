@@ -7,10 +7,11 @@ import ClassificationStatus from "./ClassificationStatus.astro";
 
 interface Props {
   classification: GameFinalClassification | null;
+  slug?: string;
 }
 
-const { classification } = Astro.props;
-const presentation = presentClassification(classification);
+const { classification, slug } = Astro.props;
+const presentation = presentClassification(classification, slug);
 ---
 
 <section class="classification" aria-labelledby="classification-heading">

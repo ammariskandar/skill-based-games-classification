@@ -124,7 +124,10 @@ const robots = game ? undefined : "noindex, nofollow";
 
           <div class="space-y-8">
             <GameInformation game={game} />
-            <ClassificationDisplay classification={classification} />
+            <ClassificationDisplay
+              classification={classification}
+              slug={game.slug}
+            />
           </div>
         </div>
       </article>
