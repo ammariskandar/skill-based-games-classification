@@ -87,6 +87,7 @@ html {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  padding-top: 5%;
 }
 
 .radar-chart__svg {
@@ -129,7 +130,7 @@ html {
 
 .radar-axis-label {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   opacity: 0.4;
   transition: opacity 0.15s ease;
