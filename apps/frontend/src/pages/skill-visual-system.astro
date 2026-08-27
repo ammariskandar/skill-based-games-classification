@@ -37,7 +37,19 @@ const malformedError = validateProfile({
   <!-- Legend -->
   <section class="mt-10">
     <h2 class="text-xl font-semibold">Legend</h2>
-    <div class="mt-3"><SkillLegend /></div>
+    <p class="mt-2 text-sm text-muted">
+      Shared labels, symbols, and colours — with profile-aware descriptions.
+    </p>
+    <div class="mt-3 space-y-6">
+      <div>
+        <h3 class="text-sm font-semibold text-muted">Challenge</h3>
+        <div class="mt-2"><SkillLegend profile="challenge" /></div>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-muted">Reward</h3>
+        <div class="mt-2"><SkillLegend profile="reward" /></div>
+      </div>
+    </div>
   </section>
 
   <!-- Bars: balanced profiles -->

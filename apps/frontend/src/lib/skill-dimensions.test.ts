@@ -8,7 +8,16 @@
 
 import { describe, expect, it } from "vitest";
 
-import { validateSkillProfile } from "./skill-dimensions";
+import {
+  DIMENSIONS,
+  DIMENSION_BG_CLASSES,
+  DIMENSION_IDS,
+  DIMENSION_TEXT_CLASSES,
+  getDimensionDescription,
+  validateSkillProfile,
+  type DimensionId,
+  type ProfileType,
+} from "./skill-dimensions";
 
 describe("validateSkillProfile — valid vectors", () => {
   it("accepts a standard distribution", () => {
@@ -108,5 +117,54 @@ describe("validateSkillProfile — missing keys", () => {
 
   it("rejects a profile missing micro", () => {
     expect(validateSkillProfile({ mystiko: 60, macro: 40 }).ok).toBe(false);
+  });
+});
+
+describe("getDimensionDescription — exhaustive mapping", () => {
+  const pairs: Array<[ProfileType, DimensionId]> = [
+    ["challenge", "micro"],
+    ["challenge", "mystiko"],
+    ["challenge", "macro"],
+    ["reward", "micro"],
+    ["reward", "mystiko"],
+    ["reward", "macro"],
+  ];
+
+  it.each(pairs)(
+    "returns a non-trivial description for %s/%s",
+    (profile, dimension) => {
+      const description = getDimensionDescription(profile, dimension);
+      expect(typeof description).toBe("string");
+      expect(description.trim().length).toBeGreaterThan(10);
+      expect(description).not.toContain("undefined");
+    },
+  );
+});
+
+describe("getDimensionDescription — semantic divergence", () => {
+  it("differs between Challenge and Reward for every dimension", () => {
+    for (const dimension of DIMENSION_IDS) {
+      expect(getDimensionDescription("challenge", dimension)).not.toBe(
+        getDimensionDescription("reward", dimension),
+      );
+    }
+  });
+});
+
+describe("DIMENSIONS — shared visual invariants", () => {
+  it("contains exactly micro, mystiko, and macro in canonical order", () => {
+    expect(DIMENSION_IDS).toEqual(["micro", "mystiko", "macro"]);
+    expect(Object.keys(DIMENSIONS)).toEqual(["micro", "mystiko", "macro"]);
+  });
+
+  it("has non-empty labels, symbols, and colour tokens", () => {
+    for (const id of DIMENSION_IDS) {
+      const def = DIMENSIONS[id];
+      expect(def.label.trim().length).toBeGreaterThan(0);
+      expect(def.symbol.trim().length).toBeGreaterThan(0);
+      expect(def.token).toBe(id);
+      expect(DIMENSION_TEXT_CLASSES[id]).toBeTruthy();
+      expect(DIMENSION_BG_CLASSES[id]).toBeTruthy();
+    }
   });
 });

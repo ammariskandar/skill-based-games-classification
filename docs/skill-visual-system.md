@@ -4,17 +4,20 @@ Canonical visual representation for the MyGameDNA Micro/Mystiko/Macro skill dime
 
 ## Terminology and Order
 
-| ID       | Label   | Symbol | Colour Token    | Description |
-| -------- | ------- | ------ | --------------- | ----------- |
-| `micro`  | Micro   | ◆      | `--color-micro`  (blue)  | Execution, mechanics, timing, precision |
-| `mystiko`| Mystiko | ◈      | `--color-mystiko`(purple) | Hidden information, probability, mind games, prediction |
-| `macro`  | Macro   | ⬟      | `--color-macro`  (orange)| Systems, resource management, planning, strategy |
+| ID        | Label   | Symbol | Colour Token              |
+| --------- | ------- | ------ | ------------------------- |
+| `micro`   | Micro   | ◆      | `--color-micro` (blue)    |
+| `mystiko` | Mystiko | ◈      | `--color-mystiko`(purple) |
+| `macro`   | Macro   | ⬟      | `--color-macro` (orange)  |
 
 Dimensions always appear in this canonical order. Challenge and Reward are separate profiles — each independently totals 100.
+
+Labels, symbols, colours, and order are **shared invariants** across both profiles. Only the explanatory descriptions are profile-dependent (see **Profile-Dependent Semantics** below).
 
 ## Non-Colour Identity
 
 Each dimension is identifiable through three channels:
+
 1. **Label** — text name
 2. **Symbol** — Unicode glyph for accessible, non-colour identification
 3. **Colour** — semantic theme token (`--color-micro`, `--color-mystiko`, `--color-macro`)
@@ -23,25 +26,45 @@ Each dimension is identifiable through three channels:
 
 No dimension relies on colour alone. Symbols are always visible in legends and summaries.
 
+## Profile-Dependent Semantics
+
+Descriptions are resolved via `getDimensionDescription(profile, dimension)` (`DIMENSION_DESCRIPTIONS` in `src/lib/skill-dimensions.ts`). `SkillLegend` requires a `profile` prop; components must never hardcode a single Challenge-oriented description.
+
+### Challenge — what the game demands of the player
+
+| Dimension | Meaning                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| Micro     | Fine motor execution, reflexes, precision, timing, and mechanical dexterity.                           |
+| Mystiko   | Decision-making under uncertainty, hidden information, tactical adaptation, and situational awareness. |
+| Macro     | High-level strategy, resource management, long-term planning, and systemic foresight.                  |
+
+### Reward — what yields player satisfaction, fulfillment, mastery payoff, or victory
+
+| Dimension | Meaning                                                                                      |
+| --------- | -------------------------------------------------------------------------------------------- |
+| Micro     | Kinetic satisfaction, sensory feedback, mechanical mastery, and reflex execution payoff.     |
+| Mystiko   | Discovery, tactical outplay, deduction, puzzle resolution, and out-adapting opponents.       |
+| Macro     | Strategic triumph, realization of long-term planning, economic dominance, and grand victory. |
+
 ## Components
 
-| Component            | Path | Role |
-| -------------------- | ---- | ---- |
-| `SkillLegend`        | `src/components/score/SkillLegend.astro` | Dimension definitions list (compact + full modes) |
-| `SkillScoreSummary`  | `src/components/score/SkillScoreSummary.astro` | Universal accessible text profile — always present |
-| `SkillScoreBars`     | `src/components/score/SkillScoreBars.astro` | Observable Plot horizontal bar chart |
-| `SkillRadarChart`    | `src/components/score/SkillRadarChart.astro` | D3 radar/spider chart (three axes) |
-| `SkillProfilePanel`  | `src/components/score/SkillProfilePanel.astro` | Composition panel: heading + summary + legend + selected chart |
-| `SkillChartFallback` | `src/components/score/SkillChartFallback.astro` | CSS/HTML bars — no JavaScript required |
+| Component            | Path                                            | Role                                                           |
+| -------------------- | ----------------------------------------------- | -------------------------------------------------------------- |
+| `SkillLegend`        | `src/components/score/SkillLegend.astro`        | Dimension definitions list (compact + full modes)              |
+| `SkillScoreSummary`  | `src/components/score/SkillScoreSummary.astro`  | Universal accessible text profile — always present             |
+| `SkillScoreBars`     | `src/components/score/SkillScoreBars.astro`     | Observable Plot horizontal bar chart                           |
+| `SkillRadarChart`    | `src/components/score/SkillRadarChart.astro`    | D3 radar/spider chart (three axes)                             |
+| `SkillProfilePanel`  | `src/components/score/SkillProfilePanel.astro`  | Composition panel: heading + summary + legend + selected chart |
+| `SkillChartFallback` | `src/components/score/SkillChartFallback.astro` | CSS/HTML bars — no JavaScript required                         |
 
 ## Data Contract
 
 ```typescript
 interface SkillProfile {
   type: "challenge" | "reward";
-  micro: number;    // integer 0-100
-  mystiko: number;  // integer 0-100
-  macro: number;    // integer 0-100
+  micro: number; // integer 0-100
+  mystiko: number; // integer 0-100
+  macro: number; // integer 0-100
   title?: string;
   description?: string;
   source?: string;
@@ -49,6 +72,7 @@ interface SkillProfile {
 ```
 
 Presentation-level validation (`validateProfile` in `src/lib/skill-dimensions.ts`) enforces:
+
 - All three dimensions present and numeric
 - Integer values only
 - 0–100 range per dimension
@@ -80,16 +104,16 @@ Malformed input is never silently rendered. Django will own authoritative server
 
 **The bar-versus-radar product decision belongs to Ammar Iskandar.** Both foundations are implemented for evaluation.
 
-| Trade-off | Bars | Radar |
-|-----------|------|-------|
-| Precision | High — exact values labelled | Lower — angle/area perception |
-| Compactness | Good for catalogue rows, tables | Larger space requirement |
-| Mobile | Excellent at narrow widths | Workable but constrained |
-| Scanning | Fast numeric comparison | Slower — shape interpretation |
-| Overlay | Difficult to overlay profiles | Possible but cluttered |
-| Shape storytelling | Weak | Strong — overall balance visible |
-| Accessibility | Text summary + bar labels | Text summary + axis labels |
-| 3-dimension shape | N/A | Triangle — fixed geometry |
+| Trade-off          | Bars                            | Radar                            |
+| ------------------ | ------------------------------- | -------------------------------- |
+| Precision          | High — exact values labelled    | Lower — angle/area perception    |
+| Compactness        | Good for catalogue rows, tables | Larger space requirement         |
+| Mobile             | Excellent at narrow widths      | Workable but constrained         |
+| Scanning           | Fast numeric comparison         | Slower — shape interpretation    |
+| Overlay            | Difficult to overlay profiles   | Possible but cluttered           |
+| Shape storytelling | Weak                            | Strong — overall balance visible |
+| Accessibility      | Text summary + bar labels       | Text summary + axis labels       |
+| 3-dimension shape  | N/A                             | Triangle — fixed geometry        |
 
 ### When to prefer bars
 

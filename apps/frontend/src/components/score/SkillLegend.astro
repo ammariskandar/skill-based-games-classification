@@ -2,10 +2,13 @@
 import {
   DIMENSION_LIST,
   DIMENSION_TEXT_CLASSES,
+  getDimensionDescription,
   type DimensionDef,
+  type ProfileType,
 } from "../../lib/skill-dimensions";
 
 interface Props {
+  profile: ProfileType;
   compact?: boolean;
 }
 
@@ -35,7 +38,9 @@ const dimensions: DimensionDef[] = DIMENSION_LIST;
         </span>
         <span class="text-text font-medium">{d.label}</span>
         {!Astro.props.compact && (
-          <span class="text-muted">{d.description}</span>
+          <span class="text-muted">
+            {getDimensionDescription(Astro.props.profile, d.id)}
+          </span>
         )}
       </li>
     ))

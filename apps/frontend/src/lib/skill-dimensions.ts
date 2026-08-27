@@ -10,7 +10,6 @@ export type ProfileType = (typeof PROFILE_TYPES)[number];
 export interface DimensionDef {
   id: DimensionId;
   label: string;
-  description: string;
   /** Tailwind CSS 4 theme colour token (e.g. "bg-blue", "text-green") */
   token: string;
   /** Non-colour symbol for accessible identification */
@@ -21,24 +20,18 @@ export const DIMENSIONS: Record<DimensionId, DimensionDef> = {
   micro: {
     id: "micro",
     label: "Micro",
-    description:
-      "Execution, mechanics, timing, precision, and moment-to-moment control.",
     token: "micro",
     symbol: "◆",
   },
   mystiko: {
     id: "mystiko",
     label: "Mystiko",
-    description:
-      "Hidden information, probability, mind games, prediction, and adaptation under uncertainty.",
     token: "mystiko",
     symbol: "◈",
   },
   macro: {
     id: "macro",
     label: "Macro",
-    description:
-      "Systems knowledge, resource management, planning, and long-horizon strategy.",
     token: "macro",
     symbol: "⬟",
   },
@@ -61,6 +54,41 @@ export const DIMENSION_BG_CLASSES: Record<DimensionId, string> = {
   mystiko: "bg-(--color-mystiko)",
   macro: "bg-(--color-macro)",
 } as const;
+
+/* ── profile-dependent explanatory descriptions ── */
+
+/** Authoritative explanatory copy: 3 Challenge + 3 Reward meanings.  Labels,
+ * symbols, colours, and order are shared across profiles; only the semantics
+ * are profile-aware (`description = f(profile, dimension)`). */
+export const DIMENSION_DESCRIPTIONS: Record<
+  ProfileType,
+  Record<DimensionId, string>
+> = {
+  challenge: {
+    micro:
+      "Fine motor execution, reflexes, precision, timing, and mechanical dexterity.",
+    mystiko:
+      "Decision-making under uncertainty, hidden information, tactical adaptation, and situational awareness.",
+    macro:
+      "High-level strategy, resource management, long-term planning, and systemic foresight.",
+  },
+  reward: {
+    micro:
+      "Kinetic satisfaction, sensory feedback, mechanical mastery, and reflex execution payoff.",
+    mystiko:
+      "Discovery, tactical outplay, deduction, puzzle resolution, and out-adapting opponents.",
+    macro:
+      "Strategic triumph, realization of long-term planning, economic dominance, and grand victory.",
+  },
+};
+
+/** Resolve the explanatory description for a profile × dimension. */
+export function getDimensionDescription(
+  profile: ProfileType,
+  dimension: DimensionId,
+): string {
+  return DIMENSION_DESCRIPTIONS[profile][dimension];
+}
 
 /* ── typed presentation data ── */
 
