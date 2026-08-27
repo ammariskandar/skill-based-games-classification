@@ -72,8 +72,8 @@ export function buildRadarHtml(data: RadarRenderData): string {
   }
 
   const center: Point = { x: size / 2, y: size / 2 };
-  const maxRadius = size / 2 - 24;
-  const labelRadius = maxRadius + 16;
+  const maxRadius = size / 2 - 40;
+  const labelRadius = maxRadius + 26;
 
   const challengePath =
     challenge === null
@@ -86,7 +86,7 @@ export function buildRadarHtml(data: RadarRenderData): string {
       ? ""
       : generateSplinePath(getSpokePoints(reward, "reward", center, maxRadius));
 
-  const gridRadii = [0.25, 0.5, 0.75, 1].map((factor) => factor * maxRadius);
+  const gridRadii = [0.1, 0.3, 0.6, 0.8, 1].map((factor) => factor * maxRadius);
 
   const spokes = SPOKES.map((spoke) => {
     const profile = spoke.kind === "challenge" ? challenge : reward;
@@ -101,12 +101,6 @@ export function buildRadarHtml(data: RadarRenderData): string {
         center.x,
         center.y,
         (score / 100) * maxRadius,
-        spoke.angleDegrees,
-      ),
-      endpoint: polarToCartesian(
-        center.x,
-        center.y,
-        maxRadius,
         spoke.angleDegrees,
       ),
       label: polarToCartesian(
@@ -132,13 +126,6 @@ export function buildRadarHtml(data: RadarRenderData): string {
     .map(
       (radius) =>
         `<circle class="radar-grid-circle" cx="${center.x}" cy="${center.y}" r="${radius}" />`,
-    )
-    .join("");
-
-  const spokeHtml = spokes
-    .map(
-      (spoke) =>
-        `<line class="radar-spoke" x1="${center.x}" y1="${center.y}" x2="${spoke.endpoint.x}" y2="${spoke.endpoint.y}" style="stroke: var(${spoke.colorVar});" />`,
     )
     .join("");
 
@@ -200,5 +187,5 @@ export function buildRadarHtml(data: RadarRenderData): string {
     title,
   )}</title><desc id="${descId}">${escapeHtml(
     description,
-  )}</desc><defs><filter id="radar-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter><radialGradient id="radar-fill" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color: var(--color-micro);" /><stop offset="50%" style="stop-color: var(--color-mystiko);" /><stop offset="100%" style="stop-color: var(--color-macro);" /></radialGradient></defs><g class="radar-grid">${gridHtml}${spokeHtml}</g><g class="radar-labels">${labelHtml}</g><g class="radar-layers" data-radar-layers><g class="radar-polygons" data-radar-polygons>${challengePathHtml}${rewardPathHtml}</g><g class="radar-nodes">${nodeHtml}</g></g></svg><table class="sr-only"><caption>Skill classification scores</caption><thead><tr><th scope="col">Profile</th><th scope="col">Micro</th><th scope="col">Mystiko</th><th scope="col">Macro</th></tr></thead><tbody>${tableRowsHtml}</tbody></table><div class="radar-tooltip" role="tooltip" aria-hidden="true"><span class="radar-tooltip-header"></span><span class="radar-tooltip-value"></span><p class="radar-tooltip-description"></p></div>${toggleHtml}</div>`;
+  )}</desc><defs><filter id="radar-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter><radialGradient id="radar-fill" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color: var(--color-micro);" /><stop offset="50%" style="stop-color: var(--color-mystiko);" /><stop offset="100%" style="stop-color: var(--color-macro);" /></radialGradient></defs><g class="radar-grid">${gridHtml}</g><g class="radar-labels">${labelHtml}</g><g class="radar-layers" data-radar-layers><g class="radar-polygons" data-radar-polygons>${challengePathHtml}${rewardPathHtml}</g><g class="radar-nodes">${nodeHtml}</g></g></svg><table class="sr-only"><caption>Skill classification scores</caption><thead><tr><th scope="col">Profile</th><th scope="col">Micro</th><th scope="col">Mystiko</th><th scope="col">Macro</th></tr></thead><tbody>${tableRowsHtml}</tbody></table><div class="radar-tooltip" role="tooltip" aria-hidden="true"><span class="radar-tooltip-header"></span><span class="radar-tooltip-value"></span><p class="radar-tooltip-description"></p></div>${toggleHtml}</div>`;
 }

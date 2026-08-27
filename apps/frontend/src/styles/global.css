@@ -123,11 +123,6 @@ html {
   stroke-dasharray: 2 4;
 }
 
-.radar-spoke {
-  stroke-width: 1;
-  stroke-opacity: 0.4;
-}
-
 .radar-axis-label {
   font-family: var(--font-sans);
   font-size: 0.75rem;
