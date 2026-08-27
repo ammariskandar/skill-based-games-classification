@@ -132,3 +132,62 @@ export function isValidProfile(
 ): profile is SkillProfile {
   return validateProfile(profile).length === 0;
 }
+
+/** A validated three-component skill vector (micro, mystiko, macro). */
+export interface SkillProfileVector {
+  micro: number;
+  mystiko: number;
+  macro: number;
+}
+
+/** Discriminated result of strict runtime skill-profile validation. */
+export type SkillProfileValidation =
+  { ok: true; value: SkillProfileVector } | { ok: false; reason: string };
+
+/**
+ * Strictly validate a raw untrusted value as a skill-profile vector (SBGC-163).
+ *
+ * Accepts only a plain, non-array object whose ``micro``, ``mystiko``, and
+ * ``macro`` fields are finite integers in ``[0, 100]`` summing to exactly 100.
+ * Extra keys are ignored.  This fails closed — it never coerces, scales, or
+ * repairs malformed data.
+ */
+export function validateSkillProfile(input: unknown): SkillProfileValidation {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return { ok: false, reason: "must be a profile object" };
+  }
+
+  const record = input as Record<string, unknown>;
+  for (const key of DIMENSION_IDS) {
+    const value = record[key];
+    if (
+      typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      !Number.isInteger(value) ||
+      value < 0 ||
+      value > 100
+    ) {
+      return {
+        ok: false,
+        reason: `${key} must be an integer between 0 and 100`,
+      };
+    }
+  }
+
+  const total =
+    (record.micro as number) +
+    (record.mystiko as number) +
+    (record.macro as number);
+  if (total !== 100) {
+    return { ok: false, reason: `scores must sum to 100 (got ${total})` };
+  }
+
+  return {
+    ok: true,
+    value: {
+      micro: record.micro as number,
+      mystiko: record.mystiko as number,
+      macro: record.macro as number,
+    },
+  };
+}

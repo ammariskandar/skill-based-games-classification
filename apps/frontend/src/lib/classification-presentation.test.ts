@@ -5,7 +5,7 @@
  * ready state narrowing. No Django arithmetic is invoked.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CLASSIFICATION_DIMENSION_ORDER,
@@ -111,5 +111,55 @@ describe("presentClassification", () => {
       expect(presentation.isStale).toBe(true);
       expect(presentation.challenge.micro).toBe(40);
     }
+  });
+});
+
+describe("presentClassification — malformed profile validation", () => {
+  it("fails closed when the reward profile is malformed", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const presentation = presentClassification({
+      status: "READY",
+      regime: "provisional",
+      challenge: { micro: 50, macro: 30, mystiko: 20 },
+      reward: { micro: 60, macro: 40, mystiko: 40 }, // sums to 140
+      confidence_level: 80,
+      confidence_label: "High",
+      submission_count: 10,
+      calculation_version: null,
+      calculated_at: null,
+      is_stale: false,
+    });
+
+    expect(presentation).toEqual({ kind: "unavailable" });
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("fails closed when the challenge profile is malformed", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const presentation = presentClassification({
+      status: "READY",
+      challenge: { micro: -5, macro: 60, mystiko: 45 },
+      reward: { micro: 50, macro: 30, mystiko: 20 },
+    });
+
+    expect(presentation).toEqual({ kind: "unavailable" });
+    warn.mockRestore();
+  });
+
+  it("fails closed on non-object input", () => {
+    expect(presentClassification("not-a-classification")).toEqual({
+      kind: "unavailable",
+    });
+  });
+
+  it("fails closed when one profile is missing", () => {
+    const presentation = presentClassification({
+      status: "READY",
+      challenge: { micro: 50, macro: 30, mystiko: 20 },
+      reward: null,
+    });
+
+    expect(presentation).toEqual({ kind: "unavailable" });
   });
 });

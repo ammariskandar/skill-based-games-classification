@@ -9,8 +9,8 @@
 import type {
   ClassificationProfile,
   ClassificationRegime,
-  GameFinalClassification,
 } from "./server/api/games";
+import { validateSkillProfile } from "./skill-dimensions";
 
 /** Locked canonical display order. Never Micro/Mystiko/Macro, never sorted. */
 export const CLASSIFICATION_DIMENSION_ORDER = [
@@ -60,23 +60,71 @@ export type ClassificationPresentation =
 
 /** Narrow a nullable classification into an unavailable or ready state. */
 export function presentClassification(
-  classification: GameFinalClassification | null,
+  raw: unknown,
+  slug?: string,
 ): ClassificationPresentation {
-  if (
-    classification === null ||
-    classification.challenge === null ||
-    classification.reward === null
-  ) {
+  if (!isRecord(raw)) {
     return { kind: "unavailable" };
   }
+
+  const challengeRaw = raw["challenge"];
+  const rewardRaw = raw["reward"];
+
+  // Missing profiles are the honest "not yet classified" state, not corruption
+  // — fail closed without a warning.  Only non-null malformed vectors warn.
+  if (challengeRaw == null || rewardRaw == null) {
+    return { kind: "unavailable" };
+  }
+
+  const challenge = validateSkillProfile(challengeRaw);
+  const reward = validateSkillProfile(rewardRaw);
+
+  if (!challenge.ok) {
+    warnMalformed(slug, "challenge", challenge.reason);
+    return { kind: "unavailable" };
+  }
+  if (!reward.ok) {
+    warnMalformed(slug, "reward", reward.reason);
+    return { kind: "unavailable" };
+  }
+
   return {
     kind: "ready",
-    challenge: classification.challenge,
-    reward: classification.reward,
-    confidence: classification.confidence_level,
-    confidenceLabel: classification.confidence_label,
-    regime: classification.regime,
-    isStale: classification.is_stale,
-    submissionCount: classification.submission_count,
+    challenge: challenge.value,
+    reward: reward.value,
+    confidence: numberOrNull(raw["confidence_level"]),
+    confidenceLabel: stringOrNull(raw["confidence_label"]),
+    regime: asRegime(raw["regime"]),
+    isStale: raw["is_stale"] === true,
+    submissionCount: numberOrNull(raw["submission_count"]),
   };
+}
+
+function warnMalformed(
+  slug: string | undefined,
+  profile: string,
+  reason: string,
+): void {
+  // Server-side diagnostic only — never leak malformed payload into markup.
+  console.warn(
+    `[classification] ${slug ?? "game"}: ${profile} profile invalid (${reason})`,
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function numberOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asRegime(value: unknown): ClassificationRegime | null {
+  return value === "provisional" || value === "unified" || value === "none"
+    ? value
+    : null;
 }
