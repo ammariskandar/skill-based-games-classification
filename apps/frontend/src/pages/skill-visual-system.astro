@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SkillProfilePanel from "../components/score/SkillProfilePanel.astro";
 import SkillLegend from "../components/score/SkillLegend.astro";
+import RadarChart from "../components/score/RadarChart.astro";
 import ErrorState from "../components/ui/ErrorState.astro";
 import { validateProfile } from "../lib/skill-dimensions";
 
@@ -236,6 +237,36 @@ const malformedError = validateProfile({
         {...balanced}
         chart="none"
       />
+    </div>
+  </section>
+  <!-- Dual-profile radar (SBGC-85/86/87) -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Dual-Profile Radar</h2>
+    <p class="text-sm text-muted">
+      Six-axis Challenge + Reward overlay with smooth cardinal splines and an
+      active-profile toggle.
+    </p>
+    <div class="mt-4 grid gap-8 lg:grid-cols-2">
+      <div class="max-w-sm">
+        <h3 class="text-sm font-semibold text-muted">Balanced</h3>
+        <div class="mt-2">
+          <RadarChart
+            challenge={balanced}
+            reward={macroHeavy}
+            gameTitle="Balanced example"
+          />
+        </div>
+      </div>
+      <div class="max-w-sm">
+        <h3 class="text-sm font-semibold text-muted">Extreme (100% Micro)</h3>
+        <div class="mt-2">
+          <RadarChart
+            challenge={zeros}
+            reward={zeros}
+            gameTitle="Extreme example"
+          />
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>

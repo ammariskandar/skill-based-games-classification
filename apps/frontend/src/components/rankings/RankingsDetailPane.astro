@@ -1,11 +1,16 @@
 ---
+import RadarChart from "../score/RadarChart.astro";
 import { gameHref } from "../../lib/catalogue-presentation";
+import type { SkillProfileVector } from "../../lib/skill-dimensions";
 
 interface Props {
   selectedGame: { slug: string; name: string } | null;
+  challenge: SkillProfileVector | null;
+  reward: SkillProfileVector | null;
 }
 
-const { selectedGame } = Astro.props;
+const { selectedGame, challenge, reward } = Astro.props;
+const hasRadar = challenge !== null || reward !== null;
 ---
 
 {
@@ -19,11 +24,20 @@ const { selectedGame } = Astro.props;
     <div class="rankings-detail" data-rankings-detail>
       <h2 class="rankings-detail__heading">{selectedGame.name}</h2>
 
-      <div class="rankings-detail__upper" aria-hidden="true">
-        <div class="rankings-detail__region">
-          <span class="rankings-detail__region-label">Radar</span>
+      <div class="rankings-detail__upper">
+        <div class="rankings-detail__region rankings-detail__region--radar">
+          {hasRadar ? (
+            <RadarChart
+              challenge={challenge}
+              reward={reward}
+              gameTitle={selectedGame.name}
+              showToggle={false}
+            />
+          ) : (
+            <span class="rankings-detail__region-label">Radar</span>
+          )}
         </div>
-        <div class="rankings-detail__region">
+        <div class="rankings-detail__region" aria-hidden="true">
           <span class="rankings-detail__region-label">Dominant Type</span>
         </div>
       </div>
@@ -103,6 +117,13 @@ const { selectedGame } = Astro.props;
     border: 1px dashed var(--color-border-2);
     border-radius: var(--radius-md);
     background: var(--color-surface);
+  }
+
+  .rankings-detail__region--radar {
+    display: block;
+    border: none;
+    background: transparent;
+    padding: 0;
   }
 
   /* The upper placeholders are massive, near-square shells that split the

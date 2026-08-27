@@ -1,7 +1,9 @@
 ---
+import RadarChart from "../score/RadarChart.astro";
 import { resolveGameImageLayout } from "../../lib/game-image-layout";
 import { isImageUpscalingEnabled } from "../../lib/game-image-upscale";
 import { isSteamCdnUrl } from "../../lib/steam-cdn";
+import type { SkillProfileVector } from "../../lib/skill-dimensions";
 
 interface Props {
   src: string;
@@ -10,10 +12,20 @@ interface Props {
   source: "steam" | "manual";
   libraryHeroUrl?: string | null;
   libraryCapsuleUrl?: string | null;
+  challenge?: SkillProfileVector | null;
+  reward?: SkillProfileVector | null;
 }
 
-const { src, name, slug, source, libraryHeroUrl, libraryCapsuleUrl } =
-  Astro.props;
+const {
+  src,
+  name,
+  slug,
+  source,
+  libraryHeroUrl,
+  libraryCapsuleUrl,
+  challenge,
+  reward,
+} = Astro.props;
 
 const layout = resolveGameImageLayout({
   src,
@@ -50,6 +62,7 @@ const foregroundCrossorigin = isSteamCdnUrl(foregroundSrc)
   ? "anonymous"
   : undefined;
 const isDev = import.meta.env.DEV;
+const hasRadar = challenge != null || reward != null;
 // Automatic WebSR upscaling is disabled by default (SBGC-202). The `<script>` is
 // only emitted when this public flag is explicitly enabled.
 const upscalingEnabled = isImageUpscalingEnabled(
@@ -102,12 +115,21 @@ const upscalingEnabled = isImageUpscalingEnabled(
               <div
                 class="game-image__visualization"
                 data-classification-visualization
-                hidden={!isDev}
+                hidden={!hasRadar && !isDev}
               >
-                {isDev && (
-                  <span class="game-image__visualization-label">
-                    Visualization slot
-                  </span>
+                {hasRadar ? (
+                  <RadarChart
+                    challenge={challenge ?? null}
+                    reward={reward ?? null}
+                    gameTitle={name}
+                    showToggle={false}
+                  />
+                ) : (
+                  isDev && (
+                    <span class="game-image__visualization-label">
+                      Visualization slot
+                    </span>
+                  )
                 )}
               </div>
             )}
