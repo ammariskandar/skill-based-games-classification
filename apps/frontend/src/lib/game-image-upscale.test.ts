@@ -2,7 +2,7 @@
  * Pure game-image upscaling policy tests — SBGC-184.
  */
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   accessCache,
@@ -10,11 +10,17 @@ import {
   decideEnhancement,
   isEligibleForUpscale,
   isEligibleForUpscaleByDensity,
+  isImageUpscalingEnabled,
+  MAX_ENHANCED_CACHE_BYTES,
   MAX_ENHANCED_GAME_IMAGES,
+  planCacheEvictions,
   QUALITY_HEADROOM,
   revealMode,
+  shouldRunInference,
   transitionMode,
+  withTimeout,
   type LruCacheEntry,
+  type SizedCacheEntry,
   upscaleDimensions,
 } from "./game-image-upscale";
 
@@ -219,5 +225,149 @@ describe("transitionMode", () => {
   it("wipes the header fallback and Manual primary image", () => {
     expect(transitionMode("header")).toBe("wipe");
     expect(transitionMode("manual-primary")).toBe("wipe");
+  });
+});
+
+describe("isImageUpscalingEnabled (SBGC-202 gate)", () => {
+  it("is disabled by default", () => {
+    expect(isImageUpscalingEnabled(undefined)).toBe(false);
+    expect(isImageUpscalingEnabled("false")).toBe(false);
+    expect(isImageUpscalingEnabled(false)).toBe(false);
+  });
+
+  it("is enabled only on an explicit true value", () => {
+    expect(isImageUpscalingEnabled("true")).toBe(true);
+    expect(isImageUpscalingEnabled(true)).toBe(true);
+  });
+});
+
+describe("shouldRunInference (environmental gating)", () => {
+  it("requires intersection, visibility, and non-data-saver", () => {
+    expect(
+      shouldRunInference({
+        isIntersecting: true,
+        isVisible: true,
+        saveData: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("suppresses when the image is offscreen", () => {
+    expect(
+      shouldRunInference({
+        isIntersecting: false,
+        isVisible: true,
+        saveData: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("suppresses when the tab is backgrounded", () => {
+    expect(
+      shouldRunInference({
+        isIntersecting: true,
+        isVisible: false,
+        saveData: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("suppresses when data saver is active", () => {
+    expect(
+      shouldRunInference({
+        isIntersecting: true,
+        isVisible: true,
+        saveData: true,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("withTimeout (worker termination)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("resolves before the timeout and never calls onTimeout", async () => {
+    vi.useFakeTimers();
+    const onTimeout = vi.fn();
+    const result = await withTimeout(Promise.resolve("done"), 5000, onTimeout);
+    expect(result).toBe("done");
+    expect(onTimeout).not.toHaveBeenCalled();
+  });
+
+  it("times out and invokes the termination callback", async () => {
+    vi.useFakeTimers();
+    const onTimeout = vi.fn();
+    const never = new Promise<never>(() => {});
+    const result = withTimeout(never, 5000, onTimeout);
+    const rejection = result.catch((error: unknown) => error);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await rejection;
+
+    expect(onTimeout).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("planCacheEvictions (byte-bounded LRU)", () => {
+  const MB = 1024 * 1024;
+
+  it("evicts oldest entries until total bytes fit the budget", () => {
+    const existing: SizedCacheEntry[] = [
+      { key: "a", lastAccessedAt: 1, size: 10 * MB },
+      { key: "b", lastAccessedAt: 2, size: 10 * MB },
+      { key: "c", lastAccessedAt: 3, size: 10 * MB },
+      { key: "d", lastAccessedAt: 4, size: 10 * MB },
+    ];
+    const incoming: SizedCacheEntry = {
+      key: "e",
+      lastAccessedAt: 5,
+      size: 5 * MB,
+    };
+
+    // 45 MiB total against a 25 MiB budget: evict a (10) then b (10) → 25 MiB.
+    const evicted = planCacheEvictions(
+      existing,
+      incoming,
+      MAX_ENHANCED_GAME_IMAGES,
+      MAX_ENHANCED_CACHE_BYTES,
+    );
+    expect(evicted).toEqual(["a", "b"]);
+  });
+
+  it("evicts a single oversized entry", () => {
+    const incoming: SizedCacheEntry = {
+      key: "huge",
+      lastAccessedAt: 1,
+      size: 30 * MB,
+    };
+    const evicted = planCacheEvictions(
+      [],
+      incoming,
+      MAX_ENHANCED_GAME_IMAGES,
+      MAX_ENHANCED_CACHE_BYTES,
+    );
+    expect(evicted).toContain("huge");
+  });
+
+  it("respects the entry-count cap alongside the byte budget", () => {
+    const existing: SizedCacheEntry[] = Array.from({ length: 10 }, (_, i) => ({
+      key: `k${i}`,
+      lastAccessedAt: i + 1,
+      size: 1 * MB,
+    }));
+    const incoming: SizedCacheEntry = {
+      key: "new",
+      lastAccessedAt: 11,
+      size: 1 * MB,
+    };
+    const evicted = planCacheEvictions(
+      existing,
+      incoming,
+      MAX_ENHANCED_GAME_IMAGES,
+      MAX_ENHANCED_CACHE_BYTES,
+    );
+    expect(evicted).toEqual(["k0"]);
   });
 });

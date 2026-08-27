@@ -1,14 +1,12 @@
 /**
- * Browser controller for progressive game-image upscaling — SBGC-184.
+ * Browser controller for progressive game-image upscaling — SBGC-184 / SBGC-202.
  *
- * Orchestrates: eligibility → cache lookup → (cache miss) worker/WebSR → cache
- * → reveal. Every failure path leaves the original image untouched and does not
- * surface any user-facing error.
+ * Orchestrates: feature gate → eligibility → environmental gating → cache lookup
+ * → (cache miss) worker/WebSR → cache → reveal.  Every failure path leaves the
+ * original image untouched and does not surface any user-facing error.
  *
- * Role-aware: the Library Capsule uses a display-density rule (rendered CSS ×
- * DPR × 1.25 headroom); the header fallback and Manual primary image use the
- * width threshold rule. The cache key includes the asset role so a header and a
- * capsule for the same Game never collide.
+ * SBGC-202 hardens this path: automatic WebSR is disabled by default, gated on
+ * viewport/visibility/data-saver, bounded by a 5s timeout, and teardown-safe.
  */
 
 import {
@@ -16,11 +14,14 @@ import {
   decideEnhancement,
   isEligibleForUpscale,
   isEligibleForUpscaleByDensity,
+  isImageUpscalingEnabled,
   MODEL_VERSION,
   NETWORK_NAME,
   revealMode,
+  shouldRunInference,
   transitionMode,
   UPSCALE_FACTOR,
+  withTimeout,
   type AssetRole,
 } from "./game-image-upscale";
 import {
@@ -34,6 +35,8 @@ import {
 import websrUrl from "@websr/websr/dist/websr.js?url";
 import weights3d from "@websr/websr/weights/anime4k/cnn-2x-s-3d.json";
 
+const INFERENCE_TIMEOUT_MS = 5000;
+
 export interface MountOptions {
   root: HTMLElement;
   gameSlug: string;
@@ -41,8 +44,30 @@ export interface MountOptions {
   sourceUrl: string;
 }
 
-export function mountGameImageEnhancer(options: MountOptions): void {
+export interface EnhancerHandle {
+  /** Detach observers/timers so a navigating page never commits stale work. */
+  disconnect: () => void;
+}
+
+function isDataSaver(): boolean {
+  const nav = navigator as Navigator & {
+    connection?: { saveData?: boolean };
+  };
+  return nav.connection?.saveData === true;
+}
+
+export function mountGameImageEnhancer(options: MountOptions): EnhancerHandle {
   const { root, gameSlug, assetRole, sourceUrl } = options;
+
+  const setStatus = (status: string): void => {
+    root.dataset.upscaleStatus = status;
+  };
+
+  // Disabled by default: no worker, no observer, no model loading.
+  if (!isImageUpscalingEnabled(import.meta.env.PUBLIC_ENABLE_IMAGE_UPSCALE)) {
+    setStatus("disabled");
+    return { disconnect: () => {} };
+  }
 
   const original = root.querySelector<HTMLImageElement>(
     "[data-game-image-original]",
@@ -50,29 +75,78 @@ export function mountGameImageEnhancer(options: MountOptions): void {
   const overlay = root.querySelector<HTMLImageElement>(
     "[data-game-image-enhanced]",
   );
-  if (!original || !overlay) return;
+  if (!original || !overlay) {
+    setStatus("disabled");
+    return { disconnect: () => {} };
+  }
 
   const originalImage: HTMLImageElement = original;
   const overlayImage: HTMLImageElement = overlay;
   overlayImage.dataset.transition = transitionMode(assetRole);
 
-  // Give the original at least one paint opportunity before any heavy work.
+  let disposed = false;
+  let observer: IntersectionObserver | null = null;
+  setStatus("pending");
+
+  const disconnect = (): void => {
+    disposed = true;
+    observer?.disconnect();
+  };
+
   const afterPaint = (fn: () => void): void => {
     requestAnimationFrame(() => requestAnimationFrame(fn));
   };
 
-  const start = (): void => {
+  const scheduleIdle = (fn: () => void): void => {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(fn, { timeout: 2000 });
+    } else {
+      window.setTimeout(fn, 0);
+    }
+  };
+
+  const begin = (): void => {
+    if (disposed || !root.isConnected) return;
+    // The observer already confirmed intersection (or none is available), so
+    // `isIntersecting` is `true`; visibility and data-saver are checked here.
+    if (
+      !shouldRunInference({
+        isIntersecting: true,
+        isVisible: document.visibilityState === "visible",
+        saveData: isDataSaver(),
+      })
+    ) {
+      return;
+    }
+
     const width = originalImage.naturalWidth;
     const height = originalImage.naturalHeight;
-    const eligible = isEligible(assetRole, originalImage, width, height);
-    console.info("[game-image]", "dimensions", {
-      role: assetRole,
-      width,
-      height,
-      eligible,
-    });
-    if (!eligible) return;
-    void enhance(width, height);
+    if (!isEligible(assetRole, originalImage, width, height)) {
+      setStatus("unsupported");
+      return;
+    }
+
+    scheduleIdle(() => void enhance(width, height));
+  };
+
+  const start = (): void => {
+    if (typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              observer?.disconnect();
+              begin();
+              return;
+            }
+          }
+        },
+        { rootMargin: "50px" },
+      );
+      observer.observe(originalImage);
+    } else {
+      begin();
+    }
   };
 
   if (originalImage.complete && originalImage.naturalWidth > 0) {
@@ -110,12 +184,14 @@ export function mountGameImageEnhancer(options: MountOptions): void {
       modelVersion: MODEL_VERSION,
     });
 
-    // Cache-before-inference: a valid cached result must bypass WebSR.
     const cached = await getCachedImage(key);
+    if (disposed || !root.isConnected) return;
+
     const decision = decideEnhancement(true, cached !== null);
     console.info("[game-image]", "decision", { role: assetRole, decision });
     if (decision === "cache-hit" && cached) {
       reveal(cached.blob);
+      setStatus("enhanced");
       return;
     }
     if (decision !== "cache-miss") return;
@@ -136,14 +212,17 @@ export function mountGameImageEnhancer(options: MountOptions): void {
         role: assetRole,
         error,
       });
+      setStatus("unsupported");
       return;
     }
+
+    if (disposed || !root.isConnected) return;
 
     const worker = new Worker(
       new URL("./game-image-upscale.worker.ts", import.meta.url),
     );
 
-    const blob = await new Promise<Blob | null>((resolve) => {
+    const workerResult = new Promise<Blob | null>((resolve) => {
       worker.onmessage = (event: MessageEvent) => {
         const data = event.data as { type?: string; blob?: Blob } | null;
         console.info("[game-image]", "worker result", {
@@ -173,9 +252,24 @@ export function mountGameImageEnhancer(options: MountOptions): void {
       );
     });
 
+    let blob: Blob | null;
+    try {
+      blob = await withTimeout(workerResult, INFERENCE_TIMEOUT_MS, () =>
+        worker.terminate(),
+      );
+    } catch {
+      worker.terminate();
+      setStatus("timeout");
+      return;
+    }
     worker.terminate();
 
-    if (!blob) return;
+    // The component may have been unmounted or navigated away mid-flight.
+    if (disposed || !root.isConnected) return;
+    if (!blob) {
+      setStatus("unsupported");
+      return;
+    }
 
     const now = Date.now();
     const record: CachedGameImage = {
@@ -185,11 +279,15 @@ export function mountGameImageEnhancer(options: MountOptions): void {
       sourceUrl,
       modelVersion: MODEL_VERSION,
       blob,
+      size: blob.size,
       createdAt: now,
       lastAccessedAt: now,
     };
     await putCachedImage(record);
+    if (disposed || !root.isConnected) return;
+
     reveal(blob);
+    setStatus("enhanced");
   }
 
   function reveal(blob: Blob): void {
@@ -218,4 +316,6 @@ export function mountGameImageEnhancer(options: MountOptions): void {
     overlayImage.addEventListener("error", cleanup, { once: true });
     overlayImage.src = url;
   }
+
+  return { disconnect };
 }

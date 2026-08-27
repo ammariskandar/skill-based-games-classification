@@ -8,10 +8,11 @@
  */
 
 import {
-  accessCache,
+  MAX_ENHANCED_CACHE_BYTES,
   MAX_ENHANCED_GAME_IMAGES,
+  planCacheEvictions,
   type AssetRole,
-  type LruCacheEntry,
+  type SizedCacheEntry,
 } from "./game-image-upscale";
 
 const DB_NAME = "mygamedna-game-image-cache";
@@ -25,6 +26,8 @@ export interface CachedGameImage {
   sourceUrl: string;
   modelVersion: string;
   blob: Blob;
+  /** Estimated byte size, used for the byte-bounded cache ceiling. */
+  size: number;
   createdAt: number;
   lastAccessedAt: number;
 }
@@ -91,27 +94,37 @@ export async function getCachedImage(
   }
 }
 
-/** Persist a cached image, evicting LRU entries to stay within capacity. */
+/** Persist a cached image, evicting LRU entries to stay within both the entry
+ * count and the byte ceiling. */
 export async function putCachedImage(record: CachedGameImage): Promise<void> {
   const db = await openDb();
   if (!db) return;
   try {
     const existing = await listEntries(db);
-    const entries: LruCacheEntry[] = existing.map((e) => ({
-      key: e.key,
-      lastAccessedAt: e.lastAccessedAt,
+    const existingSized: SizedCacheEntry[] = existing.map((entry) => ({
+      key: entry.key,
+      lastAccessedAt: entry.lastAccessedAt,
+      size: entry.size ?? entry.blob?.size ?? 0,
     }));
-    const { evicted } = accessCache(
-      entries,
-      record.key,
-      record.lastAccessedAt,
+    const incoming: SizedCacheEntry = {
+      key: record.key,
+      lastAccessedAt: record.lastAccessedAt,
+      size: record.size,
+    };
+    const evicted = planCacheEvictions(
+      existingSized,
+      incoming,
       MAX_ENHANCED_GAME_IMAGES,
+      MAX_ENHANCED_CACHE_BYTES,
     );
 
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     for (const key of evicted) store.delete(key);
-    store.put(record);
+    // Only persist the incoming record when it survives the count/byte budget.
+    if (!evicted.includes(record.key)) {
+      store.put(record);
+    }
   } catch {
     // Cache write failure must not affect the page.
   }
