@@ -46,8 +46,9 @@ export function initRadarChart(container: HTMLElement): () => void {
   const rewardPath = container.querySelector<SVGPathElement>(
     ".radar-polygon-reward",
   );
-  const toggles = Array.from(
-    container.querySelectorAll<HTMLInputElement>("[data-profile-toggle]"),
+  const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
+  const toggleLabel = container.querySelector<HTMLElement>(
+    "[data-toggle-label]",
   );
   const nodes = Array.from(
     container.querySelectorAll<SVGCircleElement>(".radar-vertex-node"),
@@ -68,15 +69,28 @@ export function initRadarChart(container: HTMLElement): () => void {
 
   let animationFrame = 0;
   let disposed = false;
+  let current: SkillProfileKind = initial;
 
   function setActive(profile: SkillProfileKind): void {
-    for (const toggle of toggles) {
-      toggle.checked = toggle.dataset.profileToggle === profile;
+    current = profile;
+
+    if (toggle) {
+      toggle.setAttribute("aria-checked", String(profile === "reward"));
+    }
+    if (toggleLabel) {
+      toggleLabel.textContent =
+        profile === "challenge" ? "Challenge" : "Reward";
     }
     for (const label of axisLabels) {
       label.classList.toggle(
         "radar-axis-label--active",
         label.dataset.profile === profile,
+      );
+    }
+    for (const node of nodes) {
+      node.classList.toggle(
+        "radar-vertex-node--active",
+        node.dataset.profile === profile,
       );
     }
 
@@ -214,10 +228,8 @@ export function initRadarChart(container: HTMLElement): () => void {
     hideTooltip();
   }
 
-  function onToggle(event: Event): void {
-    const input = event.currentTarget as HTMLInputElement;
-    if (!input.checked) return;
-    setActive(input.dataset.profileToggle as SkillProfileKind);
+  function onToggle(): void {
+    setActive(current === "challenge" ? "reward" : "challenge");
   }
 
   function onNodeShow(event: Event): void {
@@ -231,8 +243,8 @@ export function initRadarChart(container: HTMLElement): () => void {
   setActive(initial);
   animateAppear();
 
-  for (const toggle of toggles) {
-    toggle.addEventListener("change", onToggle);
+  if (toggle) {
+    toggle.addEventListener("click", onToggle);
   }
   for (const node of nodes) {
     node.addEventListener("mouseenter", onNodeShow);
@@ -246,8 +258,8 @@ export function initRadarChart(container: HTMLElement): () => void {
     if (animationFrame) {
       cancelAnimationFrame(animationFrame);
     }
-    for (const toggle of toggles) {
-      toggle.removeEventListener("change", onToggle);
+    if (toggle) {
+      toggle.removeEventListener("click", onToggle);
     }
     for (const node of nodes) {
       node.removeEventListener("mouseenter", onNodeShow);

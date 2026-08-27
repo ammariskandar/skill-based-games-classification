@@ -199,7 +199,9 @@ export function buildRadarHtml(data: RadarRenderData): string {
     .filter((spoke) => spoke.hasProfile)
     .map(
       (spoke) =>
-        `<circle class="radar-vertex-node" cx="${spoke.vertex.x}" cy="${spoke.vertex.y}" r="4" tabindex="0" role="img" data-profile="${spoke.kind}" data-dimension="${spoke.dimension}" data-score="${spoke.score}" data-label="${escapeHtml(
+        `<circle class="radar-vertex-node${
+          spoke.kind === initialProfile ? " radar-vertex-node--active" : ""
+        }" cx="${spoke.vertex.x}" cy="${spoke.vertex.y}" r="4" tabindex="0" role="img" data-profile="${spoke.kind}" data-dimension="${spoke.dimension}" data-score="${spoke.score}" data-label="${escapeHtml(
           buildVertexLabel(spoke.kind, spoke.dimension),
         )}" aria-label="${escapeHtml(
           buildVertexAriaLabel(spoke.kind, spoke.dimension, spoke.score),
@@ -214,16 +216,14 @@ export function buildRadarHtml(data: RadarRenderData): string {
     )
     .join("");
 
-  const challengeDisabled = challenge === null ? " disabled" : "";
-  const rewardDisabled = reward === null ? " disabled" : "";
-  const toggleName = `radar-profile-${uid}`;
+  const hasToggle = showToggle && challenge !== null && reward !== null;
 
-  const toggleHtml = showToggle
-    ? `<div class="radar-toggle-group" role="radiogroup" aria-label="Active Radar Profile"><label class="radar-toggle"><input class="radar-toggle__input" type="radio" name="${toggleName}" value="challenge" data-profile-toggle="challenge"${
-        initialProfile === "challenge" ? " checked" : ""
-      }${challengeDisabled} /><span class="radar-toggle__radio" aria-hidden="true"></span><span class="radar-toggle__label">Challenge</span></label><label class="radar-toggle"><input class="radar-toggle__input" type="radio" name="${toggleName}" value="reward" data-profile-toggle="reward"${
-        initialProfile === "reward" ? " checked" : ""
-      }${rewardDisabled} /><span class="radar-toggle__radio" aria-hidden="true"></span><span class="radar-toggle__label">Reward</span></label></div>`
+  const toggleHtml = hasToggle
+    ? `<div class="radar-toggle-group"><button type="button" class="radar-toggle" role="switch" aria-checked="${
+        initialProfile === "reward"
+      }" aria-label="Active radar profile"><span class="radar-toggle__track" aria-hidden="true"><span class="radar-toggle__thumb"></span></span></button><span class="radar-toggle__label" data-toggle-label>${
+        initialProfile === "challenge" ? "Challenge" : "Reward"
+      }</span></div>`
     : "";
 
   return `<div class="radar-chart${classSuffix}" data-radar-chart data-size="${size}" data-initial-profile="${initialProfile}"><svg class="radar-chart__svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${escapeHtml(
