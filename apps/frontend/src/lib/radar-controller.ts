@@ -46,11 +46,14 @@ export function initRadarChart(container: HTMLElement): () => void {
   const rewardPath = container.querySelector<SVGPathElement>(
     ".radar-polygon-reward",
   );
-  const buttons = Array.from(
-    container.querySelectorAll<HTMLButtonElement>("[data-profile-toggle]"),
+  const toggles = Array.from(
+    container.querySelectorAll<HTMLInputElement>("[data-profile-toggle]"),
   );
   const nodes = Array.from(
     container.querySelectorAll<SVGCircleElement>(".radar-vertex-node"),
+  );
+  const axisLabels = Array.from(
+    container.querySelectorAll<SVGTextElement>(".radar-axis-label"),
   );
   const tooltip = container.querySelector<HTMLElement>(".radar-tooltip");
   const tooltipHeader = tooltip?.querySelector<HTMLElement>(
@@ -67,9 +70,14 @@ export function initRadarChart(container: HTMLElement): () => void {
   let disposed = false;
 
   function setActive(profile: SkillProfileKind): void {
-    for (const button of buttons) {
-      const active = button.dataset.profileToggle === profile;
-      button.setAttribute("aria-pressed", String(active));
+    for (const toggle of toggles) {
+      toggle.checked = toggle.dataset.profileToggle === profile;
+    }
+    for (const label of axisLabels) {
+      label.classList.toggle(
+        "radar-axis-label--active",
+        label.dataset.profile === profile,
+      );
     }
 
     if (challengePath) {
@@ -163,15 +171,26 @@ export function initRadarChart(container: HTMLElement): () => void {
 
     const width = tooltip.offsetWidth;
     const height = tooltip.offsetHeight;
-    const chartSize = svg ? svg.clientWidth : size;
     const gap = 12;
 
-    let top = nodeY - height - gap;
-    if (top < 0) top = nodeY + gap;
-    top = Math.max(0, Math.min(top, chartSize - height));
+    // The SVG is narrower than the wrapper (75% width, centered), so translate
+    // node coordinates into the wrapper's coordinate space before clamping the
+    // tooltip within the SVG bounds.
+    const chartSize = svg ? svg.clientWidth : size;
+    const offsetX = svg
+      ? svg.getBoundingClientRect().left -
+        container.getBoundingClientRect().left
+      : 0;
+    const offsetY = svg
+      ? svg.getBoundingClientRect().top - container.getBoundingClientRect().top
+      : 0;
 
-    let left = nodeX - width / 2;
-    left = Math.max(0, Math.min(left, chartSize - width));
+    let top = offsetY + nodeY - height - gap;
+    if (top < offsetY) top = offsetY + nodeY + gap;
+    top = Math.max(offsetY, Math.min(top, offsetY + chartSize - height));
+
+    let left = offsetX + nodeX - width / 2;
+    left = Math.max(offsetX, Math.min(left, offsetX + chartSize - width));
 
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
@@ -196,9 +215,9 @@ export function initRadarChart(container: HTMLElement): () => void {
   }
 
   function onToggle(event: Event): void {
-    const button = event.currentTarget as HTMLButtonElement;
-    const profile = button.dataset.profileToggle as SkillProfileKind;
-    setActive(profile);
+    const input = event.currentTarget as HTMLInputElement;
+    if (!input.checked) return;
+    setActive(input.dataset.profileToggle as SkillProfileKind);
   }
 
   function onNodeShow(event: Event): void {
@@ -212,8 +231,8 @@ export function initRadarChart(container: HTMLElement): () => void {
   setActive(initial);
   animateAppear();
 
-  for (const button of buttons) {
-    button.addEventListener("click", onToggle);
+  for (const toggle of toggles) {
+    toggle.addEventListener("change", onToggle);
   }
   for (const node of nodes) {
     node.addEventListener("mouseenter", onNodeShow);
@@ -227,8 +246,8 @@ export function initRadarChart(container: HTMLElement): () => void {
     if (animationFrame) {
       cancelAnimationFrame(animationFrame);
     }
-    for (const button of buttons) {
-      button.removeEventListener("click", onToggle);
+    for (const toggle of toggles) {
+      toggle.removeEventListener("change", onToggle);
     }
     for (const node of nodes) {
       node.removeEventListener("mouseenter", onNodeShow);

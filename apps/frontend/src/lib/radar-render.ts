@@ -164,10 +164,18 @@ export function buildRadarHtml(data: RadarRenderData): string {
     .join("");
 
   const labelHtml = spokes
-    .map(
-      (spoke) =>
-        `<text class="radar-axis-label" x="${spoke.label.x}" y="${spoke.label.y}" text-anchor="${spoke.textAnchor}" dominant-baseline="middle" style="fill: var(${spoke.colorVar});">${spoke.labelText}</text>`,
-    )
+    .map((spoke) => {
+      const active = spoke.kind === initialProfile;
+      return `<text class="radar-axis-label${
+        active ? " radar-axis-label--active" : ""
+      }" data-profile="${spoke.kind}" data-dimension="${spoke.dimension}" x="${
+        spoke.label.x
+      }" y="${spoke.label.y}" text-anchor="${
+        spoke.textAnchor
+      }" dominant-baseline="middle" style="fill: var(${spoke.colorVar});">${
+        spoke.labelText
+      }</text>`;
+    })
     .join("");
 
   const challengePathHtml =
@@ -206,15 +214,16 @@ export function buildRadarHtml(data: RadarRenderData): string {
     )
     .join("");
 
-  const challengeButtonDisabled = challenge === null ? " disabled" : "";
-  const rewardButtonDisabled = reward === null ? " disabled" : "";
+  const challengeDisabled = challenge === null ? " disabled" : "";
+  const rewardDisabled = reward === null ? " disabled" : "";
+  const toggleName = `radar-profile-${uid}`;
 
   const toggleHtml = showToggle
-    ? `<div class="radar-toggle-group" role="group" aria-label="Active Radar Profile"><button type="button" class="radar-toggle-button" data-profile-toggle="challenge" aria-pressed="${
-        initialProfile === "challenge"
-      }"${challengeButtonDisabled}>Challenge Profile</button><button type="button" class="radar-toggle-button" data-profile-toggle="reward" aria-pressed="${
-        initialProfile === "reward"
-      }"${rewardButtonDisabled}>Reward Profile</button></div>`
+    ? `<div class="radar-toggle-group" role="radiogroup" aria-label="Active Radar Profile"><label class="radar-toggle"><input class="radar-toggle__input" type="radio" name="${toggleName}" value="challenge" data-profile-toggle="challenge"${
+        initialProfile === "challenge" ? " checked" : ""
+      }${challengeDisabled} /><span class="radar-toggle__radio" aria-hidden="true"></span><span class="radar-toggle__label">Challenge</span></label><label class="radar-toggle"><input class="radar-toggle__input" type="radio" name="${toggleName}" value="reward" data-profile-toggle="reward"${
+        initialProfile === "reward" ? " checked" : ""
+      }${rewardDisabled} /><span class="radar-toggle__radio" aria-hidden="true"></span><span class="radar-toggle__label">Reward</span></label></div>`
     : "";
 
   return `<div class="radar-chart${classSuffix}" data-radar-chart data-size="${size}" data-initial-profile="${initialProfile}"><svg class="radar-chart__svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${escapeHtml(
