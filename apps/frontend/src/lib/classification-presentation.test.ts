@@ -9,6 +9,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   CLASSIFICATION_DIMENSION_ORDER,
+  dominantBadgeHtml,
+  dominantForProfile,
   presentClassification,
   profileDimensions,
 } from "./classification-presentation";
@@ -31,6 +33,96 @@ describe("profileDimensions", () => {
       { key: "macro", label: "Macro", value: 31 },
       { key: "mystiko", label: "Mystiko", value: 18 },
     ]);
+  });
+});
+
+describe("dominantForProfile", () => {
+  it("returns the strictly-highest Challenge dimension", () => {
+    expect(
+      dominantForProfile(
+        "challenge",
+        { micro: 51, macro: 31, mystiko: 18 },
+        null,
+      ),
+    ).toBe("micro");
+    expect(
+      dominantForProfile(
+        "challenge",
+        { micro: 20, macro: 70, mystiko: 10 },
+        null,
+      ),
+    ).toBe("macro");
+    expect(
+      dominantForProfile(
+        "challenge",
+        { micro: 20, macro: 10, mystiko: 70 },
+        null,
+      ),
+    ).toBe("mystiko");
+  });
+
+  it("returns null for a Challenge tie (no strict winner)", () => {
+    expect(
+      dominantForProfile(
+        "challenge",
+        { micro: 50, macro: 50, mystiko: 0 },
+        null,
+      ),
+    ).toBeNull();
+  });
+
+  it("returns the strictly-highest Reward dimension", () => {
+    expect(
+      dominantForProfile("reward", null, { micro: 13, macro: 27, mystiko: 60 }),
+    ).toBe("mystiko");
+    expect(
+      dominantForProfile("reward", null, { micro: 80, macro: 10, mystiko: 10 }),
+    ).toBe("micro");
+  });
+
+  it("derives the Unified dominant from summed Challenge + Reward", () => {
+    // Challenge is macro-dominant, Reward is mystiko-dominant; the summed
+    // Unified vector is mystiko-dominant (mirrors SBGC-81 unified dominance).
+    const challenge = { micro: 40, macro: 50, mystiko: 10 };
+    const reward = { micro: 10, macro: 20, mystiko: 70 };
+    expect(dominantForProfile("unified", challenge, reward)).toBe("mystiko");
+  });
+
+  it("returns null for a Unified tie", () => {
+    const challenge = { micro: 70, macro: 10, mystiko: 20 };
+    const reward = { micro: 10, macro: 70, mystiko: 20 };
+    expect(dominantForProfile("unified", challenge, reward)).toBeNull();
+  });
+
+  it("returns null when required vectors are missing", () => {
+    expect(dominantForProfile("challenge", null, null)).toBeNull();
+    expect(dominantForProfile("reward", null, null)).toBeNull();
+    expect(dominantForProfile("unified", null, null)).toBeNull();
+    expect(
+      dominantForProfile(
+        "unified",
+        { micro: 50, macro: 30, mystiko: 20 },
+        null,
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("dominantBadgeHtml", () => {
+  it("renders a dimension-colored badge for a known dominant", () => {
+    const html = dominantBadgeHtml("mystiko", true);
+    expect(html).toContain("rankings-detail__dominant-badge");
+    expect(html).toContain("rankings-detail__dominant-badge--mystiko");
+    expect(html).toContain("Dominant: Mystiko");
+  });
+
+  it("renders the truthful unclassified empty state", () => {
+    expect(dominantBadgeHtml(null, false)).toContain("Not yet classified");
+    expect(dominantBadgeHtml(null, false)).not.toContain("dominant-badge--");
+  });
+
+  it("renders the tie empty state without fabricating a dimension", () => {
+    expect(dominantBadgeHtml(null, true)).toContain("No dominant dimension");
   });
 });
 

@@ -45,6 +45,72 @@ export function profileDimensions(
   }));
 }
 
+/* ── dominant-dimension presentation (SBGC-208) ──────────────────────────── */
+
+export type DominantDimension = "micro" | "mystiko" | "macro";
+
+/**
+ * Resolve the dominant skill dimension for a ranking profile from the
+ * published classification vectors (SBGC-208).
+ *
+ * Mirrors the backend's strictly-highest dominance semantics (SBGC-81): a tie
+ * for the top score is *no* dominant, and Unified reads the summed Challenge +
+ * Reward dimensions.  Missing required vectors resolve to ``null`` (never a
+ * fabricated dimension).  This is presentation-only — no score is calculated
+ * or persisted.
+ */
+export function dominantForProfile(
+  profile: "unified" | "challenge" | "reward",
+  challenge: ClassificationProfile | null,
+  reward: ClassificationProfile | null,
+): DominantDimension | null {
+  if (profile === "challenge") {
+    return challenge ? strictlyHighest(challenge) : null;
+  }
+  if (profile === "reward") {
+    return reward ? strictlyHighest(reward) : null;
+  }
+  if (challenge === null || reward === null) return null;
+  return strictlyHighest({
+    micro: challenge.micro + reward.micro,
+    macro: challenge.macro + reward.macro,
+    mystiko: challenge.mystiko + reward.mystiko,
+  });
+}
+
+function strictlyHighest(values: {
+  micro: number;
+  macro: number;
+  mystiko: number;
+}): DominantDimension | null {
+  const ordered: Array<[DominantDimension, number]> = [
+    ["micro", values.micro],
+    ["macro", values.macro],
+    ["mystiko", values.mystiko],
+  ];
+  const top = Math.max(...ordered.map(([, value]) => value));
+  const winners = ordered.filter(([, value]) => value === top);
+  return winners.length === 1 ? winners[0][0] : null;
+}
+
+/**
+ * Static badge markup shared by the SSR detail pane and the client-side
+ * re-render, so the runtime DOM never drifts from the server markup.
+ * Copy is fixed and vetted — never interpolates user data.
+ */
+export function dominantBadgeHtml(
+  dominant: DominantDimension | null,
+  classified: boolean,
+): string {
+  if (!classified) {
+    return `<span class="rankings-detail__dominant-empty">Not yet classified</span>`;
+  }
+  if (dominant === null) {
+    return `<span class="rankings-detail__dominant-empty">No dominant dimension</span>`;
+  }
+  return `<span class="rankings-detail__dominant-badge rankings-detail__dominant-badge--${dominant}">Dominant: ${DIMENSION_LABELS[dominant]}</span>`;
+}
+
 export type ClassificationPresentation =
   | { kind: "unavailable" }
   | {

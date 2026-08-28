@@ -210,6 +210,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
             selectedGame={selectedGame}
             challenge={selectedChallenge}
             reward={selectedReward}
+            profile={state.profile}
           />
         </section>
       </div>
@@ -229,8 +230,13 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
   import type { RankingProfile } from "../lib/rankings-state";
   import { createRankingsLoader } from "../lib/rankings-load";
   import { buildRadarHtml } from "../lib/radar-render";
-  import { presentClassification } from "../lib/classification-presentation";
+  import {
+    dominantBadgeHtml,
+    dominantForProfile,
+    presentClassification,
+  } from "../lib/classification-presentation";
   import { initRadarChart } from "../lib/radar-controller";
+  import type { SkillProfileVector } from "../lib/skill-dimensions";
 
   (() => {
     const root = document.querySelector<HTMLElement>("[data-rankings]");
@@ -326,7 +332,10 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       const href = `/games/${encodeURIComponent(game.slug)}`;
       return `<div class="rankings-detail" data-rankings-detail><h2 class="rankings-detail__heading">${escapeHtml(
         game.name,
-      )}</h2><div class="rankings-detail__upper"><div class="rankings-detail__region rankings-detail__region--radar" data-radar-region><span class="rankings-detail__region-label">Radar</span></div><div class="rankings-detail__region" aria-hidden="true"><span class="rankings-detail__region-label">Dominant Type</span></div></div><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__region rankings-detail__region--grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
+      )}</h2><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__classification"><div class="rankings-detail__dominant" data-dominant-region>${dominantBadgeHtml(
+        null,
+        false,
+      )}</div><div class="rankings-detail__radar" data-radar-region><span class="rankings-detail__region-label">Radar</span></div></div><div class="rankings-detail__grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
     };
 
     // Present the skeleton only after a short delay so a fast transition never
@@ -349,16 +358,61 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       list.hidden = false;
     };
 
+    // Classification vectors for the selected game, cached so the dominant
+    // badge can follow profile-tab switches without refetching.  Seeded from
+    // the SSR-rendered pane and reset whenever a new selection is rendered.
+    let lastClassification: {
+      challenge: SkillProfileVector;
+      reward: SkillProfileVector;
+    } | null = null;
+
+    const readSeed = (): typeof lastClassification => {
+      const pane = detailPane.querySelector<HTMLElement>(
+        "[data-rankings-detail]",
+      );
+      if (!pane) return null;
+      const rawChallenge = pane.dataset.challenge;
+      const rawReward = pane.dataset.reward;
+      if (!rawChallenge || !rawReward) return null;
+      try {
+        const challenge = JSON.parse(rawChallenge) as SkillProfileVector;
+        const reward = JSON.parse(rawReward) as SkillProfileVector;
+        return { challenge, reward };
+      } catch {
+        return null;
+      }
+    };
+    lastClassification = readSeed();
+
+    const renderDominant = (profile: RankingProfile): void => {
+      const region = detailPane.querySelector<HTMLElement>(
+        "[data-dominant-region]",
+      );
+      if (!region) return;
+      const classification = lastClassification;
+      region.innerHTML = dominantBadgeHtml(
+        classification
+          ? dominantForProfile(
+              profile,
+              classification.challenge,
+              classification.reward,
+            )
+          : null,
+        classification !== null,
+      );
+    };
+
     const renderDetail = (): void => {
+      lastClassification = null;
       detailPane.innerHTML = detailHtml(selectedGame);
     };
 
     let radarRequestId = 0;
 
-    const loadRadar = async (game: {
-      slug: string;
-      name: string;
-    }): Promise<void> => {
+    const loadRadar = async (
+      game: { slug: string; name: string },
+      profileOverride?: RankingProfile,
+    ): Promise<void> => {
       const requestId = ++radarRequestId;
       const region = detailPane.querySelector<HTMLElement>(
         "[data-radar-region]",
@@ -375,12 +429,21 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         };
         if (requestId !== radarRequestId) return;
 
+        const profile = profileOverride ?? state.profile;
         const presentation = presentClassification(
           data.classification,
           game.slug,
         );
-        if (presentation.kind !== "ready") return;
+        if (presentation.kind !== "ready") {
+          lastClassification = null;
+          renderDominant(profile);
+          return;
+        }
 
+        lastClassification = {
+          challenge: presentation.challenge,
+          reward: presentation.reward,
+        };
         region.innerHTML = buildRadarHtml({
           challenge: presentation.challenge,
           reward: presentation.reward,
@@ -389,6 +452,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
         const chart = region.querySelector<HTMLElement>("[data-radar-chart]");
         if (chart) initRadarChart(chart);
+        renderDominant(profile);
       } catch {
         // Keep the "Radar" placeholder — unclassified or fetch failure.
       }
@@ -522,6 +586,13 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         event.preventDefault();
         const profile = tab.dataset.profile;
         if (!profile || profile === state.profile) return;
+        // The badge is profile-dependent; recompute it immediately from the
+        // cached vectors, or fetch them when this selection has no cache yet.
+        if (lastClassification) {
+          renderDominant(profile as RankingProfile);
+        } else if (selectedGame) {
+          void loadRadar(selectedGame, profile as RankingProfile);
+        }
         void load(
           { ...state, profile: profile as RankingProfile, page: 1 },
           pageSize,

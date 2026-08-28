@@ -2570,6 +2570,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-28 — SBGC-208 dominant dimension badge + rankings detail pane reorg
+
+- Rankings detail pane reorganized: the "View Game" action button now sits
+  directly below the selected-game header (above the classification display);
+  the placeholder "Dominant Type" shell is replaced by a real dominant
+  dimension badge; the radar gains the full pane width; and a dynamic
+  `clamp(0.75rem, 1.2vw, 1.25rem)` breathing gap separates the classification
+  block from the Suggested Games placeholder.
+- Dominant badge semantics mirror the backend's strictly-highest dominance
+  (SBGC-81): Challenge reads the Challenge vector, Reward reads the Reward
+  vector, Unified reads the summed Challenge + Reward dimensions; a top-score
+  tie resolves to *no* dominant (truthful "No dominant dimension" state) and
+  unclassified games show "Not yet classified" — never a fabricated dimension
+  or a 0/0/0 vector.  Badge colours reuse the canonical tokens
+  (`--color-micro`/`--color-mystiko`/`--color-macro`).
+- New pure helpers in `src/lib/classification-presentation.ts`
+  (`dominantForProfile`, `dominantBadgeHtml`) shared by the SSR pane and the
+  client-side re-render (`detailHtml`), so the runtime DOM cannot drift from
+  server markup; badge HTML is fixed copy only.  The client caches the fetched
+  classification (seeded from the SSR pane) so profile-tab switches recompute
+  the badge instantly without refetching.
+- +9 tests (`dominantForProfile` semantics incl. ties/unified-sum/missing
+  vectors; badge markup states).  Full frontend suite 586 green;
+  `astro check` 0 errors; lint/format/build clean.  No Django change; no
+  migration; no `.venv` change.
+
 ## 2026-08-28 — SBGC-210 vertex-anchored barycentric radar fill
 
 - Replaced the static radial-gradient polygon fill with a vertex-anchored

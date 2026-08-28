@@ -1,16 +1,28 @@
 ---
 import RadarChart from "../score/RadarChart.astro";
 import { gameHref } from "../../lib/catalogue-presentation";
+import {
+  dominantBadgeHtml,
+  dominantForProfile,
+} from "../../lib/classification-presentation";
 import type { SkillProfileVector } from "../../lib/skill-dimensions";
+import type { RankingProfile } from "../../lib/rankings-state";
 
 interface Props {
   selectedGame: { slug: string; name: string } | null;
   challenge: SkillProfileVector | null;
   reward: SkillProfileVector | null;
+  profile: RankingProfile;
 }
 
-const { selectedGame, challenge, reward } = Astro.props;
+const { selectedGame, challenge, reward, profile } = Astro.props;
 const hasRadar = challenge !== null || reward !== null;
+// presentClassification yields both vectors together or neither (SBGC-73).
+const classified = challenge !== null && reward !== null;
+const dominant = classified
+  ? dominantForProfile(profile, challenge, reward)
+  : null;
+const dominantHtml = dominantBadgeHtml(dominant, classified);
 ---
 
 {
@@ -21,25 +33,13 @@ const hasRadar = challenge !== null || reward !== null;
       </p>
     </div>
   ) : (
-    <div class="rankings-detail" data-rankings-detail>
+    <div
+      class="rankings-detail"
+      data-rankings-detail
+      data-challenge={challenge ? JSON.stringify(challenge) : undefined}
+      data-reward={reward ? JSON.stringify(reward) : undefined}
+    >
       <h2 class="rankings-detail__heading">{selectedGame.name}</h2>
-
-      <div class="rankings-detail__upper">
-        <div class="rankings-detail__region rankings-detail__region--radar">
-          {hasRadar ? (
-            <RadarChart
-              challenge={challenge}
-              reward={reward}
-              gameTitle={selectedGame.name}
-            />
-          ) : (
-            <span class="rankings-detail__region-label">Radar</span>
-          )}
-        </div>
-        <div class="rankings-detail__region" aria-hidden="true">
-          <span class="rankings-detail__region-label">Dominant Type</span>
-        </div>
-      </div>
 
       <div class="rankings-detail__actions">
         <a
@@ -51,10 +51,24 @@ const hasRadar = challenge !== null || reward !== null;
         </a>
       </div>
 
-      <div
-        class="rankings-detail__region rankings-detail__region--grow"
-        aria-hidden="true"
-      >
+      <div class="rankings-detail__classification">
+        <div class="rankings-detail__dominant" data-dominant-region>
+          <Fragment set:html={dominantHtml} />
+        </div>
+        <div class="rankings-detail__radar" data-radar-region>
+          {hasRadar ? (
+            <RadarChart
+              challenge={challenge}
+              reward={reward}
+              gameTitle={selectedGame.name}
+            />
+          ) : (
+            <span class="rankings-detail__region-label">Radar</span>
+          )}
+        </div>
+      </div>
+
+      <div class="rankings-detail__grow" aria-hidden="true">
         <span class="rankings-detail__region-label">Suggested Games</span>
       </div>
     </div>
@@ -65,7 +79,6 @@ const hasRadar = challenge !== null || reward !== null;
   .rankings-detail {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     width: 100%;
     min-width: 0;
     height: 100%;
@@ -98,54 +111,9 @@ const hasRadar = challenge !== null || reward !== null;
     overflow-wrap: anywhere;
   }
 
-  /* Two side-by-side placeholder shells for the future Radar + Dominant Type. */
-  .rankings-detail__upper {
-    display: flex;
-    gap: 1rem;
-    min-width: 0;
-  }
-
-  /* Placeholder shell for future radar/Dominant-type and similar-games work.
-     Truthful empty surface — no fake radar, no fake recommendations. */
-  .rankings-detail__region {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 12rem;
-    border: 1px dashed var(--color-border-2);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-  }
-
-  .rankings-detail__region--radar {
-    display: block;
-    border: none;
-    background: transparent;
-    padding: 0;
-  }
-
-  /* The upper placeholders are massive, near-square shells that split the
-     pane width and scale their height from it. */
-  .rankings-detail__upper .rankings-detail__region {
-    flex: 1 1 0;
-    aspect-ratio: 1 / 1;
-  }
-
-  .rankings-detail__region--grow {
-    flex: 1 1 auto;
-    min-height: 12rem;
-  }
-
-  .rankings-detail__region-label {
-    padding: 0.5rem;
-    font-size: 0.8125rem;
-    color: var(--color-dim);
-    text-align: center;
-  }
-
   .rankings-detail__actions {
     display: flex;
+    margin-top: 1rem;
   }
 
   .rankings-detail__view {
@@ -174,18 +142,94 @@ const hasRadar = challenge !== null || reward !== null;
     outline-offset: 2px;
   }
 
-  /* Stack the two upper placeholders once the pane is narrow; they fall back
-     to a fixed height rather than full-width squares. */
-  @media (max-width: 40rem) {
-    .rankings-detail__upper {
-      flex-direction: column;
-    }
+  /* Skill classification block: dominant badge above the radar. */
+  .rankings-detail__classification {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
+    margin-top: 1rem;
+  }
 
-    .rankings-detail__upper .rankings-detail__region {
-      flex: 0 0 auto;
-      width: 100%;
-      aspect-ratio: auto;
-    }
+  .rankings-detail__dominant {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .rankings-detail__radar {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .rankings-detail__dominant-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    border-radius: 9999px;
+    border: 1px solid;
+  }
+
+  .rankings-detail__dominant-badge--micro {
+    color: var(--color-micro);
+    border-color: color-mix(in srgb, var(--color-micro) 35%, transparent);
+    background: color-mix(in srgb, var(--color-micro) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-badge--mystiko {
+    color: var(--color-mystiko);
+    border-color: color-mix(in srgb, var(--color-mystiko) 35%, transparent);
+    background: color-mix(in srgb, var(--color-mystiko) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-badge--macro {
+    color: var(--color-macro);
+    border-color: color-mix(in srgb, var(--color-macro) 35%, transparent);
+    background: color-mix(in srgb, var(--color-macro) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-empty {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+    border: 1px dashed var(--color-border-2);
+    border-radius: 9999px;
+  }
+
+  /* Truthful empty shell for the future similar-games work — no fake recs. */
+  .rankings-detail__grow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 12rem;
+    margin-top: clamp(0.75rem, 1.2vw, 1.25rem);
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .rankings-detail__region-label {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-dim);
+    text-align: center;
   }
 
   @media (prefers-reduced-motion: reduce) {
