@@ -250,6 +250,13 @@ describe("vertex-anchored barycentric fill (SBGC-210)", () => {
     ).not.toBeNull();
   });
 
+  it("halves the boundary glow intensity", () => {
+    const html = buildRadarHtml({ challenge: CHALLENGE, reward: REWARD });
+    // The blur layer's alpha is scaled by 0.5 before it is merged under the
+    // sharp stroke, so the glow reads at half intensity.
+    expect(html).toContain('feFuncA type="linear" slope="0.5"');
+  });
+
   it("anchors each dimension color at its vertex gradient", () => {
     const doc = parse(
       buildRadarHtml({

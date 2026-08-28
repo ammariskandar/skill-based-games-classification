@@ -156,7 +156,10 @@ html {
 }
 
 .radar-polygon--active {
-  fill-opacity: 0.35;
+  /* SBGC-210: 0.6 fill-opacity (was 0.35) makes the already-fully-saturated
+     vertex colors read vibrantly instead of being washed out by the dark
+     surface — ~71% more colour presence, matching the requested ~75%. */
+  fill-opacity: 0.6;
   stroke: var(--color-chart-fg);
   stroke-width: 2.5;
 }

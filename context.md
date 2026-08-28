@@ -2581,9 +2581,10 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   blended via `mix-blend-mode: plus-lighter` and clipped to the polygon spline;
   SSR-safe, no canvas/WebGL, and no tiled rect mesh (a mesh of solid rects
   shows anti-aliasing seams at every cell boundary).  Active/inactive opacity
-  (0.35/0.05), stroke, toggle behaviour, and all geometry (spoke radii,
-  cardinal spline, 56px label padding) unchanged.  The glow filter applies to
-  the polygon's bounding stroke only.
+  (0.6/0.05 — raised from 0.35 for a ~75% more vibrant fill), stroke, toggle
+  behaviour, and all geometry (spoke radii, cardinal spline, 56px label
+  padding) unchanged.  The glow filter applies to the polygon's bounding stroke
+  only, at half intensity (`feFuncA` slope 0.5).
 
 ## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
 
