@@ -236,10 +236,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
     dominantRegionHtml,
     presentClassification,
   } from "../lib/classification-presentation";
-  import {
-    initRadarChart,
-    type RadarChartHandle,
-  } from "../lib/radar-controller";
+  import { getRadarHandle, initRadarChart } from "../lib/radar-controller";
   import type { SkillProfileVector } from "../lib/skill-dimensions";
 
   (() => {
@@ -409,12 +406,10 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
     const renderDetail = (): void => {
       lastClassification = null;
-      radarHandle = null;
       detailPane.innerHTML = detailHtml(selectedGame);
     };
 
     let radarRequestId = 0;
-    let radarHandle: RadarChartHandle | null = null;
 
     // The radar's Challenge/Reward toggle only shows on the Unified profile;
     // on the Challenge/Reward tabs the active layer is forced to that profile
@@ -426,8 +421,16 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       );
       if (!region) return;
       region.classList.toggle("radar-toggle-hidden", profile !== "unified");
-      if (profile !== "unified" && radarHandle) {
-        radarHandle.setProfile(profile);
+      const toggleGroup = region.querySelector<HTMLElement>(
+        ".radar-toggle-group",
+      );
+      if (toggleGroup) {
+        toggleGroup.style.display = profile === "unified" ? "" : "none";
+      }
+      if (profile !== "unified") {
+        const chart = region.querySelector<HTMLElement>("[data-radar-chart]");
+        const handle = chart ? getRadarHandle(chart) : null;
+        handle?.setProfile(profile);
       }
     };
 
@@ -474,7 +477,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         });
 
         const chart = region.querySelector<HTMLElement>("[data-radar-chart]");
-        if (chart) radarHandle = initRadarChart(chart);
+        if (chart) initRadarChart(chart);
         applyRadarProfile(profile);
         renderDominant(profile);
       } catch {

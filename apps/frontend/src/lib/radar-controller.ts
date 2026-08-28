@@ -32,6 +32,16 @@ export interface RadarChartHandle {
   destroy(): void;
 }
 
+/** Live handles by container, so callers can drive a chart they did not init. */
+const handles = new WeakMap<HTMLElement, RadarChartHandle>();
+
+/** Retrieve the live handle for an initialized radar chart, if any. */
+export function getRadarHandle(
+  container: HTMLElement,
+): RadarChartHandle | null {
+  return handles.get(container) ?? null;
+}
+
 /**
  * Pure reduced-motion check, injectable for Node/Vitest. Returns `true` when
  * the caller's media query matches `prefers-reduced-motion: reduce`.
@@ -265,7 +275,7 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
     node.addEventListener("blur", onNodeHide);
   }
 
-  return {
+  const handle: RadarChartHandle = {
     setProfile: setActive,
     destroy: () => {
       disposed = true;
@@ -283,4 +293,6 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
       }
     },
   };
+  handles.set(container, handle);
+  return handle;
 }

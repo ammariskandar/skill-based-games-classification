@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { initRadarChart, prefersReducedMotion } from "./radar-controller";
+import {
+  getRadarHandle,
+  initRadarChart,
+  prefersReducedMotion,
+} from "./radar-controller";
 import { buildRadarHtml } from "./radar-render";
 import {
   buildRadarDescription,
@@ -201,6 +205,23 @@ describe("initRadarChart lifecycle", () => {
     );
     expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(false);
     expect(toggle!.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("getRadarHandle retrieves the live handle for any initialized chart", () => {
+    const container = mountChart();
+    initRadarChart(container);
+
+    const handle = getRadarHandle(container);
+    expect(handle).not.toBeNull();
+
+    // Drive a chart the caller did not init (the SSR-radar case on rankings).
+    handle!.setProfile("reward");
+    const rewardPath = container.querySelector<SVGPathElement>(
+      ".radar-polygon-reward",
+    );
+    expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(true);
+
+    handle!.destroy();
   });
 });
 
