@@ -332,10 +332,10 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       const href = `/games/${encodeURIComponent(game.slug)}`;
       return `<div class="rankings-detail" data-rankings-detail><h2 class="rankings-detail__heading">${escapeHtml(
         game.name,
-      )}</h2><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__classification"><div class="rankings-detail__dominant" data-dominant-region>${dominantBadgeHtml(
+      )}</h2><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__upper"><div class="rankings-detail__region rankings-detail__region--radar" data-radar-region><span class="rankings-detail__region-label">Radar</span></div><div class="rankings-detail__region rankings-detail__region--dominant"><div class="rankings-detail__dominant" data-dominant-region>${dominantBadgeHtml(
         null,
         false,
-      )}</div><div class="rankings-detail__radar" data-radar-region><span class="rankings-detail__region-label">Radar</span></div></div><div class="rankings-detail__grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
+      )}</div></div></div><div class="rankings-detail__grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
     };
 
     // Present the skeleton only after a short delay so a fast transition never

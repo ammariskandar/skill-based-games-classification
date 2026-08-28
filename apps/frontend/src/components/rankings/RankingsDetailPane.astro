@@ -51,11 +51,11 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
         </a>
       </div>
 
-      <div class="rankings-detail__classification">
-        <div class="rankings-detail__dominant" data-dominant-region>
-          <Fragment set:html={dominantHtml} />
-        </div>
-        <div class="rankings-detail__radar" data-radar-region>
+      <div class="rankings-detail__upper">
+        <div
+          class="rankings-detail__region rankings-detail__region--radar"
+          data-radar-region
+        >
           {hasRadar ? (
             <RadarChart
               challenge={challenge}
@@ -65,6 +65,11 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
           ) : (
             <span class="rankings-detail__region-label">Radar</span>
           )}
+        </div>
+        <div class="rankings-detail__region rankings-detail__region--dominant">
+          <div class="rankings-detail__dominant" data-dominant-region>
+            <Fragment set:html={dominantHtml} />
+          </div>
         </div>
       </div>
 
@@ -116,6 +121,49 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
     margin-top: 1rem;
   }
 
+  /* Two equal side-by-side shells: radar + dominant dimension (SBGC-208). */
+  .rankings-detail__upper {
+    display: flex;
+    gap: 1rem;
+    min-width: 0;
+    margin-top: 1rem;
+  }
+
+  .rankings-detail__upper .rankings-detail__region {
+    flex: 1 1 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Placeholder shell for future similar-games work; the dominant region is a
+     real surface hosting the badge.  Truthful — no fake radar/recs. */
+  .rankings-detail__region {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 12rem;
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .rankings-detail__region--radar {
+    display: block;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+
+  .rankings-detail__region--dominant {
+    padding: 1rem;
+  }
+
+  .rankings-detail__dominant {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
   .rankings-detail__view {
     display: flex;
     align-items: center;
@@ -140,6 +188,32 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
   .rankings-detail__view:focus-visible {
     outline: 2px solid var(--color-blue);
     outline-offset: 2px;
+  }
+
+  /* Skill classification block: dominant badge above the radar. */
+  .rankings-detail__classification {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
+    margin-top: 1rem;
+  }
+
+  .rankings-detail__dominant {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .rankings-detail__radar {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
   }
 
   /* Skill classification block: dominant badge above the radar. */
@@ -230,6 +304,20 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
     font-size: 0.8125rem;
     color: var(--color-dim);
     text-align: center;
+  }
+
+  /* Stack the two equal shells once the pane is narrow; they fall back to a
+     fixed height rather than full-width squares. */
+  @media (max-width: 40rem) {
+    .rankings-detail__upper {
+      flex-direction: column;
+    }
+
+    .rankings-detail__upper .rankings-detail__region {
+      flex: 0 0 auto;
+      width: 100%;
+      aspect-ratio: auto;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
