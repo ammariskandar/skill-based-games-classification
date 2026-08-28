@@ -144,7 +144,9 @@ html {
 }
 
 .radar-polygon {
-  fill: url(#radar-fill);
+  /* SBGC-210: the fill is the vertex-anchored barycentric gradient painted by
+     the sibling `.radar-polygon-fill` group; this path contributes the stroke. */
+  fill: none;
   stroke-linejoin: round;
   stroke-linecap: round;
   transition:
@@ -154,17 +156,41 @@ html {
 }
 
 .radar-polygon--active {
-  fill-opacity: 0.35;
+  /* SBGC-210: 0.6 fill-opacity (was 0.35) makes the already-fully-saturated
+     vertex colors read vibrantly instead of being washed out by the dark
+     surface — ~71% more colour presence, matching the requested ~75%. */
+  fill-opacity: 0.6;
   stroke: var(--color-chart-fg);
   stroke-width: 2.5;
-  filter: url(#radar-glow);
 }
 
 .radar-polygon--inactive {
   fill-opacity: 0.05;
   stroke: var(--color-dim);
   stroke-width: 1.5;
+}
+
+/* The glow follows the polygon's bounding curve only — never the fill layers
+   (a layer-level filter reads as a per-segment fishnet). */
+.radar-polygon--active .radar-polygon-stroke {
+  filter: url(#radar-glow);
+}
+
+.radar-polygon--inactive .radar-polygon-stroke {
   filter: none;
+}
+
+/* Barycentric gradient fill (SBGC-210): the three vertex gradients add up
+   inside this isolated group (`plus-lighter`), then the group draws over the
+   page at the inherited `fill-opacity` (0.35 active / 0.05 inactive).  Never
+   intercepts pointer events so the vertex nodes and toggle stay interactive. */
+.radar-polygon-fill {
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.radar-polygon-gradient {
+  mix-blend-mode: plus-lighter;
 }
 
 .radar-vertex-node {

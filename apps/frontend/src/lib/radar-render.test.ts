@@ -8,7 +8,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { buildRadarHtml } from "./radar-render";
+import {
+  barycentricColor,
+  buildRadarHtml,
+  polygonColorVertices,
+} from "./radar-render";
 
 const CHALLENGE = { micro: 60, mystiko: 20, macro: 20 };
 const REWARD = { micro: 30, mystiko: 40, macro: 30 };
@@ -161,5 +165,129 @@ describe("profile switch contract", () => {
       }),
     );
     expect(doc.querySelector(".radar-toggle")).toBeNull();
+  });
+});
+
+describe("vertex-anchored barycentric fill (SBGC-210)", () => {
+  const REFERENCE_TRIANGLE: Array<{
+    x: number;
+    y: number;
+    color: [number, number, number];
+  }> = [
+    { x: 0, y: 0, color: [0x58, 0xa6, 0xff] },
+    { x: 100, y: 0, color: [0xbc, 0x8c, 0xff] },
+    { x: 0, y: 100, color: [0xff, 0xa6, 0x57] },
+  ];
+
+  it("returns the exact vertex color at each vertex", () => {
+    expect(barycentricColor(REFERENCE_TRIANGLE, 0, 0)).toBe("rgb(88,166,255)");
+    expect(barycentricColor(REFERENCE_TRIANGLE, 100, 0)).toBe(
+      "rgb(188,140,255)",
+    );
+    expect(barycentricColor(REFERENCE_TRIANGLE, 0, 100)).toBe(
+      "rgb(255,166,87)",
+    );
+  });
+
+  it("blends all three vertex colors at the centroid", () => {
+    expect(barycentricColor(REFERENCE_TRIANGLE, 100 / 3, 100 / 3)).toBe(
+      "rgb(177,157,199)",
+    );
+  });
+
+  it("orders challenge vertices with their dimension colors", () => {
+    const vertices = polygonColorVertices(
+      { micro: 100, mystiko: 50, macro: 0 },
+      "challenge",
+      { x: 160, y: 160 },
+      100,
+    );
+    expect(vertices).toHaveLength(3);
+    expect(vertices.map((v) => v.color)).toEqual([
+      [0x58, 0xa6, 0xff], // micro (0°, top) → blue
+      [0xbc, 0x8c, 0xff], // mystiko (120°) → purple
+      [0xff, 0xa6, 0x57], // macro (240°) → orange
+    ]);
+    expect(vertices[0].y).toBeLessThan(160);
+  });
+
+  it("orders reward vertices with their dimension colors", () => {
+    const vertices = polygonColorVertices(
+      { micro: 100, mystiko: 50, macro: 0 },
+      "reward",
+      { x: 160, y: 160 },
+      100,
+    );
+    expect(vertices.map((v) => v.color)).toEqual([
+      [0xff, 0xa6, 0x57], // macro (60°) → orange
+      [0x58, 0xa6, 0xff], // micro (180°, bottom) → blue
+      [0xbc, 0x8c, 0xff], // mystiko (300°) → purple
+    ]);
+    expect(vertices[1].y).toBeGreaterThan(160);
+  });
+
+  it("emits an additive gradient fill and drops the radial gradient", () => {
+    const html = buildRadarHtml({ challenge: CHALLENGE, reward: REWARD });
+    const doc = parse(html);
+    expect(
+      doc.querySelectorAll(".radar-polygon-fill .radar-polygon-gradient")
+        .length,
+    ).toBe(6); // three vertex gradients per polygon × two polygons
+    expect(html).not.toContain("radar-fill");
+    expect(
+      doc
+        .querySelector(".radar-polygon-challenge")
+        ?.classList.contains("radar-polygon--active"),
+    ).toBe(true);
+    expect(
+      doc
+        .querySelector(".radar-polygon-reward")
+        ?.classList.contains("radar-polygon--inactive"),
+    ).toBe(true);
+    // The stroke is a distinct element so the glow never touches the fill layers.
+    expect(
+      doc.querySelector(".radar-polygon-challenge .radar-polygon-stroke"),
+    ).not.toBeNull();
+  });
+
+  it("halves the boundary glow intensity", () => {
+    const html = buildRadarHtml({ challenge: CHALLENGE, reward: REWARD });
+    // The blur layer's alpha is scaled by 0.5 before it is merged under the
+    // sharp stroke, so the glow reads at half intensity.
+    expect(html).toContain('feFuncA type="linear" slope="0.5"');
+  });
+
+  it("anchors each dimension color at its vertex gradient", () => {
+    const doc = parse(
+      buildRadarHtml({
+        challenge: { micro: 60, mystiko: 20, macro: 20 },
+        reward: null,
+      }),
+    );
+    const stopColor = (suffix: string): string | null | undefined =>
+      doc
+        .querySelector(`[id$="-challenge-${suffix}"]`)
+        ?.querySelector('stop[offset="0"]')
+        ?.getAttribute("stop-color");
+    expect(stopColor("0")).toBe("rgb(88,166,255)"); // micro → blue
+    expect(stopColor("1")).toBe("rgb(188,140,255)"); // mystiko → purple
+    expect(stopColor("2")).toBe("rgb(255,166,87)"); // macro → orange
+  });
+
+  it("produces a blue-dominated blend for a Micro-skewed triangle", () => {
+    // Micro vertex far out (top), Mystiko/Macro near the centre — the 90/5/5 shape.
+    const vertices: Array<{
+      x: number;
+      y: number;
+      color: [number, number, number];
+    }> = [
+      { x: 160, y: 56, color: [0x58, 0xa6, 0xff] },
+      { x: 165, y: 163, color: [0xbc, 0x8c, 0xff] },
+      { x: 155, y: 163, color: [0xff, 0xa6, 0x57] },
+    ];
+    // A point on the median between the Micro vertex and the base.
+    const color = barycentricColor(vertices, 160, 95);
+    const [, r, , b] = color.match(/rgb\((\d+),(\d+),(\d+)\)/)!.map(Number);
+    expect(b).toBeGreaterThan(r);
   });
 });

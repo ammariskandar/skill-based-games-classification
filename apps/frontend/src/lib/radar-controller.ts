@@ -40,10 +40,10 @@ export function initRadarChart(container: HTMLElement): () => void {
   const polygonGroup = container.querySelector<SVGGElement>(
     "[data-radar-polygons]",
   );
-  const challengePath = container.querySelector<SVGPathElement>(
+  const challengeLayer = container.querySelector<SVGGElement>(
     ".radar-polygon-challenge",
   );
-  const rewardPath = container.querySelector<SVGPathElement>(
+  const rewardLayer = container.querySelector<SVGGElement>(
     ".radar-polygon-reward",
   );
   const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
@@ -94,20 +94,20 @@ export function initRadarChart(container: HTMLElement): () => void {
       );
     }
 
-    if (challengePath) {
-      challengePath.classList.toggle(ACTIVE_CLASS, profile === "challenge");
-      challengePath.classList.toggle(INACTIVE_CLASS, profile !== "challenge");
+    if (challengeLayer) {
+      challengeLayer.classList.toggle(ACTIVE_CLASS, profile === "challenge");
+      challengeLayer.classList.toggle(INACTIVE_CLASS, profile !== "challenge");
     }
-    if (rewardPath) {
-      rewardPath.classList.toggle(ACTIVE_CLASS, profile === "reward");
-      rewardPath.classList.toggle(INACTIVE_CLASS, profile !== "reward");
+    if (rewardLayer) {
+      rewardLayer.classList.toggle(ACTIVE_CLASS, profile === "reward");
+      rewardLayer.classList.toggle(INACTIVE_CLASS, profile !== "reward");
     }
 
-    // SVG paints in document order, so moving the active path to the end puts
-    // it on top without re-mounting the DOM.
-    const activePath = profile === "challenge" ? challengePath : rewardPath;
-    if (polygonGroup && activePath) {
-      polygonGroup.appendChild(activePath);
+    // SVG paints in document order, so moving the active layer (fill mesh +
+    // stroke) to the end puts it on top without re-mounting the DOM.
+    const activeLayer = profile === "challenge" ? challengeLayer : rewardLayer;
+    if (polygonGroup && activeLayer) {
+      polygonGroup.appendChild(activeLayer);
     }
   }
 
