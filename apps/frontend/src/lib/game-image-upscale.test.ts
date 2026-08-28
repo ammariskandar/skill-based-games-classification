@@ -11,11 +11,13 @@ import {
   isEligibleForUpscale,
   isEligibleForUpscaleByDensity,
   isImageUpscalingEnabled,
+  HIGH_DPI_PIXEL_THRESHOLD,
   MAX_ENHANCED_CACHE_BYTES,
   MAX_ENHANCED_GAME_IMAGES,
   planCacheEvictions,
   QUALITY_HEADROOM,
   revealMode,
+  shouldEnableUpscale,
   shouldRunInference,
   transitionMode,
   withTimeout,
@@ -238,6 +240,60 @@ describe("isImageUpscalingEnabled (SBGC-202 gate)", () => {
   it("is enabled only on an explicit true value", () => {
     expect(isImageUpscalingEnabled("true")).toBe(true);
     expect(isImageUpscalingEnabled(true)).toBe(true);
+  });
+});
+
+describe("shouldEnableUpscale (SBGC-209 gate)", () => {
+  const desktop = {
+    featureFlagEnabled: false,
+    isDesktop: true,
+    physicalPixelCount: 1920 * 1080,
+    logicalPixelCount: 1920 * 1080,
+  };
+
+  it("is enabled by the explicit flag regardless of display", () => {
+    expect(
+      shouldEnableUpscale({
+        featureFlagEnabled: true,
+        isDesktop: false,
+        physicalPixelCount: 0,
+        logicalPixelCount: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("is disabled on a non-desktop pointer", () => {
+    expect(shouldEnableUpscale({ ...desktop, isDesktop: false })).toBe(false);
+  });
+
+  it("is enabled on a desktop above 1080p in physical pixels", () => {
+    expect(
+      shouldEnableUpscale({
+        ...desktop,
+        physicalPixelCount: HIGH_DPI_PIXEL_THRESHOLD + 1,
+        logicalPixelCount: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("is enabled on a desktop above 1080p in logical pixels", () => {
+    expect(
+      shouldEnableUpscale({
+        ...desktop,
+        physicalPixelCount: 0,
+        logicalPixelCount: HIGH_DPI_PIXEL_THRESHOLD + 1,
+      }),
+    ).toBe(true);
+  });
+
+  it("is disabled on a desktop at or below 1080p", () => {
+    expect(
+      shouldEnableUpscale({
+        ...desktop,
+        physicalPixelCount: HIGH_DPI_PIXEL_THRESHOLD,
+        logicalPixelCount: HIGH_DPI_PIXEL_THRESHOLD,
+      }),
+    ).toBe(false);
   });
 });
 

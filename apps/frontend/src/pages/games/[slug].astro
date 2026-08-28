@@ -121,7 +121,7 @@ const robots = game ? undefined : "noindex, nofollow";
           </h1>
         </header>
 
-        <div class="mt-8 grid gap-8 lg:grid-cols-[44rem_minmax(0,1fr)] lg:items-start">
+        <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,66rem)_minmax(16rem,1fr)] lg:items-start">
           <GameImage
             src={game.image_url}
             name={game.name}
@@ -133,7 +133,7 @@ const robots = game ? undefined : "noindex, nofollow";
             reward={rewardVector}
           />
 
-          <div class="space-y-8">
+          <div class="space-y-8 lg:max-w-md">
             <GameInformation game={game} />
             <ClassificationDisplay
               classification={classification}
