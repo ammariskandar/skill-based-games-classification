@@ -162,6 +162,24 @@ describe("getGameCatalogue", () => {
     expect(url).toBe("https://backend.test/api/v1/games/");
   });
 
+  it("serializes source, sort, profile, and dominant in snake_case (SBGC-93)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(CATALOGUE));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameCatalogue } = await importGames();
+    await getGameCatalogue({
+      source: "steam",
+      sort: "recent",
+      profile: "reward",
+      dominant: "mystiko",
+    });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe(
+      "https://backend.test/api/v1/games/?source=steam&sort=recent&profile=reward&dominant=mystiko",
+    );
+  });
+
   it("throws BackendApiError on a Django 500", async () => {
     const fetchMock = vi
       .fn()
