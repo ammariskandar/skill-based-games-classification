@@ -87,7 +87,10 @@ export function getSpokePoints(
 ): Point[] {
   return SPOKES.filter((spoke) => spoke.kind === kind).map((spoke) => {
     const score = profile[spoke.dimension];
-    const radius = (score / 100) * maxRadius;
+    // Defensive: missing or non-numeric dimensions degrade to 0 so a partial
+    // or malformed vector collapses toward the center instead of emitting NaN
+    // into the SVG path. Validation happens upstream (skill-dimensions).
+    const radius = ((Number.isFinite(score) ? score : 0) / 100) * maxRadius;
     return polarToCartesian(center.x, center.y, radius, spoke.angleDegrees);
   });
 }
