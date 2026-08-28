@@ -183,13 +183,14 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     min-width: 0;
   }
 
-  /* Decorative dimension icon above the badge; sources are uniform 512×512,
-     rendered at a fixed display width with the aspect ratio preserved. */
+  /* Decorative dimension icon above the badge; sources are uniform 512×512
+     white-on-transparent, rendered at a fixed display width with the aspect
+     ratio preserved, with breathing room above and below. */
   .rankings-detail__dominant-icon {
     display: block;
     width: 6rem;
     height: auto;
-    margin-bottom: 0.75rem;
+    margin: 1.5rem 0;
   }
 
   .rankings-detail__dominant-copy {
@@ -264,6 +265,7 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     line-height: 1.25;
     border-radius: 9999px;
     border: 1px solid;
+    margin: 0.75rem 0;
   }
 
   .rankings-detail__dominant-badge--micro {
@@ -295,6 +297,7 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     color: var(--color-dim);
     border: 1px dashed var(--color-border-2);
     border-radius: 9999px;
+    margin: 0.75rem 0;
   }
 
   /* Truthful empty shell for the future similar-games work — no fake recs.
