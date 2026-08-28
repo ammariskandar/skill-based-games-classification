@@ -92,7 +92,9 @@ html {
 
 .radar-chart__svg {
   display: block;
-  width: 75%;
+  /* SBGC-209: 90% = 75% × 1.2 — scale the chart (grid, labels, polygons, nodes)
+     by 20% while the sibling Challenge/Reward toggle stays unchanged. */
+  width: 90%;
   aspect-ratio: 1 / 1;
   flex: none;
 }
