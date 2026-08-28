@@ -172,11 +172,13 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   }
 
   /* The dominant wrapper is a column: badge centred on top, explainer copy
-     below, left-aligned for readability. */
+     below, left-aligned for readability.  The whole block centres vertically
+     inside the taller card. */
   .rankings-detail__dominant {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     width: 100%;
     min-width: 0;
   }
@@ -245,8 +247,8 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   .rankings-detail__dominant-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.5rem 1.25rem;
-    font-size: 1.125rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 1.375rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -276,8 +278,8 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   .rankings-detail__dominant-empty {
     display: inline-flex;
     align-items: center;
-    padding: 0.5rem 1.25rem;
-    font-size: 1.125rem;
+    padding: 0.625rem 1.5rem;
+    font-size: 1.375rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
