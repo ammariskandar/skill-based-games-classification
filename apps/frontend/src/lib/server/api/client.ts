@@ -199,12 +199,19 @@ function validateTimeout(ms: number | undefined): number {
 
 // ═══ helpers ═══
 
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === "AbortError";
+}
+
 /** Consume and discard a response body to release the connection. */
 async function drainBody(response: Response): Promise<void> {
   try {
     await response.text();
-  } catch {
-    // body may already be consumed or cancelled — ignore
+  } catch (err) {
+    // Surface abort/timeout during draining so the caller can classify it as
+    // ABORTED/TIMEOUT instead of silently swallowing the cancellation.  Other
+    // drain failures are best-effort connection cleanup and are ignored.
+    if (isAbortError(err)) throw err;
   }
 }
 
@@ -287,170 +294,205 @@ async function request<T>(
     }
   }
 
-  // ── 6. build headers ──
-  const headers = new Headers(opts.headers);
-  if (!headers.has("Accept")) {
-    headers.set("Accept", JSON_MEDIA_TYPE);
-  }
-  if (serializedBody !== undefined && !headers.has("Content-Type")) {
-    headers.set("Content-Type", JSON_MEDIA_TYPE);
-  }
-
-  // ── 7. fetch ──
-  let response: Response;
   try {
-    response = await fetch(url, {
-      method,
-      headers,
-      body: serializedBody ?? null,
-      signal: controller.signal,
-      redirect: "manual",
-    });
-  } catch (err: unknown) {
-    cleanup();
-    if (err instanceof DOMException && err.name === "AbortError") {
-      if (callerAborted) {
-        return {
-          ok: false,
-          error: apiError("ABORTED", "Request was cancelled"),
-        };
-      }
+    // ── 6. build headers ──
+    let headers: Headers;
+    try {
+      headers = new Headers(opts.headers);
+    } catch (err: unknown) {
       return {
         ok: false,
-        error: apiError("TIMEOUT", `Request timed out after ${timeoutMs}ms`),
+        error: apiError(
+          "REQUEST_SERIALIZATION",
+          err instanceof Error ? err.message : "Invalid headers provided",
+          { cause: err },
+        ),
       };
     }
-    return {
-      ok: false,
-      error: apiError("NETWORK_ERROR", "Network request failed", {
-        cause: err,
-      }),
-    };
-  }
+    if (!headers.has("Accept")) {
+      headers.set("Accept", JSON_MEDIA_TYPE);
+    }
+    if (serializedBody !== undefined && !headers.has("Content-Type")) {
+      headers.set("Content-Type", JSON_MEDIA_TYPE);
+    }
 
-  // ── 8. handle redirects ──
-  if (isRedirect(response.status)) {
-    await drainBody(response);
-    cleanup();
-    return {
-      ok: false,
-      status: response.status,
-      error: apiError("REDIRECT", `Unexpected redirect (${response.status})`),
-    };
-  }
-
-  // ── 9. handle non-2xx ──
-  if (!response.ok) {
-    let apiErrorDto: ApiErrorDto | undefined;
-    const contentType = response.headers.get("content-type");
-
-    if (contentType && isJsonMediaType(contentType)) {
-      try {
-        const text = await response.text();
-        const errorJson = JSON.parse(text) as unknown;
-        if (
-          errorJson &&
-          typeof errorJson === "object" &&
-          "error" in errorJson &&
-          errorJson.error &&
-          typeof errorJson.error === "object" &&
-          "code" in errorJson.error &&
-          "message" in errorJson.error &&
-          "details" in errorJson.error &&
-          Array.isArray(errorJson.error.details)
-        ) {
-          apiErrorDto = errorJson.error as ApiErrorDto;
+    // ── 7. fetch ──
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: serializedBody ?? null,
+        signal: controller.signal,
+        redirect: "manual",
+      });
+    } catch (err: unknown) {
+      if (isAbortError(err)) {
+        if (callerAborted) {
+          return {
+            ok: false,
+            error: apiError("ABORTED", "Request was cancelled"),
+          };
         }
-      } catch {
-        // Malformed or non-consumable JSON body — fall back to the generic
-        // HTTP_ERROR and leave the structured envelope unset.
-      }
-    } else {
-      await drainBody(response);
-    }
-
-    cleanup();
-
-    const message =
-      apiErrorDto?.message ?? `Server returned ${response.status}`;
-
-    return {
-      ok: false,
-      status: response.status,
-      error: apiError("HTTP_ERROR", message),
-      apiError: apiErrorDto,
-    };
-  }
-
-  // ── 10. 204 No Content ──
-  if (response.status === 204) {
-    await drainBody(response);
-    cleanup();
-    return { ok: true, status: 204 } as ApiNoContent;
-  }
-
-  // ── 11. validate media type ──
-  const contentType = response.headers.get("content-type");
-  if (!isJsonMediaType(contentType)) {
-    await drainBody(response);
-    cleanup();
-    return {
-      ok: false,
-      status: response.status,
-      error: apiError("INVALID_RESPONSE", "Expected JSON response"),
-    };
-  }
-
-  // ── 12. read and parse body (timeout/cancel still active) ──
-  let text: string;
-  try {
-    text = await response.text();
-  } catch (err: unknown) {
-    cleanup();
-    if (err instanceof DOMException && err.name === "AbortError") {
-      if (callerAborted) {
         return {
           ok: false,
-          error: apiError("ABORTED", "Request was cancelled"),
+          error: apiError("TIMEOUT", `Request timed out after ${timeoutMs}ms`),
         };
       }
       return {
         ok: false,
-        error: apiError("TIMEOUT", `Request timed out after ${timeoutMs}ms`),
+        error: apiError("NETWORK_ERROR", "Network request failed", {
+          cause: err,
+        }),
+      };
+    }
+
+    // ── 8. handle redirects ──
+    if (isRedirect(response.status)) {
+      await drainBody(response);
+      return {
+        ok: false,
+        status: response.status,
+        error: apiError("REDIRECT", `Unexpected redirect (${response.status})`),
+      };
+    }
+
+    // ── 9. handle non-2xx ──
+    if (!response.ok) {
+      let apiErrorDto: ApiErrorDto | undefined;
+      const contentType = response.headers.get("content-type");
+
+      if (contentType && isJsonMediaType(contentType)) {
+        try {
+          const text = await response.text();
+          const errorJson = JSON.parse(text) as unknown;
+          if (
+            errorJson &&
+            typeof errorJson === "object" &&
+            "error" in errorJson &&
+            errorJson.error &&
+            typeof errorJson.error === "object" &&
+            "code" in errorJson.error &&
+            "message" in errorJson.error &&
+            "details" in errorJson.error &&
+            Array.isArray(errorJson.error.details)
+          ) {
+            apiErrorDto = errorJson.error as ApiErrorDto;
+          }
+        } catch (err) {
+          // Surface abort/timeout during the structured-error read; otherwise
+          // fall back to the generic HTTP_ERROR below.
+          if (isAbortError(err)) throw err;
+        }
+      } else {
+        await drainBody(response);
+      }
+
+      const message =
+        apiErrorDto?.message ?? `Server returned ${response.status}`;
+
+      return {
+        ok: false,
+        status: response.status,
+        error: apiError("HTTP_ERROR", message),
+        apiError: apiErrorDto,
+      };
+    }
+
+    // ── 10. 204 No Content ──
+    if (response.status === 204) {
+      await drainBody(response);
+      return { ok: true, status: 204 } as ApiNoContent;
+    }
+
+    // ── 11. validate media type ──
+    const contentType = response.headers.get("content-type");
+    if (!isJsonMediaType(contentType)) {
+      await drainBody(response);
+      return {
+        ok: false,
+        status: response.status,
+        error: apiError("INVALID_RESPONSE", "Expected JSON response"),
+      };
+    }
+
+    // ── 12. read and parse body (timeout/cancel still active) ──
+    let text: string;
+    try {
+      text = await response.text();
+    } catch (err: unknown) {
+      if (isAbortError(err)) {
+        if (callerAborted) {
+          return {
+            ok: false,
+            error: apiError("ABORTED", "Request was cancelled"),
+          };
+        }
+        return {
+          ok: false,
+          error: apiError("TIMEOUT", `Request timed out after ${timeoutMs}ms`),
+        };
+      }
+      return {
+        ok: false,
+        error: apiError("INVALID_RESPONSE", "Failed to read response body", {
+          cause: err,
+        }),
+      };
+    }
+
+    if (!text.trim()) {
+      return {
+        ok: false,
+        status: response.status,
+        error: apiError("INVALID_RESPONSE", "Empty response body"),
+      };
+    }
+
+    let data: T;
+    try {
+      data = JSON.parse(text) as T;
+    } catch (err: unknown) {
+      return {
+        ok: false,
+        status: response.status,
+        error: apiError(
+          "INVALID_RESPONSE",
+          "Failed to parse response as JSON",
+          {
+            cause: err,
+          },
+        ),
+      };
+    }
+
+    return { ok: true, data, status: response.status } as ApiSuccess<T>;
+  } catch (err: unknown) {
+    // Reached when a body drain or structured-error read surfaced an abort, or
+    // an unexpected error escaped the guarded branches above.
+    if (controller.signal.aborted) {
+      if (callerAborted) {
+        return {
+          ok: false,
+          error: apiError("ABORTED", "Request was cancelled", { cause: err }),
+        };
+      }
+      return {
+        ok: false,
+        error: apiError("TIMEOUT", `Request timed out after ${timeoutMs}ms`, {
+          cause: err,
+        }),
       };
     }
     return {
       ok: false,
-      error: apiError("INVALID_RESPONSE", "Failed to read response body", {
+      error: apiError("UNKNOWN_ERROR", "Unexpected transport error", {
         cause: err,
       }),
     };
+  } finally {
+    cleanup();
   }
-
-  cleanup();
-
-  if (!text.trim()) {
-    return {
-      ok: false,
-      status: response.status,
-      error: apiError("INVALID_RESPONSE", "Empty response body"),
-    };
-  }
-
-  let data: T;
-  try {
-    data = JSON.parse(text) as T;
-  } catch (err: unknown) {
-    return {
-      ok: false,
-      status: response.status,
-      error: apiError("INVALID_RESPONSE", "Failed to parse response as JSON", {
-        cause: err,
-      }),
-    };
-  }
-
-  return { ok: true, data, status: response.status } as ApiSuccess<T>;
 }
 
 // ═══ convenience helpers ═══
