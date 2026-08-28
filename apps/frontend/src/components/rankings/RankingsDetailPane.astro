@@ -301,14 +301,14 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   }
 
   /* Truthful empty shell for the future similar-games work — no fake recs.
-     Kept low and clearly separated from the radar + dominant card above. */
+     Kept low with a modest gap from the radar + dominant card above. */
   .rankings-detail__grow {
     display: flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
     min-height: 8rem;
-    margin-top: clamp(2.5rem, 3vw, 3rem);
+    margin-top: clamp(1rem, 1.25vw, 1.5rem);
     border: 1px dashed var(--color-border-2);
     border-radius: var(--radius-md);
     background: var(--color-surface);
