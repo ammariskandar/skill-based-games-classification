@@ -162,6 +162,9 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   .rankings-detail__region--dominant {
     display: block;
     min-height: 12rem;
+    /* 4:5 = 25% taller than the radar square — the explainer card reads as
+       the larger of the two surfaces, with breathing room below the copy. */
+    aspect-ratio: 4 / 5;
     padding: 1rem;
     border: 1px solid var(--color-border-2);
     border-radius: var(--radius-md);
@@ -186,7 +189,7 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
 
   .rankings-detail__dominant-lead {
     margin: 0 0 0.875rem;
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 600;
     line-height: 1.35;
     color: var(--color-text);
@@ -208,7 +211,7 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
 
   .rankings-detail__dominant-section-text {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--color-muted);
   }
@@ -284,15 +287,14 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
   }
 
   /* Truthful empty shell for the future similar-games work — no fake recs.
-     Shorter than the classification block above, with extra breathing room
-     separating it from the radar + dominant card. */
+     Kept low and clearly separated from the radar + dominant card above. */
   .rankings-detail__grow {
     display: flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    min-height: 10rem;
-    margin-top: clamp(1.5rem, 2vw, 2rem);
+    min-height: 8rem;
+    margin-top: clamp(2.5rem, 3vw, 3rem);
     border: 1px dashed var(--color-border-2);
     border-radius: var(--radius-md);
     background: var(--color-surface);
