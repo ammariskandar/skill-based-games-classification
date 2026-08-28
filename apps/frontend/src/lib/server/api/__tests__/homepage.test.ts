@@ -39,7 +39,7 @@ const CARDS = {
 
 describe("getHomepageCarousel", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   it("returns the parsed card list on a 200 response", async () => {
@@ -66,7 +66,7 @@ describe("getHomepageCarousel", () => {
     await getHomepageCarousel();
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("http://backend.test/api/v1/games/homepage");
+    expect(url).toContain("https://backend.test/api/v1/games/homepage");
   });
 
   it("throws BackendApiError on a Django 500", async () => {

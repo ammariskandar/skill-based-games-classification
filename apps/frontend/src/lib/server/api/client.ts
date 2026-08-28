@@ -30,6 +30,7 @@ import type {
 
 const API_DEFAULT_TIMEOUT = 8_000; // ms
 const JSON_MEDIA_TYPE = "application/json";
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 interface ParsedMediaType {
   type: string;
@@ -78,10 +79,18 @@ function validateBaseUrl(raw: string): string {
     );
   }
 
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+  const isLocal = LOCAL_HOSTNAMES.has(parsed.hostname);
+  if (parsed.protocol === "http:") {
+    if (!isLocal) {
+      throw apiError(
+        "CONFIG_ERROR",
+        `Insecure HTTP protocol is forbidden for remote host: "${parsed.hostname}". HTTPS is required.`,
+      );
+    }
+  } else if (parsed.protocol !== "https:") {
     throw apiError(
       "CONFIG_ERROR",
-      `DJANGO_API_URL must be http or https: ${trimmed}`,
+      `DJANGO_API_URL must use https: (or http: for local development): ${trimmed}`,
     );
   }
   if (parsed.username || parsed.password) {

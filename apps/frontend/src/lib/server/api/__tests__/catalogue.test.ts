@@ -56,7 +56,7 @@ const CATALOGUE = {
 
 describe("getGameCatalogue", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   it("returns the parsed catalogue envelope on a 200 response", async () => {
@@ -91,7 +91,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue();
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/");
+    expect(url).toBe("https://backend.test/api/v1/games/");
   });
 
   it("serializes the page parameter onto the catalogue endpoint", async () => {
@@ -102,7 +102,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue({ page: 3 });
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/?page=3");
+    expect(url).toBe("https://backend.test/api/v1/games/?page=3");
   });
 
   it("serializes page and pageSize parameters together", async () => {
@@ -113,7 +113,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue({ page: 2, pageSize: 50 });
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/?page=2&page_size=50");
+    expect(url).toBe("https://backend.test/api/v1/games/?page=2&page_size=50");
   });
 
   it("serializes the q parameter before page (SBGC-78)", async () => {
@@ -124,7 +124,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue({ q: "elden ring", page: 2 });
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/?q=elden+ring&page=2");
+    expect(url).toBe("https://backend.test/api/v1/games/?q=elden+ring&page=2");
   });
 
   it("omits an empty q parameter", async () => {
@@ -135,7 +135,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue({ q: "" });
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/");
+    expect(url).toBe("https://backend.test/api/v1/games/");
   });
 
   it("serializes classified and coverless_last with snake_case", async () => {
@@ -147,7 +147,7 @@ describe("getGameCatalogue", () => {
 
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toBe(
-      "http://backend.test/api/v1/games/?classified=true&coverless_last=false",
+      "https://backend.test/api/v1/games/?classified=true&coverless_last=false",
     );
   });
 
@@ -159,7 +159,7 @@ describe("getGameCatalogue", () => {
     await getGameCatalogue({ coverlessLast: true });
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/");
+    expect(url).toBe("https://backend.test/api/v1/games/");
   });
 
   it("throws BackendApiError on a Django 500", async () => {

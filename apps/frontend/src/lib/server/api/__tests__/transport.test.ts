@@ -160,6 +160,24 @@ describe("API transport", () => {
       expect(r.ok).toBe(true);
     });
 
+    it("rejects insecure http for a remote host", async () => {
+      setEnv("http://backend.test");
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.error.code).toBe("CONFIG_ERROR");
+      expect(f.error.message).toMatch(/Insecure HTTP/);
+    });
+
+    it("accepts https for a remote host", async () => {
+      setEnv("https://backend.test");
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+      expect(r.ok).toBe(true);
+    });
+
     it("accepts trailing slash on origin", async () => {
       setEnv("http://127.0.0.1:8000/");
       stubFetch(jsonResponse({ ok: true }));

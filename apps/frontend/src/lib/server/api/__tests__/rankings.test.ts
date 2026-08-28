@@ -45,7 +45,7 @@ const RANKING = {
 
 describe("getGameRankings", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   it("returns the parsed ranking envelope on a 200 response", async () => {
@@ -77,7 +77,7 @@ describe("getGameRankings", () => {
     await getGameRankings();
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/rankings/");
+    expect(url).toBe("https://backend.test/api/v1/rankings/");
   });
 
   it("serializes profile, dimension, direction, page, and pageSize", async () => {
@@ -95,7 +95,7 @@ describe("getGameRankings", () => {
 
     const url = fetchMock.mock.calls[0][0] as string;
     expect(url).toBe(
-      "http://backend.test/api/v1/rankings/?profile=reward&dimension=mystiko&direction=asc&page=2&page_size=8",
+      "https://backend.test/api/v1/rankings/?profile=reward&dimension=mystiko&direction=asc&page=2&page_size=8",
     );
   });
 
