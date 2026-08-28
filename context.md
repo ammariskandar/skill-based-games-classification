@@ -2573,9 +2573,9 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 ## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
 
 - Game-detail desktop grid: left visual column scales from a fixed `44rem` to
-  up to `66rem` (1.5×); the right metadata column is narrowed via a
-  `minmax(16rem,1fr)` grid track with a `max-w-md` content cap, preserving
-  vertical content without clipping.
+  up to `79rem` (≈1.8×), maintaining the artwork aspect ratios; the right
+  metadata column is narrowed via a `minmax(16rem,1fr)` grid track with a
+  `max-w-md` content cap, preserving vertical content without clipping.
 - Supersedes SBGC-202's flag-only upscaling gate: automatic WebSR 2x now also
   activates by default on a fine-pointer desktop display above 1920×1080
   (physical or logical pixels), while `PUBLIC_ENABLE_IMAGE_UPSCALE` still
