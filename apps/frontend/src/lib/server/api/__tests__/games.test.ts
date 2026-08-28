@@ -42,7 +42,7 @@ const GAME = {
 
 describe("getGameDetail", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   it("returns the parsed DTO on a 200 response", async () => {
@@ -76,7 +76,7 @@ describe("getGameDetail", () => {
     await getGameDetail("my game");
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("http://backend.test/api/v1/games/my%20game");
+    expect(url).toContain("https://backend.test/api/v1/games/my%20game");
   });
 
   it("throws GameNotFoundError on a Django 404", async () => {
@@ -188,7 +188,7 @@ describe("BackendApiError", () => {
 
 describe("adapter signal forwarding", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   async function assertSignalAborts(

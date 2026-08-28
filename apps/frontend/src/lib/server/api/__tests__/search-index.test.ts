@@ -41,7 +41,7 @@ const INDEX = {
 
 describe("getGameSearchIndex", () => {
   beforeEach(() => {
-    setEnv("http://backend.test");
+    setEnv("https://backend.test");
   });
 
   it("returns the parsed game list on a 200 response", async () => {
@@ -66,7 +66,7 @@ describe("getGameSearchIndex", () => {
     await getGameSearchIndex();
 
     const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toBe("http://backend.test/api/v1/games/search-index");
+    expect(url).toBe("https://backend.test/api/v1/games/search-index");
   });
 
   it("throws BackendApiError on a Django 500", async () => {
