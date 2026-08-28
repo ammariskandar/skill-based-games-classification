@@ -159,13 +159,22 @@ html {
   fill-opacity: 0.35;
   stroke: var(--color-chart-fg);
   stroke-width: 2.5;
-  filter: url(#radar-glow);
 }
 
 .radar-polygon--inactive {
   fill-opacity: 0.05;
   stroke: var(--color-dim);
   stroke-width: 1.5;
+}
+
+/* The glow follows the polygon's bounding curve only — never the individual
+   barycentric fill cells (a layer-level filter glows every mesh rect and
+   reads as a fishnet). */
+.radar-polygon--active .radar-polygon-stroke {
+  filter: url(#radar-glow);
+}
+
+.radar-polygon--inactive .radar-polygon-stroke {
   filter: none;
 }
 

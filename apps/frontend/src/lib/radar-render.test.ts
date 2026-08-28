@@ -243,6 +243,10 @@ describe("vertex-anchored barycentric fill (SBGC-210)", () => {
         .querySelector(".radar-polygon-reward")
         ?.classList.contains("radar-polygon--inactive"),
     ).toBe(true);
+    // The stroke is a distinct element so the glow never touches the mesh cells.
+    expect(
+      doc.querySelector(".radar-polygon-challenge .radar-polygon-stroke"),
+    ).not.toBeNull();
   });
 
   it("anchors blue at the Micro vertex in the rendered fill", () => {

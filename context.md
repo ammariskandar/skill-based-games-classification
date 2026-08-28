@@ -2577,8 +2577,10 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   → blue, Mystiko → purple, Macro → orange) and the interior is interpolated
   by signed barycentric weight.  Rendered as a pure-SVG clipped rect mesh
   inside `buildRadarHtml` (SSR-safe, no canvas/WebGL).  Active/inactive
-  opacity (0.35/0.05), stroke, glow, toggle behaviour, and all geometry (spoke
-  radii, cardinal spline, 56px label padding) unchanged.
+  opacity (0.35/0.05), stroke, toggle behaviour, and all geometry (spoke
+  radii, cardinal spline, 56px label padding) unchanged.  The glow filter
+  applies to the polygon's bounding stroke only — never per mesh cell, which
+  would render as a fishnet of per-segment glows.
 
 ## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
 

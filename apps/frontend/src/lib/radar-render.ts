@@ -209,7 +209,7 @@ function polygonLayerHtml(
   );
   return `<g class="radar-polygon radar-polygon-${kind} ${
     active ? "radar-polygon--active" : "radar-polygon--inactive"
-  }">${fill}<path d="${pathD}" /></g>`;
+  }">${fill}<path class="radar-polygon-stroke" d="${pathD}" /></g>`;
 }
 
 export function buildRadarHtml(data: RadarRenderData): string {
