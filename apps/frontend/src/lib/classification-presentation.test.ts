@@ -9,8 +9,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   CLASSIFICATION_DIMENSION_ORDER,
+  DOMINANT_COPY,
   dominantBadgeHtml,
   dominantForProfile,
+  dominantRegionHtml,
   presentClassification,
   profileDimensions,
 } from "./classification-presentation";
@@ -123,6 +125,73 @@ describe("dominantBadgeHtml", () => {
 
   it("renders the tie empty state without fabricating a dimension", () => {
     expect(dominantBadgeHtml(null, true)).toContain("No dominant dimension");
+  });
+});
+
+describe("DOMINANT_COPY", () => {
+  it("defines all 9 (profile × dimension) states with complete copy", () => {
+    const profiles = ["unified", "challenge", "reward"] as const;
+    const dimensions = ["micro", "mystiko", "macro"] as const;
+    for (const profile of profiles) {
+      for (const dimension of dimensions) {
+        const copy = DOMINANT_COPY[profile][dimension];
+        expect(copy, `${profile}/${dimension}`).toBeDefined();
+        expect(copy.leadLabel.trim().length).toBeGreaterThan(0);
+        expect(copy.lead.trim().length).toBeGreaterThan(0);
+        expect(copy.sections.length).toBe(2);
+        for (const section of copy.sections) {
+          expect(section.label.trim().length).toBeGreaterThan(0);
+          expect(section.text.trim().length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("distinguishes the three profiles for the same dimension", () => {
+    const unifiedLead = DOMINANT_COPY.unified.micro.lead;
+    const challengeLead = DOMINANT_COPY.challenge.micro.lead;
+    const rewardLead = DOMINANT_COPY.reward.micro.lead;
+    expect(unifiedLead).not.toBe(challengeLead);
+    expect(challengeLead).not.toBe(rewardLead);
+    expect(rewardLead).not.toBe(unifiedLead);
+  });
+});
+
+describe("dominantRegionHtml", () => {
+  it("renders the badge plus the explainer copy for a known dominant", () => {
+    const html = dominantRegionHtml("unified", "micro", true);
+    expect(html).toContain("rankings-detail__dominant-badge--micro");
+    expect(html).toContain("rankings-detail__dominant-copy");
+    expect(html).toContain("rankings-detail__dominant-lead");
+    expect(html).toContain("Games where fast reflexes");
+    expect(html).toContain("The Skill Tested (Challenge)");
+    expect(html).toContain("The Fulfillment (Reward)");
+  });
+
+  it("uses the profile-specific copy for the same dimension", () => {
+    const unified = dominantRegionHtml("unified", "micro", true);
+    const challenge = dominantRegionHtml("challenge", "micro", true);
+    const reward = dominantRegionHtml("reward", "micro", true);
+    expect(challenge).toContain("Skill Focus");
+    expect(challenge).toContain("Fine motor execution");
+    expect(reward).toContain("Reward Type");
+    expect(reward).toContain("Instant, tactile, and localized recognition");
+    expect(unified).not.toContain("Fine motor execution");
+  });
+
+  it("omits the copy block for tie and unclassified states", () => {
+    expect(dominantRegionHtml("unified", null, true)).toBe(
+      dominantBadgeHtml(null, true),
+    );
+    expect(dominantRegionHtml("unified", null, false)).toBe(
+      dominantBadgeHtml(null, false),
+    );
+    for (const html of [
+      dominantRegionHtml("challenge", null, true),
+      dominantRegionHtml("reward", null, false),
+    ]) {
+      expect(html).not.toContain("rankings-detail__dominant-copy");
+    }
   });
 });
 

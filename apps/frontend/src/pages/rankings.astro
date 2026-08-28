@@ -233,6 +233,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
   import {
     dominantBadgeHtml,
     dominantForProfile,
+    dominantRegionHtml,
     presentClassification,
   } from "../lib/classification-presentation";
   import { initRadarChart } from "../lib/radar-controller";
@@ -390,7 +391,8 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       );
       if (!region) return;
       const classification = lastClassification;
-      region.innerHTML = dominantBadgeHtml(
+      region.innerHTML = dominantRegionHtml(
+        profile,
         classification
           ? dominantForProfile(
               profile,

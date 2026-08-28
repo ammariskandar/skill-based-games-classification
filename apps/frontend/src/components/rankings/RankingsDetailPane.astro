@@ -2,8 +2,8 @@
 import RadarChart from "../score/RadarChart.astro";
 import { gameHref } from "../../lib/catalogue-presentation";
 import {
-  dominantBadgeHtml,
   dominantForProfile,
+  dominantRegionHtml,
 } from "../../lib/classification-presentation";
 import type { SkillProfileVector } from "../../lib/skill-dimensions";
 import type { RankingProfile } from "../../lib/rankings-state";
@@ -22,7 +22,7 @@ const classified = challenge !== null && reward !== null;
 const dominant = classified
   ? dominantForProfile(profile, challenge, reward)
   : null;
-const dominantHtml = dominantBadgeHtml(dominant, classified);
+const dominantHtml = dominantRegionHtml(profile, dominant, classified);
 ---
 
 {
@@ -121,55 +121,84 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
     margin-top: 1rem;
   }
 
-  /* Two equal side-by-side shells: radar + dominant dimension (SBGC-208).
-     Grid with minmax(0, 1fr) locks both columns to an exact 50/50 split that
-     content cannot blow out — the tiny dominant badge alone could never out-bid
-     the radar's intrinsic size, so it gets this structural equal share. */
+  /* Two side-by-side shells: the radar keeps its square, the dominant cell
+     is a content card that auto-heights to its explainer copy.  Grid with
+     minmax(0, 1fr) locks both columns to an exact 50/50 split that content
+     cannot blow out. */
   .rankings-detail__upper {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
     min-width: 0;
     margin-top: 1rem;
-  }
-
-  .rankings-detail__upper .rankings-detail__region {
-    min-width: 0;
-    min-height: 0;
-    aspect-ratio: 1 / 1;
+    align-items: start;
   }
 
   .rankings-detail__region {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-width: 0;
-    min-height: 12rem;
-    border: 1px dashed var(--color-border-2);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
+    min-height: 0;
   }
 
   .rankings-detail__region--radar {
     display: block;
+    aspect-ratio: 1 / 1;
     border: none;
     background: transparent;
     padding: 0;
   }
 
   .rankings-detail__region--dominant {
-    overflow: hidden;
+    display: block;
+    min-height: 12rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
   }
 
-  /* The dominant wrapper fills its equal square so the badge visibly owns the
-     full cell rather than floating as a bare pill. */
+  /* The dominant wrapper is a column: badge centred on top, explainer copy
+     below, left-aligned for readability. */
   .rankings-detail__dominant {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
     width: 100%;
-    height: 100%;
     min-width: 0;
+  }
+
+  .rankings-detail__dominant-copy {
+    width: 100%;
+    margin-top: 1rem;
+    text-align: left;
+  }
+
+  .rankings-detail__dominant-lead {
+    margin: 0 0 0.875rem;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--color-text);
+  }
+
+  .rankings-detail__dominant-section {
+    margin-top: 0.75rem;
+  }
+
+  .rankings-detail__dominant-section-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .rankings-detail__dominant-section-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-muted);
   }
 
   .rankings-detail__view {
