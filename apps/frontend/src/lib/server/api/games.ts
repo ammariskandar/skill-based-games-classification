@@ -4,167 +4,62 @@
  * Server-side only: fetches the SBGC-71 public game-detail DTO from Django.
  * Distinguishes a game-not-found (Django 404) from backend/service failures
  * so the route can render a real 404 versus a real error page.
+ *
+ * The DTO response shapes are owned by `../../types/api` (SBGC-89); this module
+ * keeps legacy aliases so existing import sites are unchanged while the shared
+ * contract remains the single source of truth.
  */
 
 import { getJSON } from "./client";
 import type { ApiFailure } from "./types";
+import type {
+  GameCatalogueClassificationDto,
+  GameCatalogueItemDto,
+  GameCatalogueQuery,
+  GameCatalogueResponseDto,
+  GameDetailResponseDto,
+  GameSearchIndexItemDto,
+  GameSearchIndexResponseDto,
+  HomepageCarouselCardDto,
+  HomepageCarouselResponseDto,
+  PublicGameDetailDto,
+  PublishedClassificationDto,
+  RankingItemDto,
+  RankingQuery,
+  RankingResponseDto,
+  SkillDimensionsDto,
+} from "../../../types/api";
 
-export type GameSource = "steam" | "manual";
+/* ── Legacy aliases (SBGC-89) ───────────────────────────────────────────── */
 
-export type ClassificationRegime = "provisional" | "unified" | "none";
+export type ClassificationProfile = SkillDimensionsDto;
+export type GameFinalClassification = PublishedClassificationDto;
+export type GameDetailGame = PublicGameDetailDto;
+export type GameDetailResponse = GameDetailResponseDto;
+export type HomepageCarouselCard = HomepageCarouselCardDto;
+export type HomepageCarouselResponse = HomepageCarouselResponseDto;
+export type GameCatalogueClassification = GameCatalogueClassificationDto;
+export type GameCatalogueItem = GameCatalogueItemDto;
+export type GameCatalogueResponse = GameCatalogueResponseDto;
+export type GameSearchIndexItem = GameSearchIndexItemDto;
+export type GameSearchIndexResponse = GameSearchIndexResponseDto;
+export type RankingItem = RankingItemDto;
+export type RankingResponse = RankingResponseDto;
 
-export interface GameDetailGame {
-  id: number;
-  slug: string;
-  name: string;
-  source: GameSource;
-  external_id: string | null;
-  content_type: string;
-  description: string;
-  release_date: string | null;
-  developer: string;
-  image_url: string;
-  library_hero_url: string | null;
-  library_capsule_url: string | null;
-  metadata_updated_at: string;
-}
+export type { GameCatalogueQuery, RankingQuery };
 
-export interface ClassificationProfile {
-  micro: number;
-  macro: number;
-  mystiko: number;
-}
+export type {
+  CatalogueDominant,
+  CatalogueProfile,
+  CatalogueSort,
+  ClassificationRegime,
+  GameSource,
+  RankingDimension,
+  RankingDirection,
+  RankingProfile,
+} from "../../../types/api";
 
-export interface GameFinalClassification {
-  status: string;
-  regime: ClassificationRegime | null;
-  challenge: ClassificationProfile | null;
-  reward: ClassificationProfile | null;
-  confidence_level: number | null;
-  confidence_label: string | null;
-  submission_count: number | null;
-  calculation_version: string | null;
-  calculated_at: string | null;
-  is_stale: boolean;
-}
-
-export interface GameDetailResponse {
-  game: GameDetailGame;
-  classification: GameFinalClassification | null;
-}
-
-/** One homepage carousel card: slug, name, and the Library Capsule URL. */
-export interface HomepageCarouselCard {
-  slug: string;
-  name: string;
-  library_capsule_url: string;
-}
-
-export interface HomepageCarouselResponse {
-  games: HomepageCarouselCard[];
-}
-
-/** Narrow public classification summary for a catalogue item (SBGC-76). */
-export interface GameCatalogueClassification {
-  status: string;
-  challenge: ClassificationProfile | null;
-  reward: ClassificationProfile | null;
-  confidence_level: number | null;
-  confidence_label: string | null;
-  is_stale: boolean;
-}
-
-/** One public catalogue item with effective artwork (SBGC-76). */
-export interface GameCatalogueItem {
-  slug: string;
-  name: string;
-  source: GameSource;
-  image_url: string;
-  library_capsule_url: string | null;
-  classification: GameCatalogueClassification | null;
-}
-
-/** Paginated public Game catalogue envelope (SBGC-76). */
-export interface GameCatalogueResponse {
-  count: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  results: GameCatalogueItem[];
-}
-
-/** One compact search-index entry for client-side autocomplete (SBGC-78). */
-export interface GameSearchIndexItem {
-  slug: string;
-  name: string;
-  capsule_url: string | null;
-  image_url: string | null;
-}
-
-/** Complete compact public Game search index (SBGC-78). */
-export interface GameSearchIndexResponse {
-  games: GameSearchIndexItem[];
-}
-
-/** Ranking profile: the two editorial profiles plus the presentation Unified view. */
-export type RankingProfile = "unified" | "challenge" | "reward";
-
-/** Skill dimension for a ranking. */
-export type RankingDimension = "micro" | "macro" | "mystiko";
-
-/** Ranking score order. */
-export type RankingDirection = "desc" | "asc";
-
-/** One public ranking row (SBGC-81).  `score` is integer for Challenge/Reward
- * and `(Challenge + Reward) / 2` for Unified (may be `.5`). */
-export interface RankingItem {
-  slug: string;
-  name: string;
-  hero_url: string;
-  score: number;
-}
-
-/** Paginated public ranking envelope (SBGC-81). */
-export interface RankingResponse {
-  count: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  results: RankingItem[];
-}
-
-/** Ranking request inputs (SBGC-81).  `pageSize` is viewport-derived and is
- * never part of shareable URL state. */
-export interface RankingQuery {
-  profile?: RankingProfile;
-  dimension?: RankingDimension;
-  direction?: RankingDirection;
-  page?: number;
-  pageSize?: number;
-}
-
-/** Primary catalogue sort identifiers (SBGC-79). */
-export type CatalogueSort =
-  "name_asc" | "name_desc" | "recent" | "micro" | "mystiko" | "macro";
-
-/** Explicit Challenge/Reward profile for score sort and dominant filter. */
-export type CatalogueProfile = "challenge" | "reward";
-
-/** Dominant skill category for the dominant filter. */
-export type CatalogueDominant = "micro" | "mystiko" | "macro";
-
-/** Catalogue request inputs (SBGC-76/78/79). */
-export interface GameCatalogueQuery {
-  q?: string;
-  page?: number;
-  pageSize?: number;
-  source?: GameSource;
-  classified?: boolean;
-  sort?: CatalogueSort;
-  profile?: CatalogueProfile;
-  dominant?: CatalogueDominant;
-  coverlessLast?: boolean;
-}
+/* ── Domain errors ──────────────────────────────────────────────────────── */
 
 /** The slug does not resolve to a publicly-listed Game (SBGC-71 404). */
 export class GameNotFoundError extends Error {
@@ -184,6 +79,8 @@ export class BackendApiError extends Error {
     this.name = "BackendApiError";
   }
 }
+
+/* ── API client functions ───────────────────────────────────────────────── */
 
 /** Fetch one public Game detail from Django (SBGC-71). */
 export async function getGameDetail(slug: string): Promise<GameDetailResponse> {
