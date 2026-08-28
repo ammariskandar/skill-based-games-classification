@@ -138,6 +138,30 @@ describe("getGameCatalogue", () => {
     expect(url).toBe("http://backend.test/api/v1/games/");
   });
 
+  it("serializes classified and coverless_last with snake_case", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(CATALOGUE));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameCatalogue } = await importGames();
+    await getGameCatalogue({ classified: true, coverlessLast: false });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe(
+      "http://backend.test/api/v1/games/?classified=true&coverless_last=false",
+    );
+  });
+
+  it("omits coverless_last when it is true (backend default)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(CATALOGUE));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameCatalogue } = await importGames();
+    await getGameCatalogue({ coverlessLast: true });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("http://backend.test/api/v1/games/");
+  });
+
   it("throws BackendApiError on a Django 500", async () => {
     const fetchMock = vi
       .fn()

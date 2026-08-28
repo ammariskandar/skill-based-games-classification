@@ -13,6 +13,7 @@
 import { getJSON } from "./client";
 import type { ApiFailure } from "./types";
 import type {
+  ApiErrorDto,
   GameCatalogueClassificationDto,
   GameCatalogueItemDto,
   GameCatalogueQuery,
@@ -71,21 +72,35 @@ export class GameNotFoundError extends Error {
 
 /** Any backend/service failure that is not a game-not-found. */
 export class BackendApiError extends Error {
-  constructor(
-    message: string,
-    readonly failure?: ApiFailure,
-  ) {
+  readonly failure?: ApiFailure;
+
+  constructor(message: string, failure?: ApiFailure) {
     super(message);
     this.name = "BackendApiError";
+    this.failure = failure;
   }
+
+  /** Structured Django Ninja error envelope, when the transport captured one. */
+  get apiError(): ApiErrorDto | undefined {
+    return this.failure?.apiError;
+  }
+}
+
+/** Optional per-call adapter inputs. */
+export interface AdapterOptions {
+  signal?: AbortSignal;
 }
 
 /* ── API client functions ───────────────────────────────────────────────── */
 
 /** Fetch one public Game detail from Django (SBGC-71). */
-export async function getGameDetail(slug: string): Promise<GameDetailResponse> {
+export async function getGameDetail(
+  slug: string,
+  options?: AdapterOptions,
+): Promise<GameDetailResponse> {
   const result = await getJSON<GameDetailResponse>(
     `/api/v1/games/${encodeURIComponent(slug)}`,
+    { signal: options?.signal },
   );
   if (result.ok) {
     if ("data" in result) return result.data;
@@ -122,6 +137,7 @@ export async function getHomepageCarousel(): Promise<HomepageCarouselCard[]> {
  */
 export async function getGameCatalogue(
   query: GameCatalogueQuery = {},
+  options?: AdapterOptions,
 ): Promise<GameCatalogueResponse> {
   const params: Record<string, string> = {};
   if (query.q !== undefined && query.q !== "") params.q = query.q;
@@ -139,6 +155,7 @@ export async function getGameCatalogue(
 
   const result = await getJSON<GameCatalogueResponse>("/api/v1/games/", {
     params,
+    signal: options?.signal,
   });
   if (result.ok) {
     if ("data" in result) return result.data;
@@ -153,9 +170,12 @@ export async function getGameCatalogue(
  * Django owns eligibility and effective-artwork resolution; the frontend never
  * downloads catalogue pages to reconstruct this.  Deterministic order.
  */
-export async function getGameSearchIndex(): Promise<GameSearchIndexItem[]> {
+export async function getGameSearchIndex(
+  options?: AdapterOptions,
+): Promise<GameSearchIndexItem[]> {
   const result = await getJSON<GameSearchIndexResponse>(
     "/api/v1/games/search-index",
+    { signal: options?.signal },
   );
   if (result.ok) {
     if ("data" in result) return result.data.games;
@@ -173,6 +193,7 @@ export async function getGameSearchIndex(): Promise<GameSearchIndexItem[]> {
  */
 export async function getGameRankings(
   query: RankingQuery = {},
+  options?: AdapterOptions,
 ): Promise<RankingResponse> {
   const params: Record<string, string> = {};
   if (query.profile !== undefined) params.profile = query.profile;
@@ -183,6 +204,7 @@ export async function getGameRankings(
 
   const result = await getJSON<RankingResponse>("/api/v1/rankings/", {
     params,
+    signal: options?.signal,
   });
   if (result.ok) {
     if ("data" in result) return result.data;

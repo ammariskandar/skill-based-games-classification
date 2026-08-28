@@ -1,3 +1,5 @@
+import type { ApiErrorDto } from "../../../types/api";
+
 /** Generic typed API result types.  Callers narrow on `result.ok` and
  * `"data" in result` to distinguish success-with-data from no-content. */
 
@@ -19,6 +21,8 @@ export interface ApiFailure {
   ok: false;
   error: ApiError;
   status?: number;
+  /** Structured Django Ninja error envelope, when the upstream returned one. */
+  apiError?: ApiErrorDto;
 }
 
 /** Discriminated union.  204 responses are `ApiNoContent`. */

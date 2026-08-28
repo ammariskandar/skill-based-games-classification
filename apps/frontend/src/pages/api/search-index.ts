@@ -12,9 +12,9 @@ import { getGameSearchIndex } from "../../lib/server/api";
  */
 export const prerender = false;
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
   try {
-    const games = await getGameSearchIndex();
+    const games = await getGameSearchIndex({ signal: request.signal });
     return new Response(JSON.stringify({ games }), {
       status: 200,
       headers: {

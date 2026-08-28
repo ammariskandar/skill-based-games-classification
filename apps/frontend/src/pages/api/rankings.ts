@@ -22,7 +22,7 @@ export const prerender = false;
 const DEFAULT_PAGE_SIZE = 5;
 const MAX_PAGE_SIZE = 50;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   const state = parseRankingsState(url.searchParams);
   const pageSize = normalizePageSize(
     url.searchParams.get("page_size"),
@@ -31,13 +31,16 @@ export const GET: APIRoute = async ({ url }) => {
   );
 
   try {
-    const data = await getGameRankings({
-      profile: state.profile,
-      dimension: state.dimension,
-      direction: state.direction,
-      page: state.page,
-      pageSize,
-    });
+    const data = await getGameRankings(
+      {
+        profile: state.profile,
+        dimension: state.dimension,
+        direction: state.direction,
+        page: state.page,
+        pageSize,
+      },
+      { signal: request.signal },
+    );
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: {

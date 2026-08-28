@@ -15,6 +15,7 @@
  */
 
 import { apiError, bodySerializationError } from "./errors";
+import type { ApiErrorDto } from "../../../types/api";
 import type {
   ApiFailure,
   ApiNoContent,
@@ -331,12 +332,44 @@ async function request<T>(
 
   // ── 9. handle non-2xx ──
   if (!response.ok) {
-    await drainBody(response);
+    let apiErrorDto: ApiErrorDto | undefined;
+    const contentType = response.headers.get("content-type");
+
+    if (contentType && isJsonMediaType(contentType)) {
+      try {
+        const text = await response.text();
+        const errorJson = JSON.parse(text) as unknown;
+        if (
+          errorJson &&
+          typeof errorJson === "object" &&
+          "error" in errorJson &&
+          errorJson.error &&
+          typeof errorJson.error === "object" &&
+          "code" in errorJson.error &&
+          "message" in errorJson.error &&
+          "details" in errorJson.error &&
+          Array.isArray(errorJson.error.details)
+        ) {
+          apiErrorDto = errorJson.error as ApiErrorDto;
+        }
+      } catch {
+        // Malformed or non-consumable JSON body — fall back to the generic
+        // HTTP_ERROR and leave the structured envelope unset.
+      }
+    } else {
+      await drainBody(response);
+    }
+
     cleanup();
+
+    const message =
+      apiErrorDto?.message ?? `Server returned ${response.status}`;
+
     return {
       ok: false,
       status: response.status,
-      error: apiError("HTTP_ERROR", `Server returned ${response.status}`),
+      error: apiError("HTTP_ERROR", message),
+      apiError: apiErrorDto,
     };
   }
 

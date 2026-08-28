@@ -6,6 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ApiFailure } from "../types";
+
 function setEnv(value: string) {
   vi.stubEnv("DJANGO_API_URL", value);
 }
@@ -155,5 +157,83 @@ describe("getGameDetail", () => {
     await expect(getGameDetail("portal-2")).rejects.toBeInstanceOf(
       BackendApiError,
     );
+  });
+});
+
+describe("BackendApiError", () => {
+  it("exposes the structured apiError from its failure", async () => {
+    const { BackendApiError } = await importGames();
+    const apiError = {
+      code: "VALIDATION_ERROR",
+      message: "Invalid sort",
+      details: [],
+    };
+    const failure: ApiFailure = {
+      ok: false,
+      status: 422,
+      error: { code: "HTTP_ERROR", message: "Invalid sort" },
+      apiError,
+    };
+
+    const error = new BackendApiError("Invalid sort", failure);
+    expect(error.failure).toBe(failure);
+    expect(error.apiError).toEqual(apiError);
+  });
+
+  it("returns undefined apiError when there is no failure", async () => {
+    const { BackendApiError } = await importGames();
+    expect(new BackendApiError("boom").apiError).toBeUndefined();
+  });
+});
+
+describe("adapter signal forwarding", () => {
+  beforeEach(() => {
+    setEnv("http://backend.test");
+  });
+
+  async function assertSignalAborts(
+    invoke: (signal: AbortSignal) => Promise<unknown>,
+  ): Promise<void> {
+    const controller = new AbortController();
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pending = invoke(controller.signal);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({
+      name: "BackendApiError",
+      failure: { error: { code: "ABORTED" } },
+    });
+  }
+
+  it("forwards the caller signal through getGameDetail", async () => {
+    const { getGameDetail } = await importGames();
+    await assertSignalAborts((signal) => getGameDetail("hades", { signal }));
+  });
+
+  it("forwards the caller signal through getGameCatalogue", async () => {
+    const { getGameCatalogue } = await importGames();
+    await assertSignalAborts((signal) => getGameCatalogue({}, { signal }));
+  });
+
+  it("forwards the caller signal through getGameRankings", async () => {
+    const { getGameRankings } = await importGames();
+    await assertSignalAborts((signal) => getGameRankings({}, { signal }));
+  });
+
+  it("forwards the caller signal through getGameSearchIndex", async () => {
+    const { getGameSearchIndex } = await importGames();
+    await assertSignalAborts((signal) => getGameSearchIndex({ signal }));
   });
 });
