@@ -1203,4 +1203,161 @@ describe("API transport", () => {
       expect(removeSpy).toHaveBeenCalled();
     });
   });
+
+  // ──────────────────────────────────────────────────
+  //  HEADER GUARD (SBGC-169)
+  // ──────────────────────────────────────────────────
+
+  describe("header guard", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("returns REQUEST_SERIALIZATION for an invalid header name without calling fetch", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", {
+        headers: { "Bad Header": "value" },
+      });
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("REQUEST_SERIALIZATION");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("returns REQUEST_SERIALIZATION for an invalid header value and cleans up", async () => {
+      const controller = new AbortController();
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", {
+        signal: controller.signal,
+        headers: { "X-Test": "bad\0value" },
+      });
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("REQUEST_SERIALIZATION");
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(clearSpy).toHaveBeenCalled();
+      expect(removeSpy).toHaveBeenCalled();
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  BODY DRAIN — TIMEOUT & CALLER ABORT (SBGC-169)
+  // ──────────────────────────────────────────────────
+
+  describe("body drain — timeout and caller abort", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    function hangingRedirectResponse(signal?: AbortSignal | null): Response {
+      return new Response(
+        new ReadableStream({
+          start(ctrl) {
+            if (signal) {
+              signal.addEventListener(
+                "abort",
+                () => {
+                  try {
+                    ctrl.error(new DOMException("Aborted", "AbortError"));
+                  } catch {
+                    /* stream may already be errored or closed */
+                  }
+                },
+                { once: true },
+              );
+            }
+          },
+        }),
+        { status: 301 },
+      );
+    }
+
+    it("times out while draining a redirect body", async () => {
+      const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
+        Promise.resolve(hangingRedirectResponse(init?.signal)),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { timeoutMs: 1 });
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("TIMEOUT");
+    });
+
+    it("aborts while draining a redirect body", async () => {
+      const controller = new AbortController();
+      const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
+        Promise.resolve(hangingRedirectResponse(init?.signal)),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const promise = getJSON("/api/test", {
+        signal: controller.signal,
+        timeoutMs: 1000,
+      });
+      controller.abort();
+      const r = await promise;
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("ABORTED");
+    });
+  });
+
+  // ──────────────────────────────────────────────────
+  //  CLEANUP — TIMER CLEARING (SBGC-169)
+  // ──────────────────────────────────────────────────
+
+  describe("cleanup — timer clearing", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("clears the timeout timer and removes the listener after a successful response", async () => {
+      const controller = new AbortController();
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+      stubFetch(jsonResponse({ ok: true }));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test", { signal: controller.signal });
+      expect(r.ok).toBe(true);
+      expect(clearSpy).toHaveBeenCalled();
+      expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it("clears the timeout timer and removes the listener after a thrown drain error", async () => {
+      const controller = new AbortController();
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+      const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream({
+              start(ctrl) {
+                init?.signal?.addEventListener(
+                  "abort",
+                  () => {
+                    try {
+                      ctrl.error(new DOMException("Aborted", "AbortError"));
+                    } catch {
+                      /* stream may already be errored or closed */
+                    }
+                  },
+                  { once: true },
+                );
+              },
+            }),
+            { status: 301 },
+          ),
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { getJSON } = await importClient();
+      const promise = getJSON("/api/test", {
+        signal: controller.signal,
+        timeoutMs: 1000,
+      });
+      controller.abort();
+      const r = await promise;
+      expect(r.ok).toBe(false);
+      expect((r as ApiFailure).error.code).toBe("ABORTED");
+      expect(clearSpy).toHaveBeenCalled();
+      expect(removeSpy).toHaveBeenCalled();
+    });
+  });
 });
