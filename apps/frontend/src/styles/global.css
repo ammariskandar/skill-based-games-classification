@@ -77,3 +77,220 @@ html {
     --gutter: 2rem;
   }
 }
+
+/* ── Radar chart (SBGC-85/86/87) ──
+   Global (not component-scoped) so the rankings detail pane can re-render
+   the chart client-side on dynamic game selection without losing styling. */
+.radar-chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: 5%;
+}
+
+.radar-chart__svg {
+  display: block;
+  width: 75%;
+  aspect-ratio: 1 / 1;
+  flex: none;
+}
+
+.radar-chart--unavailable {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.radar-chart__unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.radar-chart__unavailable svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-dim);
+}
+
+.radar-grid-circle {
+  fill: none;
+  stroke: var(--color-chart-grid);
+  stroke-width: 0.5;
+  stroke-dasharray: 2 4;
+}
+
+.radar-axis-label {
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 500;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.radar-axis-label--active {
+  font-weight: 700;
+  opacity: 1;
+}
+
+.radar-polygon {
+  fill: url(#radar-fill);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition:
+    fill-opacity 0.2s ease,
+    stroke 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+.radar-polygon--active {
+  fill-opacity: 0.35;
+  stroke: var(--color-chart-fg);
+  stroke-width: 2.5;
+  filter: url(#radar-glow);
+}
+
+.radar-polygon--inactive {
+  fill-opacity: 0.05;
+  stroke: var(--color-dim);
+  stroke-width: 1.5;
+  filter: none;
+}
+
+.radar-vertex-node {
+  stroke: var(--color-chart-bg);
+  stroke-width: 1.5;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+
+.radar-vertex-node--active {
+  opacity: 1;
+}
+
+.radar-vertex-node:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 3px;
+}
+
+.radar-vertex-node--hovered {
+  filter: url(#radar-glow);
+}
+
+.radar-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  max-width: 16rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-2);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.radar-tooltip-header {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.radar-tooltip-value {
+  display: block;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+.radar-tooltip-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.radar-toggle-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.radar-toggle {
+  position: relative;
+  width: 2.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.radar-toggle__track {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.radar-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--color-muted);
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.radar-toggle[aria-checked="true"] {
+  background: var(--color-blue);
+}
+
+.radar-toggle[aria-checked="true"] .radar-toggle__thumb {
+  transform: translateX(1rem);
+  background: var(--color-text);
+}
+
+.radar-toggle:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+.radar-toggle__label {
+  font-size: 0.6875rem;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-polygon,
+  .radar-vertex-node,
+  .radar-axis-label,
+  .radar-toggle,
+  .radar-toggle__thumb,
+  .radar-toggle__label,
+  .radar-tooltip {
+    transition: none;
+  }
+}

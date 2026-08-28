@@ -8,6 +8,8 @@ import {
   type GameDetailGame,
   type HomepageCarouselCard,
 } from "../lib/server/api";
+import { presentClassification } from "../lib/classification-presentation";
+import type { SkillProfileVector } from "../lib/skill-dimensions";
 
 // The homepage depends on live persisted Game data: render on demand, never
 // statically, so the carousel random selection happens per request.
@@ -17,7 +19,13 @@ type CarouselState =
   { kind: "ready"; games: HomepageCarouselCard[] } | { kind: "unavailable" };
 
 type ShowcaseState =
-  { kind: "ready"; game: GameDetailGame } | { kind: "unavailable" };
+  | {
+      kind: "ready";
+      game: GameDetailGame;
+      challenge: SkillProfileVector | null;
+      reward: SkillProfileVector | null;
+    }
+  | { kind: "unavailable" };
 
 async function fetchCarousel(): Promise<CarouselState> {
   try {
@@ -30,7 +38,13 @@ async function fetchCarousel(): Promise<CarouselState> {
 async function fetchShowcase(): Promise<ShowcaseState> {
   try {
     const detail = await getGameDetail("hades");
-    return { kind: "ready", game: detail.game };
+    const presentation = presentClassification(detail.classification, "hades");
+    return {
+      kind: "ready",
+      game: detail.game,
+      challenge: presentation.kind === "ready" ? presentation.challenge : null,
+      reward: presentation.kind === "ready" ? presentation.reward : null,
+    };
   } catch {
     return { kind: "unavailable" };
   }
@@ -56,5 +70,9 @@ const [carousel, showcase] = await Promise.all([
     />
   </div>
 
-  <HomepageShowcase game={showcase.kind === "ready" ? showcase.game : null} />
+  <HomepageShowcase
+    game={showcase.kind === "ready" ? showcase.game : null}
+    challenge={showcase.kind === "ready" ? showcase.challenge : null}
+    reward={showcase.kind === "ready" ? showcase.reward : null}
+  />
 </BaseLayout>

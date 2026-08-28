@@ -20,6 +20,8 @@ import {
   getGameRankings,
   type RankingResponse,
 } from "../lib/server/api";
+import { presentClassification } from "../lib/classification-presentation";
+import type { SkillProfileVector } from "../lib/skill-dimensions";
 
 // Rankings depends on live persisted data: render on demand, never statically.
 export const prerender = false;
@@ -35,6 +37,8 @@ type PageState =
       kind: "ready";
       ranking: RankingResponse;
       selectedGame: { slug: string; name: string } | null;
+      selectedChallenge: SkillProfileVector | null;
+      selectedReward: SkillProfileVector | null;
     }
   | { kind: "service-error" };
 
@@ -69,7 +73,31 @@ try {
     resolvedDetail,
   );
 
-  pageState = { kind: "ready", ranking, selectedGame };
+  let selectedChallenge: SkillProfileVector | null = null;
+  let selectedReward: SkillProfileVector | null = null;
+  if (selectedGame) {
+    try {
+      const detail = await getGameDetail(selectedGame.slug);
+      const selectedPresentation = presentClassification(
+        detail.classification,
+        selectedGame.slug,
+      );
+      if (selectedPresentation.kind === "ready") {
+        selectedChallenge = selectedPresentation.challenge;
+        selectedReward = selectedPresentation.reward;
+      }
+    } catch {
+      // Leave unavailable (null) — the radar renders its honest empty state.
+    }
+  }
+
+  pageState = {
+    kind: "ready",
+    ranking,
+    selectedGame,
+    selectedChallenge,
+    selectedReward,
+  };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service
   // is unavailable — never "no games ranked".
@@ -79,6 +107,10 @@ try {
 
 const ranking = pageState.kind === "ready" ? pageState.ranking : null;
 const selectedGame = pageState.kind === "ready" ? pageState.selectedGame : null;
+const selectedChallenge =
+  pageState.kind === "ready" ? pageState.selectedChallenge : null;
+const selectedReward =
+  pageState.kind === "ready" ? pageState.selectedReward : null;
 const games = ranking?.results ?? [];
 const count = ranking?.count ?? 0;
 const totalPages = ranking?.total_pages ?? 0;
@@ -167,7 +199,11 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         </div>
 
         <section class="rankings__detail" data-rankings-detail-pane>
-          <RankingsDetailPane selectedGame={selectedGame} />
+          <RankingsDetailPane
+            selectedGame={selectedGame}
+            challenge={selectedChallenge}
+            reward={selectedReward}
+          />
         </section>
       </div>
     )
@@ -185,6 +221,9 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
   } from "../lib/rankings-state";
   import type { RankingProfile } from "../lib/rankings-state";
   import { createRankingsLoader } from "../lib/rankings-load";
+  import { buildRadarHtml } from "../lib/radar-render";
+  import { presentClassification } from "../lib/classification-presentation";
+  import { initRadarChart } from "../lib/radar-controller";
 
   (() => {
     const root = document.querySelector<HTMLElement>("[data-rankings]");
@@ -280,7 +319,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       const href = `/games/${encodeURIComponent(game.slug)}`;
       return `<div class="rankings-detail" data-rankings-detail><h2 class="rankings-detail__heading">${escapeHtml(
         game.name,
-      )}</h2><div class="rankings-detail__upper" aria-hidden="true"><div class="rankings-detail__region"><span class="rankings-detail__region-label">Radar</span></div><div class="rankings-detail__region"><span class="rankings-detail__region-label">Dominant Type</span></div></div><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__region rankings-detail__region--grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
+      )}</h2><div class="rankings-detail__upper"><div class="rankings-detail__region rankings-detail__region--radar" data-radar-region><span class="rankings-detail__region-label">Radar</span></div><div class="rankings-detail__region" aria-hidden="true"><span class="rankings-detail__region-label">Dominant Type</span></div></div><div class="rankings-detail__actions"><a href="${href}" class="rankings-detail__view" data-rankings-view>View Game <span aria-hidden="true">&gt;&gt;</span></a></div><div class="rankings-detail__region rankings-detail__region--grow" aria-hidden="true"><span class="rankings-detail__region-label">Suggested Games</span></div></div>`;
     };
 
     // Present the skeleton only after a short delay so a fast transition never
@@ -305,6 +344,47 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
     const renderDetail = (): void => {
       detailPane.innerHTML = detailHtml(selectedGame);
+    };
+
+    let radarRequestId = 0;
+
+    const loadRadar = async (game: {
+      slug: string;
+      name: string;
+    }): Promise<void> => {
+      const requestId = ++radarRequestId;
+      const region = detailPane.querySelector<HTMLElement>(
+        "[data-radar-region]",
+      );
+      if (!region) return;
+
+      try {
+        const response = await fetch(
+          `/api/games/${encodeURIComponent(game.slug)}`,
+        );
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          classification: unknown;
+        };
+        if (requestId !== radarRequestId) return;
+
+        const presentation = presentClassification(
+          data.classification,
+          game.slug,
+        );
+        if (presentation.kind !== "ready") return;
+
+        region.innerHTML = buildRadarHtml({
+          challenge: presentation.challenge,
+          reward: presentation.reward,
+          gameTitle: game.name,
+        });
+
+        const chart = region.querySelector<HTMLElement>("[data-radar-chart]");
+        if (chart) initRadarChart(chart);
+      } catch {
+        // Keep the "Radar" placeholder — unclassified or fetch failure.
+      }
     };
 
     const renderControls = (current: typeof state): void => {
@@ -490,6 +570,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       selectedGame = { slug, name };
       state = { ...state, game: slug };
       renderDetail();
+      void loadRadar(selectedGame);
       for (const el of list.querySelectorAll<HTMLElement>(
         "[data-ranking-row]",
       )) {

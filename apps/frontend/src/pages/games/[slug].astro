@@ -9,6 +9,7 @@ import {
   getGameDetail,
   type GameDetailResponse,
 } from "../../lib/server/api/games";
+import { presentClassification } from "../../lib/classification-presentation";
 import {
   buildCanonicalUrl,
   buildVideoGameJsonLd,
@@ -43,6 +44,10 @@ try {
 const game = state.kind === "game" ? state.detail.game : null;
 const classification =
   state.kind === "game" ? state.detail.classification : null;
+const presentation = presentClassification(classification, slug);
+const challengeVector =
+  presentation.kind === "ready" ? presentation.challenge : null;
+const rewardVector = presentation.kind === "ready" ? presentation.reward : null;
 const title = game ? game.name : "Something went wrong";
 
 const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
@@ -120,6 +125,8 @@ const robots = game ? undefined : "noindex, nofollow";
             source={game.source}
             libraryHeroUrl={game.library_hero_url}
             libraryCapsuleUrl={game.library_capsule_url}
+            challenge={challengeVector}
+            reward={rewardVector}
           />
 
           <div class="space-y-8">
