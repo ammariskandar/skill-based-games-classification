@@ -147,55 +147,55 @@ export const DOMINANT_COPY: Record<
   unified: {
     micro: {
       leadLabel: "Summary",
-      lead: "Reflex and reaction games — the fun is in split-second execution.",
+      lead: "Reflex, reaction times tested, rewards are the small things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Reading the moment and acting instantly: flicks, frame-perfect parries, rhythm timing, drift control.",
+          text: "Reading the moment and acting instantly: flicks, precise tracing, frame-perfect parries and dodges, rhythm timing, drift control.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: "Instant payoff — hitmarkers, killstreak popups, MVP badges, Play of the Game highlights.",
+          text: "Instant payoff within the same game: satisfying headshots, killstreak popups, MVP badges, Play of the Game highlights.",
         },
       ],
     },
     macro: {
       leadLabel: "Summary",
-      lead: "Strategy and planning games — the fun is in out-managing your opponent.",
+      lead: "Strategy, planning tested, rewards are the outwardly visible things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Seeing the whole board: economy, builds, cooldowns, map-wide positioning.",
+          text: "Seeing the whole board: economy, builds, synergy, cooldowns, map-wide positioning, game state and objective progress.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: "Lasting payoff — climbing ranks, rare skins, achievements, finishing a long progression.",
+          text: "Lasting payoff: climbing ranks, unlocking rare skins, achievements, achieving a world record pace.",
         },
       ],
     },
     mystiko: {
       leadLabel: "Summary",
-      lead: "Mind-game games — the fun is in figuring out what you can't see.",
+      lead: "Mind-games, reads, counterplays tested, rewards are the invisible things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Reading intent: predicting rotations through fog-of-war, seeing bluffs, deducing threats.",
+          text: "Reading intent, predicting outcomes: predicting opponent rotations and positions, seeing bluffs, deducing threats, preparing counters.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: "The rush of being right — a correct blind read, a trap that springs, hidden lore, secrets.",
+          text: "The rush that only you feel: A correct read, a plan that works, hidden lore, sense of wanderlust, secret endings.",
         },
       ],
     },
   },
   challenge: {
     micro: {
-      leadLabel: "Skill Focus",
-      lead: "Hands — speed, precision, reflexes.",
+      leadLabel: "Summary",
+      lead: "Reflex, reaction times and accuracy are tested.",
       sections: [
         {
           label: "What It Tests",
-          text: "How fast and accurate your inputs are when it matters.",
+          text: "Reading the moment and acting instantly: flicks, precise tracing, frame-perfect parries and dodges, rhythm timing, drift control.",
         },
         {
           label: "Examples in Action",
@@ -204,42 +204,42 @@ export const DOMINANT_COPY: Record<
       ],
     },
     macro: {
-      leadLabel: "Skill Focus",
-      lead: "Mind — systems, resources, long-term plans.",
+      leadLabel: "Summary",
+      lead: "Strategy, planning, management and leadership are tested.",
       sections: [
         {
           label: "What It Tests",
-          text: "How well you see the path to victory and manage trade-offs.",
+          text: "Seeing the whole board: economy, builds, synergy, cooldowns, map-wide positioning, game state and objective progress.",
         },
         {
           label: "Examples in Action",
-          text: "RTS economy vs. army, MOBA lane control, build crafting, factory logistics.",
+          text: "RTS economy vs. army, MOBA lane control, site setup, map knowledge, cooldown timings, factory logistics.",
         },
       ],
     },
     mystiko: {
-      leadLabel: "Skill Focus",
-      lead: "Reads — deduction and game sense under uncertainty.",
+      leadLabel: "Summary",
+      lead: "Mind-games, reads, counterplays and prediction skills are tested.",
       sections: [
         {
           label: "What It Tests",
-          text: "How well you predict what you can't see — play the player, not just the game.",
+          text: "Reading intent, predicting outcomes: predicting opponent rotations and positions, seeing bluffs, deducing threats, preparing counters.",
         },
         {
           label: "Examples in Action",
-          text: "Skillshots into unwarded brush, calling bluffs, finding the culprit, counter-building blind.",
+          text: "Skillshots into unwarded bushes, calling bluffs, finding the culprit, counter-building blind.",
         },
       ],
     },
   },
   reward: {
     micro: {
-      leadLabel: "Reward Type",
-      lead: "Instant, tactile recognition.",
+      leadLabel: "Summary",
+      lead: "Players are rewarded with the small things.",
       sections: [
         {
           label: "How It Satisfies",
-          text: "Every action gets a satisfying pop — you feel good the moment you do it.",
+          text: "Instant payoff within the same game that are often localized and session-specific.",
         },
         {
           label: "Examples in Action",
@@ -248,26 +248,26 @@ export const DOMINANT_COPY: Record<
       ],
     },
     macro: {
-      leadLabel: "Reward Type",
-      lead: "Long-term, outward prestige.",
+      leadLabel: "Summary",
+      lead: "Players are rewarded with the outwardly visible things.",
       sections: [
         {
           label: "How It Satisfies",
-          text: "You can show off what you've built — proof of dedication.",
+          text: "Lasting payoff that is outwardly visible to all others who either play the game or are friends.",
         },
         {
           label: "Examples in Action",
-          text: "Rank borders, rare cosmetics, 100% achievements, battle-pass levels.",
+          text: "Rank borders, rare cosmetics, 100% achievements, player levels.",
         },
       ],
     },
     mystiko: {
-      leadLabel: "Reward Type",
-      lead: "Subtle, cerebral fulfillment.",
+      leadLabel: "Summary",
+      lead: "Players are rewarded with the invisible things.",
       sections: [
         {
           label: "How It Satisfies",
-          text: "The quiet high of outsmarting someone — an idea that worked.",
+          text: "The rush that only you feel, hard to explain and others might not see or understand.",
         },
         {
           label: "Examples in Action",

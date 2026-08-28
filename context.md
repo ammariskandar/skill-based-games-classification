@@ -2572,19 +2572,29 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 ## 2026-08-28 — SBGC-208 dominant dimension badge + rankings detail pane reorg
 
+- The radar's Challenge/Reward toggle is profile-driven: it only shows on the
+  Unified tab.  On Challenge/Reward tabs the radar is locked to that profile
+  (the toggle is hidden, and the active layer is forced via a new
+  `RadarChartHandle.setProfile()` returned by `initRadarChart`); returning to
+  Unified only unhides the toggle — no auto-toggle and no reset, so the user's
+  last toggle choice persists.  The toggle stays visible and interactive on
+  the game-detail page (no profile context there).
 - The dominant-type cell is now a real content card: badge on top (pill ~70%
-  larger than the original), and below it a hard-coded 9-state explainer
+  larger than the original), and below it the hard-coded 9-state explainer
   (`DOMINANT_COPY` in `src/lib/classification-presentation.ts`) covering all
-  (Unified/Challenge/Reward × Micro/Mystiko/Macro) combinations.  Unified
-  states read Summary + "The Skill Tested (Challenge)" + "The Fulfillment
-  (Reward)"; Challenge states read Skill Focus + What It Tests + Examples in
-  Action; Reward states read Reward Type + How It Satisfies + Examples in
-  Action.  The lead line (Summary/Skill Focus/Reward Type) renders a step
-  larger than the supporting sections; the card left-aligns the copy for
-  readability, keeps the radar square on the left (grid `minmax(0,1fr)`
-  columns, `align-items: start`), and shows truthful pills with no copy for
-  ties and unclassified games.  SSR and client-side re-render share
-  `dominantRegionHtml()` so the runtime DOM cannot drift from server markup.
+  (Unified/Challenge/Reward × Micro/Mystiko/Macro) combinations.  Copy is the
+  owner-authored text (short, example-first).  Unified states read Summary +
+  "The Skill Tested (Challenge)" + "The Fulfillment (Reward)"; Challenge and
+  Reward states share the same "Summary" lead label plus two supporting
+  sections.  The lead line renders a step larger than the supporting sections
+  (1.125rem vs 0.75rem); the card left-aligns the copy for readability, keeps
+  the radar square on the left (grid `minmax(0,1fr)` columns, `align-items:
+  start`), and shows truthful pills with no copy for ties and unclassified
+  games.  SSR and client-side re-render share `dominantRegionHtml()` so the
+  runtime DOM cannot drift from server markup.
+- Suggested Games placeholder: slightly shorter (`min-height` 12rem → 10rem),
+  no longer flex-grows to fill the pane, and separated from the radar/dominant
+  card by a larger `clamp(1.5rem, 2vw, 2rem)` gap.
 - Rankings detail pane reorganized: the "View Game" action button now sits
   directly below the selected-game header (above the classification display);
   the placeholder "Dominant Type" shell is replaced by a real dominant

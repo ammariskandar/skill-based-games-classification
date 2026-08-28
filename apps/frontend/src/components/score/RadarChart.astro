@@ -39,7 +39,7 @@ const html = buildRadarHtml({
       .forEach((el) => {
         if (el.hasAttribute("data-radar-initialized")) return;
         el.setAttribute("data-radar-initialized", "");
-        cleanups.push(initRadarChart(el));
+        cleanups.push(initRadarChart(el).destroy);
       });
   }
 

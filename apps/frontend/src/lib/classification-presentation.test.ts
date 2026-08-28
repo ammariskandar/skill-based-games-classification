@@ -163,7 +163,9 @@ describe("dominantRegionHtml", () => {
     expect(html).toContain("rankings-detail__dominant-badge--micro");
     expect(html).toContain("rankings-detail__dominant-copy");
     expect(html).toContain("rankings-detail__dominant-lead");
-    expect(html).toContain("Reflex and reaction games");
+    expect(html).toContain(
+      "Reflex, reaction times tested, rewards are the small things.",
+    );
     expect(html).toContain("The Skill Tested (Challenge)");
     expect(html).toContain("The Fulfillment (Reward)");
   });
@@ -172,11 +174,15 @@ describe("dominantRegionHtml", () => {
     const unified = dominantRegionHtml("unified", "micro", true);
     const challenge = dominantRegionHtml("challenge", "micro", true);
     const reward = dominantRegionHtml("reward", "micro", true);
-    expect(challenge).toContain("Skill Focus");
-    expect(challenge).toContain("Hands — speed, precision, reflexes");
-    expect(reward).toContain("Reward Type");
-    expect(reward).toContain("Instant, tactile recognition");
-    expect(unified).not.toContain("Hands — speed, precision, reflexes");
+    expect(challenge).toContain("Summary");
+    expect(challenge).toContain(
+      "Reflex, reaction times and accuracy are tested",
+    );
+    expect(reward).toContain("Summary");
+    expect(reward).toContain("Players are rewarded with the small things");
+    expect(unified).not.toContain(
+      "Reflex, reaction times and accuracy are tested",
+    );
   });
 
   it("omits the copy block for tie and unclassified states", () => {

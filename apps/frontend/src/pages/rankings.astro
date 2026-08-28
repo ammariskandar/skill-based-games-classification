@@ -236,7 +236,10 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
     dominantRegionHtml,
     presentClassification,
   } from "../lib/classification-presentation";
-  import { initRadarChart } from "../lib/radar-controller";
+  import {
+    initRadarChart,
+    type RadarChartHandle,
+  } from "../lib/radar-controller";
   import type { SkillProfileVector } from "../lib/skill-dimensions";
 
   (() => {
@@ -406,10 +409,27 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
 
     const renderDetail = (): void => {
       lastClassification = null;
+      radarHandle = null;
       detailPane.innerHTML = detailHtml(selectedGame);
     };
 
     let radarRequestId = 0;
+    let radarHandle: RadarChartHandle | null = null;
+
+    // The radar's Challenge/Reward toggle only shows on the Unified profile;
+    // on the Challenge/Reward tabs the active layer is forced to that profile
+    // and the toggle is hidden.  Returning to Unified only unhides — no
+    // auto-toggle and no reset, so the user's last toggle choice persists.
+    const applyRadarProfile = (profile: RankingProfile): void => {
+      const region = detailPane.querySelector<HTMLElement>(
+        "[data-radar-region]",
+      );
+      if (!region) return;
+      region.classList.toggle("radar-toggle-hidden", profile !== "unified");
+      if (profile !== "unified" && radarHandle) {
+        radarHandle.setProfile(profile);
+      }
+    };
 
     const loadRadar = async (
       game: { slug: string; name: string },
@@ -450,10 +470,12 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
           challenge: presentation.challenge,
           reward: presentation.reward,
           gameTitle: game.name,
+          initialProfile: profile === "unified" ? undefined : profile,
         });
 
         const chart = region.querySelector<HTMLElement>("[data-radar-chart]");
-        if (chart) initRadarChart(chart);
+        if (chart) radarHandle = initRadarChart(chart);
+        applyRadarProfile(profile);
         renderDominant(profile);
       } catch {
         // Keep the "Radar" placeholder — unclassified or fetch failure.
@@ -595,6 +617,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
         } else if (selectedGame) {
           void loadRadar(selectedGame, profile as RankingProfile);
         }
+        applyRadarProfile(profile as RankingProfile);
         void load(
           { ...state, profile: profile as RankingProfile, page: 1 },
           pageSize,

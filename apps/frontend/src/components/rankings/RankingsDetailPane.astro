@@ -53,7 +53,12 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
 
       <div class="rankings-detail__upper">
         <div
-          class="rankings-detail__region rankings-detail__region--radar"
+          class:list={[
+            "rankings-detail__region rankings-detail__region--radar",
+            // The Challenge/Reward toggle only shows on the Unified tab; on the
+            // Challenge/Reward tabs the radar is locked to that profile.
+            profile !== "unified" && "radar-toggle-hidden",
+          ]}
           data-radar-region
         >
           {hasRadar ? (
@@ -61,6 +66,7 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
               challenge={challenge}
               reward={reward}
               gameTitle={selectedGame.name}
+              initialProfile={profile === "unified" ? undefined : profile}
             />
           ) : (
             <span class="rankings-detail__region-label">Radar</span>
@@ -145,6 +151,12 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     border: none;
     background: transparent;
     padding: 0;
+  }
+
+  /* The Challenge/Reward toggle exists in the markup on every tab (so it can be
+     unhidden without re-rendering) but only shows on the Unified profile. */
+  .rankings-detail__region--radar.radar-toggle-hidden .radar-toggle-group {
+    display: none;
   }
 
   .rankings-detail__region--dominant {
@@ -271,14 +283,16 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     border-radius: 9999px;
   }
 
-  /* Truthful empty shell for the future similar-games work — no fake recs. */
+  /* Truthful empty shell for the future similar-games work — no fake recs.
+     Shorter than the classification block above, with extra breathing room
+     separating it from the radar + dominant card. */
   .rankings-detail__grow {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 1 auto;
-    min-height: 12rem;
-    margin-top: clamp(0.75rem, 1.2vw, 1.25rem);
+    flex: 0 0 auto;
+    min-height: 10rem;
+    margin-top: clamp(1.5rem, 2vw, 2rem);
     border: 1px dashed var(--color-border-2);
     border-radius: var(--radius-md);
     background: var(--color-surface);

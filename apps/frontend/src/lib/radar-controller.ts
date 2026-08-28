@@ -21,6 +21,18 @@ const BASE_NODE_RADIUS = 4;
 const HOVERED_NODE_RADIUS = 7;
 
 /**
+ * Live handle to an initialized radar chart (SBGC-208): lets the rankings
+ * page force the active profile layer when the toggle is hidden (challenge/
+ * reward tabs) and detach all listeners on teardown.
+ */
+export interface RadarChartHandle {
+  /** Force the active profile layer, exactly as if the toggle was set. */
+  setProfile(profile: SkillProfileKind): void;
+  /** Detach listeners and cancel the appear animation. */
+  destroy(): void;
+}
+
+/**
  * Pure reduced-motion check, injectable for Node/Vitest. Returns `true` when
  * the caller's media query matches `prefers-reduced-motion: reduce`.
  */
@@ -30,7 +42,7 @@ export function prefersReducedMotion(
   return matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function initRadarChart(container: HTMLElement): () => void {
+export function initRadarChart(container: HTMLElement): RadarChartHandle {
   const size = Number(container.dataset.size ?? "320");
   const initial = (container.dataset.initialProfile ??
     "challenge") as SkillProfileKind;
@@ -253,19 +265,22 @@ export function initRadarChart(container: HTMLElement): () => void {
     node.addEventListener("blur", onNodeHide);
   }
 
-  return () => {
-    disposed = true;
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-    }
-    if (toggle) {
-      toggle.removeEventListener("click", onToggle);
-    }
-    for (const node of nodes) {
-      node.removeEventListener("mouseenter", onNodeShow);
-      node.removeEventListener("mouseleave", onNodeHide);
-      node.removeEventListener("focus", onNodeShow);
-      node.removeEventListener("blur", onNodeHide);
-    }
+  return {
+    setProfile: setActive,
+    destroy: () => {
+      disposed = true;
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+      if (toggle) {
+        toggle.removeEventListener("click", onToggle);
+      }
+      for (const node of nodes) {
+        node.removeEventListener("mouseenter", onNodeShow);
+        node.removeEventListener("mouseleave", onNodeHide);
+        node.removeEventListener("focus", onNodeShow);
+        node.removeEventListener("blur", onNodeHide);
+      }
+    },
   };
 }
