@@ -199,6 +199,28 @@ describe("dominantRegionHtml", () => {
       expect(html).not.toContain("rankings-detail__dominant-copy");
     }
   });
+
+  it("renders the matching dimension icon above the badge", () => {
+    const micro = dominantRegionHtml("unified", "micro", true);
+    expect(micro).toContain('src="/icons/hunter-icon.png"');
+    const mystiko = dominantRegionHtml("unified", "mystiko", true);
+    expect(mystiko).toContain('src="/icons/eye-blind-icon.png"');
+    const macro = dominantRegionHtml("challenge", "macro", true);
+    expect(macro).toContain('src="/icons/strategist-icon.png"');
+    // The icon sits above the badge in the markup.
+    expect(micro.indexOf("rankings-detail__dominant-icon")).toBeLessThan(
+      micro.indexOf("rankings-detail__dominant-badge"),
+    );
+  });
+
+  it("omits the icon for tie and unclassified states", () => {
+    expect(dominantRegionHtml("unified", null, true)).not.toContain(
+      "dominant-icon",
+    );
+    expect(dominantRegionHtml("reward", null, false)).not.toContain(
+      "dominant-icon",
+    );
+  });
 });
 
 describe("presentClassification", () => {

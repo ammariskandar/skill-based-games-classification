@@ -183,6 +183,15 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     min-width: 0;
   }
 
+  /* Decorative dimension icon above the badge; sources are uniform 512×512,
+     rendered at a fixed display width with the aspect ratio preserved. */
+  .rankings-detail__dominant-icon {
+    display: block;
+    width: 6rem;
+    height: auto;
+    margin-bottom: 0.75rem;
+  }
+
   .rankings-detail__dominant-copy {
     width: 100%;
     margin-top: 1rem;

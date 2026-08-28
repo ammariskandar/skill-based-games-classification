@@ -297,8 +297,17 @@ export function dominantRegionHtml(
         `<div class="rankings-detail__dominant-section"><span class="rankings-detail__dominant-section-label">${section.label}</span><p class="rankings-detail__dominant-section-text">${section.text}</p></div>`,
     )
     .join("");
-  return `${badge}<div class="rankings-detail__dominant-copy"><span class="rankings-detail__dominant-section-label">${copy.leadLabel}</span><p class="rankings-detail__dominant-lead">${copy.lead}</p>${sections}</div>`;
+  // Decorative dimension icon above the badge (all three files are 512×512).
+  const icon = `<img class="rankings-detail__dominant-icon" src="/icons/${ICON_FILES[dominant]}" alt="" width="512" height="512">`;
+  return `${icon}${badge}<div class="rankings-detail__dominant-copy"><span class="rankings-detail__dominant-section-label">${copy.leadLabel}</span><p class="rankings-detail__dominant-lead">${copy.lead}</p>${sections}</div>`;
 }
+
+/** Dimension icon filenames served from `/icons` (public/). */
+const ICON_FILES: Record<DominantDimension, string> = {
+  micro: "hunter-icon.png",
+  mystiko: "eye-blind-icon.png",
+  macro: "strategist-icon.png",
+};
 
 export type ClassificationPresentation =
   | { kind: "unavailable" }
