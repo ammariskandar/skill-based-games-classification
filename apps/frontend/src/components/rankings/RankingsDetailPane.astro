@@ -121,21 +121,24 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
     margin-top: 1rem;
   }
 
-  /* Two equal side-by-side shells: radar + dominant dimension (SBGC-208). */
+  /* Two equal side-by-side shells: radar + dominant dimension (SBGC-208).
+     Grid with minmax(0, 1fr) locks both columns to an exact 50/50 split that
+     content cannot blow out — the tiny dominant badge alone could never out-bid
+     the radar's intrinsic size, so it gets this structural equal share. */
   .rankings-detail__upper {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
     min-width: 0;
     margin-top: 1rem;
   }
 
   .rankings-detail__upper .rankings-detail__region {
-    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
     aspect-ratio: 1 / 1;
   }
 
-  /* Placeholder shell for future similar-games work; the dominant region is a
-     real surface hosting the badge.  Truthful — no fake radar/recs. */
   .rankings-detail__region {
     display: flex;
     align-items: center;
@@ -155,12 +158,17 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
   }
 
   .rankings-detail__region--dominant {
-    padding: 1rem;
+    overflow: hidden;
   }
 
+  /* The dominant wrapper fills its equal square so the badge visibly owns the
+     full cell rather than floating as a bare pill. */
   .rankings-detail__dominant {
     display: flex;
+    align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
     min-width: 0;
   }
 
@@ -188,58 +196,6 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
   .rankings-detail__view:focus-visible {
     outline: 2px solid var(--color-blue);
     outline-offset: 2px;
-  }
-
-  /* Skill classification block: dominant badge above the radar. */
-  .rankings-detail__classification {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    min-width: 0;
-    margin-top: 1rem;
-  }
-
-  .rankings-detail__dominant {
-    display: flex;
-    justify-content: center;
-    min-width: 0;
-  }
-
-  .rankings-detail__radar {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    border: none;
-    background: transparent;
-    padding: 0;
-  }
-
-  /* Skill classification block: dominant badge above the radar. */
-  .rankings-detail__classification {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    min-width: 0;
-    margin-top: 1rem;
-  }
-
-  .rankings-detail__dominant {
-    display: flex;
-    justify-content: center;
-    min-width: 0;
-  }
-
-  .rankings-detail__radar {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    border: none;
-    background: transparent;
-    padding: 0;
   }
 
   .rankings-detail__dominant-badge {
@@ -310,13 +266,13 @@ const dominantHtml = dominantBadgeHtml(dominant, classified);
      fixed height rather than full-width squares. */
   @media (max-width: 40rem) {
     .rankings-detail__upper {
-      flex-direction: column;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .rankings-detail__upper .rankings-detail__region {
-      flex: 0 0 auto;
       width: 100%;
       aspect-ratio: auto;
+      min-height: 12rem;
     }
   }
 
