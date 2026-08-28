@@ -199,6 +199,7 @@ export async function getGameRankings(
   if (query.profile !== undefined) params.profile = query.profile;
   if (query.dimension !== undefined) params.dimension = query.dimension;
   if (query.direction !== undefined) params.direction = query.direction;
+  if (query.dominant !== undefined) params.dominant = query.dominant;
   if (query.page !== undefined) params.page = String(query.page);
   if (query.pageSize !== undefined) params.page_size = String(query.pageSize);
 
