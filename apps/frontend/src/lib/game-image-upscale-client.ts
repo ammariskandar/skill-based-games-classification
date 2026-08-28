@@ -18,6 +18,7 @@ import {
   MODEL_VERSION,
   NETWORK_NAME,
   revealMode,
+  shouldEnableUpscale,
   shouldRunInference,
   transitionMode,
   UPSCALE_FACTOR,
@@ -56,6 +57,28 @@ function isDataSaver(): boolean {
   return nav.connection?.saveData === true;
 }
 
+/** SBGC-209: gather browser display state and delegate to the pure gate. */
+function shouldEnableUpscaleAtRuntime(): boolean {
+  const featureFlagEnabled = isImageUpscalingEnabled(
+    import.meta.env.PUBLIC_ENABLE_IMAGE_UPSCALE,
+  );
+  if (typeof window === "undefined" || !window.screen) {
+    return featureFlagEnabled;
+  }
+  const isDesktop =
+    window.matchMedia("(pointer: fine)").matches && !("ontouchstart" in window);
+  const dpr = window.devicePixelRatio || 1;
+  const physicalPixelCount =
+    window.screen.width * dpr * (window.screen.height * dpr);
+  const logicalPixelCount = window.screen.width * window.screen.height;
+  return shouldEnableUpscale({
+    featureFlagEnabled,
+    isDesktop,
+    physicalPixelCount,
+    logicalPixelCount,
+  });
+}
+
 export function mountGameImageEnhancer(options: MountOptions): EnhancerHandle {
   const { root, gameSlug, assetRole, sourceUrl } = options;
 
@@ -63,8 +86,8 @@ export function mountGameImageEnhancer(options: MountOptions): EnhancerHandle {
     root.dataset.upscaleStatus = status;
   };
 
-  // Disabled by default: no worker, no observer, no model loading.
-  if (!isImageUpscalingEnabled(import.meta.env.PUBLIC_ENABLE_IMAGE_UPSCALE)) {
+  // SBGC-209: flag OR high-DPI desktop. Off → no worker, observer, or model.
+  if (!shouldEnableUpscaleAtRuntime()) {
     setStatus("disabled");
     return { disconnect: () => {} };
   }

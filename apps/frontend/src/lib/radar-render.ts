@@ -83,7 +83,9 @@ export function buildRadarHtml(data: RadarRenderData): string {
   }
 
   const center: Point = { x: size / 2, y: size / 2 };
-  const maxRadius = size / 2 - 48;
+  // 56 viewBox units of padding (was 48) around the grid gives the axis labels
+  // breathing room before the SVG viewBox edge clips their text (SBGC-209).
+  const maxRadius = size / 2 - 56;
   const labelRadius = maxRadius + 24;
 
   // The outermost ring is the highest score across present profiles, rounded

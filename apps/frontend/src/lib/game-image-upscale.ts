@@ -186,14 +186,47 @@ export function transitionMode(assetRole: AssetRole): TransitionMode {
   return assetRole === "library-capsule" ? "crossfade" : "wipe";
 }
 
-/* ── SBGC-202: feature gate, environmental gating, byte-bounded cache ── */
+/* ── SBGC-202 → SBGC-209: feature gate, environmental gating, byte-bounded
+   cache.  SBGC-209 supersedes SBGC-202's flag-only gate: upscaling is now
+   enabled by the explicit flag OR, on a fine-pointer desktop display above
+   1080p, by default. ── */
 
-/** Automatic WebSR upscaling is disabled by default and enabled only via the
- * explicit public build flag `PUBLIC_ENABLE_IMAGE_UPSCALE === "true"`. */
+/** Automatic WebSR upscaling is enabled only via the explicit public build flag
+ * `PUBLIC_ENABLE_IMAGE_UPSCALE === "true"`.  This remains the static, server-
+ * safe half of the SBGC-209 gate; the display-resolution half is a client-side
+ * decision handled by `shouldEnableUpscale` below. */
 export function isImageUpscalingEnabled(
   raw: string | boolean | undefined,
 ): boolean {
   return raw === "true" || raw === true;
+}
+
+/** Physical/logical pixel threshold for "above 1080p" (1920 × 1080). */
+export const HIGH_DPI_PIXEL_THRESHOLD = 1920 * 1080;
+
+export interface UpscaleEnableInput {
+  featureFlagEnabled: boolean;
+  isDesktop: boolean;
+  physicalPixelCount: number;
+  logicalPixelCount: number;
+}
+
+/**
+ * Whether automatic upscaling should be enabled (SBGC-209).
+ *
+ * Enabled when the explicit public flag is set, or when the user is on a
+ * fine-pointer desktop whose display exceeds 1080p in physical or logical
+ * pixels.  The browser wrapper in `game-image-upscale-client.ts` gathers the
+ * window/screen values and delegates here so this decision stays pure and
+ * unit-testable.
+ */
+export function shouldEnableUpscale(input: UpscaleEnableInput): boolean {
+  if (input.featureFlagEnabled) return true;
+  if (!input.isDesktop) return false;
+  return (
+    input.physicalPixelCount > HIGH_DPI_PIXEL_THRESHOLD ||
+    input.logicalPixelCount > HIGH_DPI_PIXEL_THRESHOLD
+  );
 }
 
 /** Total byte ceiling for cached enhanced images (25 MiB). */

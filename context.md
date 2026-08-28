@@ -2318,6 +2318,7 @@ An epic is complete when its child work achieves the user/business outcome, not 
 | 2026-08-05 | SBGC-45 Game model | ``Game`` model with automatic PK, source-qualified optional external ID, name/slug, content type, listing status, manual metadata, timestamps, display identity, constraints, indexes, Admin registration, and 59 focused tests.  SBGC-46 (Classifications) unblocked. |
 | 2026-08-05 | SBGC-46 Editorial classification | ``EditorialClassification`` with separate ``ChallengeProfile`` and ``RewardProfile``, independent Micro/Mystiko/Macro scores totaling 100 each, atomic service layer, DB range constraints, Admin with two inlines, and 50 tests.  SBGC-47 unblocked. |
 | 2026-08-05 | SBGC-47 Database constraints | Verified all existing DB constraints (8 Game + 16 Classification invariants). No schema changes required.  Added 48 bulk/delete/relationship/migration-reversibility tests.  Constraint inventory, invalid-state matrix, PostgreSQL verification matrix (11 items for SBGC-52), and questionnaire-readiness separation all documented in ``docs/database-constraints.md``.  SBGC-52 unblocked. |
+| 2026-08-28 | WebSR upscaling enabled by flag OR high-DPI desktop | Accepted (SBGC-209).  Supersedes SBGC-202's flag-only disabled-by-default gate: automatic WebSR 2x now also activates by default on a fine-pointer desktop display above 1920×1080 (physical or logical pixels).  The explicit `PUBLIC_ENABLE_IMAGE_UPSCALE` flag still force-enables it for any client. |
 
 ---
 
@@ -2568,6 +2569,23 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 ---
 
 # 43. Changelog
+
+## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
+
+- Game-detail desktop grid: left visual column scales from a fixed `44rem` to
+  up to `79rem` (≈1.8×), maintaining the artwork aspect ratios; the right
+  metadata column is narrowed via a `minmax(16rem,1fr)` grid track with a
+  `max-w-md` content cap, preserving vertical content without clipping.
+- Radar chart SVG scales 20% larger (`.radar-chart__svg` width 75% → 90%),
+  enlarging the grid/labels/polygons/nodes; the Challenge/Reward toggle stays
+  unchanged.  Added label breathing room by widening the chart's inner padding
+  (`maxRadius` reserved space 48 → 56 viewBox units) so axis labels aren't
+  clipped at the SVG edge.
+- Supersedes SBGC-202's flag-only upscaling gate: automatic WebSR 2x now also
+  activates by default on a fine-pointer desktop display above 1920×1080
+  (physical or logical pixels), while `PUBLIC_ENABLE_IMAGE_UPSCALE` still
+  force-enables it for any client.
+- No Django change; no migration; no `.venv` change.
 
 ## 2026-08-24 — SBGC-80 Test search and listing behaviour
 
