@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { initRadarChart, prefersReducedMotion } from "./radar-controller";
+import {
+  getRadarHandle,
+  initRadarChart,
+  prefersReducedMotion,
+} from "./radar-controller";
 import { buildRadarHtml } from "./radar-render";
 import {
   buildRadarDescription,
@@ -138,9 +142,9 @@ afterEach(() => {
 });
 
 describe("initRadarChart lifecycle", () => {
-  it("returns a teardown function that detaches listeners", () => {
+  it("returns a handle whose destroy detaches listeners", () => {
     const container = mountChart();
-    const cleanup = initRadarChart(container);
+    const handle = initRadarChart(container);
     const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
     const toggleLabel = container.querySelector<HTMLElement>(
       "[data-toggle-label]",
@@ -155,7 +159,7 @@ describe("initRadarChart lifecycle", () => {
     expect(toggle!.getAttribute("aria-checked")).toBe("true");
     expect(toggleLabel!.textContent).toBe("Reward");
 
-    cleanup();
+    handle.destroy();
 
     // Listeners are detached: a further click must not change state.
     toggle!.click();
@@ -163,13 +167,61 @@ describe("initRadarChart lifecycle", () => {
     expect(toggleLabel!.textContent).toBe("Reward");
   });
 
-  it("is idempotent under repeated cleanup calls", () => {
+  it("is idempotent under repeated destroy calls", () => {
     const container = mountChart();
-    const cleanup = initRadarChart(container);
+    const handle = initRadarChart(container);
     expect(() => {
-      cleanup();
-      cleanup();
+      handle.destroy();
+      handle.destroy();
     }).not.toThrow();
+  });
+
+  it("setProfile forces the active layer without the toggle", () => {
+    const container = mountChart();
+    const handle = initRadarChart(container);
+
+    handle.setProfile("reward");
+
+    const rewardPath = container.querySelector<SVGPathElement>(
+      ".radar-polygon-reward",
+    );
+    const challengePath = container.querySelector<SVGPathElement>(
+      ".radar-polygon-challenge",
+    );
+    const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
+    const activeLabel = container.querySelector<SVGTextElement>(
+      ".radar-axis-label--active",
+    );
+    expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(true);
+    expect(challengePath!.classList.contains("radar-polygon--active")).toBe(
+      false,
+    );
+    expect(toggle!.getAttribute("aria-checked")).toBe("true");
+    expect(activeLabel!.dataset.profile).toBe("reward");
+
+    handle.setProfile("challenge");
+    expect(challengePath!.classList.contains("radar-polygon--active")).toBe(
+      true,
+    );
+    expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(false);
+    expect(toggle!.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("getRadarHandle retrieves the live handle for any initialized chart", () => {
+    const container = mountChart();
+    initRadarChart(container);
+
+    const handle = getRadarHandle(container);
+    expect(handle).not.toBeNull();
+
+    // Drive a chart the caller did not init (the SSR-radar case on rankings).
+    handle!.setProfile("reward");
+    const rewardPath = container.querySelector<SVGPathElement>(
+      ".radar-polygon-reward",
+    );
+    expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(true);
+
+    handle!.destroy();
   });
 });
 

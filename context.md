@@ -2570,6 +2570,55 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-28 — SBGC-208 dominant dimension badge + rankings detail pane reorg
+
+- The radar's Challenge/Reward toggle is profile-driven: it only shows on the
+  Unified tab.  On Challenge/Reward tabs the radar is locked to that profile
+  (the toggle is hidden, and the active layer is forced via a new
+  `RadarChartHandle.setProfile()` returned by `initRadarChart`); returning to
+  Unified only unhides the toggle — no auto-toggle and no reset, so the user's
+  last toggle choice persists.  The toggle stays visible and interactive on
+  the game-detail page (no profile context there).
+- The dominant-type cell is now a real content card: badge on top (pill ~70%
+  larger than the original), and below it the hard-coded 9-state explainer
+  (`DOMINANT_COPY` in `src/lib/classification-presentation.ts`) covering all
+  (Unified/Challenge/Reward × Micro/Mystiko/Macro) combinations.  Copy is the
+  owner-authored text (short, example-first).  Unified states read Summary +
+  "The Skill Tested (Challenge)" + "The Fulfillment (Reward)"; Challenge and
+  Reward states share the same "Summary" lead label plus two supporting
+  sections.  The lead line renders a step larger than the supporting sections
+  (1.125rem vs 0.75rem); the card left-aligns the copy for readability, keeps
+  the radar square on the left (grid `minmax(0,1fr)` columns, `align-items:
+  start`), and shows truthful pills with no copy for ties and unclassified
+  games.  SSR and client-side re-render share `dominantRegionHtml()` so the
+  runtime DOM cannot drift from server markup.
+- Suggested Games placeholder: slightly shorter (`min-height` 12rem → 10rem),
+  no longer flex-grows to fill the pane, and separated from the radar/dominant
+  card by a larger `clamp(1.5rem, 2vw, 2rem)` gap.
+- Rankings detail pane reorganized: the "View Game" action button now sits
+  directly below the selected-game header (above the classification display);
+  the placeholder "Dominant Type" shell is replaced by a real dominant
+  dimension badge; the radar gains the full pane width; and a dynamic
+  `clamp(0.75rem, 1.2vw, 1.25rem)` breathing gap separates the classification
+  block from the Suggested Games placeholder.
+- Dominant badge semantics mirror the backend's strictly-highest dominance
+  (SBGC-81): Challenge reads the Challenge vector, Reward reads the Reward
+  vector, Unified reads the summed Challenge + Reward dimensions; a top-score
+  tie resolves to *no* dominant (truthful "No dominant dimension" state) and
+  unclassified games show "Not yet classified" — never a fabricated dimension
+  or a 0/0/0 vector.  Badge colours reuse the canonical tokens
+  (`--color-micro`/`--color-mystiko`/`--color-macro`).
+- New pure helpers in `src/lib/classification-presentation.ts`
+  (`dominantForProfile`, `dominantBadgeHtml`) shared by the SSR pane and the
+  client-side re-render (`detailHtml`), so the runtime DOM cannot drift from
+  server markup; badge HTML is fixed copy only.  The client caches the fetched
+  classification (seeded from the SSR pane) so profile-tab switches recompute
+  the badge instantly without refetching.
+- +9 tests (`dominantForProfile` semantics incl. ties/unified-sum/missing
+  vectors; badge markup states).  Full frontend suite 586 green;
+  `astro check` 0 errors; lint/format/build clean.  No Django change; no
+  migration; no `.venv` change.
+
 ## 2026-08-28 — SBGC-210 vertex-anchored barycentric radar fill
 
 - Replaced the static radial-gradient polygon fill with a vertex-anchored

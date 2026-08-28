@@ -1,16 +1,28 @@
 ---
 import RadarChart from "../score/RadarChart.astro";
 import { gameHref } from "../../lib/catalogue-presentation";
+import {
+  dominantForProfile,
+  dominantRegionHtml,
+} from "../../lib/classification-presentation";
 import type { SkillProfileVector } from "../../lib/skill-dimensions";
+import type { RankingProfile } from "../../lib/rankings-state";
 
 interface Props {
   selectedGame: { slug: string; name: string } | null;
   challenge: SkillProfileVector | null;
   reward: SkillProfileVector | null;
+  profile: RankingProfile;
 }
 
-const { selectedGame, challenge, reward } = Astro.props;
+const { selectedGame, challenge, reward, profile } = Astro.props;
 const hasRadar = challenge !== null || reward !== null;
+// presentClassification yields both vectors together or neither (SBGC-73).
+const classified = challenge !== null && reward !== null;
+const dominant = classified
+  ? dominantForProfile(profile, challenge, reward)
+  : null;
+const dominantHtml = dominantRegionHtml(profile, dominant, classified);
 ---
 
 {
@@ -21,25 +33,13 @@ const hasRadar = challenge !== null || reward !== null;
       </p>
     </div>
   ) : (
-    <div class="rankings-detail" data-rankings-detail>
+    <div
+      class="rankings-detail"
+      data-rankings-detail
+      data-challenge={challenge ? JSON.stringify(challenge) : undefined}
+      data-reward={reward ? JSON.stringify(reward) : undefined}
+    >
       <h2 class="rankings-detail__heading">{selectedGame.name}</h2>
-
-      <div class="rankings-detail__upper">
-        <div class="rankings-detail__region rankings-detail__region--radar">
-          {hasRadar ? (
-            <RadarChart
-              challenge={challenge}
-              reward={reward}
-              gameTitle={selectedGame.name}
-            />
-          ) : (
-            <span class="rankings-detail__region-label">Radar</span>
-          )}
-        </div>
-        <div class="rankings-detail__region" aria-hidden="true">
-          <span class="rankings-detail__region-label">Dominant Type</span>
-        </div>
-      </div>
 
       <div class="rankings-detail__actions">
         <a
@@ -51,10 +51,35 @@ const hasRadar = challenge !== null || reward !== null;
         </a>
       </div>
 
-      <div
-        class="rankings-detail__region rankings-detail__region--grow"
-        aria-hidden="true"
-      >
+      <div class="rankings-detail__upper">
+        <div
+          class:list={[
+            "rankings-detail__region rankings-detail__region--radar",
+            // The Challenge/Reward toggle only shows on the Unified tab; on the
+            // Challenge/Reward tabs the radar is locked to that profile.
+            profile !== "unified" && "radar-toggle-hidden",
+          ]}
+          data-radar-region
+        >
+          {hasRadar ? (
+            <RadarChart
+              challenge={challenge}
+              reward={reward}
+              gameTitle={selectedGame.name}
+              initialProfile={profile === "unified" ? undefined : profile}
+            />
+          ) : (
+            <span class="rankings-detail__region-label">Radar</span>
+          )}
+        </div>
+        <div class="rankings-detail__region rankings-detail__region--dominant">
+          <div class="rankings-detail__dominant" data-dominant-region>
+            <Fragment set:html={dominantHtml} />
+          </div>
+        </div>
+      </div>
+
+      <div class="rankings-detail__grow" aria-hidden="true">
         <span class="rankings-detail__region-label">Suggested Games</span>
       </div>
     </div>
@@ -65,7 +90,6 @@ const hasRadar = challenge !== null || reward !== null;
   .rankings-detail {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
     width: 100%;
     min-width: 0;
     height: 100%;
@@ -98,54 +122,110 @@ const hasRadar = challenge !== null || reward !== null;
     overflow-wrap: anywhere;
   }
 
-  /* Two side-by-side placeholder shells for the future Radar + Dominant Type. */
-  .rankings-detail__upper {
+  .rankings-detail__actions {
     display: flex;
-    gap: 1rem;
-    min-width: 0;
+    margin-top: 1rem;
   }
 
-  /* Placeholder shell for future radar/Dominant-type and similar-games work.
-     Truthful empty surface — no fake radar, no fake recommendations. */
-  .rankings-detail__region {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* Two side-by-side shells: the radar keeps its square, the dominant cell
+     is a content card that auto-heights to its explainer copy.  Grid with
+     minmax(0, 1fr) locks both columns to an exact 50/50 split that content
+     cannot blow out. */
+  .rankings-detail__upper {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
     min-width: 0;
-    min-height: 12rem;
-    border: 1px dashed var(--color-border-2);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
+    margin-top: 1rem;
+    align-items: start;
+  }
+
+  .rankings-detail__region {
+    min-width: 0;
+    min-height: 0;
   }
 
   .rankings-detail__region--radar {
     display: block;
+    aspect-ratio: 1 / 1;
     border: none;
     background: transparent;
     padding: 0;
   }
 
-  /* The upper placeholders are massive, near-square shells that split the
-     pane width and scale their height from it. */
-  .rankings-detail__upper .rankings-detail__region {
-    flex: 1 1 0;
-    aspect-ratio: 1 / 1;
+  /* The Challenge/Reward toggle exists in the markup on every tab (so it can be
+     unhidden without re-rendering) but only shows on the Unified profile. */
+  .rankings-detail__region--radar.radar-toggle-hidden .radar-toggle-group {
+    display: none;
   }
 
-  .rankings-detail__region--grow {
-    flex: 1 1 auto;
+  .rankings-detail__region--dominant {
+    display: block;
     min-height: 12rem;
+    /* 4:5 = 25% taller than the radar square — the explainer card reads as
+       the larger of the two surfaces, with breathing room below the copy. */
+    aspect-ratio: 4 / 5;
+    padding: 1rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
   }
 
-  .rankings-detail__region-label {
-    padding: 0.5rem;
-    font-size: 0.8125rem;
-    color: var(--color-dim);
-    text-align: center;
-  }
-
-  .rankings-detail__actions {
+  /* The dominant wrapper is a column: badge centred on top, explainer copy
+     below, left-aligned for readability.  The whole block centres vertically
+     inside the taller card. */
+  .rankings-detail__dominant {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Decorative dimension icon above the badge; sources are uniform 512×512
+     white-on-transparent, rendered at a fixed display width with the aspect
+     ratio preserved, with breathing room above and below. */
+  .rankings-detail__dominant-icon {
+    display: block;
+    width: 6rem;
+    height: auto;
+    margin: 1.5rem 0;
+  }
+
+  .rankings-detail__dominant-copy {
+    width: 100%;
+    margin-top: 1rem;
+    text-align: left;
+  }
+
+  .rankings-detail__dominant-lead {
+    margin: 0 0 0.875rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--color-text);
+  }
+
+  .rankings-detail__dominant-section {
+    margin-top: 0.75rem;
+  }
+
+  .rankings-detail__dominant-section-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .rankings-detail__dominant-section-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-muted);
   }
 
   .rankings-detail__view {
@@ -174,17 +254,84 @@ const hasRadar = challenge !== null || reward !== null;
     outline-offset: 2px;
   }
 
-  /* Stack the two upper placeholders once the pane is narrow; they fall back
-     to a fixed height rather than full-width squares. */
+  .rankings-detail__dominant-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.5rem;
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.25;
+    border-radius: 9999px;
+    border: 1px solid;
+    margin: 0.75rem 0;
+  }
+
+  .rankings-detail__dominant-badge--micro {
+    color: var(--color-micro);
+    border-color: color-mix(in srgb, var(--color-micro) 35%, transparent);
+    background: color-mix(in srgb, var(--color-micro) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-badge--mystiko {
+    color: var(--color-mystiko);
+    border-color: color-mix(in srgb, var(--color-mystiko) 35%, transparent);
+    background: color-mix(in srgb, var(--color-mystiko) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-badge--macro {
+    color: var(--color-macro);
+    border-color: color-mix(in srgb, var(--color-macro) 35%, transparent);
+    background: color-mix(in srgb, var(--color-macro) 12%, transparent);
+  }
+
+  .rankings-detail__dominant-empty {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.625rem 1.5rem;
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+    border: 1px dashed var(--color-border-2);
+    border-radius: 9999px;
+    margin: 0.75rem 0;
+  }
+
+  /* Truthful empty shell for the future similar-games work — no fake recs.
+     Kept low with a modest gap from the radar + dominant card above. */
+  .rankings-detail__grow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 8rem;
+    margin-top: clamp(1rem, 1.25vw, 1.5rem);
+    border: 1px dashed var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .rankings-detail__region-label {
+    padding: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-dim);
+    text-align: center;
+  }
+
+  /* Stack the two equal shells once the pane is narrow; they fall back to a
+     fixed height rather than full-width squares. */
   @media (max-width: 40rem) {
     .rankings-detail__upper {
-      flex-direction: column;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .rankings-detail__upper .rankings-detail__region {
-      flex: 0 0 auto;
       width: 100%;
       aspect-ratio: auto;
+      min-height: 12rem;
     }
   }
 
