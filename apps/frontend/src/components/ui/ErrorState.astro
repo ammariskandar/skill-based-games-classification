@@ -1,29 +1,70 @@
 ---
-interface Props {
+export interface Props {
   title?: string;
-  message: string;
-  headingLevel?: "h1" | "h2";
+  message?: string;
+  actionText?: string;
+  actionHref?: string;
+  headingLevel?: "h1" | "h2" | "h3";
+  class?: string;
 }
 
-const { title, message, headingLevel = "h2" } = Astro.props;
-const resolvedTitle = title ?? "Something went wrong";
-const headingClass = `font-semibold text-text ${
-  headingLevel === "h1" ? "text-2xl" : "text-lg"
-}`;
+const {
+  title = "Something went wrong",
+  message = "An unexpected error occurred while loading this content. Please try again later.",
+  actionText,
+  actionHref,
+  headingLevel = "h2",
+  class: className = "",
+} = Astro.props;
 ---
 
 <div
-  class="flex flex-col items-center py-16 text-center"
-  role={title ? "alert" : undefined}
+  class:list={[
+    "flex flex-col items-center justify-center rounded-xl border border-border bg-(--color-surface) p-8 text-center",
+    className,
+  ]}
+  role="alert"
+  aria-live="polite"
+  data-error-state
 >
+  <div
+    class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-(--color-muted)"
+    aria-hidden="true"
+  >
+    <svg
+      class="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      ></path>
+    </svg>
+  </div>
   {
     headingLevel === "h1" ? (
-      <h1 class={headingClass}>{resolvedTitle}</h1>
+      <h1 class="text-xl font-semibold text-(--color-text)">{title}</h1>
+    ) : headingLevel === "h3" ? (
+      <h3 class="text-xl font-semibold text-(--color-text)">{title}</h3>
     ) : (
-      <h2 class={headingClass}>{resolvedTitle}</h2>
+      <h2 class="text-xl font-semibold text-(--color-text)">{title}</h2>
     )
   }
-  <p class="mt-2 max-w-md text-sm text-muted">{message}</p>
+  <p class="mt-2 max-w-md text-sm text-(--color-muted)">{message}</p>
+  {
+    actionText && actionHref && (
+      <a
+        href={actionHref}
+        class="mt-6 inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-blue)"
+      >
+        {actionText}
+      </a>
+    )
+  }
   {
     Astro.slots.has("default") && (
       <div class="mt-6">

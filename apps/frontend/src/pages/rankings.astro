@@ -107,8 +107,8 @@ try {
   };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service
-  // is unavailable — never "no games ranked".
-  Astro.response.status = 500;
+  // is unavailable — never "no games ranked". 503 reflects the upstream outage.
+  Astro.response.status = 503;
   pageState = { kind: "service-error" };
 }
 

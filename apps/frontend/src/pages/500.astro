@@ -1,6 +1,10 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ErrorState from "../components/ui/ErrorState.astro";
+
+// The Astro server renders this page for unhandled render errors (500).
+// Setting the status explicitly also makes a direct visit self-consistent.
+Astro.response.status = 500;
 ---
 
 <BaseLayout

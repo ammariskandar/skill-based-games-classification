@@ -40,7 +40,8 @@ try {
   // Timeout, network failure, Django 5xx, or a malformed response all mean the
   // service is unavailable: render a real 5xx — never a 404, and never a 200
   // "error page" that would mislead users and crawlers about availability.
-  Astro.response.status = 500;
+  // 503 (Service Unavailable) reflects that the outage is upstream-dependent.
+  Astro.response.status = 503;
   state = { kind: "service-error" };
 }
 
