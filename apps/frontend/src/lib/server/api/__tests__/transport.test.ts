@@ -498,6 +498,47 @@ describe("API transport", () => {
     }
   });
 
+  describe("structured error capture", () => {
+    beforeEach(() => setEnv("http://127.0.0.1:8000"));
+
+    it("attaches the Django error envelope for a JSON 4xx", async () => {
+      const apiError = {
+        code: "INVALID_QUERY",
+        message: "Invalid query parameter",
+        details: [
+          {
+            location: ["query", "sort"],
+            message: "Invalid",
+            type: "value_error",
+          },
+        ],
+      };
+      stubFetch(jsonResponse({ error: apiError }, 400));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.status).toBe(400);
+      expect(f.error.code).toBe("HTTP_ERROR");
+      expect(f.error.message).toBe("Invalid query parameter");
+      expect(f.apiError).toEqual(apiError);
+    });
+
+    it("degrades cleanly for an HTML gateway error", async () => {
+      stubFetch(textResponse("<html><body>502 Bad Gateway</body></html>", 502));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.status).toBe(502);
+      expect(f.error.code).toBe("HTTP_ERROR");
+      expect(f.error.message).toBe("Server returned 502");
+      expect(f.apiError).toBeUndefined();
+    });
+  });
+
   // ──────────────────────────────────────────────────
   //  MEDIA TYPE HANDLING
   // ──────────────────────────────────────────────────

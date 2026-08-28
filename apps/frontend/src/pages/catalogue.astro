@@ -31,16 +31,19 @@ let pageState: PageState;
 try {
   pageState = {
     kind: "ready",
-    catalogue: await getGameCatalogue({
-      page: state.page,
-      q: state.q || undefined,
-      source: state.source ?? undefined,
-      classified: state.classified ?? undefined,
-      sort: state.sort,
-      profile: state.profile,
-      dominant: state.dominant ?? undefined,
-      coverlessLast: state.coverlessLast,
-    }),
+    catalogue: await getGameCatalogue(
+      {
+        page: state.page,
+        q: state.q || undefined,
+        source: state.source ?? undefined,
+        classified: state.classified ?? undefined,
+        sort: state.sort,
+        profile: state.profile,
+        dominant: state.dominant ?? undefined,
+        coverlessLast: state.coverlessLast,
+      },
+      { signal: Astro.request.signal },
+    ),
   };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service

@@ -28,7 +28,10 @@ type PageState =
 
 let state: PageState;
 try {
-  state = { kind: "game", detail: await getGameDetail(slug) };
+  state = {
+    kind: "game",
+    detail: await getGameDetail(slug, { signal: Astro.request.signal }),
+  };
 } catch (error: unknown) {
   if (error instanceof GameNotFoundError) {
     Astro.response.status = 404;

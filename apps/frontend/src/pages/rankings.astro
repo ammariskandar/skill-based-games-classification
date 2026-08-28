@@ -44,13 +44,16 @@ type PageState =
 
 let pageState: PageState;
 try {
-  const ranking = await getGameRankings({
-    profile: state.profile,
-    dimension: state.dimension,
-    direction: state.direction,
-    page: state.page,
-    pageSize: SSR_PAGE_SIZE,
-  });
+  const ranking = await getGameRankings(
+    {
+      profile: state.profile,
+      dimension: state.dimension,
+      direction: state.direction,
+      page: state.page,
+      pageSize: SSR_PAGE_SIZE,
+    },
+    { signal: Astro.request.signal },
+  );
 
   // Resolve the detail-pane selection.  A requested slug already on the page
   // wins; otherwise try the game-detail endpoint, and fall back to the
@@ -61,7 +64,9 @@ try {
     !ranking.results.some((game) => game.slug === state.game)
   ) {
     try {
-      const detail = await getGameDetail(state.game);
+      const detail = await getGameDetail(state.game, {
+        signal: Astro.request.signal,
+      });
       resolvedDetail = { slug: detail.game.slug, name: detail.game.name };
     } catch {
       resolvedDetail = null;
@@ -77,7 +82,9 @@ try {
   let selectedReward: SkillProfileVector | null = null;
   if (selectedGame) {
     try {
-      const detail = await getGameDetail(selectedGame.slug);
+      const detail = await getGameDetail(selectedGame.slug, {
+        signal: Astro.request.signal,
+      });
       const selectedPresentation = presentClassification(
         detail.classification,
         selectedGame.slug,
