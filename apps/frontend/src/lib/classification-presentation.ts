@@ -147,43 +147,43 @@ export const DOMINANT_COPY: Record<
   unified: {
     micro: {
       leadLabel: "Summary",
-      lead: "Games where fast reflexes and immediate tactile feedback take center stage.",
+      lead: "Reflex and reaction games — the fun is in split-second execution.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Demands sensorimotor execution—rapidly processing sensory cues (visual flashes, audio cues, controller vibrations) to execute precise physical inputs (flick shots, frame-perfect parries, rhythm timing, drift control, or combo chaining).",
+          text: "Reading the moment and acting instantly: flicks, frame-perfect parries, rhythm timing, drift control.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: "Delivers instant, localized feedback that validates moment-to-moment mechanical mastery (crisp hitmarker sounds, killstreak announcements, lobby MVP badges, Play of the Game highlights, or round victories).",
+          text: "Instant payoff — hitmarkers, killstreak popups, MVP badges, Play of the Game highlights.",
         },
       ],
     },
     macro: {
       leadLabel: "Summary",
-      lead: "Games where long-term planning, resource management, and systemic strategy determine success.",
+      lead: "Strategy and planning games — the fun is in out-managing your opponent.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Demands high-level oversight—managing economies, allocating talent points, optimizing build synergies, tracking team cooldowns, and adapting map-wide positioning.",
+          text: "Seeing the whole board: economy, builds, cooldowns, map-wide positioning.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: "Delivers persistent, outward prestige and milestone accomplishments (climbing competitive ELO tiers, unlocking exclusive season skins, earning rare achievements, expanding an empire, or completing endgame progression trees).",
+          text: "Lasting payoff — climbing ranks, rare skins, achievements, finishing a long progression.",
         },
       ],
     },
     mystiko: {
       leadLabel: "Summary",
-      lead: "Games driven by hidden information, deduction, and outthinking opponents under uncertainty.",
+      lead: "Mind-game games — the fun is in figuring out what you can't see.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
-          text: "Demands game sense and psychological reads—predicting enemy rotations through fog-of-war, seeing through bluffs, adapting to unpredictable card draws, and deducing invisible threats.",
+          text: "Reading intent: predicting rotations through fog-of-war, seeing bluffs, deducing threats.",
         },
         {
           label: "The Fulfillment (Reward)",
-          text: 'Delivers intrinsic, "invisible" satisfaction and creative validation (the dopamine rush of a correct blind read, executing an unorthodox counter-strategy, uncovering hidden lore, or discovering branching story consequences).',
+          text: "The rush of being right — a correct blind read, a trap that springs, hidden lore, secrets.",
         },
       ],
     },
@@ -191,43 +191,43 @@ export const DOMINANT_COPY: Record<
   challenge: {
     micro: {
       leadLabel: "Skill Focus",
-      lead: "Fine motor execution, physical dexterity, and reaction time.",
+      lead: "Hands — speed, precision, reflexes.",
       sections: [
         {
           label: "What It Tests",
-          text: "How quickly and accurately your hands respond to what your eyes and ears perceive. Success relies on muscle memory, input precision, and millisecond decision-making.",
+          text: "How fast and accurate your inputs are when it matters.",
         },
         {
           label: "Examples in Action",
-          text: "Snapping a sniper crosshair onto a target, timing a dodge through invulnerability frames, executing complex fighting game inputs, or staying on-beat in a rhythm game.",
+          text: "Sniper flicks, i-frame dodges, fighting-game combos, keeping the beat in rhythm games.",
         },
       ],
     },
     macro: {
       leadLabel: "Skill Focus",
-      lead: "System management, tactical foresight, and economic efficiency.",
+      lead: "Mind — systems, resources, long-term plans.",
       sections: [
         {
           label: "What It Tests",
-          text: "How effectively you manage systems, resources, and long-term plans. Success relies on identifying the optimal route to victory, spotting structural weaknesses in setups, and managing trade-offs.",
+          text: "How well you see the path to victory and manage trade-offs.",
         },
         {
           label: "Examples in Action",
-          text: "Balancing gold income versus military production in an RTS, managing team lane control and objective timers in a MOBA, crafting optimized gear builds, or setting up automated logistics in a simulation.",
+          text: "RTS economy vs. army, MOBA lane control, build crafting, factory logistics.",
         },
       ],
     },
     mystiko: {
       leadLabel: "Skill Focus",
-      lead: "Deduction, pattern recognition, and game sense under uncertainty.",
+      lead: "Reads — deduction and game sense under uncertainty.",
       sections: [
         {
           label: "What It Tests",
-          text: "How well you operate with incomplete information. Success relies on predicting what you cannot see, reading opponent habits, bluffing, and forecasting future game states.",
+          text: "How well you predict what you can't see — play the player, not just the game.",
         },
         {
           label: "Examples in Action",
-          text: "Throwing a skillshot into an unwarded brush based on intuition, calling an opponent's poker-style bluff in a card game, deducing the culprit in an investigative game, or preparing a counter-build before the enemy reveals their strategy.",
+          text: "Skillshots into unwarded brush, calling bluffs, finding the culprit, counter-building blind.",
         },
       ],
     },
@@ -235,43 +235,43 @@ export const DOMINANT_COPY: Record<
   reward: {
     micro: {
       leadLabel: "Reward Type",
-      lead: "Instant, tactile, and localized recognition.",
+      lead: "Instant, tactile recognition.",
       sections: [
         {
           label: "How It Satisfies",
-          text: "Rewards you immediately after an action with punchy audiovisual feedback and short-term match accolades that celebrate your mechanical execution.",
+          text: "Every action gets a satisfying pop — you feel good the moment you do it.",
         },
         {
           label: "Examples in Action",
-          text: "The ping of a headshot, high-combo multipliers, multi-kill banners, mid-match bounty claims, and earning match MVP in a lobby.",
+          text: "Headshot pings, combo multipliers, multi-kill banners, match MVP.",
         },
       ],
     },
     macro: {
       leadLabel: "Reward Type",
-      lead: "Long-term, outward, and permanent prestige.",
+      lead: "Long-term, outward prestige.",
       sections: [
         {
           label: "How It Satisfies",
-          text: "Rewards you with tangible status symbols and macro-progression markers that demonstrate dedication and mastery over entire game systems.",
+          text: "You can show off what you've built — proof of dedication.",
         },
         {
           label: "Examples in Action",
-          text: "Displaying a Grandmaster/Diamond rank border, equipping rare cosmetics/mounts, unlocking 100% completion achievements, and leveling up an account or battle pass.",
+          text: "Rank borders, rare cosmetics, 100% achievements, battle-pass levels.",
         },
       ],
     },
     mystiko: {
       leadLabel: "Reward Type",
-      lead: "Subtle, cerebral, and intrinsic fulfillment.",
+      lead: "Subtle, cerebral fulfillment.",
       sections: [
         {
           label: "How It Satisfies",
-          text: 'Rewards you with the internal gratification of outsmarting the game or your opponent—the quiet "feel-good factor" of executing a clever idea.',
+          text: "The quiet high of outsmarting someone — an idea that worked.",
         },
         {
           label: "Examples in Action",
-          text: "The psychological high of winning purely on a mind game, watching an unorthodox trap spring shut, finding obscure secrets/easter eggs, or reaching a unique ending shaped by subtle earlier choices.",
+          text: "Winning a mind game, a trap closing, finding secrets, unique endings.",
         },
       ],
     },
