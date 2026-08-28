@@ -164,7 +164,7 @@ describe("dominantRegionHtml", () => {
     expect(html).toContain("rankings-detail__dominant-copy");
     expect(html).toContain("rankings-detail__dominant-lead");
     expect(html).toContain(
-      "Reflex, reaction times tested, rewards are the small things.",
+      "Reflexes are tested while rewards are the small things.",
     );
     expect(html).toContain("The Skill Tested (Challenge)");
     expect(html).toContain("The Fulfillment (Reward)");

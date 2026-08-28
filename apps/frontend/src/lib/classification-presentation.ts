@@ -147,7 +147,7 @@ export const DOMINANT_COPY: Record<
   unified: {
     micro: {
       leadLabel: "Summary",
-      lead: "Reflex, reaction times tested, rewards are the small things.",
+      lead: "Reflexes are tested while rewards are the small things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
@@ -161,7 +161,7 @@ export const DOMINANT_COPY: Record<
     },
     macro: {
       leadLabel: "Summary",
-      lead: "Strategy, planning tested, rewards are the outwardly visible things.",
+      lead: "Strategy is tested while rewards are the visible things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
@@ -175,7 +175,7 @@ export const DOMINANT_COPY: Record<
     },
     mystiko: {
       leadLabel: "Summary",
-      lead: "Mind-games, reads, counterplays tested, rewards are the invisible things.",
+      lead: "Mind-games and counterplays are tested while rewards are the invisible things.",
       sections: [
         {
           label: "The Skill Tested (Challenge)",
