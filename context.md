@@ -2574,13 +2574,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 - Replaced the static radial-gradient polygon fill with a vertex-anchored
   Gouraud-style fill: each polygon vertex carries its dimension's color (Micro
-  → blue, Mystiko → purple, Macro → orange) and the interior is interpolated
-  by signed barycentric weight.  Rendered as a pure-SVG clipped rect mesh
-  inside `buildRadarHtml` (SSR-safe, no canvas/WebGL).  Active/inactive
-  opacity (0.35/0.05), stroke, toggle behaviour, and all geometry (spoke
-  radii, cardinal spline, 56px label padding) unchanged.  The glow filter
-  applies to the polygon's bounding stroke only — never per mesh cell, which
-  would render as a fishnet of per-segment glows.
+  → blue, Mystiko → purple, Macro → orange) and the interior is the barycentric
+  blend of the three.  Rendered as three pure-SVG linear gradients (one per
+  vertex, perpendicular to its opposite edge, fading to transparent — the
+  gradient parameter equals that vertex's barycentric weight) additively
+  blended via `mix-blend-mode: plus-lighter` and clipped to the polygon spline;
+  SSR-safe, no canvas/WebGL, and no tiled rect mesh (a mesh of solid rects
+  shows anti-aliasing seams at every cell boundary).  Active/inactive opacity
+  (0.35/0.05), stroke, toggle behaviour, and all geometry (spoke radii,
+  cardinal spline, 56px label padding) unchanged.  The glow filter applies to
+  the polygon's bounding stroke only.
 
 ## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
 
