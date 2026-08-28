@@ -99,6 +99,34 @@ describe("getGameRankings", () => {
     );
   });
 
+  it("serializes a standalone dominant parameter (SBGC-206)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(RANKING));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameRankings } = await importGames();
+    await getGameRankings({ dominant: "micro" });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe("https://backend.test/api/v1/rankings/?dominant=micro");
+  });
+
+  it("serializes dominant alongside profile and dimension (SBGC-206)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(RANKING));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getGameRankings } = await importGames();
+    await getGameRankings({
+      profile: "challenge",
+      dimension: "macro",
+      dominant: "mystiko",
+    });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toBe(
+      "https://backend.test/api/v1/rankings/?profile=challenge&dimension=macro&dominant=mystiko",
+    );
+  });
+
   it("throws BackendApiError on a Django 500", async () => {
     const fetchMock = vi
       .fn()

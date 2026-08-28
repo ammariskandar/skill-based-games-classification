@@ -175,6 +175,7 @@ export interface RankingQuery {
   profile?: RankingProfile;
   dimension?: RankingDimension;
   direction?: RankingDirection;
+  dominant?: CatalogueDominant;
   page?: number;
   pageSize?: number;
 }

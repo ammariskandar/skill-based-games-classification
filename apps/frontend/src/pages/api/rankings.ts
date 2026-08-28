@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 
-import { getGameRankings } from "../../lib/server/api";
+import { getGameRankings, type CatalogueDominant } from "../../lib/server/api";
 import {
   normalizePageSize,
   parseRankingsState,
@@ -22,8 +22,15 @@ export const prerender = false;
 const DEFAULT_PAGE_SIZE = 5;
 const MAX_PAGE_SIZE = 50;
 
+/** Normalize a raw `dominant` query value; invalid or absent values are dropped. */
+function normalizeDominant(raw: string | null): CatalogueDominant | undefined {
+  if (raw === "micro" || raw === "mystiko" || raw === "macro") return raw;
+  return undefined;
+}
+
 export const GET: APIRoute = async ({ url, request }) => {
   const state = parseRankingsState(url.searchParams);
+  const dominant = normalizeDominant(url.searchParams.get("dominant"));
   const pageSize = normalizePageSize(
     url.searchParams.get("page_size"),
     DEFAULT_PAGE_SIZE,
@@ -36,6 +43,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         profile: state.profile,
         dimension: state.dimension,
         direction: state.direction,
+        dominant,
         page: state.page,
         pageSize,
       },

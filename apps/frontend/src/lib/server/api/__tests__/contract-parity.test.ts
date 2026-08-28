@@ -340,6 +340,9 @@ describe("Rankings contract parity", () => {
     expect(
       enumValues(queryParamSchema("/api/v1/rankings/", "direction")),
     ).toEqual(["desc", "asc"]);
+    expect(
+      enumValues(queryParamSchema("/api/v1/rankings/", "dominant")),
+    ).toEqual(["micro", "mystiko", "macro"]);
   });
 });
 
