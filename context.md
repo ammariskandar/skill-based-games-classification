@@ -2570,6 +2570,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-28 — SBGC-210 vertex-anchored barycentric radar fill
+
+- Replaced the static radial-gradient polygon fill with a vertex-anchored
+  Gouraud-style fill: each polygon vertex carries its dimension's color (Micro
+  → blue, Mystiko → purple, Macro → orange) and the interior is interpolated
+  by signed barycentric weight.  Rendered as a pure-SVG clipped rect mesh
+  inside `buildRadarHtml` (SSR-safe, no canvas/WebGL).  Active/inactive
+  opacity (0.35/0.05), stroke, glow, toggle behaviour, and all geometry (spoke
+  radii, cardinal spline, 56px label padding) unchanged.
+
 ## 2026-08-28 — SBGC-209 game-detail geometry + conditional upscaling
 
 - Game-detail desktop grid: left visual column scales from a fixed `44rem` to

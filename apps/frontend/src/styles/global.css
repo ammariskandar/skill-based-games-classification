@@ -144,7 +144,9 @@ html {
 }
 
 .radar-polygon {
-  fill: url(#radar-fill);
+  /* SBGC-210: the fill is the vertex-anchored barycentric mesh painted by the
+     sibling `.radar-polygon-fill` group; this path contributes the stroke. */
+  fill: none;
   stroke-linejoin: round;
   stroke-linecap: round;
   transition:
@@ -165,6 +167,13 @@ html {
   stroke: var(--color-dim);
   stroke-width: 1.5;
   filter: none;
+}
+
+/* Barycentric fill mesh (SBGC-210): never intercepts pointer events so the
+   vertex nodes and toggle stay interactive.  Opacity comes from the inherited
+   `fill-opacity` set by the parent layer's --active/--inactive class. */
+.radar-polygon-fill {
+  pointer-events: none;
 }
 
 .radar-vertex-node {

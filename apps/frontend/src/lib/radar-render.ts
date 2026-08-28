@@ -14,6 +14,7 @@ import {
   buildRadarTitle,
   buildVertexAriaLabel,
   buildVertexLabel,
+  type DimensionId,
   type SkillProfileKind,
   type SkillProfileVector,
 } from "./skill-dimensions";
@@ -63,6 +64,152 @@ function textAnchorFor(angleDegrees: number): "start" | "middle" | "end" {
   const x = Math.sin(radians);
   if (Math.abs(x) < 1e-9) return "middle";
   return x > 0 ? "start" : "end";
+}
+
+/* ── SBGC-210: vertex-anchored barycentric fill ──
+   Replaces the radial gradient with a Gouraud-style fill: each polygon vertex
+   carries its dimension's color (Micro → blue, Mystiko → purple, Macro →
+   orange) and the interior is interpolated by barycentric weight.  Pure SVG
+   (a clipped mesh of solid rects) so SSR and Vitest stay DOM-free. */
+
+/**
+ * Base colors for the vertex-anchored fill.  These mirror the
+ * `--color-micro` / `--color-mystiko` / `--color-macro` theme tokens so the
+ * pure string generator can interpolate fills without a DOM.
+ */
+const VERTEX_COLOR: Record<DimensionId, [number, number, number]> = {
+  micro: [0x58, 0xa6, 0xff], // --color-micro
+  mystiko: [0xbc, 0x8c, 0xff], // --color-mystiko
+  macro: [0xff, 0xa6, 0x57], // --color-macro
+};
+
+/** Cells per side of the barycentric fill mesh (N² cells per polygon). */
+const FILL_GRID_CELLS = 16;
+
+export interface PolygonVertex {
+  x: number;
+  y: number;
+  color: [number, number, number];
+}
+
+/**
+ * A polygon's three dimension vertices with their anchor colors, ordered by
+ * spoke angle — identical geometry to `getSpokePoints`, plus the color.
+ */
+export function polygonColorVertices(
+  profile: SkillProfileVector | null,
+  kind: SkillProfileKind,
+  center: Point,
+  maxRadius: number,
+): PolygonVertex[] {
+  return SPOKES.filter((spoke) => spoke.kind === kind).map((spoke) => {
+    const score = profile ? profile[spoke.dimension] : 0;
+    const radius = ((Number.isFinite(score) ? score : 0) / 100) * maxRadius;
+    return {
+      ...polarToCartesian(center.x, center.y, radius, spoke.angleDegrees),
+      color: VERTEX_COLOR[spoke.dimension],
+    };
+  });
+}
+
+/**
+ * Barycentric color at a point relative to the polygon's reference triangle.
+ *
+ * Each vertex contributes its anchor color weighted by the signed sub-triangle
+ * area opposite it, so the color at a vertex is that vertex's color and the
+ * interior is a smooth Gouraud blend.  Points outside the triangle (the spline
+ * bulge) extrapolate via signed weights; channels are clamped to the valid
+ * range so no out-of-gamut color escapes.
+ */
+export function barycentricColor(
+  vertices: PolygonVertex[],
+  px: number,
+  py: number,
+): string {
+  const [a, b, c] = vertices;
+  const denom = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+  if (Math.abs(denom) < 1e-9) {
+    const [r, g, bl] = a.color;
+    return `rgb(${r},${g},${bl})`;
+  }
+  const wA = ((b.x - px) * (c.y - py) - (c.x - px) * (b.y - py)) / denom;
+  const wB = ((c.x - px) * (a.y - py) - (a.x - px) * (c.y - py)) / denom;
+  const wC = 1 - wA - wB;
+  const clamp = (v: number): number =>
+    Math.max(0, Math.min(255, Math.round(v)));
+  return `rgb(${clamp(wA * a.color[0] + wB * b.color[0] + wC * c.color[0])},${clamp(
+    wA * a.color[1] + wB * b.color[1] + wC * c.color[1],
+  )},${clamp(wA * a.color[2] + wB * b.color[2] + wC * c.color[2])})`;
+}
+
+function fmt(v: number): string {
+  return String(Math.round(v * 10) / 10);
+}
+
+/** Emit the clipped rect mesh that paints the barycentric fill. */
+function polygonFillHtml(
+  uid: string,
+  kind: SkillProfileKind,
+  vertices: PolygonVertex[],
+): string {
+  const xs = vertices.map((v) => v.x);
+  const ys = vertices.map((v) => v.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = maxX - minX;
+  const height = maxY - minY;
+  // Degenerate (zero-area) polygons get no fill; the stroke path still renders.
+  if (width < 0.5 || height < 0.5) return "";
+
+  const n = FILL_GRID_CELLS;
+  const cellW = width / n;
+  const cellH = height / n;
+  const rects: string[] = [];
+  for (let j = 0; j < n; j += 1) {
+    for (let i = 0; i < n; i += 1) {
+      const x = minX + i * cellW;
+      const y = minY + j * cellH;
+      rects.push(
+        `<rect x="${fmt(x)}" y="${fmt(y)}" width="${fmt(cellW)}" height="${fmt(cellH)}" fill="${barycentricColor(
+          vertices,
+          x + cellW / 2,
+          y + cellH / 2,
+        )}"/>`,
+      );
+    }
+  }
+  return `<g clip-path="url(#radar-clip-${uid}-${kind})" class="radar-polygon-fill">${rects.join("")}</g>`;
+}
+
+/** Clip path matching the polygon spline so the mesh never overdraws the stroke. */
+function polygonClipHtml(
+  uid: string,
+  kind: SkillProfileKind,
+  pathD: string,
+): string {
+  return `<clipPath id="radar-clip-${uid}-${kind}"><path d="${pathD}" /></clipPath>`;
+}
+
+/** One polygon layer: barycentric fill mesh + stroke path in a `<g>` layer. */
+function polygonLayerHtml(
+  kind: SkillProfileKind,
+  profile: SkillProfileVector | null,
+  pathD: string,
+  center: Point,
+  dataMaxRadius: number,
+  uid: string,
+  active: boolean,
+): string {
+  const fill = polygonFillHtml(
+    uid,
+    kind,
+    polygonColorVertices(profile, kind, center, dataMaxRadius),
+  );
+  return `<g class="radar-polygon radar-polygon-${kind} ${
+    active ? "radar-polygon--active" : "radar-polygon--inactive"
+  }">${fill}<path d="${pathD}" /></g>`;
 }
 
 export function buildRadarHtml(data: RadarRenderData): string {
@@ -180,22 +327,35 @@ export function buildRadarHtml(data: RadarRenderData): string {
     })
     .join("");
 
-  const challengePathHtml =
+  const challengeLayerHtml =
     challenge === null
       ? ""
-      : `<path class="radar-polygon radar-polygon-challenge ${
-          initialProfile === "challenge"
-            ? "radar-polygon--active"
-            : "radar-polygon--inactive"
-        }" d="${challengePath}" />`;
-  const rewardPathHtml =
+      : polygonLayerHtml(
+          "challenge",
+          challenge,
+          challengePath,
+          center,
+          dataMaxRadius,
+          uid,
+          initialProfile === "challenge",
+        );
+  const rewardLayerHtml =
     reward === null
       ? ""
-      : `<path class="radar-polygon radar-polygon-reward ${
-          initialProfile === "reward"
-            ? "radar-polygon--active"
-            : "radar-polygon--inactive"
-        }" d="${rewardPath}" />`;
+      : polygonLayerHtml(
+          "reward",
+          reward,
+          rewardPath,
+          center,
+          dataMaxRadius,
+          uid,
+          initialProfile === "reward",
+        );
+  const polygonClipDefs =
+    (challenge === null
+      ? ""
+      : polygonClipHtml(uid, "challenge", challengePath)) +
+    (reward === null ? "" : polygonClipHtml(uid, "reward", rewardPath));
 
   const nodeHtml = spokes
     .filter((spoke) => spoke.hasProfile)
@@ -232,5 +392,5 @@ export function buildRadarHtml(data: RadarRenderData): string {
     title,
   )}</title><desc id="${descId}">${escapeHtml(
     description,
-  )}</desc><defs><filter id="radar-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter><radialGradient id="radar-fill" cx="50%" cy="50%" r="50%"><stop offset="0%" style="stop-color: var(--color-micro);" /><stop offset="50%" style="stop-color: var(--color-mystiko);" /><stop offset="100%" style="stop-color: var(--color-macro);" /></radialGradient></defs><g class="radar-grid">${gridHtml}</g><g class="radar-labels">${labelHtml}</g><g class="radar-layers" data-radar-layers><g class="radar-polygons" data-radar-polygons>${challengePathHtml}${rewardPathHtml}</g><g class="radar-nodes">${nodeHtml}</g></g></svg><table class="sr-only"><caption>Skill classification scores</caption><thead><tr><th scope="col">Profile</th><th scope="col">Micro</th><th scope="col">Mystiko</th><th scope="col">Macro</th></tr></thead><tbody>${tableRowsHtml}</tbody></table><div class="radar-tooltip" role="tooltip" aria-hidden="true"><span class="radar-tooltip-header"></span><span class="radar-tooltip-value"></span><p class="radar-tooltip-description"></p></div>${toggleHtml}</div>`;
+  )}</desc><defs><filter id="radar-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>${polygonClipDefs}</defs><g class="radar-grid">${gridHtml}</g><g class="radar-labels">${labelHtml}</g><g class="radar-layers" data-radar-layers><g class="radar-polygons" data-radar-polygons>${challengeLayerHtml}${rewardLayerHtml}</g><g class="radar-nodes">${nodeHtml}</g></g></svg><table class="sr-only"><caption>Skill classification scores</caption><thead><tr><th scope="col">Profile</th><th scope="col">Micro</th><th scope="col">Mystiko</th><th scope="col">Macro</th></tr></thead><tbody>${tableRowsHtml}</tbody></table><div class="radar-tooltip" role="tooltip" aria-hidden="true"><span class="radar-tooltip-header"></span><span class="radar-tooltip-value"></span><p class="radar-tooltip-description"></p></div>${toggleHtml}</div>`;
 }

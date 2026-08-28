@@ -8,7 +8,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { buildRadarHtml } from "./radar-render";
+import {
+  barycentricColor,
+  buildRadarHtml,
+  polygonColorVertices,
+} from "./radar-render";
 
 const CHALLENGE = { micro: 60, mystiko: 20, macro: 20 };
 const REWARD = { micro: 30, mystiko: 40, macro: 30 };
@@ -161,5 +165,145 @@ describe("profile switch contract", () => {
       }),
     );
     expect(doc.querySelector(".radar-toggle")).toBeNull();
+  });
+});
+
+describe("vertex-anchored barycentric fill (SBGC-210)", () => {
+  const REFERENCE_TRIANGLE: Array<{
+    x: number;
+    y: number;
+    color: [number, number, number];
+  }> = [
+    { x: 0, y: 0, color: [0x58, 0xa6, 0xff] },
+    { x: 100, y: 0, color: [0xbc, 0x8c, 0xff] },
+    { x: 0, y: 100, color: [0xff, 0xa6, 0x57] },
+  ];
+
+  it("returns the exact vertex color at each vertex", () => {
+    expect(barycentricColor(REFERENCE_TRIANGLE, 0, 0)).toBe("rgb(88,166,255)");
+    expect(barycentricColor(REFERENCE_TRIANGLE, 100, 0)).toBe(
+      "rgb(188,140,255)",
+    );
+    expect(barycentricColor(REFERENCE_TRIANGLE, 0, 100)).toBe(
+      "rgb(255,166,87)",
+    );
+  });
+
+  it("blends all three vertex colors at the centroid", () => {
+    expect(barycentricColor(REFERENCE_TRIANGLE, 100 / 3, 100 / 3)).toBe(
+      "rgb(177,157,199)",
+    );
+  });
+
+  it("orders challenge vertices with their dimension colors", () => {
+    const vertices = polygonColorVertices(
+      { micro: 100, mystiko: 50, macro: 0 },
+      "challenge",
+      { x: 160, y: 160 },
+      100,
+    );
+    expect(vertices).toHaveLength(3);
+    expect(vertices.map((v) => v.color)).toEqual([
+      [0x58, 0xa6, 0xff], // micro (0°, top) → blue
+      [0xbc, 0x8c, 0xff], // mystiko (120°) → purple
+      [0xff, 0xa6, 0x57], // macro (240°) → orange
+    ]);
+    expect(vertices[0].y).toBeLessThan(160);
+  });
+
+  it("orders reward vertices with their dimension colors", () => {
+    const vertices = polygonColorVertices(
+      { micro: 100, mystiko: 50, macro: 0 },
+      "reward",
+      { x: 160, y: 160 },
+      100,
+    );
+    expect(vertices.map((v) => v.color)).toEqual([
+      [0xff, 0xa6, 0x57], // macro (60°) → orange
+      [0x58, 0xa6, 0xff], // micro (180°, bottom) → blue
+      [0xbc, 0x8c, 0xff], // mystiko (300°) → purple
+    ]);
+    expect(vertices[1].y).toBeGreaterThan(160);
+  });
+
+  it("emits a barycentric fill mesh and drops the radial gradient", () => {
+    const html = buildRadarHtml({ challenge: CHALLENGE, reward: REWARD });
+    const doc = parse(html);
+    expect(
+      doc.querySelectorAll(".radar-polygon-fill rect").length,
+    ).toBeGreaterThan(0);
+    expect(html).not.toContain("radar-fill");
+    expect(
+      doc
+        .querySelector(".radar-polygon-challenge")
+        ?.classList.contains("radar-polygon--active"),
+    ).toBe(true);
+    expect(
+      doc
+        .querySelector(".radar-polygon-reward")
+        ?.classList.contains("radar-polygon--inactive"),
+    ).toBe(true);
+  });
+
+  it("anchors blue at the Micro vertex in the rendered fill", () => {
+    const doc = parse(
+      buildRadarHtml({
+        challenge: { micro: 60, mystiko: 20, macro: 20 },
+        reward: null,
+      }),
+    );
+    const microNode = doc.querySelector<SVGCircleElement>(
+      '.radar-vertex-node[data-profile="challenge"][data-dimension="micro"]',
+    )!;
+    const cx = Number(microNode.getAttribute("cx"));
+    const cy = Number(microNode.getAttribute("cy"));
+    const rects = Array.from(
+      doc.querySelectorAll<SVGRectElement>(".radar-polygon-fill rect"),
+    );
+    expect(rects.length).toBeGreaterThan(0);
+
+    let best: SVGRectElement | null = null;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const rect of rects) {
+      const rx =
+        Number(rect.getAttribute("x")) + Number(rect.getAttribute("width")) / 2;
+      const ry =
+        Number(rect.getAttribute("y")) +
+        Number(rect.getAttribute("height")) / 2;
+      const d = (rx - cx) ** 2 + (ry - cy) ** 2;
+      if (d < bestDist) {
+        bestDist = d;
+        best = rect;
+      }
+    }
+    const [, r, , b] = best!
+      .getAttribute("fill")!
+      .match(/rgb\((\d+),(\d+),(\d+)\)/)!
+      .map(Number);
+    expect(b).toBeGreaterThan(r);
+  });
+
+  it("renders a blue-dominated fill for a 90/5/5 Micro profile", () => {
+    const doc = parse(
+      buildRadarHtml({
+        challenge: { micro: 90, mystiko: 5, macro: 5 },
+        reward: null,
+      }),
+    );
+    const rects = Array.from(
+      doc.querySelectorAll<SVGRectElement>(".radar-polygon-fill rect"),
+    );
+    expect(rects.length).toBeGreaterThan(0);
+
+    let totalR = 0;
+    let totalB = 0;
+    for (const rect of rects) {
+      const m = rect.getAttribute("fill")?.match(/rgb\((\d+),(\d+),(\d+)\)/);
+      if (m) {
+        totalR += Number(m[1]);
+        totalB += Number(m[3]);
+      }
+    }
+    expect(totalB).toBeGreaterThan(totalR);
   });
 });
