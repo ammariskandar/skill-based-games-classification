@@ -68,6 +68,23 @@ class SteamOverrideTests(TestCase):
         self.assertFalse(self.game.description_overridden)
         self.assertFalse(self.game.developer_overridden)
         self.assertFalse(self.game.release_date_overridden)
+        self.assertFalse(self.game.content_type_overridden)
+
+    def test_change_content_type_marks_override(self):
+        self._post(content_type=ContentType.DLC)
+        self.game.refresh_from_db()
+        self.assertEqual(self.game.content_type, ContentType.DLC)
+        self.assertTrue(self.game.content_type_overridden)
+
+    def test_resume_content_type_clears_override(self):
+        self.game.content_type_overridden = True
+        self.game.content_type = ContentType.DLC
+        self.game.save()
+
+        self._post(content_type=ContentType.DLC, resume_content_type="on")
+        self.game.refresh_from_db()
+        self.assertFalse(self.game.content_type_overridden)
+        self.assertEqual(self.game.content_type, ContentType.DLC)
 
     def test_change_description_only(self):
         self._post(

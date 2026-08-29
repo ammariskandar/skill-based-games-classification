@@ -103,9 +103,9 @@ def _apply_steam_metadata(
     """Apply Steam-managed metadata from *candidate* onto *existing*.
 
     The single owner of the field-mapping table shared by import updates and
-    metadata refresh.  Handles always-Steam-owned fields (name, content_type,
-    images) and the overridable fields (description, developer, release date),
-    each of which is preserved when its per-field override flag is set.
+    metadata refresh.  Handles always-Steam-owned fields (name, images) and
+    the overridable fields (content_type, description, developer, release
+    date), each of which is preserved when its per-field override flag is set.
 
     Mutates *existing* in memory only — the caller decides whether to save.
     Returns the changed field names in the deterministic ``_REFRESHABLE_FIELDS``
@@ -118,7 +118,12 @@ def _apply_steam_metadata(
     if existing.name != candidate.name:
         existing.name = candidate.name
         changed.append("name")
-    if existing.content_type != candidate.content_type:
+    # A human-set content_type override survives refresh (SBGC-96); otherwise
+    # the upstream Steam type is authoritative.
+    if (
+        not existing.content_type_overridden
+        and existing.content_type != candidate.content_type
+    ):
         existing.content_type = candidate.content_type
         changed.append("content_type")
     if image_url is not None and existing.steam_image_url != image_url:

@@ -178,6 +178,13 @@ class Game(models.Model):
             "False = Steam-managed (Steam Games only)."
         ),
     )
+    content_type_overridden = models.BooleanField(
+        default=False,
+        help_text=(
+            "True = content type is human-owned; Steam refresh preserves it. "
+            "False = Steam-managed (Steam Games only)."
+        ),
+    )
 
     # -- Steam-owned metadata ---------------------------------------------------
 

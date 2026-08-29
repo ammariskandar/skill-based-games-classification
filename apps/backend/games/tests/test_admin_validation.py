@@ -232,7 +232,7 @@ class EditTests(TestCase):
 
     # -- Content type and listing status independence ---------------------------
 
-    def test_steam_content_type_readonly_on_edit(self):
+    def test_steam_content_type_editable_marks_override(self):
         self.steam_game.listing_status = ListingStatus.PUBLISHED
         self.steam_game.save()
         url = self._change_url(self.steam_game)
@@ -244,7 +244,10 @@ class EditTests(TestCase):
         data["_changelist_filters"] = ""
         self.client.post(url, data)
         self.steam_game.refresh_from_db()
-        self.assertEqual(self.steam_game.content_type, ContentType.GAME)
+        # An Admin edit to a Steam game's content type is an owner override
+        # (SBGC-96): applied immediately and marked so refresh preserves it.
+        self.assertEqual(self.steam_game.content_type, ContentType.DLC)
+        self.assertTrue(self.steam_game.content_type_overridden)
         self.assertEqual(self.steam_game.listing_status, ListingStatus.PUBLISHED)
 
     def test_edit_listing_status_does_not_change_content_type(self):

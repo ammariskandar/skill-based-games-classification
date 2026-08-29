@@ -52,8 +52,16 @@ class GameForm(forms.ModelForm):
         label="Resume Steam sync for description",
         help_text=_RESUME_HELP,
     )
+    resume_content_type = forms.BooleanField(
+        required=False,
+        label="Resume Steam sync for content type",
+        help_text=(
+            "Clear the override; the next Steam refresh restores the upstream type."
+        ),
+    )
 
     STEAM_RESUME_FIELDS = (
+        "resume_content_type",
         "resume_release_date",
         "resume_developer",
         "resume_description",
