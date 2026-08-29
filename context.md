@@ -2570,6 +2570,27 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-213 methodology page redesign
+
+- Rebuilt `/methodology` into a static, self-contained educational guide:
+  standardized header with the new subheader copy; top section with
+  Challenge vs. Reward dimension definitions (Micro/Macro/Mystiko bullets per
+  profile) beside a static Portal 2 sample radar card; three alternating
+  diagram-and-prose method sections (Method 1 role-weighted aggregation,
+  Method 2 Isolation Forest, Method 3 LoOP) with external reference links;
+  and four full-width statistical deep-dive Q&A blocks (two outlier engines,
+  Method 1 vs. 2/3 reliability, Superuser role rationale, BHPCM
+  consolidation).
+- Static assets in `public/images/methodology/`:
+  `method1-expert-roles.png`, `isolation-forest.png`, `loop-outliers.svg`
+  (copied from the owner's downloads).  The sample radar chart is a
+  build-time-rendered inline static SVG (pre-rendered page, `showToggle:
+  false`) — zero client-side calculation, no runtime fetching, no dynamic
+  SSR; it reuses the exact radar CSS so it matches the interactive chart.
+- No backend change; no Homepage/Rankings changes.  `astro check` 0 errors;
+  lint/format clean; 595 tests OK; production build verified (radar SVG
+  baked into the static page, all three images copied to dist).
+
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
 - New suite ``games/tests/test_ambiguous_content_type_cases.py`` (12 tests)
