@@ -2623,6 +2623,13 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   above `method1-expert-roles.png` in the same white-backed wrapper — zero
   vertical gap, both images rendered at identical width with aspect ratios
   preserved.
+- Whitespace fix: Astro's `compressHTML` strips newline+indent between text
+  and inline elements, gluing words together (`the<strong>Multiplicative`,
+  `For<span>N ≤ 400`). Inserted `&nbsp;` at all 42 join points (KaTeX math
+  spans, `<strong>`, `<code>`) in `methodology.astro`; the entity survives
+  both Prettier reflow and the compressor, and keeps math symbols glued to
+  their preceding word. Verified via built-output grep: zero remaining
+  text-to-inline-tag joins (except the intentional `low-N` hyphen).
 
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 

@@ -201,13 +201,13 @@ const SAMPLE_RADAR = buildRadarHtml({
         <p class="mt-1 text-sm text-muted">
           Beyond the role weighting, Method 1 maintains a protected anchor — a
           hand-selected set of authoritative submissions treated as ground-truth
-          anchors during catalogue bootstrapping. For
+          anchors during catalogue bootstrapping. For&nbsp;
           <span set:html={math`N \le 400`} /> the anchor is a raw equal average of
-          its submissions; from
+          its submissions; from&nbsp;
           <span set:html={math`N \ge 401`} /> it switches to evidence-weighted averaging
-          governed by the aggregate anchor reliability
-          <span set:html={math`\rho_A`} />. The ordinary role weight
-          <span set:html={math`w_g`} /> is scaled by a population-influence coefficient
+          governed by the aggregate anchor reliability&nbsp;
+          <span set:html={math`\rho_A`} />. The ordinary role weight&nbsp;
+          <span set:html={math`w_g`} /> is scaled by a population-influence coefficient&nbsp;
           <span set:html={math`c(N)`} />:
         </p>
         <ul class="mt-2 space-y-2 text-sm text-muted">
@@ -215,11 +215,11 @@ const SAMPLE_RADAR = buildRadarHtml({
             <span class="font-semibold text-(--color-text)"
               >Very low population</span
             >
-            (<span set:html={math`N < 6`} />): the effective weight
+            (<span set:html={math`N < 6`} />): the effective weight&nbsp;
             <span set:html={math`q_g = w_g\,c(N) = 0`} />, so the result is
             exactly the selected anchor average (<span
               set:html={math`F = A`}
-            />). If no anchor qualifies, the calculation returns
+            />). If no anchor qualifies, the calculation returns&nbsp;
             <code class="font-mono text-xs">INSUFFICIENT_ANCHOR</code> instead of
             fabricating a score.
           </li>
@@ -236,8 +236,8 @@ const SAMPLE_RADAR = buildRadarHtml({
             become active — Method 1A, a mean- and SD-based absolute threshold
             with a 5-point floor, and Method 1B, a robust median-based threshold
             (<span set:html={math`3.5\,S_n`} />). Their verdicts weight each
-            submission: <span set:html={math`u_i = 1.0`} /> when both retain,
-            <span set:html={math`0.5`} /> when they split, and
+            submission: <span set:html={math`u_i = 1.0`} /> when both retain,&nbsp;
+            <span set:html={math`0.5`} /> when they split, and&nbsp;
             <span set:html={math`0.0`} /> when both reject. Anchor submissions are
             never removed by these flags — detector disagreement reduces ordinary-role
             influence, not anchor membership.
@@ -257,11 +257,11 @@ const SAMPLE_RADAR = buildRadarHtml({
           dormant, the anchored prior is the entire calculation, and the low-<span
             set:html={math`N`}
           /> result is deliberately the anchor average rather than a noisy arithmetic
-          mean. As the expert base expands, this system evolves toward the
-          <strong class="text-(--color-text)"
+          mean. As the expert base expands, this system evolves toward the&nbsp;<strong
+            class="text-(--color-text)"
             >Multiplicative Weights Update Method (MWUM)</strong
           >, dynamically penalizing inaccurate predictions and rewarding
-          consistent calibration — and at high
+          consistent calibration — and at high&nbsp;
           <span set:html={math`N`} />, statistically unsupported anchor
           submissions remain represented but are diluted rather than removed.
         </p>
@@ -299,11 +299,11 @@ const SAMPLE_RADAR = buildRadarHtml({
           across the six scalar dimensions without assuming normal
           distributions. It is not a density model, it is not role-aware, and it
           performs no cross-dimension standardization — each of the six scalar
-          columns is analyzed by its own one-dimensional forest:
+          columns is analyzed by its own one-dimensional forest:&nbsp;
           <span set:html={math`t = 512`} /> isolation trees per dimension, each built
-          on a subsample of
+          on a subsample of&nbsp;
           <span set:html={math`\psi = \min(256, N)`} /> submissions drawn without
-          replacement, with every tree capped at height
+          replacement, with every tree capped at height&nbsp;
           <span set:html={math`\ell = \lceil \log_2 \psi \rceil`} />.
         </p>
 
@@ -315,9 +315,9 @@ const SAMPLE_RADAR = buildRadarHtml({
           thresholds. Genuinely anomalous points are easy to isolate — they need
           only a few partitions before they sit alone — so the number of splits
           required to isolate an observation is itself the signal. Averaging the
-          path length across the forest gives
-          <span set:html={math`\bar h_{id}`} />, and the canonical anomaly score
-          is:
+          path length across the forest gives&nbsp;<span
+            set:html={math`\bar h_{id}`}
+          />, and the canonical anomaly score is:
         </p>
         <div set:html={mathDisplay`s_{id} = 2^{-\bar h_{id} / c(\psi)}`} />
         <ul class="mt-2 space-y-2 text-sm text-muted">
@@ -333,7 +333,7 @@ const SAMPLE_RADAR = buildRadarHtml({
               >A score near 0.5</span
             >
             means the observation's path length matches the expected reference depth
-            for the subsample size
+            for the subsample size&nbsp;
             <span set:html={math`c(\psi)`} /> — a completely ordinary value.
           </li>
           <li>
@@ -349,13 +349,13 @@ const SAMPLE_RADAR = buildRadarHtml({
           Flagging rule &amp; the 2-of-6 rejection
         </h4>
         <p class="mt-1 text-sm text-muted">
-          A submission is flagged in a dimension only when
+          A submission is flagged in a dimension only when&nbsp;
           <span set:html={math`s_{id} > 0.60`} /> — strictly greater-than, so a score
           of exactly 0.60 is retained. The rule never selects a fixed percentage of
           observations: there is no contamination quota or forced rejection rate,
           and the number of flags may be zero, one, many, or all, depending purely
           on the data. A single flagged dimension is treated as a hint rather than
-          a verdict; it takes
+          a verdict; it takes&nbsp;
           <strong class="text-(--color-text)"
             >flags in at least 2 of the 6 dimensions</strong
           >
@@ -405,11 +405,11 @@ const SAMPLE_RADAR = buildRadarHtml({
           question than iForest: not "is this value easy to isolate globally?"
           but "is this value's local spread unusually large compared to the
           spread of its own neighbors?" It runs independently on each of the six
-          scalar dimensions using the absolute distance
-          <span set:html={math`d = |x - y|`} />, a
-          <strong class="text-(--color-text)">tie-inclusive</strong>
+          scalar dimensions using the absolute distance&nbsp;
+          <span set:html={math`d = |x - y|`} />, a&nbsp;
+          <strong class="text-(--color-text)">tie-inclusive</strong>&nbsp;
           <span set:html={math`k = 10`} /> nearest-neighbor neighborhood, and a standard-deviation
-          extent
+          extent&nbsp;
           <span set:html={math`\lambda = 3`} />. Tie-inclusion matters because
           submissions are integers on a bounded 0–100 scale — exact ties are
           common and must not be discarded.
@@ -419,9 +419,9 @@ const SAMPLE_RADAR = buildRadarHtml({
           From local distance to a probability
         </h4>
         <p class="mt-1 text-sm text-muted">
-          Each submission gets a probabilistic distance
+          Each submission gets a probabilistic distance&nbsp;
           <span set:html={math`\text{pdist}_i = \lambda \sigma_i`} /> — its neighborhood's
-          spread scaled by the extent parameter — and the neighborhood reference
+          spread scaled by the extent parameter — and the neighborhood reference&nbsp;
           <span set:html={math`\overline{\text{pdist}}_i`} />, the mean of its
           neighbors' probabilistic distances. The ratio of the two yields the
           Probabilistic Local Outlier Factor, the relative excess local spread
@@ -431,26 +431,26 @@ const SAMPLE_RADAR = buildRadarHtml({
           set:html={mathDisplay`\text{PLOF}_i = \frac{\text{pdist}_i}{\overline{\text{pdist}}_i} - 1`}
         />
         <p class="mt-2 text-sm text-muted">
-          A positive
+          A positive&nbsp;
           <span set:html={math`\text{PLOF}_i`} /> means the submission has greater
           local spread than its neighbors; zero means it matches the neighborhood
           reference; a negative value means it sits in a locally denser region. Raw
           PLOF values are normalized across the population by the root-mean-square
-          factor
+          factor&nbsp;
           <span
             set:html={math`n\text{PLOF} = \lambda \sqrt{\frac{\sum_{i \in \mathcal{F}} \text{PLOF}_i^2}{|\mathcal{F}|}}`}
-          /> and mapped into
+          /> and mapped into&nbsp;
           <span set:html={math`[0, 1]`} /> through the Gauss error function:
         </p>
         <div
           set:html={mathDisplay`\text{LoOP}_i = \max\left[0,\ \operatorname{erf}\left(\frac{\text{PLOF}_i}{n\text{PLOF}\sqrt{2}}\right)\right], \qquad \operatorname{erf}(z) = \frac{2}{\sqrt{\pi}}\int_0^z e^{-t^2}\,dt`}
         />
         <p class="mt-2 text-sm text-muted">
-          A submission is flagged only when
+          A submission is flagged only when&nbsp;
           <span set:html={math`\text{LoOP}_i > 0.75`} /> — strictly greater-than,
           so a probability of exactly 0.75 is retained — and the same universal 2-of-6
           rejection rule applies across the six dimensions. The LoOP probability is
-          a
+          a&nbsp;
           <span class="text-(--color-text)">relative anomaly measure</span>: it
           ranks how atypical a submission looks within its neighborhood. It is
           not a posterior probability that a submitter is wrong or malicious —
@@ -509,7 +509,7 @@ const SAMPLE_RADAR = buildRadarHtml({
         profile (what the game demands) and a Reward profile (what the game
         returns) — each split across Micro, Macro, and Mystiko and normalized so
         the three components of every profile sum to 100. A single epoch
-        therefore presents the pipeline with six scalar columns of data:
+        therefore presents the pipeline with six scalar columns of data:&nbsp;
         <span
           class="text-(--color-text)"
           set:html={math`C_\mu,\ C_M,\ C_Y,\ R_\mu,\ R_M,\ R_Y`}
@@ -517,7 +517,7 @@ const SAMPLE_RADAR = buildRadarHtml({
         the detectors ever sees the composition as a single joint object.
       </p>
       <p>
-        Each method
+        Each method&nbsp;
         <span set:html={math`\mathcal{M}_k`} /> returns a continuous six-component
         result — a Challenge triple and a Reward triple, each summing exactly to 100:
       </p>
@@ -525,16 +525,17 @@ const SAMPLE_RADAR = buildRadarHtml({
         set:html={mathDisplay`\mathcal{M}_k(D) = \left(\mathbf{m}_{kC}, \mathbf{m}_{kR}\right), \qquad \sum_j m_{ktj} = 100`}
       />
       <p>
-        These are
+        These are&nbsp;
         <span class="text-(--color-text)"
           >continuous pre-reconciliation outputs</span
         >. The unification layer consumes the continuous values — never the
         rounded integers — and only the final published profile is reconciled to
-        whole numbers. Method 1 contributes the expertise-sensitive perspective
+        whole numbers. Method 1 contributes the expertise-sensitive
+        perspective&nbsp;
         <span set:html={math`\mathbf{E}_t`} />, Method 2 the globally robust
-        population perspective
+        population perspective&nbsp;
         <span set:html={math`\mathbf{G}_t`} />, and Method 3 the locally robust
-        population perspective
+        population perspective&nbsp;
         <span set:html={math`\mathbf{L}_t`} /> — three independent answers to the
         same question, consolidated by BHPCM at the end.
       </p>
@@ -557,7 +558,7 @@ const SAMPLE_RADAR = buildRadarHtml({
             >iForest strengths:</span
           >
           Efficient at catching wild, non-linear global outliers — 512 trees per dimension
-          over a
+          over a&nbsp;
           <span set:html={math`\min(256, N)`} /> subsample, with no pairwise distance
           calculations at all.
         </li>
@@ -573,9 +574,9 @@ const SAMPLE_RADAR = buildRadarHtml({
         </li>
         <li>
           <span class="font-semibold text-(--color-text)">LoOP strengths:</span>
-          Produces a mathematically calibrated probability score
-          <span set:html={math`[0, 1]`} /> from local neighborhood density (tie-inclusive
-          <span set:html={math`k = 10`} />, extent
+          Produces a mathematically calibrated probability score&nbsp;
+          <span set:html={math`[0, 1]`} /> from local neighborhood density (tie-inclusive&nbsp;
+          <span set:html={math`k = 10`} />, extent&nbsp;
           <span set:html={math`\lambda = 3`} />), so a niche playstyle that is
           coherent within its own neighborhood survives even when it differs
           from the global majority.
@@ -584,7 +585,7 @@ const SAMPLE_RADAR = buildRadarHtml({
           <span class="font-semibold text-(--color-text)">LoOP weaknesses:</span
           >
           Computationally intensive (<span set:html={math`O(N^2)`} /> pairwise distance
-          checks) and sensitive to the neighborhood size
+          checks) and sensitive to the neighborhood size&nbsp;
           <span set:html={math`k`} />. Its flag is also strictly greater-than (<span
             set:html={math`\text{LoOP}_i > 0.75`}
           />), and a LoOP probability is a relative anomaly measure, not a
@@ -615,15 +616,15 @@ const SAMPLE_RADAR = buildRadarHtml({
           <span class="font-semibold text-(--color-text)"
             >The cold-start trap:</span
           >
-          Methods 2 and 3 are only invoked once a population reaches
+          Methods 2 and 3 are only invoked once a population reaches&nbsp;
           <span set:html={math`N \geq 20`} />; below that threshold the
           statistical engines are dormant and the anchored prior is the entire
           calculation. Even in the 20–50 range, small samples lack the
           statistical power to distinguish a genuine niche opinion from an
           anomaly, so outlier rejection can misclassify valid minority
           viewpoints. Method 1's internal filters also calibrate earlier — its
-          detectors switch on at
-          <span set:html={math`N \geq 9`} />, while iForest and LoOP need
+          detectors switch on at&nbsp;
+          <span set:html={math`N \geq 9`} />, while iForest and LoOP need&nbsp;
           <span set:html={math`N \geq 20`} />.
         </li>
         <li>
@@ -684,7 +685,7 @@ const SAMPLE_RADAR = buildRadarHtml({
           Bayesian Hierarchical Pluralistic Consensus Model (BHPCM):
         </span>
         rather than computing an arithmetic mean (which is vulnerable to residual
-        skew), BHPCM treats a skill profile as a
+        skew), BHPCM treats a skill profile as a&nbsp;
         <span class="text-(--color-text)">composition</span> and works in isometric
         log-ratio (ilr / Aitchison) geometry: the six components are embedded in a
         five-dimensional log-ratio space, and distances between profiles are measured
@@ -694,18 +695,18 @@ const SAMPLE_RADAR = buildRadarHtml({
         averaging happens in this space.
       </p>
       <p class="mt-3 text-sm text-muted">
-        Method 1 supplies the
+        Method 1 supplies the&nbsp;
         <span class="text-(--color-text)">expertise-sensitive prior</span>
         (<span set:html={math`\mathbf{E}_t`} />); Methods 2 and 3 provide the
         cleaned population likelihood — the globally robust (<span
           set:html={math`\mathbf{G}_t`}
         />) and locally robust (<span set:html={math`\mathbf{L}_t`} />)
-        perspectives. The two population perspectives are treated as
+        perspectives. The two population perspectives are treated as&nbsp;
         <span class="text-(--color-text)">correlated</span> — they consume the same
         submissions, so their outputs must not be pooled as independent votes. A stratified
         bootstrap resamples the submission population to propagate uncertainty through
         both perspectives, and the posterior distribution of the governed compromise
-        yields the unified score plus a mathematical
+        yields the unified score plus a mathematical&nbsp;
         <span class="text-(--color-text)">Confidence Level</span>.
       </p>
       <p class="mt-3 text-sm text-muted">
