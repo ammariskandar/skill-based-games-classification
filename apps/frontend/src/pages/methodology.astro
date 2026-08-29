@@ -113,61 +113,22 @@ const SAMPLE_RADAR = buildRadarHtml({
 
   <!-- ── Aggregation pipelines ─────────────────────────────────────────── -->
   <section class="mt-16">
-    <h2 class="text-2xl font-bold tracking-tight text-(--color-text)">
-      How We Aggregate Submissions to Compute the Final Score
-    </h2>
-    <p class="mt-2 max-w-4xl text-base text-muted sm:text-lg">
-      Three pipelines run on every classification epoch. They never run in
-      isolation: Method 1 anchors the prior, while Methods 2 and 3 clean the
-      population before the final consolidation step.
-    </p>
-
-    <div class="mt-4 max-w-4xl space-y-3 text-sm text-muted">
-      <p>
-        Each contributing player submits two independent profiles — a Challenge
-        profile (what the game demands) and a Reward profile (what the game
-        returns) — each split across Micro, Macro, and Mystiko and normalized so
-        the three components of every profile sum to 100. A single epoch
-        therefore presents the pipeline with six scalar columns of data:
-        <span
-          class="text-(--color-text)"
-          set:html={math`C_\mu,\ C_M,\ C_Y,\ R_\mu,\ R_M,\ R_Y`}
-        />. All three methods analyze those six columns independently — none of
-        the detectors ever sees the composition as a single joint object.
-      </p>
-      <p>
-        Each method
-        <span set:html={math`\mathcal{M}_k`} /> returns a continuous six-component
-        result — a Challenge triple and a Reward triple, each summing exactly to 100:
-      </p>
-      <div
-        set:html={mathDisplay`\mathcal{M}_k(D) = \left(\mathbf{m}_{kC}, \mathbf{m}_{kR}\right), \qquad \sum_j m_{ktj} = 100`}
-      />
-      <p>
-        These are
-        <span class="text-(--color-text)"
-          >continuous pre-reconciliation outputs</span
-        >. The unification layer consumes the continuous values — never the
-        rounded integers — and only the final published profile is reconciled to
-        whole numbers. Method 1 contributes the expertise-sensitive perspective
-        <span set:html={math`\mathbf{E}_t`} />, Method 2 the globally robust
-        population perspective
-        <span set:html={math`\mathbf{G}_t`} />, and Method 3 the locally robust
-        population perspective
-        <span set:html={math`\mathbf{L}_t`} /> — three independent answers to the
-        same question, consolidated by BHPCM at the end.
-      </p>
-    </div>
-
     <!-- Method 1: diagram left, content right -->
     <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
       <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
+        <img
+          src="/images/methodology/method1-weighted-average.webp"
+          alt="Method 1: weighted-average aggregation formula"
+          loading="lazy"
+          decoding="async"
+          class="block w-full rounded-t"
+        />
         <img
           src="/images/methodology/method1-expert-roles.png"
           alt="Method 1: expert roles feeding into a role-weighted aggregation"
           loading="lazy"
           decoding="async"
-          class="block w-full rounded"
+          class="block w-full rounded-b"
         />
       </div>
       <div>
@@ -532,6 +493,52 @@ const SAMPLE_RADAR = buildRadarHtml({
         </a>
       </div>
     </article>
+
+    <h2 class="mt-16 text-2xl font-bold tracking-tight text-(--color-text)">
+      How We Aggregate Submissions to Compute the Final Score
+    </h2>
+    <p class="mt-2 text-base text-muted sm:text-lg">
+      Three pipelines run on every classification epoch. They never run in
+      isolation: Method 1 anchors the prior, while Methods 2 and 3 clean the
+      population before the final consolidation step.
+    </p>
+
+    <div class="mt-4 space-y-3 text-sm text-muted">
+      <p>
+        Each contributing player submits two independent profiles — a Challenge
+        profile (what the game demands) and a Reward profile (what the game
+        returns) — each split across Micro, Macro, and Mystiko and normalized so
+        the three components of every profile sum to 100. A single epoch
+        therefore presents the pipeline with six scalar columns of data:
+        <span
+          class="text-(--color-text)"
+          set:html={math`C_\mu,\ C_M,\ C_Y,\ R_\mu,\ R_M,\ R_Y`}
+        />. All three methods analyze those six columns independently — none of
+        the detectors ever sees the composition as a single joint object.
+      </p>
+      <p>
+        Each method
+        <span set:html={math`\mathcal{M}_k`} /> returns a continuous six-component
+        result — a Challenge triple and a Reward triple, each summing exactly to 100:
+      </p>
+      <div
+        set:html={mathDisplay`\mathcal{M}_k(D) = \left(\mathbf{m}_{kC}, \mathbf{m}_{kR}\right), \qquad \sum_j m_{ktj} = 100`}
+      />
+      <p>
+        These are
+        <span class="text-(--color-text)"
+          >continuous pre-reconciliation outputs</span
+        >. The unification layer consumes the continuous values — never the
+        rounded integers — and only the final published profile is reconciled to
+        whole numbers. Method 1 contributes the expertise-sensitive perspective
+        <span set:html={math`\mathbf{E}_t`} />, Method 2 the globally robust
+        population perspective
+        <span set:html={math`\mathbf{G}_t`} />, and Method 3 the locally robust
+        population perspective
+        <span set:html={math`\mathbf{L}_t`} /> — three independent answers to the
+        same question, consolidated by BHPCM at the end.
+      </p>
+    </div>
   </section>
 
   <!-- ── Architectural & statistical deep dives ───────────────────────── -->

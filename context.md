@@ -2614,6 +2614,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   matching Methods 1 and 2). All text after Method 3 — the four
   "Architectural &amp; Statistical Deep Dives" articles — lost their
   `max-w-4xl` cap and now wraps at the full container width.
+- Section reorder: the "How We Aggregate Submissions to Compute the Final
+  Score" heading and its intro now appear AFTER the three method articles
+  (full wrapping, no `max-w-4xl` cap); the aggregation section opens
+  directly with Method 1.
+- New Method 1 asset: `public/images/methodology/method1-weighted-average.webp`
+  (owner-provided weighted-average formula diagram, 750×501) stacked flush
+  above `method1-expert-roles.png` in the same white-backed wrapper — zero
+  vertical gap, both images rendered at identical width with aspect ratios
+  preserved.
 
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
