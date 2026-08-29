@@ -2570,6 +2570,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
+
+- New suite ``games/tests/test_ambiguous_content_type_cases.py`` (12 tests)
+  closing the SBGC-14 edge-case matrix:
+  - Ambiguous Steam type strings: casing/whitespace tolerance through
+    ``map_steam_product_type``; unrecognized types (mod/tool/hardware/video/
+    series/episode/advertising/application/bundle) → UNKNOWN; malformed or
+    missing ``type`` payloads through the real adapter parse path → UNKNOWN.
+  - Standalone-expansion lifecycle: ingested DLC → Admin override to GAME →
+    immediately visible on detail/catalogue/search-index; repeated Steam
+    refresh with upstream ``dlc`` returns UNCHANGED and preserves the
+    override.
+  - Upstream drift: unoverridden GAME → upstream ``software`` evicts from all
+    public surfaces; overridden record preserves listing; the Admin resume
+    control clears the override so the next refresh reverts to upstream and
+    evicts the record.
+  - Public boundary: UNKNOWN + READY snapshot never leaks; GOTY/Deluxe GAME
+    base client stays listable; soundtrack bundle stays excluded from search
+    and rankings.
+- `docs/content-type-policy.md` aligned: the standalone-expansion guideline
+  now documents the shipped SBGC-96 Admin override + resume mechanism instead
+  of the pre-override state.
+- No production code changes; no migrations.  Epic matrix
+  (policy+override+exclusions+ambiguous) 34 OK; ruff check + format clean;
+  frontend 595 OK.  SBGC-14 implementation complete.
+
 ## 2026-08-29 — SBGC-97 exclusions enforced across all public read paths
 
 - Audit pass over every public read surface (game detail, catalogue, search
