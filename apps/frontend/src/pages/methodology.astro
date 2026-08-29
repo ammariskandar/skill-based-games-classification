@@ -117,12 +117,16 @@ const SAMPLE_RADAR = buildRadarHtml({
     <p class="mt-2 max-w-4xl text-base text-muted sm:text-lg">
       Three pipelines run on every classification epoch. They never run in
       isolation: Method 1 anchors the prior, while Methods 2 and 3 clean the
-      population before the final consolidation step.
+      population before the final consolidation step. Every method operates
+      independently on the six scalar dimensions (Challenge and Reward × Micro,
+      Macro, Mystiko), and each emits a continuous score that is later
+      reconciled to an integer profile summing to 100 through largest-remainder
+      allocation.
     </p>
 
     <!-- Method 1: diagram left, content right -->
     <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-      <div class="mx-auto w-[80%] rounded-lg bg-white p-2 shadow-sm">
+      <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
         <img
           src="/images/methodology/method1-expert-roles.png"
           alt="Method 1: expert roles feeding into a role-weighted aggregation"
@@ -186,7 +190,7 @@ const SAMPLE_RADAR = buildRadarHtml({
     <!-- Method 2: content left, diagram right -->
     <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
       <div class="lg:order-2">
-        <div class="mx-auto w-[80%] rounded-lg bg-white p-2 shadow-sm">
+        <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
           <img
             src="/images/methodology/isolation-forest.png"
             alt="Isolation Forest: anomalous data points isolated with fewer random partitions"
@@ -205,14 +209,35 @@ const SAMPLE_RADAR = buildRadarHtml({
         </p>
         <p class="mt-3 text-sm text-muted">
           An unsupervised anomaly detection model that isolates global outliers
-          across the 6-dimensional submission space without assuming normal
-          distributions.
+          across the six scalar dimensions without assuming normal
+          distributions. Each dimension is scored by its own one-dimensional
+          forest of
+          <code class="font-mono text-xs">t = 512</code> isolation trees built on
+          a subsample of
+          <code class="font-mono text-xs">ψ = min(256, N)</code> submissions drawn
+          without replacement, with each tree capped at height
+          <code class="font-mono text-xs">ℓ = ⌈log₂ ψ⌉</code>.
         </p>
         <p class="mt-3 text-sm text-muted">
           Outliers are isolated using recursive random orthogonal partitioning
-          trees. Anomalous data points (extreme coordinate swings) require
-          significantly fewer splits to isolate and are assigned a high anomaly
-          score, systematically pruning them from the global pool.
+          trees: anomalous points (extreme coordinate swings) require
+          significantly fewer splits to isolate. A submission's mean path length
+          <code class="font-mono text-xs">h̄</code> across the forest yields the canonical
+          anomaly score
+          <code class="font-mono text-xs">s = 2^(−h̄ / c(ψ))</code> — short paths drive
+          the score toward 1, a score near 0.5 matches the expected reference depth,
+          and there is no contamination quota or forced rejection rate.
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          A submission is flagged in a dimension only when
+          <code class="font-mono text-xs">s &gt; 0.60</code> — strictly greater-than,
+          so a score of exactly 0.60 is retained. If at least
+          <strong class="text-(--color-text)">2 of the 6 dimensions</strong>
+          flag, the entire submission is rejected; every surviving submission carries
+          equal weight (1.0) downstream. The run is fully seeded (<code
+            class="font-mono text-xs">seed = 42</code
+          >), so identical input populations reproduce identical flags within a
+          calculation version.
         </p>
         <p class="mt-3 text-sm text-muted">
           Method 2 protects the dataset against chaotic haymakers, griefers,
@@ -230,7 +255,7 @@ const SAMPLE_RADAR = buildRadarHtml({
 
     <!-- Method 3: diagram left, content right -->
     <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
-      <div class="mx-auto w-[80%] rounded-lg bg-white p-2 shadow-sm">
+      <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
         <img
           src="/images/methodology/loop-outliers.svg"
           alt="LoOP: a local density-based outlier diagram showing a point that clashes with its immediate neighborhood"
@@ -249,7 +274,28 @@ const SAMPLE_RADAR = buildRadarHtml({
         <p class="mt-3 text-sm text-muted">
           A local density-based statistical filter that calculates an outlier
           probability based on a submission's local neighborhood rather than
-          global distance.
+          global distance. It runs independently on each of the six scalar
+          dimensions using the absolute distance
+          <code class="font-mono text-xs">d = |x − y|</code>, a tie-inclusive
+          <code class="font-mono text-xs">k = 10</code> nearest-neighbor neighborhood,
+          and a standard-deviation extent
+          <code class="font-mono text-xs">λ = 3</code>.
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          The pipeline computes each submission's probabilistic distance
+          <code class="font-mono text-xs">pdist = λσ</code>, the neighborhood
+          reference <code class="font-mono text-xs">pdist̄</code>, and the
+          Probabilistic Local Outlier Factor
+          <code class="font-mono text-xs">PLOF = pdist / pdist̄ − 1</code> — the relative
+          excess local spread around a submission. Scores are normalized by
+          <code class="font-mono text-xs">nPLOF = λ·√(Σ PLOF² / |F|)</code> and mapped
+          into [0, 1] via the Gauss error function:
+          <code class="font-mono text-xs"
+            >LoOP = max[0, erf(PLOF / (nPLOF·√2))]</code
+          >. A submission is flagged only when
+          <code class="font-mono text-xs">LoOP &gt; 0.75</code> — strictly greater-than,
+          so a score of exactly 0.75 is retained — and the same universal 2-of-6 rejection
+          rule applies across the six dimensions.
         </p>
         <p class="mt-3 text-sm text-muted">
           <strong class="text-(--color-text)"
@@ -303,36 +349,50 @@ const SAMPLE_RADAR = buildRadarHtml({
           <span class="font-semibold text-(--color-text)"
             >iForest strengths:</span
           >
-          Highly efficient at catching wild, non-linear global outliers across high-dimensional
-          space without heavy distance calculations.
+          Efficient at catching wild, non-linear global outliers — 512 trees per dimension
+          over a
+          <code class="font-mono text-xs">min(256, N)</code> subsample, with no pairwise
+          distance calculations at all.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >iForest weaknesses:</span
           >
-          Blind to local density variations; can accidentally prune small, legitimate
-          consensus clusters.
+          Blind to local density variation; a small but legitimate consensus cluster
+          that sits far from the global mass can be pruned as if it were noise. Its
+          binary flag (
+          <code class="font-mono text-xs">s &gt; 0.60</code> strict) says nothing
+          about how far past the threshold an observation lies.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)">LoOP strengths:</span>
           Produces a mathematically calibrated probability score
-          <code class="font-mono text-xs">[0, 1]</code> based on local neighborhood
-          density, respecting valid niche playstyles.
+          <code class="font-mono text-xs">[0, 1]</code> from local neighborhood density
+          (tie-inclusive
+          <code class="font-mono text-xs">k = 10</code>, extent
+          <code class="font-mono text-xs">λ = 3</code>), so a niche playstyle
+          that is coherent within its own neighborhood survives even when it
+          differs from the global majority.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)">LoOP weaknesses:</span
           >
           Computationally intensive (<code class="font-mono text-xs">O(N²)</code
           >
-          pairwise distance checks) and sensitive to the chosen k-nearest neighbor
-          parameter.
+          pairwise distance checks) and sensitive to the neighborhood size
+          <code class="font-mono text-xs">k</code>. Its flag is also strictly
+          greater-than (<code class="font-mono text-xs">LoOP &gt; 0.75</code>),
+          and a LoOP probability is a relative anomaly measure, not a posterior
+          probability that a submitter is wrong.
         </li>
       </ul>
       <p class="mt-3 text-sm text-muted">
         The reality of data &amp; hardware: combining global tree-based
         isolation with local density probabilities ensures the platform is
         protected against malicious vandalism without erasing genuine subjective
-        nuance.
+        nuance. Neither engine is a popularity vote, and neither engine can
+        unilaterally decide a classification — each only prunes submissions
+        before the BHPCM consolidation stage.
       </p>
     </article>
 
@@ -346,11 +406,13 @@ const SAMPLE_RADAR = buildRadarHtml({
           <span class="font-semibold text-(--color-text)"
             >The cold-start trap:</span
           >
-          With small sample sizes (<code class="font-mono text-xs"
-            >N &lt; 10</code
-          >), machine learning outlier detection (iForest and LoOP) lacks
-          sufficient statistical power and can misidentify valid niche opinions
-          as anomalies.
+          Methods 2 and 3 are only invoked once a population reaches
+          <code class="font-mono text-xs">N ≥ 20</code>; below that threshold
+          the statistical engines are dormant and the anchored prior is the
+          entire calculation. Even in the 20–50 range, small samples lack the
+          statistical power to distinguish a genuine niche opinion from an
+          anomaly, so outlier rejection can misclassify valid minority
+          viewpoints.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
@@ -358,7 +420,9 @@ const SAMPLE_RADAR = buildRadarHtml({
           >
           In early classification epochs, a single verified expert submission anchored
           via Method 1 provides a mathematically grounded baseline that prevents uncalibrated
-          public sentiment from skewing the initial index.
+          public sentiment from skewing the initial index. As N grows, the anchor's
+          influence is diluted rather than removed — it remains represented but ceases
+          to dominate.
         </li>
       </ul>
     </article>
@@ -404,10 +468,21 @@ const SAMPLE_RADAR = buildRadarHtml({
           Bayesian Hierarchical Pluralistic Consensus Model (BHPCM):
         </span>
         rather than computing an arithmetic mean (which is vulnerable to residual
-        skew), BHPCM models the true skill vector as a latent Dirichlet-multinomial
-        distribution. Method 1 acts as the informed prior distribution; Methods 2
-        and 3 provide the cleaned population likelihood estimates. The posterior distribution
-        produces the final score with a mathematical
+        skew), BHPCM treats a skill profile as a composition and works in
+        <span class="text-(--color-text)"
+          >isometric log-ratio (ilr / Aitchison) geometry</span
+        >, where the six components are embedded in a five-dimensional log-ratio
+        space and distances between profiles are measured with the Aitchison
+        distance — never Euclidean distance on raw percentages. Method 1
+        supplies the
+        <span class="text-(--color-text)">expertise-sensitive prior</span>;
+        Methods 2 and 3 provide the cleaned
+        <span class="text-(--color-text)">population likelihood</span>, treated
+        as correlated perspectives on the same submissions rather than
+        independent votes. A stratified bootstrap resamples the submission
+        population to propagate uncertainty through both perspectives, and the
+        posterior distribution of the governed compromise yields the unified
+        score plus a mathematical
         <span class="text-(--color-text)">Confidence Level</span>.
       </p>
       <p class="mt-3 text-sm text-muted">
@@ -427,9 +502,20 @@ const SAMPLE_RADAR = buildRadarHtml({
           <span class="font-semibold text-(--color-text)"
             >Dynamic uncertainty weighting:</span
           >
-          If Methods 2 and 3 show high inter-method agreement, the model automatically
-          reduces the prior's influence, transitioning smoothly from expert-led to
-          community-led governance.
+          The influence of the expertise perspective is bounded by explicit governance
+          parameters — a permitted minimum and maximum. If Methods 2 and 3 show high
+          inter-method agreement, the model reduces the prior's influence toward its
+          minimum, transitioning smoothly from expert-led to community-led governance;
+          strong expert–population disagreement similarly tamps the expert anchor
+          down rather than letting either side win by default.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Integer reconciliation:</span
+          >
+          The posterior is a continuous composition; the published profile is recovered
+          by largest-remainder allocation so each profile sums to exactly 100, with
+          a fixed tie priority (Micro wins a 0.5/0.5 Micro–Mystiko remainder tie).
         </li>
       </ul>
     </article>

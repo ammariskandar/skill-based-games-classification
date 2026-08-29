@@ -2590,6 +2590,19 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - No backend change; no Homepage/Rankings changes.  `astro check` 0 errors;
   lint/format clean; 595 tests OK; production build verified (radar SVG
   baked into the static page, all three images copied to dist).
+- Sizing pass: diagrams scaled to 90% width on white backing boxes, radar
+  reduced to 63% width.
+- Content pass (grounded in `docs/statistical_model.md`): Method 2 now
+  cites the exact iForest constants (`t = 512`, `ψ = min(256, N)`, height
+  limit `⌈log₂ ψ⌉`, anomaly score `s = 2^(−h̄/c(ψ))`, strict `s > 0.60`
+  flag, six one-dimensional forests, universal 2-of-6 rejection, equal
+  survivor weight, seed 42); Method 3 cites LoOP constants (`k = 10`
+  tie-inclusive, `λ = 3`, `d = |x−y|`, `PLOF`, `nPLOF`, `erf` probability,
+  strict `LoOP > 0.75`); deep dives updated with the `N ≥ 20` dormancy
+  threshold, governance-bounded expert influence, and BHPCM described via
+  verified compositional terms (ilr/Aitchison geometry, expertise prior vs.
+  correlated population likelihood, stratified bootstrap, posterior +
+  Confidence Level, largest-remainder integer reconciliation).
 
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
