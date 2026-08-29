@@ -34,6 +34,41 @@ const SAMPLE_RADAR = buildRadarHtml({
     </p>
   </div>
 
+  <!-- ── Summary card ─────────────────────────────────────────────────── -->
+  <div
+    class="mb-12 rounded-xl border border-(--color-border-2) bg-(--color-surface) p-6"
+  >
+    <p class="text-base text-muted sm:text-lg">
+      MyGameDNA scores games using two profiles:&nbsp;<strong
+        class="text-(--color-text)">Challenge</strong
+      >&nbsp;(skills needed to succeed) and&nbsp;<strong
+        class="text-(--color-text)">Reward</strong
+      >&nbsp;(satisfaction gained from succeeding). Each profile has&nbsp;<strong
+        class="text-(--color-micro)">Micro</strong
+      >&nbsp;(reflexes/precision),&nbsp;<strong class="text-(--color-macro)"
+        >Macro</strong
+      >&nbsp;(planning/resources), and&nbsp;<strong
+        class="text-(--color-mystiko)">Mystiko</strong
+      >&nbsp;(prediction/deduction), totaling&nbsp;<strong
+        class="text-(--color-text)">100%</strong
+      >.
+    </p>
+    <p class="mt-3 text-base text-muted sm:text-lg">
+      Three methods calculate the result:&nbsp;<strong
+        class="text-(--color-text)">Method 1</strong
+      >&nbsp;prioritizes trusted experts, especially with few submissions;&nbsp;<strong
+        class="text-(--color-text)">Method 2</strong
+      >&nbsp;(iForest) removes globally unusual submissions;&nbsp;<strong
+        class="text-(--color-text)">Method 3</strong
+      >&nbsp;(LoOP) detects submissions that are unusual compared with nearby
+      players. Finally,&nbsp;<strong class="text-(--color-text)">BHPCM</strong
+      >&nbsp;combines all three, accounting for uncertainty and disagreement
+      rather than simply averaging them, producing the final&nbsp;<strong
+        class="text-(--color-text)">100-point profile</strong
+      >.
+    </p>
+  </div>
+
   <!-- ── Top section: taxonomy + sample radar ─────────────────────────── -->
   <section class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
     <div>
@@ -55,19 +90,20 @@ const SAMPLE_RADAR = buildRadarHtml({
       </p>
       <ul class="mt-3 space-y-2 text-sm text-muted">
         <li>
-          <span class="font-semibold text-(--color-micro)">Micro:</span>
-          Sensorimotor reflexes, fine dexterity, millisecond mechanical timing, and
-          input precision (e.g., flick shots, parry frames, rhythm execution).
+          <span class="font-semibold text-(--color-micro)">Micro:</span>&nbsp;
+          Sensorimotor reflexes, fine dexterity, millisecond mechanical timing,
+          and input precision (e.g., flick shots, parry frames, rhythm
+          execution).
         </li>
         <li>
-          <span class="font-semibold text-(--color-macro)">Macro:</span>
-          Long-term planning, economic efficiency, systemic build crafting, map awareness,
-          and resource management.
+          <span class="font-semibold text-(--color-macro)">Macro:</span>&nbsp;
+          Long-term planning, economic efficiency, systemic build crafting, map
+          awareness, and resource management.
         </li>
         <li>
-          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span>
-          Deduction under uncertainty, predicting hidden enemy rotations, psychological
-          bluffing, and game sense under fog-of-war.
+          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span
+          >&nbsp; Deduction under uncertainty, predicting hidden enemy
+          rotations, psychological bluffing, and game sense under fog-of-war.
         </li>
       </ul>
 
@@ -80,20 +116,21 @@ const SAMPLE_RADAR = buildRadarHtml({
       </p>
       <ul class="mt-3 space-y-2 text-sm text-muted">
         <li>
-          <span class="font-semibold text-(--color-micro)">Micro:</span>
-          Instant, localized, tactile feedback (e.g., headshot hitmarkers, combo multipliers,
-          killstreak banners, round MVP awards).
+          <span class="font-semibold text-(--color-micro)">Micro:</span>&nbsp;
+          Instant, localized, tactile feedback (e.g., headshot hitmarkers, combo
+          multipliers, killstreak banners, round MVP awards).
         </li>
         <li>
-          <span class="font-semibold text-(--color-macro)">Macro:</span>
-          Permanent, outward prestige and long-term milestones (e.g., climbing competitive
-          ELO ladders, rare achievements, account level progression).
+          <span class="font-semibold text-(--color-macro)">Macro:</span>&nbsp;
+          Permanent, outward prestige and long-term milestones (e.g., climbing
+          competitive ELO ladders, rare achievements, account level
+          progression).
         </li>
         <li>
-          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span>
-          Cerebral, "invisible" satisfaction (e.g., the dopamine hit of a correct
-          blind read, executing an unorthodox counter-strategy, discovering obscure
-          narrative lore).
+          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span
+          >&nbsp; Cerebral, "invisible" satisfaction (e.g., the dopamine hit of
+          a correct blind read, executing an unorthodox counter-strategy,
+          discovering obscure narrative lore).
         </li>
       </ul>
     </div>
@@ -214,8 +251,8 @@ const SAMPLE_RADAR = buildRadarHtml({
           <li>
             <span class="font-semibold text-(--color-text)"
               >Very low population</span
-            >
-            (<span set:html={math`N < 6`} />): the effective weight&nbsp;
+            >&nbsp; (<span set:html={math`N < 6`} />): the effective
+            weight&nbsp;
             <span set:html={math`q_g = w_g\,c(N) = 0`} />, so the result is
             exactly the selected anchor average (<span
               set:html={math`F = A`}
@@ -224,19 +261,21 @@ const SAMPLE_RADAR = buildRadarHtml({
             fabricating a score.
           </li>
           <li>
-            <span class="font-semibold text-(--color-text)">Early growth</span>
-            (<span set:html={math`6 \le N < 9`} />): population influence turns
-            positive, but the internal filters do not reject anyone — every
-            submission receives <span set:html={math`u_i = 1`} />.
+            <span class="font-semibold text-(--color-text)">Early growth</span
+            >&nbsp; (<span set:html={math`6 \le N < 9`} />): population
+            influence turns positive, but the internal filters do not reject
+            anyone — every submission receives <span
+              set:html={math`u_i = 1`}
+            />.
           </li>
           <li>
             <span class="font-semibold text-(--color-text)">Filters engage</span
-            >
-            (<span set:html={math`N \ge 9`} />): both complementary detectors
-            become active — Method 1A, a mean- and SD-based absolute threshold
-            with a 5-point floor, and Method 1B, a robust median-based threshold
-            (<span set:html={math`3.5\,S_n`} />). Their verdicts weight each
-            submission: <span set:html={math`u_i = 1.0`} /> when both retain,&nbsp;
+            >&nbsp; (<span set:html={math`N \ge 9`} />): both complementary
+            detectors become active — Method 1A, a mean- and SD-based absolute
+            threshold with a 5-point floor, and Method 1B, a robust median-based
+            threshold (<span set:html={math`3.5\,S_n`} />). Their verdicts
+            weight each submission: <span set:html={math`u_i = 1.0`} /> when both
+            retain,&nbsp;
             <span set:html={math`0.5`} /> when they split, and&nbsp;
             <span set:html={math`0.0`} /> when both reject. Anchor submissions are
             never removed by these flags — detector disagreement reduces ordinary-role
@@ -245,9 +284,8 @@ const SAMPLE_RADAR = buildRadarHtml({
           <li>
             <span class="font-semibold text-(--color-text)"
               >Community fallback</span
-            >
-            (<span set:html={math`N \ge 50`} />): when no privileged anchor
-            exists, a Community fallback becomes available with a capped
+            >&nbsp; (<span set:html={math`N \ge 50`} />): when no privileged
+            anchor exists, a Community fallback becomes available with a capped
             influence of <span set:html={math`0.30`} />.
           </li>
         </ul>
@@ -324,24 +362,21 @@ const SAMPLE_RADAR = buildRadarHtml({
           <li>
             <span class="font-semibold text-(--color-text)"
               >Short average path</span
-            >
-            (few splits needed) drives the score toward 1 — the signature of an easily
-            isolated, anomalous value.
+            >&nbsp; (few splits needed) drives the score toward 1 — the
+            signature of an easily isolated, anomalous value.
           </li>
           <li>
             <span class="font-semibold text-(--color-text)"
               >A score near 0.5</span
-            >
-            means the observation's path length matches the expected reference depth
-            for the subsample size&nbsp;
+            >&nbsp; means the observation's path length matches the expected
+            reference depth for the subsample size&nbsp;
             <span set:html={math`c(\psi)`} /> — a completely ordinary value.
           </li>
           <li>
             <span class="font-semibold text-(--color-text)"
               >Scores below 0.5</span
-            >
-            indicate deeper-than-expected isolation, i.e. values buried inside a dense
-            region.
+            >&nbsp; indicate deeper-than-expected isolation, i.e. values buried
+            inside a dense region.
           </li>
         </ul>
 
@@ -358,11 +393,11 @@ const SAMPLE_RADAR = buildRadarHtml({
           a verdict; it takes&nbsp;
           <strong class="text-(--color-text)"
             >flags in at least 2 of the 6 dimensions</strong
-          >
-          to reject the entire submission. Every survivor then carries equal weight
-          (1.0) downstream — iForest prunes, it does not down-rank. Because the whole
-          run is seeded (<code class="font-mono text-xs">seed = 42</code>),
-          identical input populations reproduce identical flags within a
+          >&nbsp; to reject the entire submission. Every survivor then carries
+          equal weight (1.0) downstream — iForest prunes, it does not down-rank.
+          Because the whole run is seeded (<code class="font-mono text-xs"
+            >seed = 42</code
+          >), identical input populations reproduce identical flags within a
           calculation version.
         </p>
         <p class="mt-3 text-sm text-muted">
@@ -465,15 +500,14 @@ const SAMPLE_RADAR = buildRadarHtml({
           <li>
             <span class="font-semibold text-(--color-text)"
               >iForest analogy:</span
-            >
-            Spotting a lone skyscraper in the middle of open farmland — an obvious
-            global outlier.
+            >&nbsp; Spotting a lone skyscraper in the middle of open farmland —
+            an obvious global outlier.
           </li>
           <li>
-            <span class="font-semibold text-(--color-text)">LoOP analogy:</span>
-            Spotting a single suburban single-family home placed inside dense downtown
-            Manhattan — it looks normal in isolation, but completely clashes with
-            the density of its immediate neighbors.
+            <span class="font-semibold text-(--color-text)">LoOP analogy:</span
+            >&nbsp; Spotting a single suburban single-family home placed inside
+            dense downtown Manhattan — it looks normal in isolation, but
+            completely clashes with the density of its immediate neighbors.
           </li>
         </ul>
         <p class="mt-3 text-sm text-muted">
@@ -556,25 +590,23 @@ const SAMPLE_RADAR = buildRadarHtml({
         <li>
           <span class="font-semibold text-(--color-text)"
             >iForest strengths:</span
-          >
-          Efficient at catching wild, non-linear global outliers — 512 trees per dimension
-          over a&nbsp;
+          >&nbsp; Efficient at catching wild, non-linear global outliers — 512
+          trees per dimension over a&nbsp;
           <span set:html={math`\min(256, N)`} /> subsample, with no pairwise distance
           calculations at all.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >iForest weaknesses:</span
-          >
-          Blind to local density variation; a small but legitimate consensus cluster
-          that sits far from the global mass can be pruned as if it were noise. Its
-          binary flag (
+          >&nbsp; Blind to local density variation; a small but legitimate
+          consensus cluster that sits far from the global mass can be pruned as
+          if it were noise. Its binary flag (
           <span set:html={math`s_{id} > 0.60`} /> strict) says nothing about how far
           past the threshold an observation lies.
         </li>
         <li>
-          <span class="font-semibold text-(--color-text)">LoOP strengths:</span>
-          Produces a mathematically calibrated probability score&nbsp;
+          <span class="font-semibold text-(--color-text)">LoOP strengths:</span
+          >&nbsp; Produces a mathematically calibrated probability score&nbsp;
           <span set:html={math`[0, 1]`} /> from local neighborhood density (tie-inclusive&nbsp;
           <span set:html={math`k = 10`} />, extent&nbsp;
           <span set:html={math`\lambda = 3`} />), so a niche playstyle that is
@@ -583,9 +615,8 @@ const SAMPLE_RADAR = buildRadarHtml({
         </li>
         <li>
           <span class="font-semibold text-(--color-text)">LoOP weaknesses:</span
-          >
-          Computationally intensive (<span set:html={math`O(N^2)`} /> pairwise distance
-          checks) and sensitive to the neighborhood size&nbsp;
+          >&nbsp; Computationally intensive (<span set:html={math`O(N^2)`} /> pairwise
+          distance checks) and sensitive to the neighborhood size&nbsp;
           <span set:html={math`k`} />. Its flag is also strictly greater-than (<span
             set:html={math`\text{LoOP}_i > 0.75`}
           />), and a LoOP probability is a relative anomaly measure, not a
@@ -615,8 +646,8 @@ const SAMPLE_RADAR = buildRadarHtml({
         <li>
           <span class="font-semibold text-(--color-text)"
             >The cold-start trap:</span
-          >
-          Methods 2 and 3 are only invoked once a population reaches&nbsp;
+          >&nbsp; Methods 2 and 3 are only invoked once a population
+          reaches&nbsp;
           <span set:html={math`N \geq 20`} />; below that threshold the
           statistical engines are dormant and the anchored prior is the entire
           calculation. Even in the 20–50 range, small samples lack the
@@ -630,12 +661,12 @@ const SAMPLE_RADAR = buildRadarHtml({
         <li>
           <span class="font-semibold text-(--color-text)"
             >Expert calibration:</span
-          >
-          In early classification epochs, a single verified expert submission anchored
-          via Method 1 provides a mathematically grounded baseline that prevents uncalibrated
-          public sentiment from skewing the initial index. As N grows, the anchor's
-          influence is diluted rather than removed — it remains represented but ceases
-          to dominate, and the system transitions smoothly from expert-led to community-led
+          >&nbsp; In early classification epochs, a single verified expert
+          submission anchored via Method 1 provides a mathematically grounded
+          baseline that prevents uncalibrated public sentiment from skewing the
+          initial index. As N grows, the anchor's influence is diluted rather
+          than removed — it remains represented but ceases to dominate, and the
+          system transitions smoothly from expert-led to community-led
           governance.
         </li>
       </ul>
@@ -649,29 +680,27 @@ const SAMPLE_RADAR = buildRadarHtml({
         <li>
           <span class="font-semibold text-(--color-text)"
             >Operational checks &amp; balances:</span
-          >
-          Serves strictly as a bootstrapping mechanism to establish ground-truth anchors
-          across initial catalogue releases. A Superuser classification is a calibration
-          anchor, not a veto.
+          >&nbsp; Serves strictly as a bootstrapping mechanism to establish
+          ground-truth anchors across initial catalogue releases. A Superuser
+          classification is a calibration anchor, not a veto.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >Classification ≠ quality judgments:</span
-          >
-          MyGameDNA measures <em>what kind of game a title is</em>, not whether
-          it is <em>good or bad</em>. A Superuser bias has zero moral or
+          >&nbsp; MyGameDNA measures <em>what kind of game a title is</em>, not
+          whether it is <em>good or bad</em>. A Superuser bias has zero moral or
           commercial impact on review aggregates — it merely anchors mechanical
           categorization.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >Pledge of impartiality:</span
-          >
-          Staff classifications pledge strict adherence to observable mechanical inputs.
-          As the contributor and expert dataset matures, the Superuser weighting phase-out
-          is baked into the convergence algorithm. The base-weight table above makes
-          the institutional authority explicit — a normative governance choice, not
-          a hidden empirical claim. Feedback is continuously welcome.
+          >&nbsp; Staff classifications pledge strict adherence to observable
+          mechanical inputs. As the contributor and expert dataset matures, the
+          Superuser weighting phase-out is baked into the convergence algorithm.
+          The base-weight table above makes the institutional authority explicit
+          — a normative governance choice, not a hidden empirical claim.
+          Feedback is continuously welcome.
         </li>
       </ul>
     </article>
@@ -683,9 +712,8 @@ const SAMPLE_RADAR = buildRadarHtml({
       <p class="mt-3 text-sm text-muted">
         <span class="font-semibold text-(--color-text)">
           Bayesian Hierarchical Pluralistic Consensus Model (BHPCM):
-        </span>
-        rather than computing an arithmetic mean (which is vulnerable to residual
-        skew), BHPCM treats a skill profile as a&nbsp;
+        </span>&nbsp; rather than computing an arithmetic mean (which is
+        vulnerable to residual skew), BHPCM treats a skill profile as a&nbsp;
         <span class="text-(--color-text)">composition</span> and works in isometric
         log-ratio (ilr / Aitchison) geometry: the six components are embedded in a
         five-dimensional log-ratio space, and distances between profiles are measured
@@ -696,7 +724,7 @@ const SAMPLE_RADAR = buildRadarHtml({
       </p>
       <p class="mt-3 text-sm text-muted">
         Method 1 supplies the&nbsp;
-        <span class="text-(--color-text)">expertise-sensitive prior</span>
+        <span class="text-(--color-text)">expertise-sensitive prior</span>&nbsp;
         (<span set:html={math`\mathbf{E}_t`} />); Methods 2 and 3 provide the
         cleaned population likelihood — the globally robust (<span
           set:html={math`\mathbf{G}_t`}
@@ -718,37 +746,35 @@ const SAMPLE_RADAR = buildRadarHtml({
         <li>
           <span class="font-semibold text-(--color-text)"
             >Variance shrinkage:</span
-          >
-          Automatically pulls extreme scores toward the consensus mean when sample
-          variance is high.
+          >&nbsp; Automatically pulls extreme scores toward the consensus mean
+          when sample variance is high.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >Dynamic uncertainty weighting:</span
-          >
-          The influence of the expertise perspective is bounded by explicit governance
-          parameters — a permitted minimum and maximum. If Methods 2 and 3 show high
-          inter-method agreement, the model reduces the prior's influence toward its
-          minimum, transitioning smoothly from expert-led to community-led governance;
-          strong expert–population disagreement similarly tamps the expert anchor
-          down rather than letting either side win by default.
+          >&nbsp; The influence of the expertise perspective is bounded by
+          explicit governance parameters — a permitted minimum and maximum. If
+          Methods 2 and 3 show high inter-method agreement, the model reduces
+          the prior's influence toward its minimum, transitioning smoothly from
+          expert-led to community-led governance; strong expert–population
+          disagreement similarly tamps the expert anchor down rather than
+          letting either side win by default.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >Pluralism without averaging:</span
-          >
-          Disagreement is treated as legitimate diversity of judgment, not as evidence
-          that one side is objectively wrong — BHPCM never assumes a single objectively
-          correct score vector. Disagreement is preserved in the uncertainty, not
-          repaired away.
+          >&nbsp; Disagreement is treated as legitimate diversity of judgment,
+          not as evidence that one side is objectively wrong — BHPCM never
+          assumes a single objectively correct score vector. Disagreement is
+          preserved in the uncertainty, not repaired away.
         </li>
         <li>
           <span class="font-semibold text-(--color-text)"
             >Integer reconciliation:</span
-          >
-          The posterior is a continuous composition; the published profile is recovered
-          by largest-remainder allocation so each profile sums to exactly 100, with
-          a fixed tie priority (Micro wins a 0.5/0.5 Micro–Mystiko remainder tie).
+          >&nbsp; The posterior is a continuous composition; the published
+          profile is recovered by largest-remainder allocation so each profile
+          sums to exactly 100, with a fixed tie priority (Micro wins a 0.5/0.5
+          Micro–Mystiko remainder tie).
         </li>
       </ul>
     </article>

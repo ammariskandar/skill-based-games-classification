@@ -2630,6 +2630,18 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   both Prettier reflow and the compressor, and keeps math symbols glued to
   their preceding word. Verified via built-output grep: zero remaining
   text-to-inline-tag joins (except the intentional `low-N` hyphen).
+- Fixed the mirror-image whitespace bug: spaces stripped BETWEEN a closing
+  inline tag and the following word (`weighting:</span>The`,
+  `prior</span>(E`). Inserted `&nbsp;` after 31 closing tags (all
+  `>Label:</span>`-style list labels, `A score near 0.5`-style bullets, the
+  `flags in at least 2 of the 6 dimensions</strong>` join, taxonomy
+  Micro/Macro/Mystiko labels). Built-output grep: zero text↔tag joins in
+  either direction.
+- Added an edge-to-edge summary card between the page header and the
+  Challenge vs. Reward section (`rounded-xl border bg-(--color-surface)`
+  with `p-6` padding): subheader-size text summarising the two profiles
+  (Micro/Macro/Mystiko colour-coded, Challenge/Reward/100% bold) and the
+  three methods + BHPCM consolidation, with `&nbsp;`-protected spacing.
 
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
