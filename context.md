@@ -2570,6 +2570,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-214 about page build
+
+- Rebuilt `/about` as a static content page (prerendered, no client scripts):
+  `h1` "About" with no subheader, followed by three sections — "Why was the
+  project created?" (with a compact inline `youtube-nocookie` embed of
+  Surnex's Challenge vs Reward video, `?autoplay=0`, `loading="lazy"`, 16:9,
+  `max-w-md`), "Built on Astro, Powered by Django" (Astro + Django logos
+  from `public/images/about/`, Djazztro repo link), and "How YOU can
+  contribute" (placeholder coffee link). Owner copy preserved verbatim;
+  `&nbsp;`-protected spacing around the inline links.
+- New assets: `public/images/about/astro-logo.png`,
+  `public/images/about/django-logo.png` (owner-provided).
+- No other routes touched. `astro check` 0 errors; lint/format clean;
+  595 tests OK; production build verified (logos copied, iframe src clean,
+  zero text↔link whitespace joins).
+
 ## 2026-08-30 — SBGC-213 methodology page redesign
 
 - Rebuilt `/methodology` into a static, self-contained educational guide:
