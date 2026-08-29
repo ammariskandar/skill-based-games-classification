@@ -2601,6 +2601,10 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   width — at a 1280px viewport this measures ~83px, so the text sits in a
   narrow column beside the dominant video, per owner request. Mobile keeps
   the stacked 16:9 block.
+- Section 1 video sizing (rev 2): video resized to 600px wide at 16:9
+  (~600×338, measured), and the two "…video on YouTube:" / "and came to
+  agree…" paragraphs merged into one continuous paragraph per owner copy
+  edit.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
