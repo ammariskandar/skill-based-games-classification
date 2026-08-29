@@ -2570,6 +2570,22 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-211 subheader width + header/subheader typography standardization
+
+- Standardized the page header across `/catalogue`, `/methodology`, and
+  `/about` (strictly isolated — Homepage and Rankings untouched): a shared
+  header container (`mb-8 flex flex-col gap-2`), uniform `<h1>`
+  (`text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl`),
+  and a uniform subheader (`text-base sm:text-lg text-muted`).
+- Widened the subheader wrap from `max-w-2xl` to `max-w-4xl` on all three
+  pages (both the catalogue search and default intro states) to eliminate
+  premature line breaks on desktop.  Copy, filters, SSR queries, and
+  responsive breakpoints unchanged.
+- Token note: the ticket's `text-white`/`text-slate-400` matrix values were
+  mapped to the project's canonical tokens (`text-(--color-text)` and
+  `text-muted`) so the headers match the existing theme rather than
+  introducing Tailwind-default colors.
+
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
 - New suite ``games/tests/test_ambiguous_content_type_cases.py`` (12 tests)

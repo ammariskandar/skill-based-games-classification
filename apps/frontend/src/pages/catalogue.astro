@@ -93,19 +93,25 @@ const robots = catalogueNeedsNoindex(state) ? "noindex, follow" : undefined;
   robots={robots}
   preloadGameSearchIndex
 >
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{heading}</h1>
-  {
-    searching ? (
-      <p class="mt-2 max-w-2xl text-muted">
-        Matching public Games by name for “{state.q}”.
-      </p>
-    ) : (
-      <p class="mt-2 max-w-2xl text-muted">
-        Browse MyGameDNA's public Game catalogue and compare Challenge and
-        Reward skill profiles.
-      </p>
-    )
-  }
+  <div class="mb-8 flex flex-col gap-2">
+    <h1
+      class="text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl"
+    >
+      {heading}
+    </h1>
+    {
+      searching ? (
+        <p class="max-w-4xl text-base text-muted sm:text-lg">
+          Matching public Games by name for “{state.q}”.
+        </p>
+      ) : (
+        <p class="max-w-4xl text-base text-muted sm:text-lg">
+          Browse MyGameDNA's public Game catalogue and compare Challenge and
+          Reward skill profiles.
+        </p>
+      )
+    }
+  </div>
 
   {
     pageState.kind === "ready" && (
