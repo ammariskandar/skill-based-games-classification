@@ -24,7 +24,8 @@
     "@observablehq/plot": "^0.6.17",
     "@websr/websr": "^0.0.16",
     "astro": "^7.1.3",
-    "d3": "^7.9.0"
+    "d3": "^7.9.0",
+    "katex": "^0.18.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",

@@ -2592,6 +2592,11 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   baked into the static page, all three images copied to dist).
 - Sizing pass: diagrams scaled to 90% width on white backing boxes, radar
   reduced to 63% width.
+- Math typesetting: added `katex@0.18` as a frontend dependency and a
+  build-time helper (`apps/frontend/src/lib/katex.ts`); all formulas now
+  render as real KaTeX markup at build time (62 inline `.katex` spans and 4
+  display equations in the built page) with the KaTeX fonts bundled into
+  dist — zero client-side math JS, page remains fully pre-rendered.
 - Content pass (grounded in `docs/statistical_model.md`): Method 2 now
   cites the exact iForest constants (`t = 512`, `ψ = min(256, N)`, height
   limit `⌈log₂ ψ⌉`, anomaly score `s = 2^(−h̄/c(ψ))`, strict `s > 0.60`
