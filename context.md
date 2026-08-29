@@ -2594,6 +2594,13 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   spacing), and the Django logo asset was reprocessed to remove its white
   background (white → transparent with feathered edges; dark-green logo
   kept fully opaque; verified corner alpha 0 / center alpha 255).
+- Section 1 video sizing: desktop video now fixed at 800px tall with a 4:3
+  aspect ratio (1067×800 on wide screens; `lg:max-w-full` guard prevents
+  horizontal overflow on narrower lg viewports, where it gracefully shrinks
+  width while keeping 800px height). The text column flexes to the leftover
+  width — at a 1280px viewport this measures ~83px, so the text sits in a
+  narrow column beside the dominant video, per owner request. Mobile keeps
+  the stacked 16:9 block.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
