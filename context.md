@@ -2622,6 +2622,9 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   project", "their answer is often insightful… out the window entirely",
   "classify games into buckets… through their REWARD and CHALLENGE",
   "FPS.", "Notice how… So, in a way:"); P5 highlight unchanged.
+- Section 1 copy update (owner revision 3): paragraphs 3 and 4 merged into
+  one paragraph ("…FPS." Notice how… Challenge. So, in a way:"); text
+  column now has 4 paragraphs + the highlight.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
