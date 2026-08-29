@@ -2608,6 +2608,8 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Section 1 video sizing (rev 3): video width increased ~40% to 840px,
   height scaled to keep 16:9 (measured 840×473); text column ~310px at a
   1280px viewport.
+- Section 1 video sizing (rev 4): width +10% to 924px, height scaled to
+  16:9 (measured 924×520); text column ~226px at a 1280px viewport.
 - Section 1 copy update (owner revision): paragraphs 1–4 rewritten per the
   owner's latest text — removed the "I take the L" line, the expense
   parenthetical, the Surnex-credited clause (now "I realized, there was
