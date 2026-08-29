@@ -2616,6 +2616,12 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   another layer to it that he had missed"), "forsake the competitive
   integrity" and "useless"/"universal truth" tails; P5 highlight
   unchanged.
+- Section 1 copy update (owner revision 2): paragraphs 1–4 rewritten again
+  per the owner's latest text ("only to play them for an hour", "I’ve
+  started questioning…", "agreed with most of it… inspired much of this
+  project", "their answer is often insightful… out the window entirely",
+  "classify games into buckets… through their REWARD and CHALLENGE",
+  "FPS.", "Notice how… So, in a way:"); P5 highlight unchanged.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
