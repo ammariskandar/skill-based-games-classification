@@ -2608,6 +2608,12 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Section 1 video sizing (rev 3): video width increased ~40% to 840px,
   height scaled to keep 16:9 (measured 840×473); text column ~310px at a
   1280px viewport.
+- Section 1 copy update (owner revision): paragraphs 1–4 rewritten per the
+  owner's latest text — removed the "I take the L" line, the expense
+  parenthetical, the Surnex-credited clause (now "I realized, there was
+  another layer to it that he had missed"), "forsake the competitive
+  integrity" and "useless"/"universal truth" tails; P5 highlight
+  unchanged.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
