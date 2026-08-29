@@ -421,9 +421,9 @@ const SAMPLE_RADAR = buildRadarHtml({
       </div>
     </article>
 
-    <!-- Method 3: diagram centered above, full-width text below -->
-    <article class="mt-12">
-      <div class="mx-auto w-[60%] max-w-md rounded-lg bg-white p-2 shadow-sm">
+    <!-- Method 3: diagram left, content right -->
+    <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
         <img
           src="/images/methodology/loop-outliers.svg"
           alt="LoOP: a local density-based outlier diagram showing a point that clashes with its immediate neighborhood"
@@ -432,7 +432,7 @@ const SAMPLE_RADAR = buildRadarHtml({
           class="block w-full rounded"
         />
       </div>
-      <div class="mx-auto mt-8 max-w-4xl">
+      <div>
         <h3 class="text-xl font-bold tracking-tight text-(--color-text)">
           3. Method 3 — Global Population Density
         </h3>
@@ -540,7 +540,7 @@ const SAMPLE_RADAR = buildRadarHtml({
       Architectural &amp; Statistical Deep Dives
     </h2>
 
-    <article class="mt-8 max-w-4xl">
+    <article class="mt-8">
       <h3 class="text-lg font-semibold text-(--color-text)">
         Why employ two different methods of removing outliers?
       </h3>
@@ -598,7 +598,7 @@ const SAMPLE_RADAR = buildRadarHtml({
       </p>
     </article>
 
-    <article class="mt-10 max-w-4xl">
+    <article class="mt-10">
       <h3 class="text-lg font-semibold text-(--color-text)">
         In what scenarios would Method 1 ever "beat" Methods 2 and 3 in
         reliability?
@@ -633,7 +633,7 @@ const SAMPLE_RADAR = buildRadarHtml({
       </ul>
     </article>
 
-    <article class="mt-10 max-w-4xl">
+    <article class="mt-10">
       <h3 class="text-lg font-semibold text-(--color-text)">
         Why is "Superuser" even a role in Method 1?
       </h3>
@@ -668,7 +668,7 @@ const SAMPLE_RADAR = buildRadarHtml({
       </ul>
     </article>
 
-    <article class="mt-10 max-w-4xl">
+    <article class="mt-10">
       <h3 class="text-lg font-semibold text-(--color-text)">
         How are the three methods consolidated into a single score?
       </h3>
