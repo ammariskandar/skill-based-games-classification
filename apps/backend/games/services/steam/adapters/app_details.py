@@ -22,6 +22,7 @@ from games.services.steam.normalization import (
     normalize_steam_developer,
     normalize_steam_release_date,
 )
+from games.types import ContentType
 
 # Store appdetails endpoint.
 _APP_DETAILS_PATH = "/api/appdetails"
@@ -93,7 +94,15 @@ class SteamAppDetailsAdapter:
         # -- required fields -----------------------------------------------------
 
         name = _require_nonblank_str(data, "name", app_id)
-        raw_type = _require_nonblank_str(data, "type", app_id)
+
+        # -- content type --------------------------------------------------------
+
+        # The Steam ``type`` field is optional: absent/null/blank/non-string
+        # payloads fail safe to UNKNOWN instead of crashing the import/refresh
+        # pipeline (SBGC-95).  A genuine nonblank string is classified
+        # deterministically by the canonical mapping (unrecognized values also
+        # resolve to UNKNOWN, which is never publicly listable).
+        raw_type = _optional_type(data)
 
         # -- optional fields -----------------------------------------------------
 
@@ -108,7 +117,11 @@ class SteamAppDetailsAdapter:
         return SteamAppDetails(
             app_id=app_id,
             name=name,
-            content_type=map_steam_product_type(raw_type),
+            content_type=(
+                map_steam_product_type(raw_type)
+                if raw_type is not None
+                else ContentType.UNKNOWN
+            ),
             description=description,
             developer=developer,
             release_date=release_date,
@@ -137,6 +150,21 @@ def _require_nonblank_str(data: dict[str, object], key: str, app_id: str) -> str
             f"'{key}' must not be blank (App ID {app_id})."
         )
     return stripped
+
+
+def _optional_type(data: dict[str, object]) -> str | None:
+    """Extract the optional Steam ``type`` field.
+
+    Returns ``None`` for absent/null/blank/non-string values so the caller
+    fails safe to ``ContentType.UNKNOWN`` — an ambiguous payload must never
+    crash the import/refresh pipeline (SBGC-95).  A genuine nonblank string
+    is returned as-is for ``map_steam_product_type``.
+    """
+    value = data.get("type")
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
 
 
 def _optional_bool(data: dict[str, object], key: str) -> bool | None:
