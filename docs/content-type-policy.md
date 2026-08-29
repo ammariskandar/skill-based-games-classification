@@ -76,10 +76,12 @@ public listing while leaving its status untouched (and vice versa).
 
 - **Standalone expansions / DLC**: may be reclassified as `GAME` when the
   product runs fully standalone (its own executable, no base-game dependency)
-  and carries independent skill profiles.  This is an owner decision; today
-  it is expressed by registering the product as a Manual `GAME` (see
-  `manual-game-management.md`) — Steam-sourced types remain Steam-owned until
-  an owner-override mechanism exists (SBGC-96).
+  and carries independent skill profiles.  Steam-sourced types can be
+  overridden directly in Admin (SBGC-96): editing `content_type` marks the
+  record `content_type_overridden` and Steam refresh preserves the manual
+  decision; clearing "Resume Steam sync for content type" restores upstream
+  sync.  Manual Games are edited as ordinary records (see
+  `manual-game-management.md`).
 - **Bundles / GOTY / Deluxe editions**: classify as `GAME` when the package
   contains the base playable game client (base game + bundled DLC).  Classify
   as `DLC` when it is only an add-on package without the base client.
