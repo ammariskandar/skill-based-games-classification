@@ -2570,6 +2570,26 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-29 — SBGC-97 exclusions enforced across all public read paths
+
+- Audit pass over every public read surface (game detail, catalogue, search
+  index, rankings, homepage carousel): all query builders start from
+  ``Game.objects.publicly_listable()``; the only raw ``Game.objects.get``
+  uses are in the staff-only Steam import/refresh response helpers.  No
+  production change was warranted — the boundary was already correct.
+- New integration suite ``games/tests/test_content_type_exclusions_everywhere.py``
+  (10 tests) with a fixture of one published GAME control + five published
+  non-game records (DLC/DEMO/SOFTWARE/SOUNDTRACK/UNKNOWN) + DRAFT/ARCHIVED
+  GAME records, all non-games carrying current READY published snapshots:
+  detail 404s are status/code/body-identical to an unknown slug
+  (``GAME_NOT_FOUND``); catalogue count/page/results stay exactly 1 under
+  base, ``q=Soundtrack``, ``classified``, ``source``, and a full
+  sort+profile+dominant+coverless composition; rankings stay 1 for
+  challenge/reward/unified; search-index array contains only the control.
+- No schema/migration changes; no enum/queryset changes.  Targeted
+  policy+listing+override+exclusions suites 64 OK; ruff check + format
+  clean; frontend 595 OK.
+
 ## 2026-08-29 — SBGC-96 owner content-type override in Admin
 
 - Steam Games' ``content_type`` is now editable in Admin (previously readonly,
