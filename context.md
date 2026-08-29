@@ -2570,6 +2570,24 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-29 — SBGC-95 auto-classify content_type on Steam import & refresh
+
+- Steam App Details adapter: the ``type`` field is now optional and fails
+  safe to ``ContentType.UNKNOWN`` — absent/null/blank/non-string payloads no
+  longer raise ``SteamMissingRequiredFieldError`` and crash the import;
+  genuine nonblank strings still flow through the canonical
+  ``map_steam_product_type()`` (unrecognized values → UNKNOWN).  Unmapped
+  products stay excluded from the public surface by construction.
+- Refresh synchronization already existed (shared `_apply_steam_metadata`,
+  SBGC-54/56) and remains unchanged; its content-type transition coverage
+  (game↔dlc↔unknown, library-asset transitions) is intact.
+- Tests: adapter edge cases (missing/blank/absent/non-string type → unknown)
+  replace the old raise expectations; a new import-pipeline classification
+  matrix (game/dlc/demo/software/music/soundtrack/hardware/mod through the
+  canonical mapper → persisted content_type) added to test_steam_import.
+- Full backend 1864 OK (25 skipped); ruff check + format clean; frontend 595
+  OK.  No enum/queryset/migration changes.
+
 ## 2026-08-29 — SBGC-94 content-type policy contract (docs + tests)
 
 - Created `docs/content-type-policy.md` — the canonical policy record for the

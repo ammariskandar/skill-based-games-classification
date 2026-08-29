@@ -265,15 +265,27 @@ class MalformedTests(SimpleTestCase):
         with self.assertRaises(SteamMissingRequiredFieldError):
             self.adapter.fetch(SteamAppId("730"))
 
-    def test_missing_type(self):
+    def test_missing_type_fails_safe_to_unknown(self):
         self.client.get_store_api_json.return_value = _valid_response("730", type=None)  # pyright: ignore[reportAttributeAccessIssue]
-        with self.assertRaises(SteamMissingRequiredFieldError):
-            self.adapter.fetch(SteamAppId("730"))
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertEqual(details.content_type, "unknown")
 
-    def test_blank_type(self):
+    def test_blank_type_fails_safe_to_unknown(self):
         self.client.get_store_api_json.return_value = _valid_response("730", type="   ")  # pyright: ignore[reportAttributeAccessIssue]
-        with self.assertRaises(SteamMissingRequiredFieldError):
-            self.adapter.fetch(SteamAppId("730"))
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertEqual(details.content_type, "unknown")
+
+    def test_absent_type_fails_safe_to_unknown(self):
+        response = _valid_response("730")
+        del response["730"]["data"]["type"]
+        self.client.get_store_api_json.return_value = response  # pyright: ignore[reportAttributeAccessIssue]
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertEqual(details.content_type, "unknown")
+
+    def test_non_string_type_fails_safe_to_unknown(self):
+        self.client.get_store_api_json.return_value = _valid_response("730", type=123)  # pyright: ignore[reportAttributeAccessIssue]
+        details = self.adapter.fetch(SteamAppId("730"))
+        self.assertEqual(details.content_type, "unknown")
 
     # -- Non-string metadata → malformed -------------------------------------
 
