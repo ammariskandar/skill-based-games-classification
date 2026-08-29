@@ -28,6 +28,8 @@ from games.services.imports.steam import (
 from games.services.steam.adapters.app_details import SteamAppDetailsAdapter
 from games.services.steam.dto import (
     LookupStatus,
+    SteamAppDetails,
+    SteamAppId,
     SteamAppLookupResult,
     SteamGameImportCandidate,
 )
@@ -124,12 +126,14 @@ def _refresh_service(foundation):
     return SteamGameRefreshService(foundation, SteamGamePersistenceService())
 
 
-def _adapter_details(payload_data: dict) -> object:
-    """Run one raw Steam ``data`` dict through the real adapter parse path."""
-    adapter = SteamAppDetailsAdapter(mock.MagicMock())
-    return adapter._parse_response(
-        "730", {"730": {"success": True, "data": payload_data}}
-    )  # pyright: ignore[reportPrivateUsage]
+def _adapter_details(payload_data: dict) -> SteamAppDetails:
+    """Run one raw Steam ``data`` dict through the real adapter fetch path."""
+    client = mock.MagicMock()
+    client.get_store_api_json.return_value = {
+        "730": {"success": True, "data": payload_data},
+    }
+    adapter = SteamAppDetailsAdapter(client)
+    return adapter.fetch(SteamAppId("730"))
 
 
 # ---------------------------------------------------------------------------
