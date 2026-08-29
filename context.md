@@ -2608,6 +2608,12 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   verified compositional terms (ilr/Aitchison geometry, expertise prior vs.
   correlated population likelihood, stratified bootstrap, posterior +
   Confidence Level, largest-remainder integer reconciliation).
+- Layout fix: `loop-outliers.svg` had no `viewBox`, so the browser rendered
+  it as a 16px-tall sliver and the Method 3 text sat in a narrow half-width
+  column next to an invisible diagram. Added
+  `viewBox="0 0 123.75 130.06"` and restructured Method 3 to stack the
+  diagram centered above a full-width (`max-w-4xl`) text column; Methods 1
+  and 2 keep their side-by-side diagram-and-prose layout.
 
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
