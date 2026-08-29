@@ -2570,6 +2570,28 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-29 — SBGC-94 content-type policy contract (docs + tests)
+
+- Created `docs/content-type-policy.md` — the canonical policy record for the
+  SBGC-14 DLC/non-game exclusion epic: the 6-value `ContentType` taxonomy
+  (`game`/`dlc`/`demo`/`software`/`soundtrack`/`unknown`, only `GAME`
+  listable), the Steam type-mapping truth table
+  (`map_steam_product_type`; unrecognized incl. `application` → `UNKNOWN`,
+  malformed → `ValueError`), the `publicly_listable()` eligibility gate, and
+  ambiguous-case guidelines (standalone expansions, GOTY/Deluxe bundles,
+  remasters, mods/hardware/video).
+- Added `games/tests/test_content_type_policy.py` (7 tests) locking the
+  contract: exact 6-value taxonomy + choices labels; full mapping truth table
+  (mapped types, unknown fallbacks, malformed input raises); and public
+  eligibility (only Published GAME listable across all six types; DRAFT/
+  ARCHIVED GAME excluded).  Complements existing `test_listing_rules`
+  (SBGC-48) and `services/steam/test_mapping` (SBGC-53); no production code
+  changed, no migrations.
+- Documented the real contract: Steam's literal `application` type maps to
+  `UNKNOWN` (not `SOFTWARE`), and there is no `HIDDEN` listing status
+  (DRAFT/PUBLISHED/ARCHIVED) — the ticket baseline's assumptions were
+  corrected to match the codebase.
+
 ## 2026-08-28 — SBGC-208 dominant dimension badge + rankings detail pane reorg
 
 - The radar's Challenge/Reward toggle is profile-driven: it only shows on the
