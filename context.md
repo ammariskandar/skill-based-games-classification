@@ -2582,9 +2582,14 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `&nbsp;`-protected spacing around the inline links.
 - New assets: `public/images/about/astro-logo.png`,
   `public/images/about/django-logo.png` (owner-provided).
+- Layout revision: content now spans the full page width (left-justified, no
+  `max-w-4xl` centering), and each of the three section subheaders became a
+  native `<details>`/`<summary>` accordion (zero JS, keyboard-accessible,
+  chevron rotates on open) with all section text hidden until expanded.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
-  zero text↔link whitespace joins).
+  zero text↔link whitespace joins); Playwright toggle test confirmed the
+  accordions start collapsed and open/close on click.
 
 ## 2026-08-30 — SBGC-213 methodology page redesign
 
