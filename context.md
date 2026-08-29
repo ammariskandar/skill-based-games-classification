@@ -2586,6 +2586,14 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `max-w-4xl` centering), and each of the three section subheaders became a
   native `<details>`/`<summary>` accordion (zero JS, keyboard-accessible,
   chevron rotates on open) with all section text hidden until expanded.
+- Layout iteration: Section 1 is now a two-column grid on desktop — text
+  left (wraps at the column boundary) and the YouTube embed right, stretched
+  to the full height of the expanded accordion (16:9 only on stacked/mobile
+  viewports). The Section 2 accordion title now embeds the Astro and Django
+  logos inline in place of the words (same h-6 size, `&nbsp;`-protected
+  spacing), and the Django logo asset was reprocessed to remove its white
+  background (white → transparent with feathered edges; dark-green logo
+  kept fully opaque; verified corner alpha 0 / center alpha 255).
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
