@@ -743,6 +743,9 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    /* Breathing room between the page shell boundary and the left panel's
+       profile tabs / sort control (SBGC-212). Fluid: scales down on mobile. */
+    padding-top: clamp(0.75rem, 1.5vw, 1.25rem);
     padding-bottom: 0.75rem;
   }
 
