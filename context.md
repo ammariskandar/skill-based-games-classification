@@ -2605,6 +2605,9 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   (~600×338, measured), and the two "…video on YouTube:" / "and came to
   agree…" paragraphs merged into one continuous paragraph per owner copy
   edit.
+- Section 1 video sizing (rev 3): video width increased ~40% to 840px,
+  height scaled to keep 16:9 (measured 840×473); text column ~310px at a
+  1280px viewport.
 - No other routes touched. `astro check` 0 errors; lint/format clean;
   595 tests OK; production build verified (logos copied, iframe src clean,
   zero text↔link whitespace joins); Playwright toggle test confirmed the
