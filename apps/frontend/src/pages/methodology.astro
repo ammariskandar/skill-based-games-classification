@@ -1,18 +1,782 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { buildRadarHtml } from "../lib/radar-render";
+import { math, mathDisplay } from "../lib/katex";
+import "katex/dist/katex.min.css";
 
 export const prerender = true;
+
+// Static sample chart: Portal 2's published classification, rendered once at
+// build time into a fully static inline SVG.  Zero client-side calculation,
+// zero runtime fetching, zero dynamic SSR overhead.
+const SAMPLE_RADAR = buildRadarHtml({
+  challenge: { micro: 50, mystiko: 30, macro: 20 },
+  reward: { micro: 10, mystiko: 60, macro: 30 },
+  gameTitle: "Portal 2",
+  showToggle: false,
+});
 ---
 
 <BaseLayout
   title="Methodology"
-  description="Each game receives two independent profiles — Challenge and Reward — each scored across Micro, Mystiko, and Macro. Together they describe skill composition, not difficulty or quality."
+  description="Read to understand how MyGameDNA calculates the overall Games' scores based on user submissions."
   canonicalPath="/methodology"
 >
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Methodology</h1>
-  <p class="mt-4 max-w-2xl text-lg text-muted">
-    Each game receives two independent profiles — Challenge and Reward — each
-    scored across Micro, Mystiko, and Macro. Together they describe skill
-    composition, not difficulty or quality.
-  </p>
+  <div class="mb-8 flex flex-col gap-2">
+    <h1
+      class="text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl"
+    >
+      Methodology
+    </h1>
+    <p class="max-w-4xl text-base text-muted sm:text-lg">
+      Read to understand how we calculate the overall Games' scores based on
+      user submissions.
+    </p>
+  </div>
+
+  <!-- ── Summary card ─────────────────────────────────────────────────── -->
+  <div
+    class="mb-12 rounded-xl border border-(--color-border-2) bg-(--color-surface) p-6"
+  >
+    <p class="text-base text-muted sm:text-lg">
+      MyGameDNA scores games using two profiles:&nbsp;<strong
+        class="text-(--color-text)">Challenge</strong
+      >&nbsp;(skills needed to succeed) and&nbsp;<strong
+        class="text-(--color-text)">Reward</strong
+      >&nbsp;(satisfaction gained from succeeding). Each profile has&nbsp;<strong
+        class="text-(--color-micro)">Micro</strong
+      >&nbsp;(reflexes/precision),&nbsp;<strong class="text-(--color-macro)"
+        >Macro</strong
+      >&nbsp;(planning/resources), and&nbsp;<strong
+        class="text-(--color-mystiko)">Mystiko</strong
+      >&nbsp;(prediction/deduction), totaling&nbsp;<strong
+        class="text-(--color-text)">100%</strong
+      >.
+    </p>
+    <p class="mt-3 text-base text-muted sm:text-lg">
+      Three methods calculate the result:&nbsp;<strong
+        class="text-(--color-text)">Method 1</strong
+      >&nbsp;prioritizes trusted experts, especially with few submissions;&nbsp;<strong
+        class="text-(--color-text)">Method 2</strong
+      >&nbsp;(iForest) removes globally unusual submissions;&nbsp;<strong
+        class="text-(--color-text)">Method 3</strong
+      >&nbsp;(LoOP) detects submissions that are unusual compared with nearby
+      players. Finally,&nbsp;<strong class="text-(--color-text)">BHPCM</strong
+      >&nbsp;combines all three, accounting for uncertainty and disagreement
+      rather than simply averaging them, producing the final&nbsp;<strong
+        class="text-(--color-text)">100-point profile</strong
+      >.
+    </p>
+  </div>
+
+  <!-- ── Top section: taxonomy + sample radar ─────────────────────────── -->
+  <section class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+    <div>
+      <h2 class="text-2xl font-bold tracking-tight text-(--color-text)">
+        Challenge vs. Reward
+      </h2>
+      <p class="mt-2 max-w-4xl text-base text-muted sm:text-lg">
+        Every game receives two independent profiles. Each profile is scored
+        across three dimensions — Micro, Macro, and Mystiko — and each profile
+        sums independently to 100%.
+      </p>
+
+      <h3 class="mt-8 text-lg font-semibold text-(--color-text)">
+        Challenge Profile
+      </h3>
+      <p class="mt-1 text-sm text-muted">
+        Measures what specific human skills the game demands from the player to
+        succeed.
+      </p>
+      <ul class="mt-3 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-micro)">Micro:</span>&nbsp;
+          Sensorimotor reflexes, fine dexterity, millisecond mechanical timing,
+          and input precision (e.g., flick shots, parry frames, rhythm
+          execution).
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-macro)">Macro:</span>&nbsp;
+          Long-term planning, economic efficiency, systemic build crafting, map
+          awareness, and resource management.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span
+          >&nbsp; Deduction under uncertainty, predicting hidden enemy
+          rotations, psychological bluffing, and game sense under fog-of-war.
+        </li>
+      </ul>
+
+      <h3 class="mt-8 text-lg font-semibold text-(--color-text)">
+        Reward Profile
+      </h3>
+      <p class="mt-1 text-sm text-muted">
+        Measures what type of fulfillment, catharsis, or validation the player
+        receives upon succeeding.
+      </p>
+      <ul class="mt-3 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-micro)">Micro:</span>&nbsp;
+          Instant, localized, tactile feedback (e.g., headshot hitmarkers, combo
+          multipliers, killstreak banners, round MVP awards).
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-macro)">Macro:</span>&nbsp;
+          Permanent, outward prestige and long-term milestones (e.g., climbing
+          competitive ELO ladders, rare achievements, account level
+          progression).
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-mystiko)">Mystiko:</span
+          >&nbsp; Cerebral, "invisible" satisfaction (e.g., the dopamine hit of
+          a correct blind read, executing an unorthodox counter-strategy,
+          discovering obscure narrative lore).
+        </li>
+      </ul>
+    </div>
+
+    <div
+      class="rounded-xl border border-(--color-border-2) bg-(--color-surface) p-6"
+    >
+      <div class="mx-auto w-[63%]">
+        <Fragment set:html={SAMPLE_RADAR} />
+      </div>
+      <p class="mt-4 text-center text-sm text-muted">
+        Example: Portal 2 — Challenge (Micro 50 / Macro 20 / Mystiko 30) and
+        Reward (Micro 10 / Macro 30 / Mystiko 60) each sum to 100%.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Aggregation pipelines ─────────────────────────────────────────── -->
+  <section class="mt-16">
+    <!-- Method 1: diagram left, content right -->
+    <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
+        <img
+          src="/images/methodology/method1-weighted-average.webp"
+          alt="Method 1: weighted-average aggregation formula"
+          loading="lazy"
+          decoding="async"
+          class="block w-full rounded-t"
+        />
+        <img
+          src="/images/methodology/method1-expert-roles.png"
+          alt="Method 1: expert roles feeding into a role-weighted aggregation"
+          loading="lazy"
+          decoding="async"
+          class="block w-full rounded-b"
+        />
+      </div>
+      <div>
+        <h3 class="text-xl font-bold tracking-tight text-(--color-text)">
+          1. Method 1 — Expert-Sensitive Pipeline
+        </h3>
+        <p class="mt-1 text-sm font-medium text-muted">
+          Role-weighted aggregation
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          A deterministic, role-weighted Bayesian anchor where submissions are
+          prioritized based on verified domain familiarity and historical
+          editorial accuracy. Method 1 is the only pipeline that is role-aware:
+          it models the assumption that trusted roles carry useful prior
+          information about what kind of game a title is — especially when the
+          population is still sparse.
+        </p>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          The roles &amp; base weights
+        </h4>
+        <p class="mt-1 text-sm text-muted">
+          The normative base weights are institutional authority parameters —
+          they are not probabilities, not empirical accuracy estimates, and not
+          effective sample sizes:
+        </p>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full max-w-sm border-collapse text-sm text-muted">
+            <thead>
+              <tr class="border-b border-(--color-border-2) text-left">
+                <th class="py-1.5 pr-4 font-semibold text-(--color-text)">
+                  Role
+                </th>
+                <th class="py-1.5 pr-4 font-semibold text-(--color-text)">
+                  Base weight
+                </th>
+                <th class="py-1.5 font-semibold text-(--color-text)">
+                  Weight symbol
+                </th>
+              </tr>
+            </thead>
+            <tbody class="border-b border-(--color-border-2)">
+              <tr class="border-b border-(--color-border-2)">
+                <td class="py-1.5 pr-4">Community</td>
+                <td class="py-1.5 pr-4">0.20</td>
+                <td class="py-1.5" set:html={math`w_g`} />
+              </tr>
+              <tr class="border-b border-(--color-border-2)">
+                <td class="py-1.5 pr-4">Community Leader</td>
+                <td class="py-1.5 pr-4">0.65</td>
+                <td class="py-1.5" set:html={math`w_g`} />
+              </tr>
+              <tr class="border-b border-(--color-border-2)">
+                <td class="py-1.5 pr-4">Moderator</td>
+                <td class="py-1.5 pr-4">0.95</td>
+                <td class="py-1.5" set:html={math`w_g`} />
+              </tr>
+              <tr>
+                <td class="py-1.5 pr-4">Superuser / Staff</td>
+                <td class="py-1.5 pr-4">1.00</td>
+                <td class="py-1.5" set:html={math`w_g`} />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          The anchor &amp; population influence
+        </h4>
+        <p class="mt-1 text-sm text-muted">
+          Beyond the role weighting, Method 1 maintains a protected anchor — a
+          hand-selected set of authoritative submissions treated as ground-truth
+          anchors during catalogue bootstrapping. For&nbsp;
+          <span set:html={math`N \le 400`} /> the anchor is a raw equal average of
+          its submissions; from&nbsp;
+          <span set:html={math`N \ge 401`} /> it switches to evidence-weighted averaging
+          governed by the aggregate anchor reliability&nbsp;
+          <span set:html={math`\rho_A`} />. The ordinary role weight&nbsp;
+          <span set:html={math`w_g`} /> is scaled by a population-influence coefficient&nbsp;
+          <span set:html={math`c(N)`} />:
+        </p>
+        <ul class="mt-2 space-y-2 text-sm text-muted">
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >Very low population</span
+            >&nbsp; (<span set:html={math`N < 6`} />): the effective
+            weight&nbsp;
+            <span set:html={math`q_g = w_g\,c(N) = 0`} />, so the result is
+            exactly the selected anchor average (<span
+              set:html={math`F = A`}
+            />). If no anchor qualifies, the calculation returns&nbsp;
+            <code class="font-mono text-xs">INSUFFICIENT_ANCHOR</code> instead of
+            fabricating a score.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)">Early growth</span
+            >&nbsp; (<span set:html={math`6 \le N < 9`} />): population
+            influence turns positive, but the internal filters do not reject
+            anyone — every submission receives <span
+              set:html={math`u_i = 1`}
+            />.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)">Filters engage</span
+            >&nbsp; (<span set:html={math`N \ge 9`} />): both complementary
+            detectors become active — Method 1A, a mean- and SD-based absolute
+            threshold with a 5-point floor, and Method 1B, a robust median-based
+            threshold (<span set:html={math`3.5\,S_n`} />). Their verdicts
+            weight each submission: <span set:html={math`u_i = 1.0`} /> when both
+            retain,&nbsp;
+            <span set:html={math`0.5`} /> when they split, and&nbsp;
+            <span set:html={math`0.0`} /> when both reject. Anchor submissions are
+            never removed by these flags — detector disagreement reduces ordinary-role
+            influence, not anchor membership.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >Community fallback</span
+            >&nbsp; (<span set:html={math`N \ge 50`} />): when no privileged
+            anchor exists, a Community fallback becomes available with a capped
+            influence of <span set:html={math`0.30`} />.
+          </li>
+        </ul>
+        <p class="mt-3 text-sm text-muted">
+          Method 1 solves the cold-start problem when a game has few submissions
+          (<span set:html={math`N < 10`} />): with the statistical engines
+          dormant, the anchored prior is the entire calculation, and the low-<span
+            set:html={math`N`}
+          /> result is deliberately the anchor average rather than a noisy arithmetic
+          mean. As the expert base expands, this system evolves toward the&nbsp;<strong
+            class="text-(--color-text)"
+            >Multiplicative Weights Update Method (MWUM)</strong
+          >, dynamically penalizing inaccurate predictions and rewarding
+          consistent calibration — and at high&nbsp;
+          <span set:html={math`N`} />, statistically unsupported anchor
+          submissions remain represented but are diluted rather than removed.
+        </p>
+        <a
+          href="https://en.wikipedia.org/wiki/Multiplicative_weight_update_method"
+          class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+        >
+          Learn more about Multiplicative Weights Update Method (MWUM)
+        </a>
+      </div>
+    </article>
+
+    <!-- Method 2: content left, diagram right -->
+    <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      <div class="lg:order-2">
+        <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
+          <img
+            src="/images/methodology/isolation-forest.png"
+            alt="Isolation Forest: anomalous data points isolated with fewer random partitions"
+            loading="lazy"
+            decoding="async"
+            class="block w-full rounded"
+          />
+        </div>
+      </div>
+      <div class="lg:order-1">
+        <h3 class="text-xl font-bold tracking-tight text-(--color-text)">
+          2. Method 2 — Global Population Filtering
+        </h3>
+        <p class="mt-1 text-sm font-medium text-muted">
+          Isolation Forest (iForest)
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          An unsupervised anomaly detection model that isolates global outliers
+          across the six scalar dimensions without assuming normal
+          distributions. It is not a density model, it is not role-aware, and it
+          performs no cross-dimension standardization — each of the six scalar
+          columns is analyzed by its own one-dimensional forest:&nbsp;
+          <span set:html={math`t = 512`} /> isolation trees per dimension, each built
+          on a subsample of&nbsp;
+          <span set:html={math`\psi = \min(256, N)`} /> submissions drawn without
+          replacement, with every tree capped at height&nbsp;
+          <span set:html={math`\ell = \lceil \log_2 \psi \rceil`} />.
+        </p>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          How the anomaly score works
+        </h4>
+        <p class="mt-1 text-sm text-muted">
+          Each tree recursively splits the dimension at random orthogonal
+          thresholds. Genuinely anomalous points are easy to isolate — they need
+          only a few partitions before they sit alone — so the number of splits
+          required to isolate an observation is itself the signal. Averaging the
+          path length across the forest gives&nbsp;<span
+            set:html={math`\bar h_{id}`}
+          />, and the canonical anomaly score is:
+        </p>
+        <div set:html={mathDisplay`s_{id} = 2^{-\bar h_{id} / c(\psi)}`} />
+        <ul class="mt-2 space-y-2 text-sm text-muted">
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >Short average path</span
+            >&nbsp; (few splits needed) drives the score toward 1 — the
+            signature of an easily isolated, anomalous value.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >A score near 0.5</span
+            >&nbsp; means the observation's path length matches the expected
+            reference depth for the subsample size&nbsp;
+            <span set:html={math`c(\psi)`} /> — a completely ordinary value.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >Scores below 0.5</span
+            >&nbsp; indicate deeper-than-expected isolation, i.e. values buried
+            inside a dense region.
+          </li>
+        </ul>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          Flagging rule &amp; the 2-of-6 rejection
+        </h4>
+        <p class="mt-1 text-sm text-muted">
+          A submission is flagged in a dimension only when&nbsp;
+          <span set:html={math`s_{id} > 0.60`} /> — strictly greater-than, so a score
+          of exactly 0.60 is retained. The rule never selects a fixed percentage of
+          observations: there is no contamination quota or forced rejection rate,
+          and the number of flags may be zero, one, many, or all, depending purely
+          on the data. A single flagged dimension is treated as a hint rather than
+          a verdict; it takes&nbsp;
+          <strong class="text-(--color-text)"
+            >flags in at least 2 of the 6 dimensions</strong
+          >&nbsp; to reject the entire submission. Every survivor then carries
+          equal weight (1.0) downstream — iForest prunes, it does not down-rank.
+          Because the whole run is seeded (<code class="font-mono text-xs"
+            >seed = 42</code
+          >), identical input populations reproduce identical flags within a
+          calculation version.
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          Method 2 protects the dataset against chaotic haymakers, griefers,
+          troll submissions, and bad-faith single-dimension flooding (e.g.,
+          scoring a tactical game as 100/0/0 Micro out of spite). What it cannot
+          see is local context: a value that is globally unusual but coherent
+          within its own small cluster can be swept up with the noise, which is
+          exactly the failure mode Method 3 exists to correct.
+        </p>
+        <a
+          href="https://en.wikipedia.org/wiki/Isolation_forest"
+          class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+        >
+          Learn more about Isolation Forest
+        </a>
+      </div>
+    </article>
+
+    <!-- Method 3: diagram left, content right -->
+    <article class="mt-12 grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
+      <div class="mx-auto w-[90%] rounded-lg bg-white p-2 shadow-sm">
+        <img
+          src="/images/methodology/loop-outliers.svg"
+          alt="LoOP: a local density-based outlier diagram showing a point that clashes with its immediate neighborhood"
+          loading="lazy"
+          decoding="async"
+          class="block w-full rounded"
+        />
+      </div>
+      <div>
+        <h3 class="text-xl font-bold tracking-tight text-(--color-text)">
+          3. Method 3 — Global Population Density
+        </h3>
+        <p class="mt-1 text-sm font-medium text-muted">
+          Local Outlier Probabilities (LoOP)
+        </p>
+        <p class="mt-3 text-sm text-muted">
+          A local density-based statistical filter that asks a different
+          question than iForest: not "is this value easy to isolate globally?"
+          but "is this value's local spread unusually large compared to the
+          spread of its own neighbors?" It runs independently on each of the six
+          scalar dimensions using the absolute distance&nbsp;
+          <span set:html={math`d = |x - y|`} />, a&nbsp;
+          <strong class="text-(--color-text)">tie-inclusive</strong>&nbsp;
+          <span set:html={math`k = 10`} /> nearest-neighbor neighborhood, and a standard-deviation
+          extent&nbsp;
+          <span set:html={math`\lambda = 3`} />. Tie-inclusion matters because
+          submissions are integers on a bounded 0–100 scale — exact ties are
+          common and must not be discarded.
+        </p>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          From local distance to a probability
+        </h4>
+        <p class="mt-1 text-sm text-muted">
+          Each submission gets a probabilistic distance&nbsp;
+          <span set:html={math`\text{pdist}_i = \lambda \sigma_i`} /> — its neighborhood's
+          spread scaled by the extent parameter — and the neighborhood reference&nbsp;
+          <span set:html={math`\overline{\text{pdist}}_i`} />, the mean of its
+          neighbors' probabilistic distances. The ratio of the two yields the
+          Probabilistic Local Outlier Factor, the relative excess local spread
+          around the submission:
+        </p>
+        <div
+          set:html={mathDisplay`\text{PLOF}_i = \frac{\text{pdist}_i}{\overline{\text{pdist}}_i} - 1`}
+        />
+        <p class="mt-2 text-sm text-muted">
+          A positive&nbsp;
+          <span set:html={math`\text{PLOF}_i`} /> means the submission has greater
+          local spread than its neighbors; zero means it matches the neighborhood
+          reference; a negative value means it sits in a locally denser region. Raw
+          PLOF values are normalized across the population by the root-mean-square
+          factor&nbsp;
+          <span
+            set:html={math`n\text{PLOF} = \lambda \sqrt{\frac{\sum_{i \in \mathcal{F}} \text{PLOF}_i^2}{|\mathcal{F}|}}`}
+          /> and mapped into&nbsp;
+          <span set:html={math`[0, 1]`} /> through the Gauss error function:
+        </p>
+        <div
+          set:html={mathDisplay`\text{LoOP}_i = \max\left[0,\ \operatorname{erf}\left(\frac{\text{PLOF}_i}{n\text{PLOF}\sqrt{2}}\right)\right], \qquad \operatorname{erf}(z) = \frac{2}{\sqrt{\pi}}\int_0^z e^{-t^2}\,dt`}
+        />
+        <p class="mt-2 text-sm text-muted">
+          A submission is flagged only when&nbsp;
+          <span set:html={math`\text{LoOP}_i > 0.75`} /> — strictly greater-than,
+          so a probability of exactly 0.75 is retained — and the same universal 2-of-6
+          rejection rule applies across the six dimensions. The LoOP probability is
+          a&nbsp;
+          <span class="text-(--color-text)">relative anomaly measure</span>: it
+          ranks how atypical a submission looks within its neighborhood. It is
+          not a posterior probability that a submitter is wrong or malicious —
+          outlier status means statistical atypicality under this detector, and
+          nothing more.
+        </p>
+
+        <h4 class="mt-5 text-sm font-semibold text-(--color-text)">
+          How it differs from iForest
+        </h4>
+        <ul class="mt-2 space-y-2 text-sm text-muted">
+          <li>
+            <span class="font-semibold text-(--color-text)"
+              >iForest analogy:</span
+            >&nbsp; Spotting a lone skyscraper in the middle of open farmland —
+            an obvious global outlier.
+          </li>
+          <li>
+            <span class="font-semibold text-(--color-text)">LoOP analogy:</span
+            >&nbsp; Spotting a single suburban single-family home placed inside
+            dense downtown Manhattan — it looks normal in isolation, but
+            completely clashes with the density of its immediate neighbors.
+          </li>
+        </ul>
+        <p class="mt-3 text-sm text-muted">
+          Method 3 captures subtle sub-population disagreements that global
+          methods cannot see. If a cluster of players agrees a game is
+          Mystiko-heavy but a sub-cluster scores it as pure Macro within an
+          otherwise cohesive local group, LoOP measures the local reachability
+          density and downweights the anomalous local cluster — while preserving
+          a globally distant but internally dense subgroup, which iForest would
+          have pruned as noise.
+        </p>
+        <a
+          href="https://en.wikipedia.org/wiki/Local_outlier_factor"
+          class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+        >
+          Learn more about Local Outlier Factor (LOF) &amp; LoOP
+        </a>
+      </div>
+    </article>
+
+    <h2 class="mt-16 text-2xl font-bold tracking-tight text-(--color-text)">
+      How We Aggregate Submissions to Compute the Final Score
+    </h2>
+    <p class="mt-2 text-base text-muted sm:text-lg">
+      Three pipelines run on every classification epoch. They never run in
+      isolation: Method 1 anchors the prior, while Methods 2 and 3 clean the
+      population before the final consolidation step.
+    </p>
+
+    <div class="mt-4 space-y-3 text-sm text-muted">
+      <p>
+        Each contributing player submits two independent profiles — a Challenge
+        profile (what the game demands) and a Reward profile (what the game
+        returns) — each split across Micro, Macro, and Mystiko and normalized so
+        the three components of every profile sum to 100. A single epoch
+        therefore presents the pipeline with six scalar columns of data:&nbsp;
+        <span
+          class="text-(--color-text)"
+          set:html={math`C_\mu,\ C_M,\ C_Y,\ R_\mu,\ R_M,\ R_Y`}
+        />. All three methods analyze those six columns independently — none of
+        the detectors ever sees the composition as a single joint object.
+      </p>
+      <p>
+        Each method&nbsp;
+        <span set:html={math`\mathcal{M}_k`} /> returns a continuous six-component
+        result — a Challenge triple and a Reward triple, each summing exactly to 100:
+      </p>
+      <div
+        set:html={mathDisplay`\mathcal{M}_k(D) = \left(\mathbf{m}_{kC}, \mathbf{m}_{kR}\right), \qquad \sum_j m_{ktj} = 100`}
+      />
+      <p>
+        These are&nbsp;
+        <span class="text-(--color-text)"
+          >continuous pre-reconciliation outputs</span
+        >. The unification layer consumes the continuous values — never the
+        rounded integers — and only the final published profile is reconciled to
+        whole numbers. Method 1 contributes the expertise-sensitive
+        perspective&nbsp;
+        <span set:html={math`\mathbf{E}_t`} />, Method 2 the globally robust
+        population perspective&nbsp;
+        <span set:html={math`\mathbf{G}_t`} />, and Method 3 the locally robust
+        population perspective&nbsp;
+        <span set:html={math`\mathbf{L}_t`} /> — three independent answers to the
+        same question, consolidated by BHPCM at the end.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Architectural & statistical deep dives ───────────────────────── -->
+  <section class="mt-16">
+    <h2 class="text-2xl font-bold tracking-tight text-(--color-text)">
+      Architectural &amp; Statistical Deep Dives
+    </h2>
+
+    <article class="mt-8">
+      <h3 class="text-lg font-semibold text-(--color-text)">
+        Why employ two different methods of removing outliers?
+      </h3>
+      <ul class="mt-3 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >iForest strengths:</span
+          >&nbsp; Efficient at catching wild, non-linear global outliers — 512
+          trees per dimension over a&nbsp;
+          <span set:html={math`\min(256, N)`} /> subsample, with no pairwise distance
+          calculations at all.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >iForest weaknesses:</span
+          >&nbsp; Blind to local density variation; a small but legitimate
+          consensus cluster that sits far from the global mass can be pruned as
+          if it were noise. Its binary flag (
+          <span set:html={math`s_{id} > 0.60`} /> strict) says nothing about how far
+          past the threshold an observation lies.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)">LoOP strengths:</span
+          >&nbsp; Produces a mathematically calibrated probability score&nbsp;
+          <span set:html={math`[0, 1]`} /> from local neighborhood density (tie-inclusive&nbsp;
+          <span set:html={math`k = 10`} />, extent&nbsp;
+          <span set:html={math`\lambda = 3`} />), so a niche playstyle that is
+          coherent within its own neighborhood survives even when it differs
+          from the global majority.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)">LoOP weaknesses:</span
+          >&nbsp; Computationally intensive (<span set:html={math`O(N^2)`} /> pairwise
+          distance checks) and sensitive to the neighborhood size&nbsp;
+          <span set:html={math`k`} />. Its flag is also strictly greater-than (<span
+            set:html={math`\text{LoOP}_i > 0.75`}
+          />), and a LoOP probability is a relative anomaly measure, not a
+          posterior probability that a submitter is wrong.
+        </li>
+      </ul>
+      <p class="mt-3 text-sm text-muted">
+        The reality of data &amp; hardware: combining global tree-based
+        isolation with local density probabilities ensures the platform is
+        protected against malicious vandalism without erasing genuine subjective
+        nuance. Disagreement between the two engines is analytically useful
+        rather than a bug — it can reveal expert/population tension, a coherent
+        minority playstyle, globally isolated observations, locally sparse
+        observations, heavy ties, or multi-modal submission behavior. Neither
+        engine is a popularity vote, and neither engine can unilaterally decide
+        a classification — each only prunes submissions before the BHPCM
+        consolidation stage.
+      </p>
+    </article>
+
+    <article class="mt-10">
+      <h3 class="text-lg font-semibold text-(--color-text)">
+        In what scenarios would Method 1 ever "beat" Methods 2 and 3 in
+        reliability?
+      </h3>
+      <ul class="mt-3 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >The cold-start trap:</span
+          >&nbsp; Methods 2 and 3 are only invoked once a population
+          reaches&nbsp;
+          <span set:html={math`N \geq 20`} />; below that threshold the
+          statistical engines are dormant and the anchored prior is the entire
+          calculation. Even in the 20–50 range, small samples lack the
+          statistical power to distinguish a genuine niche opinion from an
+          anomaly, so outlier rejection can misclassify valid minority
+          viewpoints. Method 1's internal filters also calibrate earlier — its
+          detectors switch on at&nbsp;
+          <span set:html={math`N \geq 9`} />, while iForest and LoOP need&nbsp;
+          <span set:html={math`N \geq 20`} />.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Expert calibration:</span
+          >&nbsp; In early classification epochs, a single verified expert
+          submission anchored via Method 1 provides a mathematically grounded
+          baseline that prevents uncalibrated public sentiment from skewing the
+          initial index. As N grows, the anchor's influence is diluted rather
+          than removed — it remains represented but ceases to dominate, and the
+          system transitions smoothly from expert-led to community-led
+          governance.
+        </li>
+      </ul>
+    </article>
+
+    <article class="mt-10">
+      <h3 class="text-lg font-semibold text-(--color-text)">
+        Why is "Superuser" even a role in Method 1?
+      </h3>
+      <ul class="mt-3 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Operational checks &amp; balances:</span
+          >&nbsp; Serves strictly as a bootstrapping mechanism to establish
+          ground-truth anchors across initial catalogue releases. A Superuser
+          classification is a calibration anchor, not a veto.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Classification ≠ quality judgments:</span
+          >&nbsp; MyGameDNA measures <em>what kind of game a title is</em>, not
+          whether it is <em>good or bad</em>. A Superuser bias has zero moral or
+          commercial impact on review aggregates — it merely anchors mechanical
+          categorization.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Pledge of impartiality:</span
+          >&nbsp; Staff classifications pledge strict adherence to observable
+          mechanical inputs. As the contributor and expert dataset matures, the
+          Superuser weighting phase-out is baked into the convergence algorithm.
+          The base-weight table above makes the institutional authority explicit
+          — a normative governance choice, not a hidden empirical claim.
+          Feedback is continuously welcome.
+        </li>
+      </ul>
+    </article>
+
+    <article class="mt-10">
+      <h3 class="text-lg font-semibold text-(--color-text)">
+        How are the three methods consolidated into a single score?
+      </h3>
+      <p class="mt-3 text-sm text-muted">
+        <span class="font-semibold text-(--color-text)">
+          Bayesian Hierarchical Pluralistic Consensus Model (BHPCM):
+        </span>&nbsp; rather than computing an arithmetic mean (which is
+        vulnerable to residual skew), BHPCM treats a skill profile as a&nbsp;
+        <span class="text-(--color-text)">composition</span> and works in isometric
+        log-ratio (ilr / Aitchison) geometry: the six components are embedded in a
+        five-dimensional log-ratio space, and distances between profiles are measured
+        with the Aitchison distance — never Euclidean distance on raw percentages,
+        which would let scale artifacts dominate the comparison. All probabilistic
+        combination, covariance estimation, disagreement measurement, and posterior
+        averaging happens in this space.
+      </p>
+      <p class="mt-3 text-sm text-muted">
+        Method 1 supplies the&nbsp;
+        <span class="text-(--color-text)">expertise-sensitive prior</span>&nbsp;
+        (<span set:html={math`\mathbf{E}_t`} />); Methods 2 and 3 provide the
+        cleaned population likelihood — the globally robust (<span
+          set:html={math`\mathbf{G}_t`}
+        />) and locally robust (<span set:html={math`\mathbf{L}_t`} />)
+        perspectives. The two population perspectives are treated as&nbsp;
+        <span class="text-(--color-text)">correlated</span> — they consume the same
+        submissions, so their outputs must not be pooled as independent votes. A stratified
+        bootstrap resamples the submission population to propagate uncertainty through
+        both perspectives, and the posterior distribution of the governed compromise
+        yields the unified score plus a mathematical&nbsp;
+        <span class="text-(--color-text)">Confidence Level</span>.
+      </p>
+      <p class="mt-3 text-sm text-muted">
+        <span class="font-semibold text-(--color-text)">
+          Why BHPCM beats simple or weighted averages:
+        </span>
+      </p>
+      <ul class="mt-2 space-y-2 text-sm text-muted">
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Variance shrinkage:</span
+          >&nbsp; Automatically pulls extreme scores toward the consensus mean
+          when sample variance is high.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Dynamic uncertainty weighting:</span
+          >&nbsp; The influence of the expertise perspective is bounded by
+          explicit governance parameters — a permitted minimum and maximum. If
+          Methods 2 and 3 show high inter-method agreement, the model reduces
+          the prior's influence toward its minimum, transitioning smoothly from
+          expert-led to community-led governance; strong expert–population
+          disagreement similarly tamps the expert anchor down rather than
+          letting either side win by default.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Pluralism without averaging:</span
+          >&nbsp; Disagreement is treated as legitimate diversity of judgment,
+          not as evidence that one side is objectively wrong — BHPCM never
+          assumes a single objectively correct score vector. Disagreement is
+          preserved in the uncertainty, not repaired away.
+        </li>
+        <li>
+          <span class="font-semibold text-(--color-text)"
+            >Integer reconciliation:</span
+          >&nbsp; The posterior is a continuous composition; the published
+          profile is recovered by largest-remainder allocation so each profile
+          sums to exactly 100, with a fixed tie priority (Micro wins a 0.5/0.5
+          Micro–Mystiko remainder tie).
+        </li>
+      </ul>
+    </article>
+  </section>
 </BaseLayout>

@@ -2570,6 +2570,79 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-213 methodology page redesign
+
+- Rebuilt `/methodology` into a static, self-contained educational guide:
+  standardized header with the new subheader copy; top section with
+  Challenge vs. Reward dimension definitions (Micro/Macro/Mystiko bullets per
+  profile) beside a static Portal 2 sample radar card; three alternating
+  diagram-and-prose method sections (Method 1 role-weighted aggregation,
+  Method 2 Isolation Forest, Method 3 LoOP) with external reference links;
+  and four full-width statistical deep-dive Q&A blocks (two outlier engines,
+  Method 1 vs. 2/3 reliability, Superuser role rationale, BHPCM
+  consolidation).
+- Static assets in `public/images/methodology/`:
+  `method1-expert-roles.png`, `isolation-forest.png`, `loop-outliers.svg`
+  (copied from the owner's downloads).  The sample radar chart is a
+  build-time-rendered inline static SVG (pre-rendered page, `showToggle:
+  false`) — zero client-side calculation, no runtime fetching, no dynamic
+  SSR; it reuses the exact radar CSS so it matches the interactive chart.
+- No backend change; no Homepage/Rankings changes.  `astro check` 0 errors;
+  lint/format clean; 595 tests OK; production build verified (radar SVG
+  baked into the static page, all three images copied to dist).
+- Sizing pass: diagrams scaled to 90% width on white backing boxes, radar
+  reduced to 63% width.
+- Math typesetting: added `katex@0.18` as a frontend dependency and a
+  build-time helper (`apps/frontend/src/lib/katex.ts`); all formulas now
+  render as real KaTeX markup at build time (62 inline `.katex` spans and 4
+  display equations in the built page) with the KaTeX fonts bundled into
+  dist — zero client-side math JS, page remains fully pre-rendered.
+- Content pass (grounded in `docs/statistical_model.md`): Method 2 now
+  cites the exact iForest constants (`t = 512`, `ψ = min(256, N)`, height
+  limit `⌈log₂ ψ⌉`, anomaly score `s = 2^(−h̄/c(ψ))`, strict `s > 0.60`
+  flag, six one-dimensional forests, universal 2-of-6 rejection, equal
+  survivor weight, seed 42); Method 3 cites LoOP constants (`k = 10`
+  tie-inclusive, `λ = 3`, `d = |x−y|`, `PLOF`, `nPLOF`, `erf` probability,
+  strict `LoOP > 0.75`); deep dives updated with the `N ≥ 20` dormancy
+  threshold, governance-bounded expert influence, and BHPCM described via
+  verified compositional terms (ilr/Aitchison geometry, expertise prior vs.
+  correlated population likelihood, stratified bootstrap, posterior +
+  Confidence Level, largest-remainder integer reconciliation).
+- Layout fix: `loop-outliers.svg` had no `viewBox`, so the browser rendered
+  it as a 16px-tall sliver. Added `viewBox="0 0 123.75 130.06"`; the
+  diagram now renders correctly beside the Method 3 text (side-by-side,
+  matching Methods 1 and 2). All text after Method 3 — the four
+  "Architectural &amp; Statistical Deep Dives" articles — lost their
+  `max-w-4xl` cap and now wraps at the full container width.
+- Section reorder: the "How We Aggregate Submissions to Compute the Final
+  Score" heading and its intro now appear AFTER the three method articles
+  (full wrapping, no `max-w-4xl` cap); the aggregation section opens
+  directly with Method 1.
+- New Method 1 asset: `public/images/methodology/method1-weighted-average.webp`
+  (owner-provided weighted-average formula diagram, 750×501) stacked flush
+  above `method1-expert-roles.png` in the same white-backed wrapper — zero
+  vertical gap, both images rendered at identical width with aspect ratios
+  preserved.
+- Whitespace fix: Astro's `compressHTML` strips newline+indent between text
+  and inline elements, gluing words together (`the<strong>Multiplicative`,
+  `For<span>N ≤ 400`). Inserted `&nbsp;` at all 42 join points (KaTeX math
+  spans, `<strong>`, `<code>`) in `methodology.astro`; the entity survives
+  both Prettier reflow and the compressor, and keeps math symbols glued to
+  their preceding word. Verified via built-output grep: zero remaining
+  text-to-inline-tag joins (except the intentional `low-N` hyphen).
+- Fixed the mirror-image whitespace bug: spaces stripped BETWEEN a closing
+  inline tag and the following word (`weighting:</span>The`,
+  `prior</span>(E`). Inserted `&nbsp;` after 31 closing tags (all
+  `>Label:</span>`-style list labels, `A score near 0.5`-style bullets, the
+  `flags in at least 2 of the 6 dimensions</strong>` join, taxonomy
+  Micro/Macro/Mystiko labels). Built-output grep: zero text↔tag joins in
+  either direction.
+- Added an edge-to-edge summary card between the page header and the
+  Challenge vs. Reward section (`rounded-xl border bg-(--color-surface)`
+  with `p-6` padding): subheader-size text summarising the two profiles
+  (Micro/Macro/Mystiko colour-coded, Challenge/Reward/100% bold) and the
+  three methods + BHPCM consolidation, with `&nbsp;`-protected spacing.
+
 ## 2026-08-29 — SBGC-98 ambiguous content-type & exclusion edge cases
 
 - New suite ``games/tests/test_ambiguous_content_type_cases.py`` (12 tests)
