@@ -2570,6 +2570,29 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-29 — SBGC-96 owner content-type override in Admin
+
+- Steam Games' ``content_type`` is now editable in Admin (previously readonly,
+  SBGC-61).  Editing it marks the record ``content_type_overridden`` (new
+  ``games.0013`` boolean, default False — Steam-managed until an admin
+  changes it), and Steam import/refresh preserves the manual decision via the
+  shared ``_apply_steam_metadata`` guard; clearing the override ("Resume Steam
+  sync for content type" control) restores upstream sync.  ``name`` stays
+  readonly for Steam Games.
+- Mirrors the SBGC-188 override pattern end-to-end: model flag, migration,
+  form control (hidden for Manual Games), Identity-fieldset placement,
+  ``save_model`` provenance (change → override; resume wins), and refresh
+  preservation with UNCHANGED result while overridden.
+- ``content_type`` was already in ``list_display``/``list_filter`` (SBGC-67);
+  no change there.
+- Tests: new ``games/tests/test_content_type_override.py`` (5 tests — Admin
+  DLC→GAME toggle becomes publicly listable, GAME→DLC revokes listing,
+  DRAFT/ARCHIVED never leak, override preserved on refresh, unoverridden
+  refresh applies upstream); ``test_admin_validation`` readonly test flipped
+  to the editable+override contract; ``test_admin_steam_override`` gains
+  change/resume content_type provenance cases.  Full backend 1935 discovered
+  OK (25 skipped); ruff check + format clean; frontend 595 OK.
+
 ## 2026-08-29 — SBGC-95 auto-classify content_type on Steam import & refresh
 
 - Steam App Details adapter: the ``type`` field is now optional and fails

@@ -136,17 +136,16 @@ class GameAdmin(admin.ModelAdmin):
 
         image_fieldset_label = "Manual Image Overrides" if is_steam else "Images"
 
+        identity_fields = ("name", "slug", "source_type", "external_id", "content_type")
+        if is_steam:
+            # Owner content-type override with its resume control (SBGC-96).
+            identity_fields = identity_fields + ("resume_content_type",)
+
         return [
             (
                 "Identity",
                 {
-                    "fields": (
-                        "name",
-                        "slug",
-                        "source_type",
-                        "external_id",
-                        "content_type",
-                    ),
+                    "fields": identity_fields,
                 },
             ),
             ("Publication", {"fields": ("listing_status",)}),
@@ -199,13 +198,14 @@ class GameAdmin(admin.ModelAdmin):
     )
 
     def get_readonly_fields(self, request, obj=None):
-        """Freeze source identity and source-owned metadata (SBGC-59/61).
+        """Freeze source identity and source-owned metadata (SBGC-59/61/96).
 
         Existing records never expose ``source_type`` or ``external_id``.
-        Steam-owned metadata (``name``, ``content_type``) is also readonly
-        for Steam Games — refresh owns those fields, so Admin editing would
-        be overwritten on the next refresh.  Local/editorial fields stay
-        editable for both sources.
+        ``name`` stays readonly for Steam Games (Steam-owned), but
+        ``content_type`` is now editable for both sources: editing it marks
+        the record human-overridden (``content_type_overridden``), so Steam
+        refresh preserves the manual decision (SBGC-96).  Local/editorial
+        fields stay editable for both sources.
 
         Creation (``obj is None``) still permits choosing source and
         external ID so the real Steam import / manual create flows are not
@@ -215,7 +215,7 @@ class GameAdmin(admin.ModelAdmin):
         if obj is not None:
             readonly.extend(("source_type", "external_id"))
             if obj.is_steam:
-                readonly.extend(("name", "content_type"))
+                readonly.append("name")
         return readonly
 
     def save_model(self, request, obj, form, change):
@@ -246,6 +246,11 @@ class GameAdmin(admin.ModelAdmin):
                 obj.release_date_overridden = False
             elif "release_date" in changed:
                 obj.release_date_overridden = True
+
+            if cleaned.get("resume_content_type"):
+                obj.content_type_overridden = False
+            elif "content_type" in changed:
+                obj.content_type_overridden = True
 
         super().save_model(request, obj, form, change)
 
