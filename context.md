@@ -2570,6 +2570,66 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-214 about page build
+
+- Rebuilt `/about` as a static content page (prerendered, no client scripts):
+  `h1` "About" with no subheader, followed by three sections — "Why was the
+  project created?" (with a compact inline `youtube-nocookie` embed of
+  Surnex's Challenge vs Reward video, `?autoplay=0`, `loading="lazy"`, 16:9,
+  `max-w-md`), "Built on Astro, Powered by Django" (Astro + Django logos
+  from `public/images/about/`, Djazztro repo link), and "How YOU can
+  contribute" (placeholder coffee link). Owner copy preserved verbatim;
+  `&nbsp;`-protected spacing around the inline links.
+- New assets: `public/images/about/astro-logo.png`,
+  `public/images/about/django-logo.png` (owner-provided).
+- Layout revision: content now spans the full page width (left-justified, no
+  `max-w-4xl` centering), and each of the three section subheaders became a
+  native `<details>`/`<summary>` accordion (zero JS, keyboard-accessible,
+  chevron rotates on open) with all section text hidden until expanded.
+- Layout iteration: Section 1 is now a two-column grid on desktop — text
+  left (wraps at the column boundary) and the YouTube embed right, stretched
+  to the full height of the expanded accordion (16:9 only on stacked/mobile
+  viewports). The Section 2 accordion title now embeds the Astro and Django
+  logos inline in place of the words (same h-6 size, `&nbsp;`-protected
+  spacing), and the Django logo asset was reprocessed to remove its white
+  background (white → transparent with feathered edges; dark-green logo
+  kept fully opaque; verified corner alpha 0 / center alpha 255).
+- Section 1 video sizing: desktop video now fixed at 800px tall with a 4:3
+  aspect ratio (1067×800 on wide screens; `lg:max-w-full` guard prevents
+  horizontal overflow on narrower lg viewports, where it gracefully shrinks
+  width while keeping 800px height). The text column flexes to the leftover
+  width — at a 1280px viewport this measures ~83px, so the text sits in a
+  narrow column beside the dominant video, per owner request. Mobile keeps
+  the stacked 16:9 block.
+- Section 1 video sizing (rev 2): video resized to 600px wide at 16:9
+  (~600×338, measured), and the two "…video on YouTube:" / "and came to
+  agree…" paragraphs merged into one continuous paragraph per owner copy
+  edit.
+- Section 1 video sizing (rev 3): video width increased ~40% to 840px,
+  height scaled to keep 16:9 (measured 840×473); text column ~310px at a
+  1280px viewport.
+- Section 1 video sizing (rev 4): width +10% to 924px, height scaled to
+  16:9 (measured 924×520); text column ~226px at a 1280px viewport.
+- Section 1 copy update (owner revision): paragraphs 1–4 rewritten per the
+  owner's latest text — removed the "I take the L" line, the expense
+  parenthetical, the Surnex-credited clause (now "I realized, there was
+  another layer to it that he had missed"), "forsake the competitive
+  integrity" and "useless"/"universal truth" tails; P5 highlight
+  unchanged.
+- Section 1 copy update (owner revision 2): paragraphs 1–4 rewritten again
+  per the owner's latest text ("only to play them for an hour", "I’ve
+  started questioning…", "agreed with most of it… inspired much of this
+  project", "their answer is often insightful… out the window entirely",
+  "classify games into buckets… through their REWARD and CHALLENGE",
+  "FPS.", "Notice how… So, in a way:"); P5 highlight unchanged.
+- Section 1 copy update (owner revision 3): paragraphs 3 and 4 merged into
+  one paragraph ("…FPS." Notice how… Challenge. So, in a way:"); text
+  column now has 4 paragraphs + the highlight.
+- No other routes touched. `astro check` 0 errors; lint/format clean;
+  595 tests OK; production build verified (logos copied, iframe src clean,
+  zero text↔link whitespace joins); Playwright toggle test confirmed the
+  accordions start collapsed and open/close on click.
+
 ## 2026-08-30 — SBGC-213 methodology page redesign
 
 - Rebuilt `/methodology` into a static, self-contained educational guide:

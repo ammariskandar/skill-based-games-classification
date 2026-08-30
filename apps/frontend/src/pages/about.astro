@@ -9,10 +9,254 @@ export const prerender = true;
   description="MyGameDNA is a web application that classifies games across three skill-based dimensions — Micro, Mystiko, and Macro — within separate Challenge and Reward profiles."
   canonicalPath="/about"
 >
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">About</h1>
-  <p class="mt-4 max-w-2xl text-lg text-muted">
-    MyGameDNA is a web application that classifies games across three
-    skill-based dimensions — Micro, Mystiko, and Macro — within separate
-    Challenge and Reward profiles.
-  </p>
+  <header class="mb-8">
+    <h1
+      class="text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl"
+    >
+      About
+    </h1>
+  </header>
+
+  <div class="flex flex-col gap-4">
+    <!-- Section 1: Why was the project created? -->
+    <details
+      class="rounded-xl border border-(--color-border) bg-(--color-surface)"
+    >
+      <summary
+        class="flex cursor-pointer list-none items-center gap-4 px-5 py-4"
+      >
+        <h2
+          class="text-xl font-bold tracking-tight text-(--color-text) sm:text-2xl"
+        >
+          Why was the project created?
+        </h2>
+        <svg
+          class="about-chevron ml-auto h-5 w-5 shrink-0 text-muted"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 8l5 5 5-5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </summary>
+      <div
+        class="border-t border-(--color-border) px-5 pb-5 pt-4 text-base leading-relaxed text-muted"
+      >
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div class="flex min-w-0 flex-col gap-4">
+            <p>
+              I’ll be completely honest. I have a bit of a problem. I spend too
+              much money buying games on Steam, only to play them for an hour or
+              two, stop playing, and never touch them again. I could get a
+              refund if I asked immediately, but I often “give the game another
+              chance,” which can take months or even years. Even then, there are
+              games I simply cannot crack past 3 hours no matter how much I try.
+              Eventually, I move on and accept that I wasted 50 dollars or so.
+              But as games continue to get more and more expensive, I’ve started
+              questioning whether this gaming lifestyle is sustainable. Spoiler
+              alert: it is not.
+            </p>
+            <p>
+              One day, I happened upon this brilliant video on YouTube and
+              agreed with most of it. Admittedly, it inspired much of this
+              project. But after spending weeks and months thinking about the
+              topic, I realized there was another layer he had missed. After
+              all, if games were ONLY about challenge, then… why do cheaters
+              exist? Sure, some cheat because they enjoy causing others to
+              suffer (Schadenfreude, if you will), but there must be more to it.
+              Some genuinely repent from cheating, and when asked why they did
+              it, their answer is often insightful: “It was because I wanted
+              ___.” Maybe elo, a skin, rare items, or whatever else. The common
+              trait is that they wanted the REWARD badly enough to throw the
+              “Challenge” part of the game out the window entirely.
+            </p>
+            <p>
+              Thus, I improved upon Surnex’s model by introducing two layers:
+              the REWARD and CHALLENGE layers. The goal was, essentially, to
+              classify games into buckets that “made me enjoy them” in the same
+              way through their REWARD and CHALLENGE, rather than superficial,
+              generic tags like “JRPG” or “FPS.” Notice how, even if my
+              definitions of Micro, Macro, and Mystiko are “completely wrong,”
+              as long as they are consistent, games still get put into buckets
+              that all “felt the same way” in terms of Reward and Challenge. So,
+              in a way:
+            </p>
+            <p class="font-medium text-(--color-text)">
+              I can get recommended games that I may actually enjoy playing
+              based on the games that I am already playing.
+            </p>
+          </div>
+
+          <!-- Compact Inline YouTube Player: 4:3 at 800px tall on desktop -->
+          <div
+            class="relative aspect-video w-full overflow-hidden rounded-xl border border-(--color-border) bg-(--color-surface-2) shadow-sm lg:w-[924px] lg:max-w-full"
+          >
+            <iframe
+              class="absolute inset-0 h-full w-full"
+              src="https://www.youtube-nocookie.com/embed/NgHvdCcmQ4o?autoplay=0"
+              title="Surnex - The Challenge vs Reward Video"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Section 2: Built on Astro, Powered by Django -->
+    <details
+      class="rounded-xl border border-(--color-border) bg-(--color-surface)"
+    >
+      <summary
+        class="flex cursor-pointer list-none flex-wrap items-center gap-4 px-5 py-4"
+      >
+        <h2
+          class="text-xl font-bold tracking-tight text-(--color-text) sm:text-2xl"
+        >
+          Built on&nbsp;<img
+            src="/images/about/astro-logo.png"
+            alt="Astro"
+            class="inline-block h-6 w-auto align-middle object-contain brightness-110"
+            loading="lazy"
+          />,&nbsp;Powered by&nbsp;<img
+            src="/images/about/django-logo.png"
+            alt="Django"
+            class="inline-block h-6 w-auto align-middle object-contain brightness-110"
+            loading="lazy"
+          />
+        </h2>
+        <svg
+          class="about-chevron ml-auto h-5 w-5 shrink-0 text-muted"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 8l5 5 5-5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </summary>
+      <div
+        class="flex flex-col gap-4 border-t border-(--color-border) px-5 pb-5 pt-4 text-base leading-relaxed text-muted"
+      >
+        <p>
+          The blazing fasts speeds of the Astro with the robust stability and
+          security of Django, this unique tech-stack has (to my knowledge), ever
+          been used a handful of times. I initially thought of naming it
+          Astro-on-the-Django due to how it sounds, but after I found that this
+          stack has been explored before, under the name Djazztro&nbsp;(<a
+            href="https://github.com/Bwc9876/Djazztro"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-(--color-blue) underline hover:opacity-80"
+            >https://github.com/Bwc9876/Djazztro</a
+          >),&nbsp;I figured this name is better, as coincidentally, Django was
+          also named after a legendary Jazz guitarist.
+        </p>
+        <p>
+          Why Astro, and not React? Well, because I hated React, and wanted to
+          do very little of it, if possible. Not a fan of Angular either, but I
+          figured, at the end of the day, it’s all javasc.. no, “type”script
+          anyway, so who cares. I could be using t3, but it wouldn’t make this
+          website any better, plus, the stack wouldn’t have a cool name.
+        </p>
+        <p>
+          Why not Django Templates? Because I wanted really pretty graphs, and
+          d3 just works so well with Astro right out of the box. Also, I figured
+          decoupling the frontend meant if I ever needed to outsource
+          development, it’d be cheaper to hire a TS dev than fullstack Python
+          dev (I think?)
+        </p>
+        <p>
+          Why Django? Not Node? Well, truth be told, I don’t very much like
+          Javascript nor Typescript, at all. There’s nothing wrong with it (so
+          JS devs don’t kill me), I just don’t like it. As for any other
+          backend, I did start out with C#, but I’m quite deep into python, for
+          data science stuff, and figured, why not just use Django.
+        </p>
+        <p>Best decision ever. Batteries included frameworks are so nice.</p>
+        <p>
+          Unhappy with my decisions? The code is public. Just fork it, rewrite
+          it in rust, or whatever. I really don’t care. If I needed to use PHP
+          for this project, you can bet I’d be learning Laravel right about now.
+        </p>
+      </div>
+    </details>
+
+    <!-- Section 3: How YOU can contribute -->
+    <details
+      class="rounded-xl border border-(--color-border) bg-(--color-surface)"
+    >
+      <summary
+        class="flex cursor-pointer list-none items-center gap-4 px-5 py-4"
+      >
+        <h2
+          class="text-xl font-bold tracking-tight text-(--color-text) sm:text-2xl"
+        >
+          How YOU can contribute
+        </h2>
+        <svg
+          class="about-chevron ml-auto h-5 w-5 shrink-0 text-muted"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 8l5 5 5-5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </summary>
+      <div
+        class="flex flex-col gap-4 border-t border-(--color-border) px-5 pb-5 pt-4 text-base leading-relaxed text-muted"
+      >
+        <p>
+          Just keep submitting scores. More data makes the classifications and
+          recommendations more accurate.
+        </p>
+        <p>
+          If you want to financially support me, you can buy me a coffee
+          at:&nbsp;<a
+            href="#"
+            class="text-(--color-blue) underline hover:opacity-80"
+            >(Placeholder Link)</a
+          >
+        </p>
+      </div>
+    </details>
+  </div>
 </BaseLayout>
+
+<style>
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::marker {
+    display: none;
+  }
+
+  .about-chevron {
+    transition: transform 0.2s ease;
+  }
+
+  details[open] .about-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about-chevron {
+      transition: none;
+    }
+  }
+</style>
