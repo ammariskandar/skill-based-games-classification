@@ -6,9 +6,12 @@ from classifications.models import ClassificationSnapshot
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Prefetch
+from django.template.response import TemplateResponse
 
+from games.errors import ERROR_REGISTRY
 from games.forms import GameForm
 from games.models import (
+    ErrorRegistryEntry,
     Game,
     ListingStatus,
     SourceType,
@@ -456,3 +459,40 @@ class SteamRefreshGameAttemptAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ErrorRegistryEntry)
+class ErrorRegistryAdmin(admin.ModelAdmin):
+    """Read-only catalog view over the canonical error-code registry (SBGC-100).
+
+    The model is unmanaged (``managed = False``), so nothing is ever
+    persisted or migrated; the view renders from ``games.errors.ERROR_REGISTRY``.
+    """
+
+    change_list_template = "admin/games/error_registry.html"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        # Read-only registry: any active staff member may view the catalog.
+        user = request.user  # pyright: ignore[reportAttributeAccessIssue]
+        return bool(user.is_active and user.is_staff)  # pyright: ignore[reportAttributeAccessIssue]
+
+    def changelist_view(self, request, extra_context=None):
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "System Error Code Registry",
+            "opts": self.opts,
+            "error_entries": sorted(
+                ERROR_REGISTRY.values(), key=lambda entry: entry.code.value
+            ),
+        }
+        template = self.change_list_template or "admin/change_list.html"
+        return TemplateResponse(request, template, context)

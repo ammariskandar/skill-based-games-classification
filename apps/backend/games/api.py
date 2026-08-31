@@ -30,6 +30,7 @@ from ninja import Query, Router, Schema, Status
 from ninja.errors import AuthorizationError
 from ninja.security import django_auth
 
+from games.errors import ErrorCode
 from games.models import Game, SourceType
 from games.schemas.catalogue import GameCatalogueQuerySchema
 from games.schemas.common import ValidGameSlug
@@ -310,25 +311,29 @@ def _map_steam_service_error(exc: Exception) -> ApiException:
     ``UNAVAILABLE`` before this boundary.
     """
     if isinstance(exc, SteamAdapterError) and exc.code == "STEAM_INVALID_APP_ID":
-        return ApiException(400, "BAD_REQUEST", "Invalid Steam App ID.")
+        return ApiException(400, ErrorCode.BAD_REQUEST.value, "Invalid Steam App ID.")
 
     if isinstance(exc, SteamRefreshError):
         logger.warning("Steam refresh rejected: %s", exc)
         return ApiException(
             400,
-            "BAD_REQUEST",
+            ErrorCode.BAD_REQUEST.value,
             "The requested game cannot be refreshed from Steam.",
         )
 
     if isinstance(exc, SteamRateLimitedError):
         logger.warning("Steam rate limited")
-        return ApiException(429, "RATE_LIMITED", "Steam rate limit exceeded.")
+        return ApiException(
+            429,
+            ErrorCode.RATE_LIMITED.value,
+            "Steam rate limit exceeded.",
+        )
 
     if isinstance(exc, (SteamError, SteamAdapterError)):
         logger.warning("Steam service failure: %s", type(exc).__name__)
         return ApiException(
             503,
-            "SERVICE_UNAVAILABLE",
+            ErrorCode.SERVICE_UNAVAILABLE.value,
             "Steam service is unavailable.",
         )
 
@@ -668,7 +673,7 @@ def game_catalogue(
 def game_detail(request, slug: ValidGameSlug):
     game = Game.objects.publicly_listable().filter(slug=slug).first()
     if game is None:
-        raise ApiException(404, "GAME_NOT_FOUND", "Game not found.")
+        raise ApiException(404, ErrorCode.GAME_NOT_FOUND.value, "Game not found.")
 
     # Lazy import keeps the classification engine out of the games API module
     # import surface; this is a read-only boundary, not a calculation path.

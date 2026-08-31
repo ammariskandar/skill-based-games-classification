@@ -438,6 +438,25 @@ class SteamRefreshGameAttempt(models.Model):
         return f"Attempt {self.attempt_number} for {game_id} in run {run_id}"
 
 
+class ErrorRegistryEntry(models.Model):
+    """Unmanaged virtual model exposing the error-code registry to Admin.
+
+    ``managed = False`` means no database table and no migrations are ever
+    created (SBGC-100).  The model exists purely as a Django Admin
+    registration point for the read-only error catalog view, which renders
+    from ``games.errors.ERROR_REGISTRY`` — nothing here is ever persisted.
+    """
+
+    class Meta:
+        managed = False
+        verbose_name = "Error Registry"
+        verbose_name_plural = "Error Registry"
+        default_permissions = ()
+
+    def __str__(self) -> str:
+        return "Error Registry"
+
+
 __all__ = [
     "ContentType",
     "CONTENT_TYPE_CHOICES",
@@ -446,4 +465,5 @@ __all__ = [
     "SourceType",
     "SteamRefreshGameAttempt",
     "SteamRefreshRun",
+    "ErrorRegistryEntry",
 ]

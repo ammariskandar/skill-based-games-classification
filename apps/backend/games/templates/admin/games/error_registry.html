@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="module">
+  <p style="margin-bottom: 1rem; color: var(--body-quiet-color);">
+    Canonical registry of application error codes, corresponding HTTP status
+    codes, and response contracts.  Every public API error response carries
+    <code>error.code</code>, <code>error.message</code>, and
+    <code>error.details</code>.
+  </p>
+  <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead>
+      <tr style="border-bottom: 2px solid var(--hairline-color); background: var(--darkened-bg);">
+        <th style="padding: 0.5rem; font-weight: 600;">Error Code</th>
+        <th style="padding: 0.5rem; font-weight: 600;">HTTP Status</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Category</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in error_entries %}
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <td style="padding: 0.5rem;"><code><strong>{{ entry.code.value }}</strong></code></td>
+        <td style="padding: 0.5rem;">{{ entry.http_status }}</td>
+        <td style="padding: 0.5rem;">{{ entry.category.value }}</td>
+        <td style="padding: 0.5rem; color: var(--body-quiet-color);">{{ entry.description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

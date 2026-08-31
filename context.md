@@ -2570,6 +2570,39 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-31 — SBGC-100 backend error registry & admin catalog
+
+- New canonical registry `games/errors.py`: `ErrorCategory`, `ErrorCode`
+  (StrEnum of every code the API actually emits — GAME_NOT_FOUND,
+  VALIDATION_ERROR, AUTHENTICATION/AUTHORIZATION_ERROR, NOT_FOUND,
+  BAD_REQUEST, METHOD_NOT_ALLOWED, CONFLICT, RATE_LIMITED,
+  SERVICE_UNAVAILABLE, HTTP_ERROR, INTERNAL_SERVER_ERROR),
+  `ErrorMetadata`, and `ERROR_REGISTRY` (code → status/category/
+  description/sample payload).
+- `api/errors.py` handlers now reference `ErrorCode` members
+  (value-identical strings) so the registry is the single source of
+  truth; the emitted codes, messages, and envelope shapes are unchanged
+  (existing `api/tests/test_schemas_errors.py` suite still green).
+  `games/api.py` emits GAME_NOT_FOUND / BAD_REQUEST / RATE_LIMITED /
+  SERVICE_UNAVAILABLE via the registry.
+- Read-only Django Admin error catalog: unmanaged
+  `ErrorRegistryEntry` model (`managed = False`, zero table) +
+  `ErrorRegistryAdmin` (custom `changelist_view` rendering
+  `admin/games/error_registry.html`; add/change/delete denied, view open
+  to active staff).
+- Note: Django 6's autodetector generates a `CreateModel` migration for
+  new unmanaged models (managed=False only suppresses table creation).
+  Committed the schema-neutral `0014_errorregistryentry.py` so
+  `makemigrations --check` passes; `migrate` creates no table.
+- New suites: `test_error_handling.py` (uniform envelope keys across
+  404/422/401/403/503/500, sanitized 500 with DEBUG=False, registry
+  completeness) and `test_error_registry_admin.py` (staff 200, all codes
+  rendered, anonymous → login redirect, immutable permissions) — 12
+  tests.
+- Verified: `makemigrations --check` clean; full backend suite green
+  (2001 found, 0 failures); ruff check + format clean; basedpyright
+  0 errors/0 warnings; frontend 595/595.
+
 ## 2026-08-30 — SBGC-99 server-side validation & sanitization
 
 - New explicit Pydantic query/path schemas under
