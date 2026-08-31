@@ -6,7 +6,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createSearchIndexLoader,
+  fetchSearchIndex,
   isCacheValid,
+  SEARCH_INDEX_TIMEOUT_MS,
   SEARCH_INDEX_TTL_MS,
   SEARCH_INDEX_VERSION,
   type SearchIndexStorage,
@@ -211,5 +213,69 @@ describe("createSearchIndexLoader", () => {
     const parsed = JSON.parse(raw as string);
     expect(parsed.version).toBe(1);
     expect(parsed.games).toEqual(GAMES);
+  });
+});
+
+describe("fetchSearchIndex — SBGC-102 timeout bound", () => {
+  it("aborts a hung request after the timeout budget", async () => {
+    vi.useFakeTimers();
+    const abortSpy = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_input: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => {
+              abortSpy();
+              reject(new Error("Search index request aborted"));
+            });
+          }),
+      ),
+    );
+
+    let failure: unknown;
+    try {
+      const pending = fetchSearchIndex().catch((error: unknown) => {
+        failure = error;
+      });
+      await vi.advanceTimersByTimeAsync(SEARCH_INDEX_TIMEOUT_MS);
+      await pending;
+
+      expect(abortSpy).toHaveBeenCalledTimes(1);
+      expect(failure).toBeInstanceOf(Error);
+      expect(String((failure as Error).message)).toContain("aborted");
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("clears the timeout when the response arrives in time", async () => {
+    vi.useFakeTimers();
+    const response = {
+      ok: true,
+      json: async () => ({ games: [] }),
+    } as Response;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+
+    try {
+      await expect(fetchSearchIndex()).resolves.toEqual([]);
+      // The fetch settled, so the abort timer must have been cleared.
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("throws for a non-OK response", async () => {
+    const response = { ok: false, status: 503 } as Response;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+
+    try {
+      await expect(fetchSearchIndex()).rejects.toThrow("503");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

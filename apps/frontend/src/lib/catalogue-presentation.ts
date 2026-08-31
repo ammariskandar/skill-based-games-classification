@@ -15,6 +15,7 @@ import type {
   GameCatalogueClassification,
   GameSource,
 } from "./server/api/games";
+import { getSafeQueryString } from "./server/api/query";
 
 /** Normalize the `?page=` query value to a safe positive page number. */
 export function parsePageParam(raw: string | null): number {
@@ -142,7 +143,9 @@ export function parseCatalogueQuery(
   const coverValues = searchParams.getAll("coverless_last");
   const sort = normalizeSort(searchParams.get("sort"));
   return {
-    q: (searchParams.get("q") ?? "").trim(),
+    // SBGC-102: strip control characters, trim, and cap at the backend's
+    // 100-char `max_length` so an over-long/malformed query can never 422.
+    q: getSafeQueryString(searchParams, "q") ?? "",
     page: parsePageParam(searchParams.get("page")),
     source: normalizeSource(searchParams.get("source")),
     classified: parseOptionalBool(searchParams.get("classified")),

@@ -21,6 +21,12 @@ export const SEARCH_INDEX_VERSION = 1;
 /** Reasonable freshness window; catalogue search remains authoritative. */
 export const SEARCH_INDEX_TTL_MS = 15 * 60 * 1000;
 
+/**
+ * Hard timeout for the search-index fetch (SBGC-102).  A hung request must
+ * never block Search open — the component degrades to the plain GET form.
+ */
+export const SEARCH_INDEX_TIMEOUT_MS = 3500;
+
 /** Minimal storage surface satisfied by `sessionStorage`. */
 export interface SearchIndexStorage {
   getItem(key: string): string | null;
@@ -153,18 +159,36 @@ export function scheduleIdle(callback: () => void): void {
   }
 }
 
-async function fetchSearchIndex(): Promise<GameSearchIndexItem[]> {
-  const response = await fetch("/api/search-index", {
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) {
-    throw new Error(`Search index request failed: ${response.status}`);
+/**
+ * Timeout-bounded fetch of the compact search index (SBGC-102).
+ *
+ * Aborts after `SEARCH_INDEX_TIMEOUT_MS` so a stalled network request can
+ * never hang the loader; the rejection propagates to callers, which degrade
+ * to the plain `/catalogue?q=...` GET form.  Nothing is written to the
+ * session cache on failure.
+ */
+export async function fetchSearchIndex(): Promise<GameSearchIndexItem[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    SEARCH_INDEX_TIMEOUT_MS,
+  );
+  try {
+    const response = await fetch("/api/search-index", {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Search index request failed: ${response.status}`);
+    }
+    const data = (await response.json()) as { games?: GameSearchIndexItem[] };
+    if (!Array.isArray(data.games)) {
+      throw new Error("Search index response missing games");
+    }
+    return data.games;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const data = (await response.json()) as { games?: GameSearchIndexItem[] };
-  if (!Array.isArray(data.games)) {
-    throw new Error("Search index response missing games");
-  }
-  return data.games;
 }
 
 function getSessionStorage(): SearchIndexStorage | null {
