@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
-from typing import Literal
 
 from api.errors import STANDARD_ERROR_RESPONSES, ApiException
 from api.schemas import ApiErrorResponse, ApiRequestSchema
@@ -32,6 +31,8 @@ from ninja.errors import AuthorizationError
 from ninja.security import django_auth
 
 from games.models import Game, SourceType
+from games.schemas.catalogue import GameCatalogueQuerySchema
+from games.schemas.common import ValidGameSlug
 from games.services.catalogue import (
     CatalogueClassification,
     CatalogueGame,
@@ -50,6 +51,10 @@ from games.services.steam.errors import SteamError, SteamRateLimitedError
 logger = logging.getLogger(__name__)
 
 router = Router(tags=["Games"])
+
+# Module-level singleton so Ninja's Query default is not a function call in an
+# argument default (ruff B008); Ninja types Query as Annotated for checkers.
+_catalogue_query = Query(...)  # pyright: ignore[reportCallIssue]
 
 
 # ---------------------------------------------------------------------------
@@ -615,35 +620,27 @@ def game_search_index(request):
 )
 def game_catalogue(
     request,
-    q: str | None = None,
-    source: Literal["steam", "manual"] | None = None,
-    classified: bool | None = None,
-    sort: Literal[
-        "name_asc", "name_desc", "recent", "micro", "mystiko", "macro"
-    ] = "name_asc",
-    profile: Literal["challenge", "reward"] = "challenge",
-    dominant: Literal["micro", "mystiko", "macro"] | None = None,
-    page: int = Query(default=1, ge=1),  # pyright: ignore[reportCallIssue]
-    page_size: int = Query(default=24, ge=1, le=100),  # pyright: ignore[reportCallIssue]
+    query: GameCatalogueQuerySchema = _catalogue_query,
 ):
     # The cover-last checkbox submits `coverless_last=true` when checked and
     # `coverless_last=false` (hidden input) when unchecked; a checked checkbox
     # therefore produces both values, where the explicit `true` must win.  Read
     # the raw value list so the checked-value-wins contract holds and absence
-    # falls back to the default `true`.
+    # falls back to the default `true`.  The query schema still strictly
+    # validates a single-value `coverless_last` (e.g. `maybe` → 422).
     raw_cover = request.GET.getlist("coverless_last")
     coverless_last = "true" in raw_cover if raw_cover else True
 
     catalogue = CatalogueQuery(
-        q=q.strip() if q and q.strip() else None,
-        source=SourceType(source) if source else None,
-        classified=classified,
-        sort=sort,
-        profile=profile,
-        dominant=dominant,
+        q=query.q,
+        source=SourceType(query.source) if query.source else None,
+        classified=query.classified,
+        sort=query.sort,
+        profile=query.profile,
+        dominant=query.dominant,
         coverless_last=coverless_last,
-        page=page,
-        page_size=page_size,
+        page=query.page,
+        page_size=query.page_size,
     )
     result = get_game_catalogue(catalogue)
     return GameCatalogueResponse(
@@ -668,7 +665,7 @@ def game_catalogue(
     ),
     url_name="game-detail",
 )
-def game_detail(request, slug: str):
+def game_detail(request, slug: ValidGameSlug):
     game = Game.objects.publicly_listable().filter(slug=slug).first()
     if game is None:
         raise ApiException(404, "GAME_NOT_FOUND", "Game not found.")

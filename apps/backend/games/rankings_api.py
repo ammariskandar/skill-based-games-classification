@@ -9,15 +9,18 @@ dominance, ordering, or pagination.
 
 from __future__ import annotations
 
-from typing import Literal
-
 from api.errors import STANDARD_ERROR_RESPONSES
 from api.schemas import ApiErrorResponse
 from ninja import Query, Router, Schema
 
+from games.schemas.rankings import RankingsQuerySchema
 from games.services.rankings import RankingGame, RankingQuery, get_rankings
 
 router = Router(tags=["Rankings"])
+
+# Module-level singleton so Ninja's Query default is not a function call in an
+# argument default (ruff B008); Ninja types Query as Annotated for checkers.
+_rankings_query = Query(...)  # pyright: ignore[reportCallIssue]
 
 
 class RankingItem(Schema):
@@ -69,22 +72,17 @@ def _ranking_item(game: RankingGame) -> RankingItem:
 )
 def game_rankings(
     request,
-    profile: Literal["unified", "challenge", "reward"] = "unified",
-    dimension: Literal["micro", "mystiko", "macro"] = "micro",
-    direction: Literal["desc", "asc"] = "desc",
-    dominant: Literal["micro", "mystiko", "macro"] | None = None,
-    page: int = Query(default=1, ge=1),  # pyright: ignore[reportCallIssue]
-    page_size: int = Query(default=24, ge=1, le=100),  # pyright: ignore[reportCallIssue]
+    query: RankingsQuerySchema = _rankings_query,
 ):
-    query = RankingQuery(
-        profile=profile,
-        dimension=dimension,
-        direction=direction,
-        dominant=dominant,
-        page=page,
-        page_size=page_size,
+    ranking_query = RankingQuery(
+        profile=query.profile,
+        dimension=query.dimension,
+        direction=query.direction,
+        dominant=query.dominant,
+        page=query.page,
+        page_size=query.page_size,
     )
-    result = get_rankings(query)
+    result = get_rankings(ranking_query)
     return RankingResponse(
         count=result.count,
         page=result.page,

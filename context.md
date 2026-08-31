@@ -2570,6 +2570,43 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-30 — SBGC-99 server-side validation & sanitization
+
+- New explicit Pydantic query/path schemas under
+  `apps/backend/games/schemas/`:
+  - `catalogue.py` — `GameCatalogueQuerySchema`: bounded pagination
+    (`page >= 1`, `1 <= page_size <= 100`), strict enum literals
+    (`source`, `sort`, `profile` challenge/reward, `dominant`), strict
+    boolean parsing (`classified`, `coverless_last`), and a `q` before-
+    validator that strips control characters (`\x00–\x1f`, `\x7f`),
+    trims whitespace, and normalizes empty → `None` (with
+    `max_length=100` applied to the cleaned value).
+  - `rankings.py` — `RankingsQuerySchema`: same pagination bounds plus
+    `profile`/`dimension`/`direction`/`dominant` enums; defaults preserve
+    the historical behaviour (`profile=unified`, `page_size=24`, plus the
+    `direction`/`dominant` params the ticket spec omitted).
+  - `common.py` — `ValidGameSlug` (`^[a-z0-9]+(?:-[a-z0-9]+)*$`, max 255)
+    applied to `GET /api/v1/games/{slug}`.
+- Endpoints in `games/api.py` and `games/rankings_api.py` now take a single
+  validated query schema (module-level `Query(...)` singleton to satisfy
+  ruff B008; `# pyright: ignore[reportCallIssue]` since Ninja types `Query`
+  as `Annotated`). The `coverless_last` checkbox dual-value
+  (`true` + hidden `false`) contract is preserved via the existing raw
+  `getlist` "true wins" logic — the schema validates single values while
+  the endpoint keeps the checked-value-wins behaviour.
+- Validation failures flow through the existing global `ValidationError`
+  handler (`api/errors.py`): 422 with the standard envelope
+  (`VALIDATION_ERROR`, details with `location`/`message`/`type`). No
+  handler or response-contract changes.
+- New suite `games/tests/test_validation.py` (30 tests): pagination
+  boundaries, `q` sanitization (empty/whitespace/101-char/null byte),
+  enum/boolean rejection (`source=invalid`, `sort=hacked_column`, …), slug
+  rejection (uppercase, underscores, `..`), boolean coercion, the
+  dual-value `coverless_last` regression, and the 422 envelope shape.
+- Verified: targeted suite 30/30; `manage.py test apps/backend` full suite
+  green (1923 run, 25 skipped, 0 failures); ruff check + format clean;
+  basedpyright 0 errors; frontend 595/595.
+
 ## 2026-08-30 — SBGC-214 about page build
 
 - Rebuilt `/about` as a static content page (prerendered, no client scripts):
