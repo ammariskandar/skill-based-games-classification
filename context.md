@@ -2570,6 +2570,34 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-31 — SBGC-101 frontend error handling & component states
+
+- Status-aware fallback error codes in the API client
+  (`src/lib/server/api/client.ts`): when the upstream returns no parseable
+  JSON envelope (gateway HTML pages, proxy error bodies), the client now
+  maps 404 → `NOT_FOUND`, 422 → `VALIDATION_ERROR`, 429 → `RATE_LIMITED`,
+  5xx → `SERVICE_UNAVAILABLE` (previously always `HTTP_ERROR`);
+  structured envelopes still surface the backend code via `apiError` and
+  keep the client taxonomy code `HTTP_ERROR`. `ErrorCode` union extended in
+  `types.ts`.
+- `ErrorState.astro` extended (backward compatible) with a `code` badge
+  prop (`Code: …`) and a named `actions` slot; wired truthful
+  `code="SERVICE_UNAVAILABLE"` into the catalogue/rankings/game-detail
+  service-error states.
+- Existing infrastructure already covered most of the ticket (built in
+  SBGC-71/72/74/82/89/92): typed `BackendApiError` class + `GameNotFoundError`
+  in `lib/server/api/games.ts`, envelope parsing in `client.ts`, custom
+  `404.astro`/`500.astro` pages, the game-detail 404-rewrite + 503 boundary,
+  and client-side param sanitizers (`parseCatalogueQuery`,
+  `parseRankingsState`) that pre-empt backend 422s by clamping invalid URL
+  params to defaults. No page layouts were altered.
+- Tests: `transport.test.ts` non-envelope statuses now assert the new
+  fallback codes (+ new HTML-404 → NOT_FOUND and HTML-429 → RATE_LIMITED
+  cases), `failure-handling.test.ts` 502-HTML assertion updated to
+  SERVICE_UNAVAILABLE, and a new Playwright spec
+  `tests/browser/error-pages.spec.ts` verifies the custom 404 page serves
+  status 404 with the recovery links. 597 frontend tests pass.
+
 ## 2026-08-31 — SBGC-100 backend error registry & admin catalog
 
 - New canonical registry `games/errors.py`: `ErrorCategory`, `ErrorCode`

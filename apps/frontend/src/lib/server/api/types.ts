@@ -38,6 +38,10 @@ export type ErrorCode =
   | "NETWORK_ERROR"
   | "REDIRECT"
   | "HTTP_ERROR"
+  | "NOT_FOUND"
+  | "VALIDATION_ERROR"
+  | "RATE_LIMITED"
+  | "SERVICE_UNAVAILABLE"
   | "INVALID_RESPONSE"
   | "UNKNOWN_ERROR";
 

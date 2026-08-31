@@ -503,14 +503,26 @@ describe("API transport", () => {
   describe("non-success responses", () => {
     beforeEach(() => setEnv("http://127.0.0.1:8000"));
 
+    // Unparseable (non-envelope) bodies get a status-based fallback code
+    // (SBGC-101); statuses without a canonical code stay HTTP_ERROR.
+    const expectedCode: Record<number, string> = {
+      400: "HTTP_ERROR",
+      401: "HTTP_ERROR",
+      403: "HTTP_ERROR",
+      404: "NOT_FOUND",
+      429: "RATE_LIMITED",
+      500: "SERVICE_UNAVAILABLE",
+      503: "SERVICE_UNAVAILABLE",
+    };
+
     for (const status of [400, 401, 403, 404, 429, 500, 503]) {
-      it(`handles ${status} as HTTP_ERROR`, async () => {
+      it(`handles ${status} as ${expectedCode[status]}`, async () => {
         stubFetch(textResponse("error", status));
         const { getJSON } = await importClient();
         const r = await getJSON("/api/test");
         expect(r.ok).toBe(false);
         const f = r as ApiFailure;
-        expect(f.error.code).toBe("HTTP_ERROR");
+        expect(f.error.code).toBe(expectedCode[status]);
         expect(f.status).toBe(status);
       });
     }
@@ -551,8 +563,34 @@ describe("API transport", () => {
       expect(r.ok).toBe(false);
       const f = r as ApiFailure;
       expect(f.status).toBe(502);
-      expect(f.error.code).toBe("HTTP_ERROR");
+      expect(f.error.code).toBe("SERVICE_UNAVAILABLE");
       expect(f.error.message).toBe("Server returned 502");
+      expect(f.apiError).toBeUndefined();
+    });
+
+    it("maps an HTML 404 body to NOT_FOUND", async () => {
+      stubFetch(textResponse("<html>Not Found</html>", 404));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.status).toBe(404);
+      expect(f.error.code).toBe("NOT_FOUND");
+      expect(f.error.message).toBe("Server returned 404");
+      expect(f.apiError).toBeUndefined();
+    });
+
+    it("maps an HTML 429 body to RATE_LIMITED", async () => {
+      stubFetch(textResponse("<html>Too Many Requests</html>", 429));
+      const { getJSON } = await importClient();
+      const r = await getJSON("/api/test");
+
+      expect(r.ok).toBe(false);
+      const f = r as ApiFailure;
+      expect(f.status).toBe(429);
+      expect(f.error.code).toBe("RATE_LIMITED");
+      expect(f.error.message).toBe("Server returned 429");
       expect(f.apiError).toBeUndefined();
     });
   });
@@ -1129,10 +1167,10 @@ describe("API transport", () => {
       expect((r as ApiFailure).error.code).toBe("REDIRECT");
     });
 
-    it("HTTP_ERROR — 500", async () => {
+    it("SERVICE_UNAVAILABLE — 500", async () => {
       stubFetch(textResponse("err", 500));
       const r = await (await importClient()).getJSON("/api/test");
-      expect((r as ApiFailure).error.code).toBe("HTTP_ERROR");
+      expect((r as ApiFailure).error.code).toBe("SERVICE_UNAVAILABLE");
     });
 
     it("INVALID_RESPONSE — bad JSON", async () => {

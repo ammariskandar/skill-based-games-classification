@@ -141,6 +141,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
       <ErrorState
         title="Rankings are temporarily unavailable."
         message="Please try again in a moment."
+        code="SERVICE_UNAVAILABLE"
         headingLevel="h1"
       />
     ) : emptyKind === "no-games" ? (
