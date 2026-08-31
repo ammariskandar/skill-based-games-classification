@@ -118,6 +118,7 @@ const robots = catalogueNeedsNoindex(state) ? "noindex, follow" : undefined;
       <ErrorState
         title="The catalogue is temporarily unavailable."
         message="Please try again in a moment."
+        code="SERVICE_UNAVAILABLE"
         headingLevel="h2"
       />
     ) : searching && count === 0 ? (

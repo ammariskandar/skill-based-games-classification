@@ -138,7 +138,7 @@ describe("upstream failure paths (real network)", () => {
       };
     };
     expect(backendError.failure?.status).toBe(502);
-    expect(backendError.failure?.error?.code).toBe("HTTP_ERROR");
+    expect(backendError.failure?.error?.code).toBe("SERVICE_UNAVAILABLE");
     expect(backendError.failure?.error?.message).toBe("Server returned 502");
     expect(backendError.failure?.apiError).toBeUndefined();
   });

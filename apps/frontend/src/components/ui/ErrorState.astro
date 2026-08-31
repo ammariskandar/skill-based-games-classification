@@ -2,6 +2,7 @@
 export interface Props {
   title?: string;
   message?: string;
+  code?: string;
   actionText?: string;
   actionHref?: string;
   headingLevel?: "h1" | "h2" | "h3";
@@ -11,6 +12,7 @@ export interface Props {
 const {
   title = "Something went wrong",
   message = "An unexpected error occurred while loading this content. Please try again later.",
+  code,
   actionText,
   actionHref,
   headingLevel = "h2",
@@ -56,6 +58,16 @@ const {
   }
   <p class="mt-2 max-w-md text-sm text-(--color-muted)">{message}</p>
   {
+    code && (
+      <span
+        class="mt-3 inline-block rounded bg-surface-2 px-2 py-0.5 font-mono text-xs text-muted"
+        data-error-code
+      >
+        Code: {code}
+      </span>
+    )
+  }
+  {
     actionText && actionHref && (
       <a
         href={actionHref}
@@ -63,6 +75,13 @@ const {
       >
         {actionText}
       </a>
+    )
+  }
+  {
+    Astro.slots.has("actions") && (
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <slot name="actions" />
+      </div>
     )
   }
   {

@@ -21,6 +21,7 @@ import type {
   ApiNoContent,
   ApiResult,
   ApiSuccess,
+  ErrorCode,
   GetOptions,
   PostOptions,
   RequestOptions,
@@ -225,6 +226,20 @@ function isRedirect(status: number): boolean {
   );
 }
 
+/**
+ * Status-based fallback error code when the upstream returns no parseable
+ * JSON envelope (e.g. a gateway HTML page or a proxy error body).  Mirrors
+ * the backend ErrorCode taxonomy for statuses that have canonical codes;
+ * everything else stays the generic HTTP_ERROR (SBGC-101).
+ */
+function fallbackCodeForStatus(status: number): ErrorCode {
+  if (status === 404) return "NOT_FOUND";
+  if (status === 422) return "VALIDATION_ERROR";
+  if (status === 429) return "RATE_LIMITED";
+  if (status >= 500) return "SERVICE_UNAVAILABLE";
+  return "HTTP_ERROR";
+}
+
 // ═══ transport ═══
 
 async function request<T>(
@@ -394,7 +409,10 @@ async function request<T>(
       return {
         ok: false,
         status: response.status,
-        error: apiError("HTTP_ERROR", message),
+        error: apiError(
+          apiErrorDto ? "HTTP_ERROR" : fallbackCodeForStatus(response.status),
+          message,
+        ),
         apiError: apiErrorDto,
       };
     }
