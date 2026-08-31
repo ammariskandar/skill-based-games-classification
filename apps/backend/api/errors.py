@@ -14,6 +14,7 @@ import logging
 from typing import Any
 
 from django.http import Http404, HttpRequest, HttpResponse
+from games.errors import ErrorCode
 from ninja import NinjaAPI
 from ninja.errors import (
     AuthenticationError,
@@ -125,7 +126,7 @@ def validation_error_handler(
     details = _sanitize_validation_errors(exc.errors)
     return _response(
         status=422,
-        code="VALIDATION_ERROR",
+        code=ErrorCode.VALIDATION_ERROR.value,
         message="Request validation failed.",
         details=details,
     )
@@ -139,7 +140,7 @@ def authentication_error_handler(
 ) -> HttpResponse:
     return _response(
         status=401,
-        code="AUTHENTICATION_ERROR",
+        code=ErrorCode.AUTHENTICATION_ERROR.value,
         message="Authentication credentials were not provided or are invalid.",
     )
 
@@ -149,7 +150,7 @@ def authorization_error_handler(
 ) -> HttpResponse:
     return _response(
         status=403,
-        code="AUTHORIZATION_ERROR",
+        code=ErrorCode.AUTHORIZATION_ERROR.value,
         message="You do not have permission to perform this action.",
     )
 
@@ -160,7 +161,7 @@ def authorization_error_handler(
 def http404_handler(request: HttpRequest, exc: Http404) -> HttpResponse:
     return _response(
         status=404,
-        code="NOT_FOUND",
+        code=ErrorCode.NOT_FOUND.value,
         message="The requested resource was not found.",
     )
 
@@ -168,21 +169,21 @@ def http404_handler(request: HttpRequest, exc: Http404) -> HttpResponse:
 # -- HttpError (deliberate HTTP-level error from endpoint code) --
 
 _HTTP_ERROR_MAP: dict[int, str] = {
-    400: "BAD_REQUEST",
-    401: "AUTHENTICATION_ERROR",
-    403: "AUTHORIZATION_ERROR",
-    404: "NOT_FOUND",
-    405: "METHOD_NOT_ALLOWED",
-    409: "CONFLICT",
-    422: "VALIDATION_ERROR",
-    429: "RATE_LIMITED",
-    503: "SERVICE_UNAVAILABLE",
+    400: ErrorCode.BAD_REQUEST.value,
+    401: ErrorCode.AUTHENTICATION_ERROR.value,
+    403: ErrorCode.AUTHORIZATION_ERROR.value,
+    404: ErrorCode.NOT_FOUND.value,
+    405: ErrorCode.METHOD_NOT_ALLOWED.value,
+    409: ErrorCode.CONFLICT.value,
+    422: ErrorCode.VALIDATION_ERROR.value,
+    429: ErrorCode.RATE_LIMITED.value,
+    503: ErrorCode.SERVICE_UNAVAILABLE.value,
 }
 
 
 def http_error_handler(request: HttpRequest, exc: HttpError) -> HttpResponse:
     status = exc.status_code
-    code = _HTTP_ERROR_MAP.get(status, "HTTP_ERROR")
+    code = _HTTP_ERROR_MAP.get(status, ErrorCode.HTTP_ERROR.value)
     return _response(status=status, code=code, message=str(exc))
 
 
@@ -216,7 +217,7 @@ def unexpected_exception_handler(request: HttpRequest, exc: Exception) -> HttpRe
     )
     return _response(
         status=500,
-        code="INTERNAL_SERVER_ERROR",
+        code=ErrorCode.INTERNAL_SERVER_ERROR.value,
         message="An unexpected error occurred.",
     )
 
