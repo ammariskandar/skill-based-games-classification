@@ -190,25 +190,6 @@ def http_error_handler(request: HttpRequest, exc: HttpError) -> HttpResponse:
 # -- Unexpected Exception --
 
 
-def _is_framework_validation_error(exc: Exception) -> bool:
-    """
-    Detect Django-Ninja's internal 'Invalid HTTP method' ValidationError
-    when an unsupported method hits a router.
-
-    Django Ninja 1.6.2 raises ninja.errors.ValidationError with a flat
-    error list containing a message like "Invalid HTTP method".
-    """
-    if isinstance(exc, ValidationError):
-        raw = exc.errors
-        if isinstance(raw, list):
-            for item in raw:
-                if isinstance(item, dict) and "Invalid HTTP method" in str(
-                    item.get("msg", "")
-                ):
-                    return True
-    return False
-
-
 def unexpected_exception_handler(request: HttpRequest, exc: Exception) -> HttpResponse:
     logger.error(
         "Unhandled API exception",

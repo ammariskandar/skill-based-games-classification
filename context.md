@@ -2570,6 +2570,51 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-31 — SBGC-103 comprehensive failure paths & epic SBGC-15 audit
+
+- Final epic-closing work: two matrix suites plus one cleanup (dead-code
+  removal in `api/errors.py`):
+  - Backend `games/tests/test_comprehensive_failure_paths.py` (15 tests) in four
+    classes: `ErrorRegistryCompletenessTests` (registry metadata completeness +
+    every emitted code is a real `ErrorCode` member, incl. the full
+    `_HTTP_ERROR_MAP`), `ClientErrorEnvelopeTests` (400/401/403/404/405/422/429
+    envelopes, 404 byte-identical across non-existent/draft/archived/DLC/
+    soundtrack permutations, structured 422 details per field), `ServerError-
+    EnvelopeTests` (500 sanitized under `DEBUG=False` **and** `DEBUG=True`,
+    503), and `PublicRouteBoundaryExclusionTests` (unlisted draft →
+    GAME_NOT_FOUND, catalogue/rankings invalid params → 422).
+  - Frontend `lib/server/api/__tests__/comprehensive_failure_paths.test.ts`
+    (17 tests): structured envelope parsing through `BackendApiError.apiError`
+    (VALIDATION_ERROR with preserved `details`, RATE_LIMITED,
+    SERVICE_UNAVAILABLE, INTERNAL_SERVER_ERROR, GAME_NOT_FOUND via
+    `GameNotFoundError`), the full HTML/gateway fallback matrix (404/422/429/
+    500/502/503/504 → status-aware codes, plus empty-body), and the route
+    boundary contracts (`getGameDetail` 404 → `GameNotFoundError`, 5xx →
+    `BackendApiError` SERVICE_UNAVAILABLE, catalogue/rankings 5xx →
+    `BackendApiError`).
+- Audit resolutions (5 findings → 1 pruned, 3 retained, 1 deferred):
+  1. **Pruned `_is_framework_validation_error`** — removed the unused helper
+     from `api/errors.py` (no remaining references).
+  2. **`DEBUG`-agnostic 500 handler — retained** —
+     `unexpected_exception_handler` unconditionally suppresses tracebacks in
+     the JSON error payload (message "An unexpected error occurred.") to
+     prevent accidental information leakage; strictly safer than a
+     `DEBUG`-gated message.
+  3. **Rankings `page_size=24` default — retained** — standardized across the
+     catalogue and rankings cards to match the 24-item viewport grid (the
+     frontend computes the ranking page size client-side).
+  4. **405 method-not-allowed HTML — retained** — preserves core Django URL
+     routing behaviour that runs before the Ninja dispatcher (documented in
+     `api/tests/test_api_mounted.py`); `METHOD_NOT_ALLOWED` remains reachable
+     only via an explicit `HttpError(405)`.
+  5. **429 `Retry-After` header — deferred** — formalized as future work under
+     Epic SBGC-16 (Security, Secrets & Rate Limiting); the backend currently
+     emits no `Retry-After` header.
+- Validation: full backend suite 1966 run / 25 skipped / 0 failures (2032
+  found); frontend 639 tests; `makemigrations --check` clean (no migrations);
+  `ruff check`/`ruff format --check` clean; basedpyright 0/0/0; frontend
+  `check` 0 errors / `lint` / `format:check` / `build` all clean.
+
 ## 2026-08-31 — SBGC-102 application safeguards & edge-case resilience
 
 - Backend Steam transport was already hardened (SBGC-42/53/168): the
