@@ -2570,6 +2570,43 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-08-31 — SBGC-102 application safeguards & edge-case resilience
+
+- Backend Steam transport was already hardened (SBGC-42/53/168): the
+  synchronous `SteamClient` enforces connect/read timeouts from config,
+  mounts a bounded urllib3 `Retry` (429/500/502/503/504 for GET/HEAD only,
+  backoff/retry-after caps), and converts transport failures into typed
+  domain exceptions (`SteamTimeoutError`, `SteamConnectionError`,
+  `SteamRateLimitedError`, `SteamUpstreamError`, `SteamInvalidResponseError`)
+  that `games.api._map_steam_service_error` maps onto the canonical
+  `ErrorCode` registry (429 `RATE_LIMITED`, 503 `SERVICE_UNAVAILABLE`).  No
+  production backend changes were needed; SBGC-102 added the isolated
+  `games/tests/services/steam/test_resilience.py` suite (16 tests) locking:
+  timeout/connection → typed errors, 429/503 classification, malformed-payload
+  fail-safes (HTML / bad JSON), the retry contract (503 retryable, two
+  consecutive 503s retried then a clean give-up via `MaxRetryError`), and the
+  API-boundary code mapping.
+- Frontend: new defensive SSR query helpers in `lib/server/api/query.ts` —
+  `getSafeQueryString` (control-char strip `\x00–\x1f`/`\x7f`, trim,
+  100-char cap, empty → undefined), `getSafeQueryInt` (digits-only strict
+  parse, min/max clamp, overflow e.g. `99999999999999999` → max, garbage /
+  negative / float → default), and `getSafeQueryBool` ("true wins" contract,
+  case-insensitive `true/false/1/0`).  `parseCatalogueQuery` now sanitizes
+  `q` through `getSafeQueryString`, so an over-long (≥101 char) or
+  control-character-bearing query can no longer reach the backend as a
+  422 → 503 mislabel.  Multi-value keys keep first-wins; `coverless_last`
+  keeps its true-wins contract (unchanged).
+- Frontend: `lib/game-search-index.ts` `fetchSearchIndex` is now
+  timeout-bounded via `AbortController` (3500 ms); a stalled search-index
+  fetch aborts and the Search UI degrades to the plain `/catalogue?q=...`
+  GET form, with nothing written to the session cache from a failed/aborted
+  payload.
+- Tests: new `lib/server/api/__tests__/resilience.test.ts` (22 tests: helper
+  contracts, overflow clamping, true-wins, parser integration) and
+  `game-search-index.test.ts` timeout abort/clear/non-OK cases.  Full
+  frontend suite green (622); full backend suite green; ruff check/format
+  clean; basedpyright 0/0/0; `makemigrations --check` clean.
+
 ## 2026-08-31 — SBGC-101 frontend error handling & component states
 
 - Status-aware fallback error codes in the API client
