@@ -2572,7 +2572,8 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 ## 2026-08-31 — SBGC-103 comprehensive failure paths & epic SBGC-15 audit
 
-- Final epic-closing matrix suites (test-only — no production code changed):
+- Final epic-closing work: two matrix suites plus one cleanup (dead-code
+  removal in `api/errors.py`):
   - Backend `games/tests/test_comprehensive_failure_paths.py` (15 tests) in four
     classes: `ErrorRegistryCompletenessTests` (registry metadata completeness +
     every emitted code is a real `ErrorCode` member, incl. the full
@@ -2591,23 +2592,24 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     boundary contracts (`getGameDetail` 404 → `GameNotFoundError`, 5xx →
     `BackendApiError` SERVICE_UNAVAILABLE, catalogue/rankings 5xx →
     `BackendApiError`).
-- Audit findings (documented, not changed — Gaps Policy):
-  - **405 method mismatch is HTML, not JSON** — Django resolves method
-    mismatches at URL routing before Ninja's dispatcher, so a real 405 does
-    not pass through the JSON envelope (already documented in
-    `api/tests/test_api_mounted.py`); the `METHOD_NOT_ALLOWED` code is only
-    reachable when endpoint code raises `HttpError(405)`.
-  - **500 handler is `DEBUG`-agnostic** — `unexpected_exception_handler`
-    always returns the safe `INTERNAL_SERVER_ERROR` envelope (message
-    "An unexpected error occurred."), stricter than the SBGC-100 prose which
-    implied a `DEBUG`-gated message.
-  - **`_is_framework_validation_error` in `api/errors.py` is unused** — left
-    as-is (no behaviour change in a test-only ticket).
-  - **`RankingsQuerySchema.page_size` default is 24, not 50** as the SBGC-99
-    prose suggested — matches the historical SBGC-81 behaviour (frontend uses
-    a viewport-driven page size anyway).
-  - **429 responses carry no `Retry-After` header** — the SBGC-103 "and
-    headers" wording is aspirational; the backend emits no such header.
+- Audit resolutions (5 findings → 1 pruned, 3 retained, 1 deferred):
+  1. **Pruned `_is_framework_validation_error`** — removed the unused helper
+     from `api/errors.py` (no remaining references).
+  2. **`DEBUG`-agnostic 500 handler — retained** —
+     `unexpected_exception_handler` unconditionally suppresses tracebacks in
+     the JSON error payload (message "An unexpected error occurred.") to
+     prevent accidental information leakage; strictly safer than a
+     `DEBUG`-gated message.
+  3. **Rankings `page_size=24` default — retained** — standardized across the
+     catalogue and rankings cards to match the 24-item viewport grid (the
+     frontend computes the ranking page size client-side).
+  4. **405 method-not-allowed HTML — retained** — preserves core Django URL
+     routing behaviour that runs before the Ninja dispatcher (documented in
+     `api/tests/test_api_mounted.py`); `METHOD_NOT_ALLOWED` remains reachable
+     only via an explicit `HttpError(405)`.
+  5. **429 `Retry-After` header — deferred** — formalized as future work under
+     Epic SBGC-16 (Security, Secrets & Rate Limiting); the backend currently
+     emits no `Retry-After` header.
 - Validation: full backend suite 1966 run / 25 skipped / 0 failures (2032
   found); frontend 639 tests; `makemigrations --check` clean (no migrations);
   `ruff check`/`ruff format --check` clean; basedpyright 0/0/0; frontend
