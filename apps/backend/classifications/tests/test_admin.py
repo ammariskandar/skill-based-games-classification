@@ -4,24 +4,31 @@ Editorial classification Admin tests — SBGC-46.
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
-from django.test import TestCase
+from django.contrib import admin
+from django.contrib.auth.models import Group, User
+from django.db import connection
+from django.test import RequestFactory, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from games.models import Game, SourceType
 
 from classifications.admin import (
     ChallengeProfileInline,
     ChallengeProfileInlineFormSet,
+    EditorialClassificationAdmin,
     RewardProfileInline,
     RewardProfileInlineFormSet,
 )
 from classifications.models import (
     ChallengeProfile,
     EditorialClassification,
+    EditorialGroupProfile,
     RewardProfile,
 )
+from classifications.roles import BASE_WEIGHTS, EditorialRole
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -377,3 +384,115 @@ class NoNetworkTests(TestCase):
         with self._steam_guard():
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# O(1) role resolution on the Add form (SBGC-204)
+# ---------------------------------------------------------------------------
+
+
+class EditorialClassificationAdminQueryTests(TestCase):
+    """The Add form resolves candidate roles in O(1) queries (R4-17)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username="query_admin", password="testpass"
+        )
+        self.client.force_login(self.admin)  # type: ignore[attr-defined]
+        self.url = reverse("admin:classifications_editorialclassification_add")
+
+    def _editorial_user(
+        self, username, *, is_moderator=False, is_community_leader=False
+    ):
+        user = User.objects.create_user(username=username, password="p")
+        if is_moderator or is_community_leader:
+            group = Group.objects.create(name=f"{username}-group")
+            EditorialGroupProfile.objects.create(
+                group=group,
+                is_moderator=is_moderator,
+                is_community_leader=is_community_leader,
+            )
+            user.groups.add(group)
+        return user
+
+    def test_admin_add_form_bounded_queries(self):
+        # Baseline: three active editorial candidates with varied roles.
+        self._editorial_user("evaluator-mod", is_moderator=True)
+        self._editorial_user("evaluator-cl", is_community_leader=True)
+        self._editorial_user("evaluator-community")
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        with CaptureQueriesContext(connection) as baseline:
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        baseline_queries = len(baseline.captured_queries)
+
+        # Scale to 18 candidates — the query count must stay flat, proving
+        # the role map is resolved in a single batched lookup.
+        for i in range(15):
+            if i % 3 == 0:
+                self._editorial_user(f"scaled-mod-{i}", is_moderator=True)
+            elif i % 3 == 1:
+                self._editorial_user(f"scaled-cl-{i}", is_community_leader=True)
+            else:
+                self._editorial_user(f"scaled-community-{i}")
+
+        with self.assertNumQueries(baseline_queries):
+            response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_evaluator_choices_integrity(self):
+        mod = self._editorial_user("integrity-mod", is_moderator=True)
+        cl = self._editorial_user("integrity-cl", is_community_leader=True)
+        community = self._editorial_user("integrity-community")
+        conflicted = User.objects.create_user(
+            username="integrity-conflict", password="p"
+        )
+        conflict_mod = Group.objects.create(name="integrity-conflict-mod")
+        conflict_cl = Group.objects.create(name="integrity-conflict-cl")
+        EditorialGroupProfile.objects.create(group=conflict_mod, is_moderator=True)
+        EditorialGroupProfile.objects.create(
+            group=conflict_cl, is_community_leader=True
+        )
+        conflicted.groups.add(conflict_mod, conflict_cl)
+
+        request = RequestFactory().get(self.url)
+        request.user = self.admin  # pyright: ignore[reportAttributeAccessIssue]
+        admin_instance = EditorialClassificationAdmin(
+            EditorialClassification, admin.site
+        )
+        form_class = admin_instance.get_form(request)
+        role_map = json.loads(
+            form_class.base_fields["submitted_by"].widget.attrs["data-role-map"]
+        )
+
+        self.assertEqual(
+            role_map[str(mod.pk)],
+            {
+                "role": EditorialRole.MODERATOR,
+                "weight": str(BASE_WEIGHTS[EditorialRole.MODERATOR]),
+            },
+        )
+        self.assertEqual(
+            role_map[str(cl.pk)],
+            {
+                "role": EditorialRole.COMMUNITY_LEADER,
+                "weight": str(BASE_WEIGHTS[EditorialRole.COMMUNITY_LEADER]),
+            },
+        )
+        self.assertEqual(
+            role_map[str(community.pk)],
+            {
+                "role": EditorialRole.COMMUNITY,
+                "weight": str(BASE_WEIGHTS[EditorialRole.COMMUNITY]),
+            },
+        )
+        self.assertEqual(role_map[str(conflicted.pk)], {"role": None, "weight": None})
+        self.assertEqual(
+            role_map[str(self.admin.pk)],
+            {
+                "role": EditorialRole.SUPERUSER,
+                "weight": str(BASE_WEIGHTS[EditorialRole.SUPERUSER]),
+            },
+        )
