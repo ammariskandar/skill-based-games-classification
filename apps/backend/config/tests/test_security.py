@@ -30,9 +30,6 @@ from config.testing import minimal_subprocess_env
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
 _MANAGE_PY = _BACKEND_DIR / "manage.py"
-_DUMMY_PG_URL = (
-    "postgresql://u:p@example.neon.tech/db?sslmode=require&channel_binding=require"
-)
 
 
 def _manage(*args, env=None):
@@ -48,14 +45,9 @@ def _manage(*args, env=None):
 
 def _prod_env(**overrides):
     """Return a dict with all required production security values."""
-    return {
-        "DJANGO_SECRET_KEY": "abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz",
-        "DATABASE_URL": _DUMMY_PG_URL,
-        "DJANGO_ALLOWED_HOSTS": "example.com",
-        "CSRF_TRUSTED_ORIGINS": "https://example.com",
-        "ADMIN_URL_PATH": "mygamedna-prod",
-        **overrides,
-    }
+    from config.testing import prod_test_env
+
+    return prod_test_env(**overrides)
 
 
 # ============================================================================

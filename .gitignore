@@ -3,6 +3,13 @@
 .env.*
 !.env.example
 
+# Python version / secret material — SBGC-104
+.python-version
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Node
 node_modules/
 dist/

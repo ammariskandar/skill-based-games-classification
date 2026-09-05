@@ -16,6 +16,7 @@ MANAGE="$APPS_DIR/manage.py"
 ACCEPTED_WARNINGS="security.W005 security.W021"
 
 # Controlled dummy production values — no real credentials.
+export DJANGO_DEBUG=false
 export DJANGO_SECRET_KEY="abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
 export DATABASE_URL="postgresql://u:p@example.neon.tech/db?sslmode=require"
 export DJANGO_ALLOWED_HOSTS="example.com"
@@ -23,6 +24,9 @@ export CSRF_TRUSTED_ORIGINS="https://example.com"
 export ADMIN_URL_PATH="mygamedna-prod"
 export DJANGO_LOG_LEVEL="INFO"
 export DJANGO_SECURE_HSTS_SECONDS="3600"
+# SBGC-104 — service secrets are required by production settings.
+export RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret"
+export STEAM_WEB_API_KEY="dummy-steam-api-key"
 
 set +e
 output=$("$PYTHON" "$MANAGE" check --deploy \
