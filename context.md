@@ -2666,6 +2666,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     `aria-label` for screen readers, and a click handler preserves
     label-click-to-focus.  Applied to every caption on `/reset` (both email
     fields + the username field) so the two tabs stay visually identical.
+    **Final hardening (cumulative-signal removal)**: Chrome's classifier is
+    cumulative — it reads type, autocomplete, name, id, aria-label, and label
+    text from the *initial HTML* at parse time.  The `/reset` inputs now carry
+    **no keyword anywhere**: the input `id` attributes and `aria-label`s are
+    removed entirely, the randomized `name`s are keyword-free (`q_…`), the
+    captions are unassociated plain text, and JS locates fields via
+    `data-field-key` markers (a channel Chrome ignores).  Trade-off: the
+    inputs no longer have a programmatic accessible name from an associated
+    label — the visible caption remains for sighted users.
   - `/reset-password` page: password fields use `autocomplete="new-password"`
     (NOT `off` — Chrome maps `off` on a password field to current-password and
     offers saved credentials, which is exactly the reported regression) so

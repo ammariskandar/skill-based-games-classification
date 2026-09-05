@@ -17,17 +17,17 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   .toString(36)
   .slice(2, 8)}`;
 
-// The visible fields also get randomized `name` attributes per render.  Chrome
-// keys remembered-value autofill and username+email pairing on stable field
-// names, so a fixed `name="email"` lets it re-fill this form from earlier
-// submissions even with `autocomplete="off"` — randomizing the names gives it
-// no stable key to autofill from.  Values are read by id, never by name.
-const emailFieldName = `email_${Date.now().toString(36)}${Math.random()
-  .toString(36)
-  .slice(2, 8)}`;
-const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
-  .toString(36)
-  .slice(2, 8)}`;
+// The visible fields also get randomized, keyword-free `name` attributes per
+// render.  Chrome's autofill classifier is cumulative — it reads the field's
+// type, autocomplete token, name, id, aria-label, and associated label text —
+// so the initial HTML must carry NO keyword like "email"/"username" in any of
+// them.  Field names are randomized per render and rewritten again client-side;
+// values are read via `data-field-key`, never by name or id.
+const randomFieldName = () =>
+  `q_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+const emailFieldNameA = randomFieldName();
+const emailFieldNameB = randomFieldName();
+const usernameFieldName = randomFieldName();
 ---
 
 <BaseLayout
@@ -126,14 +126,13 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
             </p>
             <div id="username-email-field" class="email-field relative mt-1.5">
               <input
-                id="username-email"
-                name={emailFieldName}
+                data-field-key="recovery-email-a"
+                name={emailFieldNameA}
                 type="text"
                 autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
-                aria-label="Email address"
                 readonly
                 data-autofill-guard
                 data-randomize-name
@@ -221,18 +220,18 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
               Username
             </p>
             <input
-              id="reset-username"
+              data-field-key="recovery-username"
               name={usernameFieldName}
               type="text"
               autocomplete="off"
               minlength="4"
               maxlength="20"
-              aria-label="Username"
               readonly
               data-autofill-guard
               data-randomize-name
               data-lpignore="true"
               data-1p-ignore
+              aria-required="true"
               class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
             <span
@@ -249,14 +248,13 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
             </p>
             <div id="reset-email-field" class="email-field relative mt-1.5">
               <input
-                id="reset-email"
-                name={emailFieldName}
+                data-field-key="recovery-email-b"
+                name={emailFieldNameB}
                 type="text"
                 autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
-                aria-label="Email address"
                 readonly
                 data-autofill-guard
                 data-randomize-name
@@ -439,10 +437,14 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   function initEmailField(
     containerId: string,
-    inputId: string,
+    fieldKey: string,
   ): EmailFieldState {
     const container = document.getElementById(containerId);
-    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    // Inputs carry no id/name keywords (Chrome autofill classifier); they are
+    // located by the data-field-key marker instead.
+    const input = document.querySelector<HTMLInputElement>(
+      `input[data-field-key="${fieldKey}"]`,
+    );
     if (!input) return { container: null, input: null };
 
     const sync = (): void => {
@@ -471,12 +473,12 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   const usernameEmail = initEmailField(
     "username-email-field",
-    "username-email",
+    "recovery-email-a",
   );
-  const resetEmail = initEmailField("reset-email-field", "reset-email");
-  const resetUsername = document.getElementById(
-    "reset-username",
-  ) as HTMLInputElement | null;
+  const resetEmail = initEmailField("reset-email-field", "recovery-email-b");
+  const resetUsername = document.querySelector<HTMLInputElement>(
+    'input[data-field-key="recovery-username"]',
+  );
   const resetUsernameHint = document.getElementById("reset-username-hint");
 
   const forgotUsernameSubmit = document.getElementById(
