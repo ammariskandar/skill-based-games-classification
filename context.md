@@ -2629,61 +2629,30 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   cache state + signed tokens, not client-side tamper resistance.
 - **Fix (post-merge review)** — the recovery/signup honeypot field used a
   recognizable fixed name (`company_website`), which browser / password-manager
-  autofill can populate and turn a real user into a “bot” (400).  Final
-  hardening:
+  autofill can populate and turn a real user into a “bot” (400).  Final state:
   - Honeypot traps (`reset.astro`, `signup.astro`, `reset-password.astro`) are
-    now randomized-per-render **and** `readonly` + `disabled` + 1Password/
+    randomized-per-render **and** `readonly` + `disabled` + 1Password/
     LastPass ignore markers; the real forms never send the value (always
     `company_website: ""`), so browser autofill is structurally incapable of
     tripping the trap.  The server still rejects non-empty values from direct
     API callers (the honeypot now catches only naive non-JS bots; reCAPTCHA v3
     + rate limits remain the automation gate).  Honeypot rejections on the
     recovery endpoints log a warning (trap length) for ops.
-  - `/reset` page: autofill disabled entirely (executive decision) — email /
-    username fields are `autocomplete="off"` + render `readonly`
-    (`lib/autofill-guard.ts` lifts it on focus) + manager-ignore markers, and
-    their `name` attributes are randomized per render (values read by id) so
-    Chrome has no stable field-name key for remembered-value autofill or
-    username+email paired fills — this closed a gap where the Forgot Password
-    tab (a username+email pair) still autofilled its email field.
-    `lib/random-form-names.ts` (`enableRandomizedFieldNames()`) goes one step
-    further for `/reset` and the sign-up username: field `name` **and `id`**
-    are re-randomized **client-side on load** (and again on `load` and on
-    bfcache `pageshow` restore), with `<label for>` / `aria-labelledby`
-    references rewritten in the same pass — Chrome matches remembered-value
-    autofill against both `name` and `id`, so a stable `id` alone was still
-    enough for it to offer a previously used email.  The browser therefore has
-    no recurring field identity to autofill from.  Payloads are always built
-    from captured element references as explicit JSON (no native form
-    submission), so names never need restoring.  The `/reset` email fields
-    additionally drop every remaining email-classifier signal Chrome heuristics
-    can key on (`inputmode="email"` removed — plain `type="text"`), leaving
-    only the visible label as a hint.
-    **Root cause found**: Chrome classifies the field from its associated
-    `<label>` element text — the one signal that survived all id/name
-    randomization.  The `/reset` field captions are now plain-text paragraphs
-    (identical styling, not `<label>` elements), the inputs carry
-    `aria-label` for screen readers, and a click handler preserves
-    label-click-to-focus.  Applied to every caption on `/reset` (both email
-    fields + the username field) so the two tabs stay visually identical.
-    **Final hardening (cumulative-signal removal)**: Chrome's classifier is
-    cumulative — it reads type, autocomplete, name, id, aria-label, and label
-    text from the *initial HTML* at parse time.  The `/reset` inputs now carry
-    **no keyword anywhere**: the input `id` attributes and `aria-label`s are
-    removed entirely, the randomized `name`s are keyword-free (`q_…`), the
-    captions are unassociated plain text, and JS locates fields via
-    `data-field-key` markers (a channel Chrome ignores).  Trade-off: the
-    inputs no longer have a programmatic accessible name from an associated
-    label — the visible caption remains for sighted users.
-  - `/reset-password` page: password fields use `autocomplete="new-password"`
-    (NOT `off` — Chrome maps `off` on a password field to current-password and
-    offers saved credentials, which is exactly the reported regression) so
-    existing saved passwords are never offered/filled, while Chrome's native
-    strong-password generator still works; manager-ignore markers added.
-  - `/signup` page: autofill allowed **only** on the email field
-    (`autocomplete="email"`); the username field is autofill-disabled
-    (readonly-lift + `off` + ignore markers) and the password field keeps
-    `autocomplete="new-password"` for the strong-password generator.
+  - Autofill is **allowed** on the recovery pages (decision after Chrome's
+    cumulative parse-time heuristics defeated every suppression attempt — name/
+    id randomization, keyword-free initial HTML, unassociated captions).  The
+    `/reset` fields were restored to proper semantic markup: real `<label
+    for>` elements, stable ids, `autocomplete="email"` / `="username"`,
+    `inputmode="email"` on the email fields; `/reset-password` password fields
+    use `autocomplete="new-password"` (blocks saved-credential fill, keeps
+    the strong-password generator).  All autofill-obfuscation scaffolding
+    (`readonly`-lift, manager-ignore markers on fields, field-identity
+    randomization) was removed from the recovery pages.
+  - `/signup` page policy unchanged: autofill allowed **only** on the email
+    field (`autocomplete="email"`); the username field stays autofill-`off`
+    with a `readonly`-until-focus lift (`lib/autofill-guard.ts`) and field
+    name/id randomization (`lib/random-form-names.ts`), and the password field
+    keeps `autocomplete="new-password"`.
 - Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
   `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).
