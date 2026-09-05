@@ -365,6 +365,19 @@ if (Astro.cookies.has("sessionid")) {
     return EMAIL_VALID_REGEX.test(value);
   }
 
+  function syncEmailValidityMessage(): void {
+    // The browser's native email tooltip distinguishes incomplete states
+    // ("Please include an '@'…", "…is missing a domain", …).  While the user
+    // is still typing, collapse that to one message; clear it once the value
+    // is valid (or empty) so the native required state resumes.
+    if (!emailInput) return;
+    const value = emailInput.value;
+    const incomplete = value !== "" && !emailLooksValid(value);
+    emailInput.setCustomValidity(
+      incomplete ? "Please enter a valid email address" : "",
+    );
+  }
+
   function renderVerifyButton(): void {
     if (!verifyButton) return;
     if (emailVerified) return; // markEmailVerified owns the verified state
@@ -400,11 +413,13 @@ if (Astro.cookies.has("sessionid")) {
     if (emailVerified) {
       emailVerified = false;
     }
+    syncEmailValidityMessage();
     renderVerifyButton();
     updateSubmitState();
   });
 
   renderVerifyButton(); // empty/invalid email starts the button disabled
+  syncEmailValidityMessage(); // honour autofilled values before any typing
 
   async function checkVerificationStatus(): Promise<void> {
     if (!challengeId || emailVerified) return;
