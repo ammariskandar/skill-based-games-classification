@@ -96,6 +96,7 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
         DJANGO_LOG_LEVEL="INFO",
         DJANGO_SECURE_HSTS_SECONDS="3600",
         RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret",
+        RECAPTCHA_SITE_KEY="dummy-recaptcha-site-key",
         STEAM_WEB_API_KEY="dummy-steam-api-key",
     )
     env.update(overrides)

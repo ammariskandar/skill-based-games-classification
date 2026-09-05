@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Review Suspicious Admin Login{% endblock %}
+
+{% block usertools %}{% endblock %}
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+
+{% block content %}
+<div id="content-main" style="max-width: 720px; margin: 2rem auto;">
+  <h1>Review Suspicious Admin Login</h1>
+
+  {% if error %}
+  <p class="errornote">{{ error }}</p>
+  {% endif %}
+
+  {% if result %}
+  <p class="success">Decision recorded: {{ result }}</p>
+  {% endif %}
+
+  {% if challenge %}
+  <div class="module">
+    <table>
+      <tr><th>Username</th><td>{{ challenge.username }}</td></tr>
+      <tr><th>IP Address</th><td>{{ challenge.ip_address }}</td></tr>
+      <tr><th>User Agent</th><td>{{ challenge.user_agent }}</td></tr>
+      <tr><th>Status</th><td>{{ challenge.status }}</td></tr>
+    </table>
+  </div>
+
+  {% if challenge.status == "PENDING" %}
+  <div class="submit-row">
+    <form method="post" style="display: inline;">
+      {% csrf_token %}
+      <input type="hidden" name="token" value="{{ review_token }}">
+      <input type="hidden" name="action" value="approve">
+      <input type="submit" value="{% translate 'Approve' %}">
+    </form>
+    <form method="post" style="display: inline;">
+      {% csrf_token %}
+      <input type="hidden" name="token" value="{{ review_token }}">
+      <input type="hidden" name="action" value="reject">
+      <input type="submit" value="{% translate 'Reject' %}">
+    </form>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -130,6 +130,13 @@ _recaptcha_secret = env_optional_str(env, "RECAPTCHA_SECRET_KEY")  # noqa: F405
 if not _recaptcha_secret or not _recaptcha_secret.strip():
     raise ImproperlyConfigured("RECAPTCHA_SECRET_KEY must be set in production.")
 
+# SBGC-106 — reCAPTCHA v3 site key: the admin login page needs it to render the
+# challenge that feeds the enforced score gate.  Missing it would make every
+# admin login fail silently at reCAPTCHA time, so fail fast instead.
+_recaptcha_site_key = env_optional_str(env, "RECAPTCHA_SITE_KEY")  # noqa: F405
+if not _recaptcha_site_key or not _recaptcha_site_key.strip():
+    raise ImproperlyConfigured("RECAPTCHA_SITE_KEY must be set in production.")
+
 # Steam Web API key: declared as a Render secret; authenticated Steam calls
 # (metadata refresh / import) require it.
 _steam_api_key = env_optional_str(env, "STEAM_WEB_API_KEY")  # noqa: F405

@@ -2570,7 +2570,52 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
-## 2026-09-05 — SBGC-105 harden Django runtime security, HTTP headers, DoS boundaries & ingress
+## 2026-09-06 — SBGC-106 secure Django Admin, adaptive VPN gate & anti-sabotage throttling
+
+- **Admin path obfuscation retained** — the existing `ADMIN_URL_PATH`
+  mechanism (SBGC-40/43) is the single source of truth; `/admin/*` resolves to
+  a 404 scanner honeypot while the obfuscated path serves the Admin.  The
+  ingress verification script now asserts both: `/admin/` must 404 and
+  `/{ADMIN_URL_PATH}login/` must reach Django (200/302).
+- **New `security` app** (no models) — `ip_engine.py` (committed
+  `data/vpn-ipv4.txt`/`vpn-ipv6.txt` CIDR lists converted to sorted, merged
+  integer ranges and queried via `bisect`), `models_cache.py` (challenge
+  state machine, per-user/IP whitelist, security-lockout markers, review
+  token signing), `middleware.py` (`AdminSecurityMiddleware`), `forms.py`
+  (`HardenedAdminAuthenticationForm`), `admin_hooks.py` (`HardenedUserAdmin`),
+  `throttling_admin.py`, `notifications.py`, `views.py`/`urls.py`.
+- **Adaptive 30-minute waiting room** — a staff login from a flagged
+  VPN/datacenter IP creates a PENDING challenge in cache and emails all active
+  superusers a signed single-use review link; the browser is held on a
+  live-countdown waiting room (5s status polling).  Unreviewed after 30
+  minutes it degrades to READ_ONLY (GET allowed, POST/PUT/PATCH/DELETE → 403,
+  amber banner injected).  Superuser approval whitelists the user+IP for 30
+  days; rejection terminates the session and applies a security lockout.
+- **Owner-exclusive reactivation** — `HardenedUserAdmin` extends the User
+  admin so a `sec_locked_user` account's `is_active` is readonly and can only
+  be re-enabled by `DJANGO_OWNER_USERNAME` (non-owner raises `PermissionDenied`).
+- **reCAPTCHA v3 on admin login** — `admin.site.login_form` is wired to
+  `HardenedAdminAuthenticationForm` (score gate before authentication) and the
+  overridden `templates/admin/login.html` renders the challenge from the new
+  `RECAPTCHA_SITE_KEY` (now required in production alongside the secret).
+- **Granular action/delete throttling** — `HardenedModelAdminMixin` paces
+  high-risk writes (User/Group) at 30s and routine editorial saves (Game /
+  EditorialClassification) at a 10/min burst; delete actions are capped at 5
+  per 5 minutes per non-superuser with a cooling-off period.  Wired into
+  `GameAdmin`, `EditorialClassificationAdmin`, `EditorialGroupAdmin`, and
+  `EditorialUserAdmin`.
+- **No Redis** — the cache layer uses Django's default `LocMemCache` in
+  dev/test (swap to a shared backend in production without code change).  This
+  preserves the repository's explicit Redis exclusion for imagined load;
+  state is cache-keyed so a later shared-cache deployment is a config change.
+- **Tests** — new `security/tests/test_admin_security.py` (10): obfuscated
+  path resolves, `/admin/` 404, subnet-matcher accuracy, VPN login → waiting
+  room + superuser email, expiry → read-only, approval clears gate,
+  rejection locks user, owner-exclusive unlock, high-risk write pacing, and
+  delete cooling-off.  `RECAPTCHA_SITE_KEY` added to the shared production
+  dummy env (`config/testing.prod_test_env`) and deploy-check script.
+  `makemigrations --check` clean (no models).
+
 
 - **Modern headers (all environments)** — `base.py` now sets
   `SECURE_CONTENT_TYPE_NOSNIFF`, `SECURE_REFERRER_POLICY

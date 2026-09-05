@@ -1,0 +1,12 @@
+# VPN / datacenter IPv4 subnets — SBGC-106.
+#
+# One CIDR block per line; '#' starts a comment; blank lines are ignored.
+#
+# These entries are documentation/reserved ranges (TEST-NET-1/2/3 and the
+# IPv4 benchmark range) committed as safe, self-contained placeholders so the
+# matcher exercises the real load/merge/bisect path.  Replace with a curated,
+# maintained feed before relying on this as a production VPN gate.
+192.0.2.0/24
+198.51.100.0/24
+203.0.113.0/24
+198.18.0.0/15

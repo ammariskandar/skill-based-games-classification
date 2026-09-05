@@ -37,6 +37,9 @@ services:
       # SBGC-104 — reCAPTCHA v3 secret; production refuses to boot without it.
       - key: RECAPTCHA_SECRET_KEY
         sync: false
+      # SBGC-106 — reCAPTCHA v3 site key; renders the admin-login challenge.
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
       # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
       - key: DB_SSL_REQUIRE
         value: "true"
