@@ -119,6 +119,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -170,11 +173,12 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Request-size limits — SBGC-41
-# Conservative values for JSON API payloads and Admin forms.
-# No public file uploads; Steam images are hotlinked.
-DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MiB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MiB
+# Request-size limits — SBGC-41 / SBGC-105
+# 1 MiB request-body ceiling (RequestDataTooBig) and field-count caps guard
+# against memory-exhaustion and multipart DoS.  No public file uploads; Steam
+# images are hotlinked.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1_048_576  # 1 MiB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1_048_576  # 1 MiB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1_000
 DATA_UPLOAD_MAX_NUMBER_FILES = 20
 
@@ -182,6 +186,22 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 20
 # Interactive API docs are disabled by default.
 # Development overrides this to True; production keeps it False.
 NINJA_API_DOCS_ENABLED = False
+
+# ---------------------------------------------------------------------------
+# Modern security response headers — SBGC-105 (all environments)
+# ---------------------------------------------------------------------------
+# The legacy X-XSS-Protection header (SECURE_BROWSER_XSS_FILTER) is deprecated
+# and deliberately NOT set: modern browsers ignore/disable the audit filter and
+# it introduces cross-site search-leak side channels.  Injection and MIME
+# protections are delegated to nosniff, Referrer-Policy, X-Frame-Options, and
+# context-aware template escaping.
+SECURE_CONTENT_TYPE_NOSNIFF = True  # X-Content-Type-Options: nosniff
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "SAMEORIGIN"  # Admin modals/popups still allowed
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+# HSTS is deliberately NOT set here — it is production-only (see
+# config/settings/production.py) and is explicitly zeroed in development/test.
 
 # Steam — SBGC-42
 # Raw values read from the environment.  Use steam_client_config_from_settings()
@@ -223,7 +243,7 @@ DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@local
 # Empty means the score check is bypassed (local development without a key).
 RECAPTCHA_SECRET_KEY = env_str(env, "RECAPTCHA_SECRET_KEY", default="")
 
-# Logging — SBGC-43
+# Logging — SBGC-43 / SBGC-105
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.
 # Production default: INFO.  Development may use DEBUG.
 # Valid: DEBUG, INFO, WARNING, ERROR, CRITICAL.
@@ -252,6 +272,19 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": _LOG_LEVEL_RAW,
+            "propagate": False,
+        },
+        # SBGC-105 — security events log as single lines (never multiline
+        # tracebacks / error reports).  DisallowedHost is split out so a
+        # hostile-host probe is a quiet warning, not a 500 signal.
+        "django.security": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.security.DisallowedHost": {
+            "handlers": ["console"],
+            "level": "WARNING",
             "propagate": False,
         },
     },

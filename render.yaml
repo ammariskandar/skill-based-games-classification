@@ -40,7 +40,9 @@ services:
       # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
       - key: DB_SSL_REQUIRE
         value: "true"
+      # SBGC-105 — full-strength HSTS (1 year).  Lower temporarily only to
+      # stage an HSTS rollout; preload + includeSubDomains are enabled.
       - key: DJANGO_SECURE_HSTS_SECONDS
-        value: "0"
+        value: "31536000"
       - key: WEB_CONCURRENCY
         value: "2"
