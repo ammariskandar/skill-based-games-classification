@@ -81,6 +81,7 @@ if (Astro.cookies.has("sessionid")) {
             <button
               id="verify-button"
               type="button"
+              disabled
               class="shrink-0 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
             >
               Verify email
@@ -349,6 +350,62 @@ if (Astro.cookies.has("sessionid")) {
   });
 
   // ── email verification ───────────────────────────────────────────────────
+  // Structural email gate: no spaces are allowed while typing (the backend
+  // still trims defensively), and the Verify button stays disabled until the
+  // value looks like a real address (`user@domain.tld`).  The user expects a
+  // malformed address to *fail*, not to be silently rewritten.
+  const EMAIL_VALID_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  // Whether a verification email was already requested for the current value;
+  // drives the "Email Sent ✓ → Resend verification" label cycle.
+  let emailRequested = false;
+  const VERIFY_BUTTON_BASE_CLASS =
+    "shrink-0 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50";
+
+  function emailLooksValid(value: string): boolean {
+    return EMAIL_VALID_REGEX.test(value);
+  }
+
+  function renderVerifyButton(): void {
+    if (!verifyButton) return;
+    if (emailVerified) return; // markEmailVerified owns the verified state
+    const locked = Date.now() < verifyButtonLockedUntil;
+    if (locked) {
+      verifyButton.textContent = "Email Sent ✓";
+      verifyButton.disabled = true;
+      verifyButton.className = VERIFY_BUTTON_BASE_CLASS;
+      return;
+    }
+    const valid = emailLooksValid(emailInput?.value ?? "");
+    verifyButton.disabled = !valid;
+    verifyButton.textContent = emailRequested
+      ? "Resend verification"
+      : "Verify email";
+    verifyButton.className = VERIFY_BUTTON_BASE_CLASS;
+  }
+
+  emailInput?.addEventListener("keydown", (event) => {
+    if (event.key === " ") event.preventDefault();
+  });
+
+  emailInput?.addEventListener("input", () => {
+    // Any edit orphans the in-flight challenge: the VERIFIED status (or the
+    // pending request) belongs to the previously typed address, so drop it and
+    // force a fresh verification before the submit gate can reopen.
+    emailRequested = false;
+    challengeId = null;
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    if (emailVerified) {
+      emailVerified = false;
+    }
+    renderVerifyButton();
+    updateSubmitState();
+  });
+
+  renderVerifyButton(); // empty/invalid email starts the button disabled
+
   async function checkVerificationStatus(): Promise<void> {
     if (!challengeId || emailVerified) return;
     try {
@@ -458,11 +515,8 @@ if (Astro.cookies.has("sessionid")) {
       }
 
       verifyButtonLockedUntil = Date.now() + 15_000;
-
-      if (verifyButton) {
-        verifyButton.textContent = "Email Sent ✓";
-        verifyButton.disabled = true;
-      }
+      emailRequested = true;
+      renderVerifyButton(); // "Email Sent ✓", disabled while locked
 
       // Remember the challenge (email + system signature) so a dropoff within
       // the 15-minute TTL can resume without sending a second email.
@@ -478,10 +532,9 @@ if (Astro.cookies.has("sessionid")) {
       startPolling();
 
       setTimeout(() => {
-        if (!emailVerified && verifyButton) {
-          verifyButton.disabled = false;
-          verifyButton.textContent = "Resend verification";
-        }
+        // Lock expired: back to an enabled button (Resend verification when
+        // the value is still valid, otherwise stays disabled).
+        if (!emailVerified) renderVerifyButton();
       }, 15_000);
     } catch {
       showError("Service temporarily unavailable. Please try again later.");

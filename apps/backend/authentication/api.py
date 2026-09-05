@@ -21,6 +21,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from games.errors import ErrorCode
 from ninja import Query, Router
 
+from authentication.emails import email_is_registered
 from authentication.schemas import (
     AuthStatusResponseSchema,
     CheckUsernameRequestSchema,
@@ -219,7 +220,8 @@ def verify_email_request(
 
     # Zero email enumeration: return an identical generic challenge whether or
     # not the address is already registered — the distinction is email-only.
-    if User.objects.filter(email__iexact=email).exists():
+    # Gmail/Googlemail dot-aliases count as registered (same mailbox).
+    if email_is_registered(email):
         send_existing_account_email(email)
         return JsonResponse(
             {
@@ -305,7 +307,9 @@ def signup_endpoint(request: HttpRequest, payload: SignUpRequestSchema) -> JsonR
         return _json(400, ErrorCode.EMAIL_NOT_VERIFIED.value, "Email not verified.")
 
     username_taken = User.objects.filter(username__iexact=payload.username).exists()
-    email_taken = User.objects.filter(email__iexact=email).exists()
+    # Gmail dot-aliases (john.smith@gmail.com vs johnsmith@gmail.com) resolve to
+    # the same mailbox and must not be double-registered.
+    email_taken = email_is_registered(email)
     if username_taken or email_taken:
         return _json(
             409,

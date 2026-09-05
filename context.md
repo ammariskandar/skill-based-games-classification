@@ -2620,6 +2620,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   back to the normal send flow.  The signature is an anti-abuse aid, not an
   auth boundary — the VERIFIED challenge check on `/signup` remains the
   authoritative gate.
+  **Gmail/Googlemail duplicate detection** (`authentication/emails.py`): the
+  email-in-use checks on `verify-email-request` and `signup` canonicalise
+  addresses by stripping dots from the local part and unifying
+  `gmail.com`/`googlemail.com` (Google routes all such variants to one mailbox),
+  so `john.smith@gmail.com` cannot be registered twice as `johnsmith@gmail.com`.
+  Every other domain keeps dots significant.  Frontend signup gates the email
+  field: spacebar input is blocked and the Verify button stays disabled until
+  the address matches a basic `user@domain.tld` shape (malformed input fails
+  instead of being silently rewritten; the backend still trims defensively).
 - **Local dev mail** — `config/settings/development.py` configures SMTP for
   smtp4dev (`EMAIL_HOST=127.0.0.1`, `EMAIL_PORT=2525`, web UI on 3000).
 - **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense
