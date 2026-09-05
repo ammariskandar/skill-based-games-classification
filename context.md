@@ -2629,6 +2629,11 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   field: spacebar input is blocked and the Verify button stays disabled until
   the address matches a basic `user@domain.tld` shape (malformed input fails
   instead of being silently rewritten; the backend still trims defensively).
+  A custom hover/focus tooltip on the field shows a single copy line
+  ("Emails must contain @ and a valid web domain after it i.e. abc@email.com")
+  while an incomplete address is present — the form is `novalidate` and the
+  field is `type=text inputmode=email` so the browser's native (unlocalisable)
+  validation bubble never appears.
 - **Local dev mail** — `config/settings/development.py` configures SMTP for
   smtp4dev (`EMAIL_HOST=127.0.0.1`, `EMAIL_PORT=2525`, web UI on 3000).
 - **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense

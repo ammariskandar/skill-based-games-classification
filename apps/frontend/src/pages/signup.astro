@@ -33,7 +33,7 @@ if (Astro.cookies.has("sessionid")) {
         <span id="signup-error-message">Something went wrong.</span>
       </div>
 
-      <form id="signup-form" class="flex flex-col gap-4">
+      <form id="signup-form" class="flex flex-col gap-4" novalidate>
         <!-- Honeypot trap (off-screen) -->
         <input
           type="text"
@@ -68,15 +68,22 @@ if (Astro.cookies.has("sessionid")) {
           <label for="email" class="block text-sm font-medium text-text">
             Email
           </label>
-          <div class="mt-1.5 flex items-center gap-2">
+          <div
+            id="email-field"
+            class="email-field relative mt-1.5 flex items-center gap-2"
+          >
             <input
               id="email"
               name="email"
-              type="email"
-              required
-              pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}"
-              maxlength="254"
+              type="text"
+              inputmode="email"
               autocomplete="email"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="254"
+              aria-invalid="false"
+              aria-required="true"
+              aria-describedby="email-validation-hint"
               class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
             <button
@@ -87,6 +94,14 @@ if (Astro.cookies.has("sessionid")) {
             >
               Verify email
             </button>
+            <div
+              id="email-validation-hint"
+              role="tooltip"
+              class="email-validation-hint pointer-events-none absolute left-0 top-full z-20 mt-2 w-max max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-snug text-text shadow-xl"
+            >
+              Emails must contain @ and a valid web domain after it i.e.
+              abc@email.com
+            </div>
           </div>
         </div>
 
@@ -128,6 +143,21 @@ if (Astro.cookies.has("sessionid")) {
     </div>
   </main>
 </BaseLayout>
+
+<style>
+  /* Custom email-validation tooltip.  Hidden by default; revealed on
+     hover/focus of the email row while the JS has flagged the value as an
+     incomplete address (data-email-invalid="true").  This replaces the
+     browser's native bubble, whose text cannot be customised. */
+  .email-validation-hint {
+    display: none;
+  }
+
+  .email-field[data-email-invalid="true"]:hover .email-validation-hint,
+  .email-field[data-email-invalid="true"]:focus-within .email-validation-hint {
+    display: block;
+  }
+</style>
 
 <script>
   import { initAntiTamper } from "../lib/anti-tamper";
@@ -209,6 +239,7 @@ if (Astro.cookies.has("sessionid")) {
   const emailInput = document.getElementById(
     "email",
   ) as HTMLInputElement | null;
+  const emailField = document.getElementById("email-field");
   const verifyButton = document.getElementById(
     "verify-button",
   ) as HTMLButtonElement | null;
@@ -364,9 +395,6 @@ if (Astro.cookies.has("sessionid")) {
   // still trims defensively), and the Verify button stays disabled until the
   // value looks like a real address (`user@domain.tld`).  The user expects a
   // malformed address to *fail*, not to be silently rewritten.
-  // NOTE: keep in sync with the `pattern` attribute on the email <input> — it
-  // makes single-label addresses like `k@c` natively invalid so the browser's
-  // hover bubble appears (type="email" alone accepts them, so no bubble).
   const EMAIL_VALID_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   // Whether a verification email was already requested for the current value;
   // drives the "Email Sent ✓ → Resend verification" label cycle.
@@ -379,16 +407,18 @@ if (Astro.cookies.has("sessionid")) {
   }
 
   function syncEmailValidityMessage(): void {
-    // The browser's native email tooltip distinguishes incomplete states
-    // ("Please include an '@'…", "…is missing a domain", …).  While the user
-    // is still typing, collapse that to one message; clear it once the value
-    // is valid (or empty) so the native required state resumes.
+    // The custom hover tooltip replaces the browser's native bubble (whose
+    // text cannot be controlled).  Flag the field so CSS shows the tooltip on
+    // hover/focus only while an incomplete address is present; also reflect
+    // the state on aria-invalid for assistive tech.
     if (!emailInput) return;
     const value = emailInput.value;
     const incomplete = value !== "" && !emailLooksValid(value);
-    emailInput.setCustomValidity(
-      incomplete ? "Please enter a valid email address" : "",
+    emailField?.setAttribute(
+      "data-email-invalid",
+      incomplete ? "true" : "false",
     );
+    emailInput.setAttribute("aria-invalid", incomplete ? "true" : "false");
   }
 
   function renderVerifyButton(): void {
