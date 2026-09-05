@@ -219,6 +219,10 @@ STEAM_REFRESH_FALLBACK_EMAILS = env_str(
 # Sender address for operational alert emails.
 DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 
+# SBGC-218 — reCAPTCHA v3 secret (never hardcoded; read from environment).
+# Empty means the score check is bypassed (local development without a key).
+RECAPTCHA_SECRET_KEY = env_str(env, "RECAPTCHA_SECRET_KEY", default="")
+
 # Logging — SBGC-43
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.
 # Production default: INFO.  Development may use DEBUG.

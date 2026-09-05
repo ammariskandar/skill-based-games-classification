@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// Static placeholder — the password-reset flow is intentionally out of scope
+// for SBGC-218 (Rule 1: no invented account-recovery behavior).  The login
+// page's "Reset >>" link lands here until a dedicated reset ticket ships.
+export const prerender = true;
+---
+
+<BaseLayout
+  title="Reset Password"
+  description="Reset your MyGameDNA account password."
+  robots="noindex, follow"
+>
+  <main
+    class="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12"
+  >
+    <div class="rounded-xl border border-border bg-surface p-8 text-center">
+      <h1 class="text-2xl font-bold tracking-tight text-text">
+        Reset Password
+      </h1>
+      <p class="mt-3 text-sm text-muted">
+        Password reset isn't available yet. You can still log in if you remember
+        your credentials.
+      </p>
+      <div class="mt-6 flex flex-col items-center gap-3">
+        <a
+          href="/login"
+          class="inline-flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90"
+        >
+          Back to Log In
+        </a>
+      </div>
+    </div>
+  </main>
+</BaseLayout>

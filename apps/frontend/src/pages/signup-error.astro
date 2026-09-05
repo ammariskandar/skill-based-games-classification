@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// Static boundary — no request-dependent content.
+export const prerender = true;
+---
+
+<BaseLayout title="Access Restricted - MyGameDNA">
+  <main
+    class="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-4 py-16 text-center"
+  >
+    <div
+      class="w-full rounded-xl border border-red/30 bg-red/10 p-8"
+      role="alert"
+    >
+      <h1 class="text-2xl font-bold tracking-tight text-red sm:text-3xl">
+        Access Temporarily Restricted
+      </h1>
+      <p class="mt-3 max-w-md text-base text-text">
+        Sorry, you are doing too much, too quickly. Our system suspects you are
+        a bot. Please try again after 30 minutes.
+      </p>
+    </div>
+
+    <a
+      href="/"
+      class="mt-8 inline-flex items-center rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
+    >
+      Return to Home
+    </a>
+  </main>
+</BaseLayout>

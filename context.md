@@ -2570,6 +2570,82 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-05 — SBGC-218 sign-up flow, email verification challenge & anti-abuse
+
+- **Pre-registration verification challenge** — registration routes through an
+  ephemeral, single-use challenge stored in Django cache (900s TTL), so
+  unverified accounts never reach `auth_user`.  `authentication/tokens.py` owns
+  the lifecycle: `create_email_challenge()` (UUID + PENDING cache entry + a
+  `TimestampSigner`-signed email link), `confirm_email_challenge()` (unsign +
+  transition to VERIFIED), and `get/delete_challenge()` for the single-use
+  guarantee.
+- **Zero email enumeration** — `POST /verify-email-request` returns an identical
+  generic `{challenge_id, message}` whether or not the address is already
+  registered; the distinction is communicated only in the email body
+  (`send_existing_account_email`).
+- **Dual-layer anti-abuse** — reCAPTCHA v3 score gate (`>= 0.5`, configurable via
+  `RECAPTCHA_SECRET_KEY`; test token `test-recaptcha-token` bypasses in DEBUG),
+  a hidden `company_website` honeypot on `verify-email-request` and `signup`,
+  a 30-minute resend lockout (`resend_limit_ip:`/`resend_limit_email:` cache
+  buckets, `>3` resends → 429 `RATE_LIMITED` + `Retry-After: 1800`), and
+  client-side DevTools deterrents (`lib/anti-tamper.ts`: contextmenu / F12 /
+  Ctrl+Shift+I-J-C / Ctrl+U blocking + a `debugger` trap).
+- **Backend endpoints** (on `auth_router`, mounted at `/auth/`):
+  `GET /check-username`, `POST /verify-email-request`,
+  `GET /verification-status`, `POST /confirm-email`, `POST /signup`.  `signup`
+  enforces the VERIFIED challenge + matching email (400 `EMAIL_NOT_VERIFIED`
+  otherwise — new canonical code), rejects duplicate username/email (409
+  `CONFLICT`), creates the user, deletes the challenge, and auto-logs-in
+  (`login()` + `session.cycle_key()`) returning 201.  Username constraint is
+  `^[a-zA-Z0-9_-]{4,20}$` (shared by FE/BFF/BE).
+- **Frontend** — BFF proxies (`pages/api/auth/{check-username,verify-email-request,verification-status,confirm-email,signup}.ts`),
+  `pages/signup.astro` (honeypot, debounced username availability, email
+  verify → "Email Sent ✓" → "Resend verification" → "Verified ✓" with 10s
+  polling, password strength meter, gated submit), `pages/verify-email.astro`
+  (SSR token confirmation; browsers block programmatic tab close, so the
+  auto-close countdown was dropped — the sign-up tab instead flashes its
+  document.title and flips to "Verified ✓" via BroadcastChannel when the link
+  is confirmed), `pages/signup-error.astro`
+  (30-minute bot lockout boundary), `components/ui/PasswordStrengthMeter.astro`,
+  and the `flash_toast=signup_success` toast ("Welcome! Account created
+  successfully.").  Login page gains a "Sign Up >>" link plus a
+  "Forgot username or password? Reset >>" row pointing at a static `/reset`
+  placeholder (no reset flow yet — SBGC-218 deliberately excludes it).
+  **Dropoff resume** (`lib/device-signature.ts`, `lib/signup-resume.ts`): after a
+  successful verify-email-request the page persists the challenge in
+  `localStorage` with a coarse device signature (OS + browser + IANA timezone).
+  Returning later with the same email on the *exact same system* re-checks the
+  server's `verification-status` and flips straight to "Verified ✓" without
+  sending a second email; email/device mismatch or an expired challenge falls
+  back to the normal send flow.  The signature is an anti-abuse aid, not an
+  auth boundary — the VERIFIED challenge check on `/signup` remains the
+  authoritative gate.
+  **Gmail/Googlemail duplicate detection** (`authentication/emails.py`): the
+  email-in-use checks on `verify-email-request` and `signup` canonicalise
+  addresses by stripping dots from the local part and unifying
+  `gmail.com`/`googlemail.com` (Google routes all such variants to one mailbox),
+  so `john.smith@gmail.com` cannot be registered twice as `johnsmith@gmail.com`.
+  Every other domain keeps dots significant.  Frontend signup gates the email
+  field: spacebar input is blocked and the Verify button stays disabled until
+  the address matches a basic `user@domain.tld` shape (malformed input fails
+  instead of being silently rewritten; the backend still trims defensively).
+  A custom hover/focus tooltip on the field shows a single copy line
+  ("Emails must contain @ and a valid web domain after it i.e. abc@email.com")
+  while an incomplete address is present — the form is `novalidate` and the
+  field is `type=text inputmode=email` so the browser's native (unlocalisable)
+  validation bubble never appears.
+- **Local dev mail** — `config/settings/development.py` configures SMTP for
+  smtp4dev (`EMAIL_HOST=127.0.0.1`, `EMAIL_PORT=2525`, web UI on 3000).
+- **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense
+  is noted but not implemented: the ticket only lists it in the defense table
+  with no enforcement spec; it is tracked as follow-up work.
+- Tests: backend `authentication/tests/test_signup.py` (13) +
+  `test_emails.py` (16) + `test_auth_api.py` (8) + `test_throttling.py` (7);
+  frontend `signup_bff.test.ts` (5) + `device-signature.test.ts` (20) +
+  `signup-resume.test.ts` (11) + `auth-status.test.ts` (7).  Full backend suite
+  green (2080 OK, 25 skipped); frontend 688; `makemigrations --check` clean
+  (no models).
+
 ## 2026-09-05 — SBGC-217 frontend login, BFF session proxy & backend auth engine
 
 - Canonical authentication architecture (new, authoritative — SBGC-207 Product
