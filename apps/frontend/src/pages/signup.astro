@@ -42,13 +42,19 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
       </div>
 
       <form id="signup-form" class="flex flex-col gap-4" novalidate>
-        <!-- Honeypot trap (off-screen, randomized name) -->
+        <!-- Honeypot trap (off-screen, randomized name).  Disabled + readonly
+             so no browser / password-manager autofill can ever populate it, and
+             the submit handler always sends an empty `company_website`. -->
         <input
           type="text"
           id="signup-hp-trap"
           name={honeypotName}
           tabindex="-1"
           autocomplete="off"
+          readonly
+          disabled
+          data-lpignore="true"
+          data-1p-ignore
           class="hidden-field"
           style="position: absolute; left: -9999px;"
           aria-hidden="true"
@@ -65,7 +71,11 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
             required
             minlength="4"
             maxlength="20"
-            autocomplete="username"
+            autocomplete="off"
+            readonly
+            data-autofill-guard
+            data-lpignore="true"
+            data-1p-ignore
             class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
           />
           <span
@@ -170,6 +180,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
 
 <script>
   import { initAntiTamper } from "../lib/anti-tamper";
+  import { initAutofillGuard } from "../lib/autofill-guard";
   import { isPasswordStrong } from "../lib/password-strength";
   import { writeCachedAuthStatus } from "../lib/auth-status";
   import { captureDeviceSignature } from "../lib/device-signature";
@@ -231,6 +242,9 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   }
 
   initAntiTamper();
+  // Username renders readonly so only the email field can be autofilled;
+  // focusing the username lifts the attribute so typing works normally.
+  initAutofillGuard();
 
   // Load reCAPTCHA v3 dynamically only when a site key is configured.
   if (SITE_KEY) {
@@ -617,9 +631,6 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
 
     try {
       const recaptchaToken = await executeRecaptcha("signup_submit");
-      const honeypot = (
-        document.getElementById("signup-hp-trap") as HTMLInputElement | null
-      )?.value;
 
       const res = await fetch("/api/auth/signup", {
         method: "POST",
@@ -630,7 +641,10 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
           password: passwordInput?.value ?? "",
           challenge_id: challengeId,
           recaptcha_token: recaptchaToken,
-          company_website: honeypot ?? "",
+          // The honeypot trap is disabled/readonly in the DOM and is NEVER
+          // sent from this page — browser autofill therefore cannot trip it.
+          // The server still rejects non-empty values from direct callers.
+          company_website: "",
         }),
       });
 

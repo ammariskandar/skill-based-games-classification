@@ -2629,16 +2629,28 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   cache state + signed tokens, not client-side tamper resistance.
 - **Fix (post-merge review)** — the recovery/signup honeypot field used a
   recognizable fixed name (`company_website`), which browser / password-manager
-  autofill can populate and turn a real user into a “bot” (400).  The trap
-  field name is now randomized per page render and read by id
-  (`reset.astro`, `signup.astro`, `reset-password.astro`), so autofill cannot
-  match it while bots that fill every field are still rejected.  Backend
-  honeypot rejections on the recovery endpoints log a warning (trap length)
-  for ops visibility.  The `/reset` and `/reset-password` pages additionally
-  disable autofill entirely: every visible input renders `readonly` with
-  `autocomplete="off"` (form + fields), and `lib/autofill-guard.ts`
-  (`initAutofillGuard()`) lifts the `readonly` attribute on focus so typing is
-  unaffected — nothing can be pre-filled into these pages (or into the trap).
+  autofill can populate and turn a real user into a “bot” (400).  Final
+  hardening:
+  - Honeypot traps (`reset.astro`, `signup.astro`, `reset-password.astro`) are
+    now randomized-per-render **and** `readonly` + `disabled` + 1Password/
+    LastPass ignore markers; the real forms never send the value (always
+    `company_website: ""`), so browser autofill is structurally incapable of
+    tripping the trap.  The server still rejects non-empty values from direct
+    API callers (the honeypot now catches only naive non-JS bots; reCAPTCHA v3
+    + rate limits remain the automation gate).  Honeypot rejections on the
+    recovery endpoints log a warning (trap length) for ops.
+  - `/reset` page: autofill disabled entirely (executive decision) — email /
+    username fields are `autocomplete="off"` + render `readonly`
+    (`lib/autofill-guard.ts` lifts it on focus) + manager-ignore markers.
+  - `/reset-password` page: password fields use `autocomplete="new-password"`
+    (NOT `off` — Chrome maps `off` on a password field to current-password and
+    offers saved credentials, which is exactly the reported regression) so
+    existing saved passwords are never offered/filled, while Chrome's native
+    strong-password generator still works; manager-ignore markers added.
+  - `/signup` page: autofill allowed **only** on the email field
+    (`autocomplete="email"`); the username field is autofill-disabled
+    (readonly-lift + `off` + ignore markers) and the password field keeps
+    `autocomplete="new-password"` for the strong-password generator.
 - Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
   `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).

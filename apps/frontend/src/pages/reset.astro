@@ -87,13 +87,19 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
           autocomplete="off"
           novalidate
         >
-          <!-- Honeypot trap (off-screen, randomized name) -->
+          <!-- Honeypot trap (off-screen, randomized name).  Disabled + readonly
+               so no autofill can ever populate it; the submit handler always
+               sends an empty `company_website`. -->
           <input
             type="text"
             id="hp-trap-username"
             name={honeypotName}
             tabindex="-1"
             autocomplete="off"
+            readonly
+            disabled
+            data-lpignore="true"
+            data-1p-ignore
             class="hidden-field"
             style="position: absolute; left: -9999px;"
             aria-hidden="true"
@@ -118,6 +124,8 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
                 maxlength="254"
                 readonly
                 data-autofill-guard
+                data-lpignore="true"
+                data-1p-ignore
                 aria-invalid="false"
                 aria-required="true"
                 aria-describedby="username-email-hint"
@@ -174,13 +182,19 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
           autocomplete="off"
           novalidate
         >
-          <!-- Honeypot trap (off-screen, randomized name) -->
+          <!-- Honeypot trap (off-screen, randomized name).  Disabled + readonly
+               so no autofill can ever populate it; the submit handler always
+               sends an empty `company_website`. -->
           <input
             type="text"
             id="hp-trap-password"
             name={honeypotName}
             tabindex="-1"
             autocomplete="off"
+            readonly
+            disabled
+            data-lpignore="true"
+            data-1p-ignore
             class="hidden-field"
             style="position: absolute; left: -9999px;"
             aria-hidden="true"
@@ -202,6 +216,8 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
               maxlength="20"
               readonly
               data-autofill-guard
+              data-lpignore="true"
+              data-1p-ignore
               class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
             <span
@@ -228,6 +244,8 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
                 maxlength="254"
                 readonly
                 data-autofill-guard
+                data-lpignore="true"
+                data-1p-ignore
                 aria-invalid="false"
                 aria-required="true"
                 aria-describedby="reset-email-hint"
@@ -484,7 +502,6 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
     form: HTMLFormElement,
     action: string,
     successPanelId: string,
-    trapInputId: string,
   ): Promise<void> {
     hideError();
     const recaptchaToken = await executeRecaptcha(action).catch(() => {
@@ -493,22 +510,16 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
     });
     if (recaptchaToken === null) return;
 
-    const trapInput = document.getElementById(
-      trapInputId,
-    ) as HTMLInputElement | null;
-    const honeypot = trapInput?.value ?? "";
-    // Keep the randomized trap name out of the JSON payload entirely (the
-    // backend schema forbids unknown fields) — only its value travels, under
-    // the canonical `company_website` key.
-    if (trapInput) trapInput.disabled = true;
-
     const formData = new FormData(form);
     const body: Record<string, string> = {};
     formData.forEach((value, key) => {
       body[key] = String(value);
     });
     body.recaptcha_token = recaptchaToken;
-    body.company_website = honeypot;
+    // The honeypot trap is disabled/readonly in the DOM and is NEVER sent
+    // from this page — browser autofill therefore cannot trip it.  The server
+    // still rejects non-empty values from direct callers.
+    body.company_website = "";
 
     try {
       const res = await fetch(url, {
@@ -546,7 +557,6 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
       forgotUsernameForm,
       "forgot_username",
       "username-success",
-      "hp-trap-username",
     );
   });
 
@@ -560,7 +570,6 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
       forgotPasswordForm,
       "forgot_password",
       "password-success",
-      "hp-trap-password",
     );
   });
 </script>
