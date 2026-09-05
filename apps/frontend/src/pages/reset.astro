@@ -118,12 +118,12 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
           />
 
           <div>
-            <label
-              for="username-email"
+            <p
+              id="username-email-caption"
               class="block text-sm font-medium text-text"
             >
               Email address
-            </label>
+            </p>
             <div id="username-email-field" class="email-field relative mt-1.5">
               <input
                 id="username-email"
@@ -133,6 +133,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
+                aria-label="Email address"
                 readonly
                 data-autofill-guard
                 data-randomize-name
@@ -213,12 +214,12 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
           />
 
           <div>
-            <label
-              for="reset-username"
+            <p
+              id="reset-username-caption"
               class="block text-sm font-medium text-text"
             >
               Username
-            </label>
+            </p>
             <input
               id="reset-username"
               name={usernameFieldName}
@@ -226,6 +227,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
               autocomplete="off"
               minlength="4"
               maxlength="20"
+              aria-label="Username"
               readonly
               data-autofill-guard
               data-randomize-name
@@ -239,12 +241,12 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
           </div>
 
           <div>
-            <label
-              for="reset-email"
+            <p
+              id="reset-email-caption"
               class="block text-sm font-medium text-text"
             >
               Email address
-            </label>
+            </p>
             <div id="reset-email-field" class="email-field relative mt-1.5">
               <input
                 id="reset-email"
@@ -254,6 +256,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
+                aria-label="Email address"
                 readonly
                 data-autofill-guard
                 data-randomize-name
@@ -513,6 +516,19 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   resetEmail.input?.addEventListener("input", syncUsernameGate);
   resetUsername?.addEventListener("input", syncUsernameGate);
+
+  // Field captions are plain text (not <label> elements, so Chrome cannot
+  // classify a field from its label text and autofill it).  Keep the
+  // label-click-to-focus behaviour manually.
+  document
+    .getElementById("username-email-caption")
+    ?.addEventListener("click", () => usernameEmail.input?.focus());
+  document
+    .getElementById("reset-username-caption")
+    ?.addEventListener("click", () => resetUsername?.focus());
+  document
+    .getElementById("reset-email-caption")
+    ?.addEventListener("click", () => resetEmail.input?.focus());
 
   // ── form submission ──────────────────────────────────────────────────────
   // Field `name` attributes are randomized (no stable autofill key), so the

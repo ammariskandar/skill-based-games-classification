@@ -2659,6 +2659,13 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     additionally drop every remaining email-classifier signal Chrome heuristics
     can key on (`inputmode="email"` removed — plain `type="text"`), leaving
     only the visible label as a hint.
+    **Root cause found**: Chrome classifies the field from its associated
+    `<label>` element text — the one signal that survived all id/name
+    randomization.  The `/reset` field captions are now plain-text paragraphs
+    (identical styling, not `<label>` elements), the inputs carry
+    `aria-label` for screen readers, and a click handler preserves
+    label-click-to-focus.  Applied to every caption on `/reset` (both email
+    fields + the username field) so the two tabs stay visually identical.
   - `/reset-password` page: password fields use `autocomplete="new-password"`
     (NOT `off` — Chrome maps `off` on a password field to current-password and
     offers saved credentials, which is exactly the reported regression) so
