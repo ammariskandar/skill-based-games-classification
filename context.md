@@ -2611,6 +2611,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   successfully.").  Login page gains a "Sign Up >>" link plus a
   "Forgot username or password? Reset >>" row pointing at a static `/reset`
   placeholder (no reset flow yet — SBGC-218 deliberately excludes it).
+  **Dropoff resume** (`lib/device-signature.ts`, `lib/signup-resume.ts`): after a
+  successful verify-email-request the page persists the challenge in
+  `localStorage` with a coarse device signature (OS + browser + IANA timezone).
+  Returning later with the same email on the *exact same system* re-checks the
+  server's `verification-status` and flips straight to "Verified ✓" without
+  sending a second email; email/device mismatch or an expired challenge falls
+  back to the normal send flow.  The signature is an anti-abuse aid, not an
+  auth boundary — the VERIFIED challenge check on `/signup` remains the
+  authoritative gate.
 - **Local dev mail** — `config/settings/development.py` configures SMTP for
   smtp4dev (`EMAIL_HOST=127.0.0.1`, `EMAIL_PORT=2525`, web UI on 3000).
 - **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense

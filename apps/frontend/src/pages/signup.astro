@@ -122,6 +122,14 @@ if (Astro.cookies.has("sessionid")) {
   import { initAntiTamper } from "../lib/anti-tamper";
   import { isPasswordStrong } from "../lib/password-strength";
   import { writeCachedAuthStatus } from "../lib/auth-status";
+  import { captureDeviceSignature } from "../lib/device-signature";
+  import {
+    canResume,
+    clearSignupResume,
+    normalizeEmail,
+    readSignupResume,
+    writeSignupResume,
+  } from "../lib/signup-resume";
 
   const LOCKOUT_MS = 30 * 60 * 1000;
   const LOCKOUT_KEY = "mygamedna:bot_lockout";
@@ -144,6 +152,20 @@ if (Astro.cookies.has("sessionid")) {
       return false;
     }
   }
+
+  function getResumeStorage(): typeof localStorage | null {
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  }
+
+  // Device signature captured once per page session: OS family, browser
+  // family, and IANA timezone.  A stored challenge is only resumed when the
+  // signature still matches — never across systems (no cross-device resume).
+  const deviceSignature = captureDeviceSignature();
+  const resumeStorage = getResumeStorage();
 
   function setBotLockout(): void {
     try {
@@ -336,16 +358,7 @@ if (Astro.cookies.has("sessionid")) {
       );
       const data = (await res.json()) as { verified?: boolean };
       if (data.verified) {
-        emailVerified = true;
-        if (pollTimer) clearInterval(pollTimer);
-        pollTimer = null;
-        if (verifyButton) {
-          verifyButton.textContent = "Verified ✓";
-          verifyButton.disabled = true;
-          verifyButton.className =
-            "shrink-0 rounded-lg bg-green px-3 py-2 text-sm font-medium text-bg";
-        }
-        updateSubmitState();
+        markEmailVerified();
         flashVerifiedTitle();
       }
     } catch {
@@ -364,15 +377,60 @@ if (Astro.cookies.has("sessionid")) {
     }, 10_000);
   }
 
+  function markEmailVerified(): void {
+    emailVerified = true;
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+    if (verifyButton) {
+      verifyButton.textContent = "Verified ✓";
+      verifyButton.disabled = true;
+      verifyButton.className =
+        "shrink-0 rounded-lg bg-green px-3 py-2 text-sm font-medium text-bg";
+    }
+    updateSubmitState();
+  }
+
+  async function tryResumeVerification(email: string): Promise<boolean> {
+    // Strict dropoff resume: reuse a stored challenge only when (a) the typed
+    // email matches, (b) the current device signature matches the system that
+    // requested it, and (c) the backend still reports the challenge VERIFIED.
+    if (!resumeStorage) return false;
+    const record = readSignupResume(resumeStorage);
+    if (!record) return false;
+    if (!canResume(record, email, deviceSignature)) return false;
+
+    try {
+      const res = await fetch(
+        `/api/auth/verification-status?challenge_id=${encodeURIComponent(record.challengeId)}`,
+        { headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) return false;
+      const data = (await res.json()) as { verified?: boolean };
+      if (!data.verified) return false;
+
+      challengeId = record.challengeId;
+      markEmailVerified();
+      return true;
+    } catch {
+      // Transient network error — fall back to the normal send flow.
+      return false;
+    }
+  }
+
   verifyButton?.addEventListener("click", async () => {
     if (Date.now() < verifyButtonLockedUntil) return;
+    const typedEmail = emailInput?.value ?? "";
     try {
+      // Dropoff resume first: an already-verified challenge from this exact
+      // system skips the email round-trip entirely (server re-validated above).
+      if (await tryResumeVerification(typedEmail)) return;
+
       const recaptchaToken = await executeRecaptcha("signup_verify_email");
       const res = await fetch("/api/auth/verify-email-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailInput?.value ?? "",
+          email: typedEmail,
           recaptcha_token: recaptchaToken,
           company_website: "",
         }),
@@ -405,6 +463,18 @@ if (Astro.cookies.has("sessionid")) {
         verifyButton.textContent = "Email Sent ✓";
         verifyButton.disabled = true;
       }
+
+      // Remember the challenge (email + system signature) so a dropoff within
+      // the 15-minute TTL can resume without sending a second email.
+      if (resumeStorage) {
+        writeSignupResume(resumeStorage, {
+          email: normalizeEmail(typedEmail),
+          challengeId: data.challenge_id as string,
+          signature: deviceSignature,
+          requestedAt: Date.now(),
+        });
+      }
+
       startPolling();
 
       setTimeout(() => {
@@ -447,6 +517,9 @@ if (Astro.cookies.has("sessionid")) {
       const data = await res.json();
 
       if (res.status === 201) {
+        // The challenge was consumed server-side; drop the resume record so a
+        // stale challenge can never be reused after registration.
+        if (resumeStorage) clearSignupResume(resumeStorage);
         writeCachedAuthStatus({
           authenticated: true,
           username: data.username ?? null,
