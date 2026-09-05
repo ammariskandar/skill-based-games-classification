@@ -196,6 +196,60 @@ if (Astro.cookies.has("sessionid")) {
   let verifyButtonLockedUntil = 0;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+  // The verification email opens in a *separate* tab, so this tab draws the
+  // user back by briefly alternating the document title when verification
+  // lands (the tab bar flashes while the tab is in the background).
+  const originalPageTitle = document.title;
+  let titleFlashTimer: ReturnType<typeof setInterval> | null = null;
+  let titleFlashReset: ReturnType<typeof setTimeout> | null = null;
+
+  function stopTitleFlash(): void {
+    if (titleFlashTimer) {
+      clearInterval(titleFlashTimer);
+      titleFlashTimer = null;
+    }
+    if (titleFlashReset) {
+      clearTimeout(titleFlashReset);
+      titleFlashReset = null;
+    }
+    document.title = originalPageTitle;
+  }
+
+  function flashVerifiedTitle(): void {
+    if (titleFlashTimer || titleFlashReset) return;
+    const verifiedTitle = "✓ Email verified — finish signing up";
+    let showVerified = false;
+    let ticks = 0;
+    titleFlashTimer = setInterval(() => {
+      ticks += 1;
+      if (ticks >= 10) {
+        stopTitleFlash();
+        return;
+      }
+      showVerified = !showVerified;
+      document.title = showVerified ? verifiedTitle : originalPageTitle;
+    }, 600);
+    titleFlashReset = setTimeout(stopTitleFlash, 6500);
+  }
+
+  // The verification tab posts on this channel the moment the emailed link is
+  // confirmed; the 10s status poll below is the fallback for browsers/tabs
+  // that cannot share a BroadcastChannel.
+  try {
+    const verifyChannel = new BroadcastChannel("mygamedna:email-verification");
+    verifyChannel.onmessage = (event: MessageEvent) => {
+      if (event.data === "verified") {
+        void checkVerificationStatus();
+      }
+    };
+  } catch {
+    /* BroadcastChannel unsupported — polling still detects verification */
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) stopTitleFlash();
+  });
+
   function showError(message: string): void {
     if (!errorBanner || !errorMsg) return;
     errorMsg.textContent = message;
@@ -273,11 +327,11 @@ if (Astro.cookies.has("sessionid")) {
   });
 
   // ── email verification ───────────────────────────────────────────────────
-  function startPolling(): void {
-    if (pollTimer || !challengeId) return;
-    pollTimer = setInterval(async () => {
+  async function checkVerificationStatus(): Promise<void> {
+    if (!challengeId || emailVerified) return;
+    try {
       const res = await fetch(
-        `/api/auth/verification-status?challenge_id=${encodeURIComponent(challengeId!)}`,
+        `/api/auth/verification-status?challenge_id=${encodeURIComponent(challengeId)}`,
         { headers: { Accept: "application/json" } },
       );
       const data = (await res.json()) as { verified?: boolean };
@@ -292,7 +346,21 @@ if (Astro.cookies.has("sessionid")) {
             "shrink-0 rounded-lg bg-green px-3 py-2 text-sm font-medium text-bg";
         }
         updateSubmitState();
+        flashVerifiedTitle();
       }
+    } catch {
+      // Transient network error — the next poll tick retries.
+    }
+  }
+
+  function startPolling(): void {
+    if (pollTimer || !challengeId) return;
+    // Check immediately so an already-verified challenge (e.g. resuming after
+    // a dropoff, or a BroadcastChannel signal) flips the button without
+    // waiting a full poll cycle.
+    void checkVerificationStatus();
+    pollTimer = setInterval(() => {
+      void checkVerificationStatus();
     }, 10_000);
   }
 

@@ -29,11 +29,14 @@ if (token) {
     {
       verified ? (
         <>
-          <h1 class="text-4xl font-bold tracking-tight text-text sm:text-5xl">
+          <h1
+            id="verify-success-heading"
+            class="text-4xl font-bold tracking-tight text-text sm:text-5xl"
+          >
             You can close this tab now.
           </h1>
-          <p id="countdown-text" class="mt-4 text-base text-muted">
-            This tab will close automatically in 5 seconds.
+          <p class="mt-4 text-base text-muted">
+            Your email is verified — head back to the sign-up tab to continue.
           </p>
         </>
       ) : (
@@ -59,22 +62,16 @@ if (token) {
 
 <script is:inline>
   (() => {
-    const countdownText = document.getElementById("countdown-text");
-    if (!countdownText) return;
-
-    let countdown = 5;
-    const timer = setInterval(() => {
-      countdown -= 1;
-      if (countdown > 0) {
-        countdownText.textContent = `This tab will close automatically in ${countdown} seconds...`;
-      } else {
-        clearInterval(timer);
-        try {
-          window.close();
-        } catch {
-          /* popup-blocked close — the "close this tab" copy covers it */
-        }
-      }
-    }, 1000);
+    // The verification link opens in a new tab; the browser forbids closing it
+    // programmatically, so instead tell the sign-up tab (same origin) that the
+    // challenge is verified.  It flips to "Verified ✓" and flashes its title.
+    if (!document.getElementById("verify-success-heading")) return;
+    try {
+      new BroadcastChannel("mygamedna:email-verification").postMessage(
+        "verified",
+      );
+    } catch {
+      /* BroadcastChannel unsupported — the sign-up page's 10s poll covers it */
+    }
   })();
 </script>

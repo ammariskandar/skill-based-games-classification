@@ -2602,10 +2602,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `pages/signup.astro` (honeypot, debounced username availability, email
   verify → "Email Sent ✓" → "Resend verification" → "Verified ✓" with 10s
   polling, password strength meter, gated submit), `pages/verify-email.astro`
-  (SSR token confirmation + 5s auto-close), `pages/signup-error.astro`
+  (SSR token confirmation; browsers block programmatic tab close, so the
+  auto-close countdown was dropped — the sign-up tab instead flashes its
+  document.title and flips to "Verified ✓" via BroadcastChannel when the link
+  is confirmed), `pages/signup-error.astro`
   (30-minute bot lockout boundary), `components/ui/PasswordStrengthMeter.astro`,
   and the `flash_toast=signup_success` toast ("Welcome! Account created
-  successfully.").  Login page gains a "Sign Up >>" link.
+  successfully.").  Login page gains a "Sign Up >>" link plus a
+  "Forgot username or password? Reset >>" row pointing at a static `/reset`
+  placeholder (no reset flow yet — SBGC-218 deliberately excludes it).
 - **Local dev mail** — `config/settings/development.py` configures SMTP for
   smtp4dev (`EMAIL_HOST=127.0.0.1`, `EMAIL_PORT=2525`, web UI on 3000).
 - **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense
