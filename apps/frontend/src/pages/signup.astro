@@ -246,9 +246,9 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   initAntiTamper();
   // Username renders readonly so only the email field can be autofilled;
   // focusing the username lifts the attribute so typing works normally.  Its
-  // name is re-randomized client-side so Chrome cannot autofill it either.
+  // id + name are re-randomized at the end of this script (after element
+  // lookups) so Chrome cannot autofill it either.
   initAutofillGuard();
-  enableRandomizedFieldNames();
 
   // Load reCAPTCHA v3 dynamically only when a site key is configured.
   if (SITE_KEY) {
@@ -671,4 +671,9 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
       showError("Service temporarily unavailable. Please try again later.");
     }
   });
+
+  // Randomize the username field's identity last: all element references above
+  // were captured by their stable SSR ids, so renaming after this point is
+  // safe.  The email field is deliberately excluded (autofill is allowed).
+  enableRandomizedFieldNames();
 </script>

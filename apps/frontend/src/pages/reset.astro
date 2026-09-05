@@ -331,11 +331,10 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   // Inputs render readonly so browser / password-manager autofill cannot
   // pre-fill this page (and cannot populate the honeypot trap); focusing a
-  // field lifts the attribute.  Field names are re-randomized client-side on
-  // load (and on bfcache restore) so Chrome has no recurring field signature
-  // to autofill from.
+  // field lifts the attribute.  Field ids + names are re-randomized at the end
+  // of this script (after all element lookups) so Chrome has no recurring
+  // field identity to autofill from.
   initAutofillGuard();
-  enableRandomizedFieldNames();
 
   type Recaptcha = {
     ready: (cb: () => void) => void;
@@ -597,4 +596,8 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
       },
     );
   });
+
+  // Randomize visible field identities last: all element references above were
+  // captured by their stable SSR ids, so renaming after this point is safe.
+  enableRandomizedFieldNames();
 </script>

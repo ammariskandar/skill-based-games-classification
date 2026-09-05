@@ -2647,13 +2647,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     username+email paired fills — this closed a gap where the Forgot Password
     tab (a username+email pair) still autofilled its email field.
     `lib/random-form-names.ts` (`enableRandomizedFieldNames()`) goes one step
-    further for `/reset`, `/reset-password`, and the sign-up username: field
-    `name`s are re-randomized **client-side on load** (and again on `load` and
-    on bfcache `pageshow` restore), so the field the user interacts with has a
-    name the browser has never seen on that URL — Chrome/Edge cannot learn a
-    recurring (name, type, autocomplete) signature to autofill.  Payloads are
-    always built by id as explicit JSON (no native form submission), so names
-    never need restoring.
+    further for `/reset` and the sign-up username: field `name` **and `id`**
+    are re-randomized **client-side on load** (and again on `load` and on
+    bfcache `pageshow` restore), with `<label for>` / `aria-labelledby`
+    references rewritten in the same pass — Chrome matches remembered-value
+    autofill against both `name` and `id`, so a stable `id` alone was still
+    enough for it to offer a previously used email.  The browser therefore has
+    no recurring field identity to autofill from.  Payloads are always built
+    from captured element references as explicit JSON (no native form
+    submission), so names never need restoring.
   - `/reset-password` page: password fields use `autocomplete="new-password"`
     (NOT `off` — Chrome maps `off` on a password field to current-password and
     offers saved credentials, which is exactly the reported regression) so
