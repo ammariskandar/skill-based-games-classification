@@ -2,6 +2,11 @@
 import Navigation from "./Navigation.astro";
 import HeaderSearch from "./HeaderSearch.astro";
 import NavbarAuth from "./NavbarAuth.astro";
+
+// Desktop renders About outside the shared Navigation list, so it owns its
+// own active-state detection (mirrors Navigation.astro's rule).
+const pathname = Astro.url.pathname;
+const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
 ---
 
 <header
@@ -28,7 +33,14 @@ import NavbarAuth from "./NavbarAuth.astro";
           </div>
           <a
             href="/about"
-            class="inline-block rounded px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            aria-current={isAboutActive ? "page" : undefined}
+            class:list={[
+              "inline-block rounded px-3 py-1.5 text-sm font-medium transition-colors",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue",
+              isAboutActive
+                ? "bg-surface-2 text-text"
+                : "text-muted hover:bg-surface-2 hover:text-text",
+            ]}
           >
             About
           </a>

@@ -56,30 +56,65 @@ const idPrefix = compact ? "compact" : "desktop";
 </div>
 
 <script>
-  function initAuthIsland(root: HTMLElement): void {
+  import {
+    clearCachedAuthStatus,
+    readCachedAuthStatus,
+    writeCachedAuthStatus,
+    type AuthStatus,
+  } from "../lib/auth-status";
+
+  function paintIsland(root: HTMLElement, status: AuthStatus): void {
     const loggedOut = root.querySelector<HTMLElement>("[data-auth-logged-out]");
     const loggedIn = root.querySelector<HTMLElement>("[data-auth-logged-in]");
     const username = root.querySelector<HTMLAnchorElement>(
       "[data-auth-username]",
     );
 
+    const isAuthenticated = Boolean(status.authenticated && status.username);
+    loggedOut?.classList.toggle("hidden", isAuthenticated);
+    if (loggedIn) {
+      loggedIn.classList.toggle("hidden", !isAuthenticated);
+      loggedIn.classList.toggle("flex", isAuthenticated);
+    }
+    if (isAuthenticated && username && status.username) {
+      username.textContent = status.username;
+      username.setAttribute("title", `Profile: ${status.username}`);
+    }
+  }
+
+  /** Re-validate against the BFF and update the cache in the background. */
+  function refreshStatus(root: HTMLElement): void {
     fetch("/api/auth/status", { headers: { Accept: "application/json" } })
-      .then((res) => (res.ok ? res.json() : { authenticated: false }))
-      .then((data: { authenticated?: boolean; username?: string | null }) => {
-        const isAuthenticated = Boolean(data.authenticated && data.username);
-        loggedOut?.classList.toggle("hidden", isAuthenticated);
-        if (loggedIn) {
-          loggedIn.classList.toggle("hidden", !isAuthenticated);
-          loggedIn.classList.toggle("flex", isAuthenticated);
-        }
-        if (isAuthenticated && username && data.username) {
-          username.textContent = data.username;
-          username.setAttribute("title", `Profile: ${data.username}`);
-        }
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<AuthStatus>)
+          : { authenticated: false, username: null },
+      )
+      .then((status) => {
+        paintIsland(root, status);
+        writeCachedAuthStatus(status);
       })
       .catch(() => {
-        // Degrade gracefully to the logged-out state.
+        // Best-effort refresh — keep whatever is already painted.
       });
+  }
+
+  function initAuthIsland(root: HTMLElement): void {
+    // A logout just happened in this tab (BFF set the flash toast before the
+    // 303 redirect): never flash the stale cached username.
+    if (document.cookie.includes("flash_toast=logout_success")) {
+      clearCachedAuthStatus();
+      paintIsland(root, { authenticated: false, username: null });
+      return;
+    }
+
+    // Paint known state instantly from the cache, then re-validate in the
+    // background so the auth controls never wait on a network round-trip.
+    const cached = readCachedAuthStatus();
+    if (cached) {
+      paintIsland(root, cached);
+    }
+    refreshStatus(root);
   }
 
   function initAll(): void {

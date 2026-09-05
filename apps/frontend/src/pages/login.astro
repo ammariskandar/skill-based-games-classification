@@ -74,6 +74,8 @@ if (Astro.cookies.has("sessionid")) {
 </BaseLayout>
 
 <script>
+  import { writeCachedAuthStatus } from "../lib/auth-status";
+
   const form = document.getElementById("login-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById(
     "login-submit",
@@ -103,6 +105,12 @@ if (Astro.cookies.has("sessionid")) {
         const data = await res.json();
 
         if (res.ok) {
+          // Seed the client cache so the navbar paints the username instantly
+          // on the landing page instead of waiting for /api/auth/status.
+          writeCachedAuthStatus({
+            authenticated: true,
+            username: data.username ?? null,
+          });
           window.location.href = "/";
           return;
         }
