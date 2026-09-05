@@ -81,7 +81,12 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
         aria-labelledby="tab-username"
         data-recovery-panel="username"
       >
-        <form id="forgot-username-form" class="flex flex-col gap-4" novalidate>
+        <form
+          id="forgot-username-form"
+          class="flex flex-col gap-4"
+          autocomplete="off"
+          novalidate
+        >
           <!-- Honeypot trap (off-screen, randomized name) -->
           <input
             type="text"
@@ -107,10 +112,12 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
                 name="email"
                 type="text"
                 inputmode="email"
-                autocomplete="email"
+                autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
+                readonly
+                data-autofill-guard
                 aria-invalid="false"
                 aria-required="true"
                 aria-describedby="username-email-hint"
@@ -161,7 +168,12 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
         data-recovery-panel="password"
         class="hidden"
       >
-        <form id="forgot-password-form" class="flex flex-col gap-4" novalidate>
+        <form
+          id="forgot-password-form"
+          class="flex flex-col gap-4"
+          autocomplete="off"
+          novalidate
+        >
           <!-- Honeypot trap (off-screen, randomized name) -->
           <input
             type="text"
@@ -185,9 +197,11 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
               id="reset-username"
               name="username"
               type="text"
-              autocomplete="username"
+              autocomplete="off"
               minlength="4"
               maxlength="20"
+              readonly
+              data-autofill-guard
               class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
             />
             <span
@@ -208,10 +222,12 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
                 name="email"
                 type="text"
                 inputmode="email"
-                autocomplete="email"
+                autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
                 maxlength="254"
+                readonly
+                data-autofill-guard
                 aria-invalid="false"
                 aria-required="true"
                 aria-describedby="reset-email-hint"
@@ -271,11 +287,18 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
 </style>
 
 <script>
+  import { initAutofillGuard } from "../lib/autofill-guard";
+
   const LOCKOUT_MS = 30 * 60 * 1000;
   const LOCKOUT_KEY = "mygamedna:bot_lockout";
   // reCAPTCHA v3 is opt-in: without a site key the page skips it and sends a
   // `test-recaptcha-token` the DEBUG backend accepts.
   const SITE_KEY = import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY || "";
+
+  // Inputs render readonly so browser / password-manager autofill cannot
+  // pre-fill this page (and cannot populate the honeypot trap); focusing a
+  // field lifts the attribute.
+  initAutofillGuard();
 
   type Recaptcha = {
     ready: (cb: () => void) => void;

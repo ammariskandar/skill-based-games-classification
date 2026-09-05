@@ -2634,7 +2634,11 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   (`reset.astro`, `signup.astro`, `reset-password.astro`), so autofill cannot
   match it while bots that fill every field are still rejected.  Backend
   honeypot rejections on the recovery endpoints log a warning (trap length)
-  for ops visibility.
+  for ops visibility.  The `/reset` and `/reset-password` pages additionally
+  disable autofill entirely: every visible input renders `readonly` with
+  `autocomplete="off"` (form + fields), and `lib/autofill-guard.ts`
+  (`initAutofillGuard()`) lifts the `readonly` attribute on focus so typing is
+  unaffected — nothing can be pre-filled into these pages (or into the trap).
 - Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
   `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).
