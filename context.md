@@ -2655,7 +2655,10 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     enough for it to offer a previously used email.  The browser therefore has
     no recurring field identity to autofill from.  Payloads are always built
     from captured element references as explicit JSON (no native form
-    submission), so names never need restoring.
+    submission), so names never need restoring.  The `/reset` email fields
+    additionally drop every remaining email-classifier signal Chrome heuristics
+    can key on (`inputmode="email"` removed — plain `type="text"`), leaving
+    only the visible label as a hint.
   - `/reset-password` page: password fields use `autocomplete="new-password"`
     (NOT `off` — Chrome maps `off` on a password field to current-password and
     offers saved credentials, which is exactly the reported regression) so

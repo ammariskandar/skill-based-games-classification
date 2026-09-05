@@ -129,7 +129,6 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 id="username-email"
                 name={emailFieldName}
                 type="text"
-                inputmode="email"
                 autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
@@ -251,7 +250,6 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 id="reset-email"
                 name={emailFieldName}
                 type="text"
-                inputmode="email"
                 autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
@@ -331,10 +329,12 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   // Inputs render readonly so browser / password-manager autofill cannot
   // pre-fill this page (and cannot populate the honeypot trap); focusing a
-  // field lifts the attribute.  Field ids + names are re-randomized at the end
-  // of this script (after all element lookups) so Chrome has no recurring
-  // field identity to autofill from.
+  // field lifts the attribute.  Field ids + names are re-randomized on a
+  // deferred task (after this whole script has run and captured its element
+  // references, and even if any earlier statement threw) so Chrome has no
+  // recurring field identity to autofill from.
   initAutofillGuard();
+  setTimeout(() => enableRandomizedFieldNames(), 0);
 
   type Recaptcha = {
     ready: (cb: () => void) => void;
@@ -596,8 +596,4 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
       },
     );
   });
-
-  // Randomize visible field identities last: all element references above were
-  // captured by their stable SSR ids, so renaming after this point is safe.
-  enableRandomizedFieldNames();
 </script>
