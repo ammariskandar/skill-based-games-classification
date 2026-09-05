@@ -102,6 +102,95 @@ const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
       </div>
     </div>
   </div>
+
+  <!-- Pre-paint auth swap (SBGC-217): runs synchronously during HTML parsing,
+       before the browser paints, so the cached username never "pops in" after
+       the logged-out navbar is already visible.  The processed module script
+       below cannot do this — it is deferred until after first paint.
+       Cache key must mirror lib/auth-status.ts AUTH_STATUS_CACHE_KEY. -->
+  <script is:inline>
+    (() => {
+      const AUTH_CACHE_KEY = "mygamedna:auth-status:v1";
+      const LOGGED_OUT = { authenticated: false, username: null };
+
+      const readCache = () => {
+        try {
+          const raw = sessionStorage.getItem(AUTH_CACHE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            parsed.authenticated === true &&
+            typeof parsed.username === "string"
+          ) {
+            return parsed;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      };
+
+      const writeCache = (status) => {
+        try {
+          sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(status));
+        } catch {
+          /* storage unavailable */
+        }
+      };
+
+      const clearCache = () => {
+        try {
+          sessionStorage.removeItem(AUTH_CACHE_KEY);
+        } catch {
+          /* storage unavailable */
+        }
+      };
+
+      const paintAll = (status) => {
+        const isAuthenticated =
+          status.authenticated === true && typeof status.username === "string";
+        for (const root of document.querySelectorAll("[data-navbar-auth]")) {
+          const loggedOut = root.querySelector("[data-auth-logged-out]");
+          const loggedIn = root.querySelector("[data-auth-logged-in]");
+          const username = root.querySelector("[data-auth-username]");
+          if (loggedOut) loggedOut.classList.toggle("hidden", isAuthenticated);
+          if (loggedIn) {
+            loggedIn.classList.toggle("hidden", !isAuthenticated);
+            loggedIn.classList.toggle("flex", isAuthenticated);
+          }
+          if (isAuthenticated && username && status.username) {
+            username.textContent = status.username;
+            username.setAttribute("title", `Profile: ${status.username}`);
+          }
+        }
+      };
+
+      // A logout just happened in this tab (the BFF set the flash toast before
+      // the 303 redirect): never flash a stale cached username.
+      if (document.cookie.includes("flash_toast=logout_success")) {
+        clearCache();
+        paintAll(LOGGED_OUT);
+        return;
+      }
+
+      // Paint the cached username synchronously — before first paint — then
+      // re-validate against the BFF in the background.
+      const cached = readCache();
+      if (cached) paintAll(cached);
+
+      fetch("/api/auth/status", { headers: { Accept: "application/json" } })
+        .then((res) => (res.ok ? res.json() : LOGGED_OUT))
+        .then((status) => {
+          paintAll(status);
+          writeCache(status);
+        })
+        .catch(() => {
+          /* best-effort refresh — keep whatever is painted */
+        });
+    })();
+  </script>
 </header>
 
 <script>

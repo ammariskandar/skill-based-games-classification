@@ -1,14 +1,19 @@
 ---
 /**
- * Navbar authentication island — SBGC-217.
+ * Navbar authentication controls — SBGC-217.
  *
- * Client-hydrated: the SSR markup always renders the logged-out state so
- * pre-rendered pages (`/about`, `/methodology`) stay 100% static with no
- * layout shift.  On load the island fetches `/api/auth/status` and swaps in
- * the username + logout control when a session exists.
+ * Pure SSR markup: the logged-out state is always the server-rendered
+ * default so pre-rendered pages (`/about`, `/methodology`) stay 100% static
+ * with zero layout shift at first paint.
+ *
+ * The client-side swap (cached username → logged-in state, followed by a
+ * background `/api/auth/status` re-validation) is handled by a single
+ * synchronous inline script in `Header.astro`, which runs during HTML
+ * parsing — before the browser paints — so the controls never visibly
+ * toggle between states on navigation.
  *
  * Rendered once per Header breakpoint (desktop + compact).  The `compact`
- * prop only changes the root data-attribute so the script can address each
+ * prop only changes the root data-attribute so scripts can address each
  * instance independently — there are no shared element IDs.
  */
 interface Props {
@@ -34,7 +39,7 @@ const idPrefix = compact ? "compact" : "desktop";
     </a>
   </div>
 
-  <!-- Logged in (hidden until /api/auth/status confirms a session) -->
+  <!-- Logged in (hidden until the cached/refreshed status confirms a session) -->
   <div data-auth-logged-in class="hidden items-center gap-3">
     <a
       data-auth-username
@@ -54,77 +59,3 @@ const idPrefix = compact ? "compact" : "desktop";
     </form>
   </div>
 </div>
-
-<script>
-  import {
-    clearCachedAuthStatus,
-    readCachedAuthStatus,
-    writeCachedAuthStatus,
-    type AuthStatus,
-  } from "../lib/auth-status";
-
-  function paintIsland(root: HTMLElement, status: AuthStatus): void {
-    const loggedOut = root.querySelector<HTMLElement>("[data-auth-logged-out]");
-    const loggedIn = root.querySelector<HTMLElement>("[data-auth-logged-in]");
-    const username = root.querySelector<HTMLAnchorElement>(
-      "[data-auth-username]",
-    );
-
-    const isAuthenticated = Boolean(status.authenticated && status.username);
-    loggedOut?.classList.toggle("hidden", isAuthenticated);
-    if (loggedIn) {
-      loggedIn.classList.toggle("hidden", !isAuthenticated);
-      loggedIn.classList.toggle("flex", isAuthenticated);
-    }
-    if (isAuthenticated && username && status.username) {
-      username.textContent = status.username;
-      username.setAttribute("title", `Profile: ${status.username}`);
-    }
-  }
-
-  /** Re-validate against the BFF and update the cache in the background. */
-  function refreshStatus(root: HTMLElement): void {
-    fetch("/api/auth/status", { headers: { Accept: "application/json" } })
-      .then((res) =>
-        res.ok
-          ? (res.json() as Promise<AuthStatus>)
-          : { authenticated: false, username: null },
-      )
-      .then((status) => {
-        paintIsland(root, status);
-        writeCachedAuthStatus(status);
-      })
-      .catch(() => {
-        // Best-effort refresh — keep whatever is already painted.
-      });
-  }
-
-  function initAuthIsland(root: HTMLElement): void {
-    // A logout just happened in this tab (BFF set the flash toast before the
-    // 303 redirect): never flash the stale cached username.
-    if (document.cookie.includes("flash_toast=logout_success")) {
-      clearCachedAuthStatus();
-      paintIsland(root, { authenticated: false, username: null });
-      return;
-    }
-
-    // Paint known state instantly from the cache, then re-validate in the
-    // background so the auth controls never wait on a network round-trip.
-    const cached = readCachedAuthStatus();
-    if (cached) {
-      paintIsland(root, cached);
-    }
-    refreshStatus(root);
-  }
-
-  function initAll(): void {
-    for (const root of document.querySelectorAll<HTMLElement>(
-      "[data-navbar-auth]",
-    )) {
-      initAuthIsland(root);
-    }
-  }
-
-  initAll();
-  document.addEventListener("astro:page-load", initAll);
-</script>
