@@ -2570,6 +2570,67 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-05 — SBGC-219 account credential recovery & one-chance password reset
+
+- **Zero-enumeration recovery entrypoints** (both on `auth_router`):
+  `POST /forgot-username` (email only) and `POST /forgot-password` (username +
+  email dual-match).  Each returns a byte-identical generic 200 envelope whether
+  or not the details match an account — existence is only ever communicated in
+  the email body.  A missing account dispatches nothing.
+  `authentication/emails.py` gains `resolve_active_user_by_email()` (Gmail
+  dot-alias aware, `is_active` only) so a dotted variant of a registered
+  `gmail.com` address still resolves for recovery.
+- **One-chance reset token model** (`authentication/tokens.py`):
+  `create_password_reset_token()` stores a PENDING `pw_reset_token:<id>` cache
+  entry (900s TTL) and returns a `TimestampSigner`-signed string (separate
+  `password-reset-salt` signer).  `claim_password_reset_token()` marks the token
+  CLAIMED on first redemption and mints an ephemeral single-use
+  `reset_nonce:<uuid>` bound to `(token_id, user_id)`.  The raw signed token can
+  never be claimed twice; a `beforeunload` beacon to `POST /burn-reset-token`
+  (`burn_reset_session_nonce()`) destroys the nonce + parent token when the
+  human abandons the page.  Crawlers that merely GET the emailed link never
+  consume the token — only the interactive verify exchange does.
+- **Post-reset hardening** — `POST /reset-password-confirm` validates the
+  nonce + reCAPTCHA + honeypot, consumes the nonce/token immediately (single
+  chance), sets the new password, deletes every live `django_session` row for
+  the user via `revoke_all_user_sessions()` (kicks out stolen/other devices),
+  sends a “Security Alert: Your MyGameDNA password has been changed”
+  notification, and never auto-logs-in.  A missing/expired/consumed nonce
+  returns 400 `EXPIRED_RESET_TOKEN` (new canonical code added to
+  `games/errors.py` ErrorCode + metadata registry).  Reset/signup-style guards:
+  reCAPTCHA v3, `company_website` honeypot, and the shared 30-minute IP/email
+  lockout (`is_signup_rate_limited` → 429 + `Retry-After: 1800`).
+- **Emails** — username reminder (Subject “Your MyGameDNA Username”, body
+  “Your username is: <username>”) and one-chance reset link to
+  `http://localhost:4321/reset-password?token=…` (15-minute expiry); both
+  dispatch from `authentication/tokens.py` (mock-friendly for tests).
+- **Frontend BFF proxies** (`pages/api/auth/`): `forgot-username.ts`,
+  `forgot-password.ts` (X-Forwarded-For + Retry-After relay),
+  `verify-reset-token.ts`, `burn-reset-token.ts` (parses beacon bodies
+  defensively; empty beacon → graceful 200), and `reset-password-confirm.ts`
+  (sets `flash_toast=password_reset_success`, 5s, on 200 — no session cookie).
+- **Frontend pages** — `pages/reset.astro` is now a tabbed recovery portal
+  (Forgot Username / Forgot Password): SSR session guard, client 30-min
+  lockout redirect, spacebar-blocked email fields with the custom hover
+  tooltip (form `novalidate`, no native bubbles), regex-gated username,
+  honeypot, reCAPTCHA, generic success panels, and 429 → `/signup-error`
+  lockout.  `pages/reset-password.astro` (SSR, `prerender = false`) validates
+  the token client-side via the BFF, reveals the one-chance form only on a
+  valid exchange, blocks paste/copy/cut on the re-confirm field, requires
+  exact match + `PasswordStrengthMeter` strong tier before enabling submit,
+  and burns the nonce via `navigator.sendBeacon` on `beforeunload` when the
+  form was not submitted.  `components/SpamWarningBanner.astro` is mounted
+  above the footer on both recovery pages via the new `showSpamWarning`
+  `BaseLayout` prop.  `Toast.astro` handles `password_reset_success`
+  (“Password reset successfully. Please log in with your new password.”).
+  Login page already links `/reset` (added in SBGC-218).
+- **Deferred by design** — the “BFF internal shared-secret header” remains
+  follow-up work (unchanged from SBGC-218); the one-chance model relies on
+  cache state + signed tokens, not client-side tamper resistance.
+- Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
+  `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
+  frontend 696; `makemigrations --check` clean (no models).
+
 ## 2026-09-05 — SBGC-218 sign-up flow, email verification challenge & anti-abuse
 
 - **Pre-registration verification challenge** — registration routes through an

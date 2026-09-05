@@ -38,6 +38,7 @@ class ErrorCode(StrEnum):
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
     CONFLICT = "CONFLICT"
     EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED"
+    EXPIRED_RESET_TOKEN = "EXPIRED_RESET_TOKEN"
     RATE_LIMITED = "RATE_LIMITED"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     HTTP_ERROR = "HTTP_ERROR"
@@ -139,6 +140,17 @@ ERROR_REGISTRY: dict[ErrorCode, ErrorMetadata] = {
         description=(
             "The pre-registration email challenge is missing, expired, or "
             "has not been confirmed through the emailed verification link."
+        ),
+        sample_details=[],
+    ),
+    ErrorCode.EXPIRED_RESET_TOKEN: ErrorMetadata(
+        code=ErrorCode.EXPIRED_RESET_TOKEN,
+        http_status=400,
+        category=ErrorCategory.VALIDATION,
+        description=(
+            "The one-chance password-reset session nonce is missing, expired, "
+            "or has already been consumed (reload/back-navigation after claim "
+            "or reuse of a burned token)."
         ),
         sample_details=[],
     ),

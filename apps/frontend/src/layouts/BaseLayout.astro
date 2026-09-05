@@ -1,6 +1,7 @@
 ---
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import SpamWarningBanner from "../components/SpamWarningBanner.astro";
 import Toast from "../components/Toast.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import { buildCanonicalUrl, resolveSiteOrigin } from "../lib/seo";
@@ -19,6 +20,9 @@ interface Props {
   /** App-shell routes (e.g. Rankings) fill the viewport between the Header and
    * Footer with no document-level scrollbar.  Opt-in only. */
   viewportContained?: boolean;
+  /** Account-recovery pages mount the persistent spam/junk advisory banner
+   * directly above the footer. */
+  showSpamWarning?: boolean;
 }
 
 const DEFAULT_DESCRIPTION =
@@ -33,6 +37,8 @@ const description = Astro.props.description ?? DEFAULT_DESCRIPTION;
 const preloadSearch = Astro.props.preloadGameSearchIndex ?? false;
 
 const viewportContained = Astro.props.viewportContained ?? false;
+
+const showSpamWarning = Astro.props.showSpamWarning ?? false;
 
 const bodyClass = viewportContained
   ? "flex h-dvh flex-col overflow-hidden bg-bg text-text antialiased"
@@ -114,6 +120,8 @@ const twitterCard = image ? "summary_large_image" : "summary";
     </main>
 
     <Toast />
+
+    {showSpamWarning && <SpamWarningBanner />}
 
     <Footer />
   </body>
