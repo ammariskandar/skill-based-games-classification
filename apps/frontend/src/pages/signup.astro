@@ -74,6 +74,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
             autocomplete="off"
             readonly
             data-autofill-guard
+            data-randomize-name
             data-lpignore="true"
             data-1p-ignore
             class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
@@ -181,6 +182,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
 <script>
   import { initAntiTamper } from "../lib/anti-tamper";
   import { initAutofillGuard } from "../lib/autofill-guard";
+  import { enableRandomizedFieldNames } from "../lib/random-form-names";
   import { isPasswordStrong } from "../lib/password-strength";
   import { writeCachedAuthStatus } from "../lib/auth-status";
   import { captureDeviceSignature } from "../lib/device-signature";
@@ -243,8 +245,10 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
 
   initAntiTamper();
   // Username renders readonly so only the email field can be autofilled;
-  // focusing the username lifts the attribute so typing works normally.
+  // focusing the username lifts the attribute so typing works normally.  Its
+  // name is re-randomized client-side so Chrome cannot autofill it either.
   initAutofillGuard();
+  enableRandomizedFieldNames();
 
   // Load reCAPTCHA v3 dynamically only when a site key is configured.
   if (SITE_KEY) {

@@ -136,6 +136,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 maxlength="254"
                 readonly
                 data-autofill-guard
+                data-randomize-name
                 data-lpignore="true"
                 data-1p-ignore
                 aria-invalid="false"
@@ -228,6 +229,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
               maxlength="20"
               readonly
               data-autofill-guard
+              data-randomize-name
               data-lpignore="true"
               data-1p-ignore
               class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
@@ -256,6 +258,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
                 maxlength="254"
                 readonly
                 data-autofill-guard
+                data-randomize-name
                 data-lpignore="true"
                 data-1p-ignore
                 aria-invalid="false"
@@ -318,6 +321,7 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
 <script>
   import { initAutofillGuard } from "../lib/autofill-guard";
+  import { enableRandomizedFieldNames } from "../lib/random-form-names";
 
   const LOCKOUT_MS = 30 * 60 * 1000;
   const LOCKOUT_KEY = "mygamedna:bot_lockout";
@@ -327,8 +331,11 @@ const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
 
   // Inputs render readonly so browser / password-manager autofill cannot
   // pre-fill this page (and cannot populate the honeypot trap); focusing a
-  // field lifts the attribute.
+  // field lifts the attribute.  Field names are re-randomized client-side on
+  // load (and on bfcache restore) so Chrome has no recurring field signature
+  // to autofill from.
   initAutofillGuard();
+  enableRandomizedFieldNames();
 
   type Recaptcha = {
     ready: (cb: () => void) => void;
