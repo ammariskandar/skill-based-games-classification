@@ -1,0 +1,80 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// SSR: confirm the emailed token server-to-server, then render the result.
+export const prerender = false;
+
+const BACKEND_URL = import.meta.env.DJANGO_API_URL || "http://127.0.0.1:8000";
+
+const token = Astro.url.searchParams.get("token") ?? "";
+let verified = false;
+if (token) {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/auth/confirm-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    verified = res.ok;
+  } catch {
+    verified = false;
+  }
+}
+---
+
+<BaseLayout title="Verify Email - MyGameDNA">
+  <main
+    class="mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-4 py-16 text-center"
+  >
+    {
+      verified ? (
+        <>
+          <h1 class="text-4xl font-bold tracking-tight text-text sm:text-5xl">
+            You can close this tab now.
+          </h1>
+          <p id="countdown-text" class="mt-4 text-base text-muted">
+            This tab will close automatically in 5 seconds.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 class="text-3xl font-bold tracking-tight text-text sm:text-4xl">
+            Verification link invalid
+          </h1>
+          <p class="mt-4 max-w-md text-base text-muted">
+            This verification link is invalid or has expired. Please request a
+            new verification email from the sign-up page.
+          </p>
+          <a
+            href="/signup"
+            class="mt-6 inline-flex items-center rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-bg transition-opacity hover:opacity-90"
+          >
+            Back to Sign Up
+          </a>
+        </>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const countdownText = document.getElementById("countdown-text");
+    if (!countdownText) return;
+
+    let countdown = 5;
+    const timer = setInterval(() => {
+      countdown -= 1;
+      if (countdown > 0) {
+        countdownText.textContent = `This tab will close automatically in ${countdown} seconds...`;
+      } else {
+        clearInterval(timer);
+        try {
+          window.close();
+        } catch {
+          /* popup-blocked close — the "close this tab" copy covers it */
+        }
+      }
+    }, 1000);
+  })();
+</script>

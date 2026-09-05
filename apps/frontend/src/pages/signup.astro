@@ -1,0 +1,390 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PasswordStrengthMeter from "../components/ui/PasswordStrengthMeter.astro";
+
+// SSR only. An already-authenticated visitor is bounced home; the 30-minute
+// bot lockout (localStorage) is enforced client-side below.
+export const prerender = false;
+
+if (Astro.cookies.has("sessionid")) {
+  return Astro.redirect("/");
+}
+---
+
+<BaseLayout title="Sign Up - MyGameDNA">
+  <main
+    class="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12"
+  >
+    <div class="rounded-xl border border-border bg-surface p-8 shadow-sm">
+      <header class="mb-6 text-center">
+        <h1 class="text-2xl font-bold tracking-tight text-text">
+          Create account
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          Verify your email to create your MyGameDNA account
+        </p>
+      </header>
+
+      <div
+        id="signup-error-banner"
+        role="alert"
+        class="mb-6 hidden rounded-lg border border-red/30 bg-red/10 p-3 text-sm text-red"
+      >
+        <span id="signup-error-message">Something went wrong.</span>
+      </div>
+
+      <form id="signup-form" class="flex flex-col gap-4">
+        <!-- Honeypot trap (off-screen) -->
+        <input
+          type="text"
+          name="company_website"
+          tabindex="-1"
+          autocomplete="off"
+          class="hidden-field"
+          style="position: absolute; left: -9999px;"
+          aria-hidden="true"
+        />
+
+        <div>
+          <label for="username" class="block text-sm font-medium text-text">
+            Username
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            minlength="4"
+            maxlength="20"
+            autocomplete="username"
+            class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+          />
+          <span
+            id="username-badge"
+            class="mt-1 block min-h-4 text-xs text-muted"></span>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-text">
+            Email
+          </label>
+          <div class="mt-1.5 flex items-center gap-2">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              maxlength="254"
+              autocomplete="email"
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+            />
+            <button
+              id="verify-button"
+              type="button"
+              class="shrink-0 rounded-lg bg-surface-2 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+            >
+              Verify email
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-text">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            minlength="8"
+            maxlength="128"
+            autocomplete="new-password"
+            class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+          />
+          <PasswordStrengthMeter inputId="password" />
+        </div>
+
+        <button
+          id="signup-submit"
+          type="submit"
+          disabled
+          class="mt-2 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+        >
+          <span>Sign Up</span>
+        </button>
+      </form>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import { initAntiTamper } from "../lib/anti-tamper";
+  import { isPasswordStrong } from "../lib/password-strength";
+  import { writeCachedAuthStatus } from "../lib/auth-status";
+
+  const LOCKOUT_MS = 30 * 60 * 1000;
+  const LOCKOUT_KEY = "mygamedna:bot_lockout";
+  const SITE_KEY =
+    import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY ||
+    "6LeZf6otAAAAAN2UlbBGMCW2eNklYdkg-8a3mQxw";
+
+  type Recaptcha = {
+    ready: (cb: () => void) => void;
+    execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+  };
+  const grecaptcha = (window as unknown as { grecaptcha?: Recaptcha })
+    .grecaptcha;
+
+  function isBotLockedOut(): boolean {
+    try {
+      const lockedAt = Number(localStorage.getItem(LOCKOUT_KEY) || 0);
+      return lockedAt > 0 && Date.now() - lockedAt < LOCKOUT_MS;
+    } catch {
+      return false;
+    }
+  }
+
+  function setBotLockout(): void {
+    try {
+      localStorage.setItem(LOCKOUT_KEY, String(Date.now()));
+    } catch {
+      /* storage unavailable */
+    }
+    window.location.href = "/signup-error";
+  }
+
+  if (isBotLockedOut()) {
+    window.location.href = "/signup-error";
+  }
+
+  initAntiTamper();
+
+  // Load reCAPTCHA v3 dynamically (the script tag cannot use an expression
+  // src); `grecaptcha.ready()` below waits for it to finish loading.
+  const recaptchaScript = document.createElement("script");
+  recaptchaScript.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+  recaptchaScript.async = true;
+  document.head.appendChild(recaptchaScript);
+
+  const form = document.getElementById("signup-form") as HTMLFormElement | null;
+  const usernameInput = document.getElementById(
+    "username",
+  ) as HTMLInputElement | null;
+  const usernameBadge = document.getElementById("username-badge");
+  const emailInput = document.getElementById(
+    "email",
+  ) as HTMLInputElement | null;
+  const verifyButton = document.getElementById(
+    "verify-button",
+  ) as HTMLButtonElement | null;
+  const passwordInput = document.getElementById(
+    "password",
+  ) as HTMLInputElement | null;
+  const submitBtn = document.getElementById(
+    "signup-submit",
+  ) as HTMLButtonElement | null;
+  const errorBanner = document.getElementById("signup-error-banner");
+  const errorMsg = document.getElementById("signup-error-message");
+
+  // ── state ────────────────────────────────────────────────────────────────
+  let usernameAvailable = false;
+  let emailVerified = false;
+  let challengeId: string | null = null;
+  let resendCount = 0;
+  let verifyButtonLockedUntil = 0;
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  function showError(message: string): void {
+    if (!errorBanner || !errorMsg) return;
+    errorMsg.textContent = message;
+    errorBanner.classList.remove("hidden");
+  }
+
+  function executeRecaptcha(action: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!grecaptcha) {
+        reject(new Error("reCAPTCHA not loaded"));
+        return;
+      }
+      grecaptcha.ready(() => {
+        grecaptcha.execute(SITE_KEY, { action }).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  function updateSubmitState(): void {
+    if (!submitBtn) return;
+    const usernameOk =
+      usernameInput?.value != null &&
+      /^[a-zA-Z0-9_-]{4,20}$/.test(usernameInput.value) &&
+      usernameAvailable;
+    const passwordOk = passwordInput
+      ? isPasswordStrong(passwordInput.value)
+      : false;
+    submitBtn.disabled = !(usernameOk && emailVerified && passwordOk);
+  }
+
+  // ── username availability ────────────────────────────────────────────────
+  let usernameTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function checkUsername(): void {
+    if (!usernameInput || !usernameBadge) return;
+    const value = usernameInput.value;
+    if (!/^[a-zA-Z0-9_-]{4,20}$/.test(value)) {
+      usernameAvailable = false;
+      usernameBadge.textContent =
+        "Username must be 4-20 letters, numbers, _ or -.";
+      usernameBadge.className = "mt-1 block min-h-4 text-xs text-muted";
+      updateSubmitState();
+      return;
+    }
+
+    fetch(`/api/auth/check-username?username=${encodeURIComponent(value)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((res) => res.json())
+      .then((data: { available?: boolean }) => {
+        usernameAvailable = Boolean(data.available);
+        if (usernameBadge) {
+          usernameBadge.textContent = usernameAvailable
+            ? "Available ✓"
+            : "Taken ✕";
+          usernameBadge.className = usernameAvailable
+            ? "mt-1 block min-h-4 text-xs text-green"
+            : "mt-1 block min-h-4 text-xs text-red";
+        }
+        updateSubmitState();
+      })
+      .catch(() => {
+        usernameAvailable = false;
+        updateSubmitState();
+      });
+  }
+
+  usernameInput?.addEventListener("input", () => {
+    if (usernameTimer) clearTimeout(usernameTimer);
+    usernameTimer = setTimeout(checkUsername, 300);
+  });
+
+  // ── email verification ───────────────────────────────────────────────────
+  function startPolling(): void {
+    if (pollTimer || !challengeId) return;
+    pollTimer = setInterval(async () => {
+      const res = await fetch(
+        `/api/auth/verification-status?challenge_id=${encodeURIComponent(challengeId!)}`,
+        { headers: { Accept: "application/json" } },
+      );
+      const data = (await res.json()) as { verified?: boolean };
+      if (data.verified) {
+        emailVerified = true;
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+        if (verifyButton) {
+          verifyButton.textContent = "Verified ✓";
+          verifyButton.disabled = true;
+          verifyButton.className =
+            "shrink-0 rounded-lg bg-green px-3 py-2 text-sm font-medium text-bg";
+        }
+        updateSubmitState();
+      }
+    }, 10_000);
+  }
+
+  verifyButton?.addEventListener("click", async () => {
+    if (Date.now() < verifyButtonLockedUntil) return;
+    try {
+      const recaptchaToken = await executeRecaptcha("signup_verify_email");
+      const res = await fetch("/api/auth/verify-email-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailInput?.value ?? "",
+          recaptcha_token: recaptchaToken,
+          company_website: "",
+        }),
+      });
+      const data = await res.json();
+
+      if (res.status === 429) {
+        setBotLockout();
+        return;
+      }
+      if (!res.ok) {
+        showError(
+          data.error?.message || "Could not send the verification email.",
+        );
+        return;
+      }
+
+      challengeId = data.challenge_id as string;
+      resendCount += 1;
+
+      // >3 resend attempts triggers the 30-minute client-side lockout.
+      if (resendCount > 3) {
+        setBotLockout();
+        return;
+      }
+
+      verifyButtonLockedUntil = Date.now() + 15_000;
+
+      if (verifyButton) {
+        verifyButton.textContent = "Email Sent ✓";
+        verifyButton.disabled = true;
+      }
+      startPolling();
+
+      setTimeout(() => {
+        if (!emailVerified && verifyButton) {
+          verifyButton.disabled = false;
+          verifyButton.textContent = "Resend verification";
+        }
+      }, 15_000);
+    } catch {
+      showError("Service temporarily unavailable. Please try again later.");
+    }
+  });
+
+  // ── password & submit gating ─────────────────────────────────────────────
+  passwordInput?.addEventListener("input", updateSubmitState);
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!submitBtn || submitBtn.disabled) return;
+
+    try {
+      const recaptchaToken = await executeRecaptcha("signup_submit");
+      const honeypot = form.querySelector<HTMLInputElement>(
+        'input[name="company_website"]',
+      )?.value;
+
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: usernameInput?.value ?? "",
+          email: emailInput?.value ?? "",
+          password: passwordInput?.value ?? "",
+          challenge_id: challengeId,
+          recaptcha_token: recaptchaToken,
+          company_website: honeypot ?? "",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 201) {
+        writeCachedAuthStatus({
+          authenticated: true,
+          username: data.username ?? null,
+        });
+        window.location.href = "/";
+        return;
+      }
+
+      showError(data.error?.message || "Could not create your account.");
+    } catch {
+      showError("Service temporarily unavailable. Please try again later.");
+    }
+  });
+</script>

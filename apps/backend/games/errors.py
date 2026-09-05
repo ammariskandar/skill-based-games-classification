@@ -37,6 +37,7 @@ class ErrorCode(StrEnum):
     BAD_REQUEST = "BAD_REQUEST"
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
     CONFLICT = "CONFLICT"
+    EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED"
     RATE_LIMITED = "RATE_LIMITED"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     HTTP_ERROR = "HTTP_ERROR"
@@ -129,6 +130,16 @@ ERROR_REGISTRY: dict[ErrorCode, ErrorMetadata] = {
         http_status=409,
         category=ErrorCategory.INGESTION,
         description=("The request conflicts with the current state of the resource."),
+        sample_details=[],
+    ),
+    ErrorCode.EMAIL_NOT_VERIFIED: ErrorMetadata(
+        code=ErrorCode.EMAIL_NOT_VERIFIED,
+        http_status=400,
+        category=ErrorCategory.VALIDATION,
+        description=(
+            "The pre-registration email challenge is missing, expired, or "
+            "has not been confirmed through the emailed verification link."
+        ),
         sample_details=[],
     ),
     ErrorCode.RATE_LIMITED: ErrorMetadata(
