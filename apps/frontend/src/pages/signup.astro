@@ -9,6 +9,14 @@ export const prerender = false;
 if (Astro.cookies.has("sessionid")) {
   return Astro.redirect("/");
 }
+
+// Honeypot field name is randomized per page render so browser / password-
+// manager autofill (which matches recognizable names like `company_website`)
+// cannot populate the trap and turn a real user into a "bot".  Bots that fill
+// every text input are still caught server-side.
+const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
+  .toString(36)
+  .slice(2, 8)}`;
 ---
 
 <BaseLayout title="Sign Up - MyGameDNA">
@@ -34,10 +42,11 @@ if (Astro.cookies.has("sessionid")) {
       </div>
 
       <form id="signup-form" class="flex flex-col gap-4" novalidate>
-        <!-- Honeypot trap (off-screen) -->
+        <!-- Honeypot trap (off-screen, randomized name) -->
         <input
           type="text"
-          name="company_website"
+          id="signup-hp-trap"
+          name={honeypotName}
           tabindex="-1"
           autocomplete="off"
           class="hidden-field"
@@ -608,8 +617,8 @@ if (Astro.cookies.has("sessionid")) {
 
     try {
       const recaptchaToken = await executeRecaptcha("signup_submit");
-      const honeypot = form.querySelector<HTMLInputElement>(
-        'input[name="company_website"]',
+      const honeypot = (
+        document.getElementById("signup-hp-trap") as HTMLInputElement | null
       )?.value;
 
       const res = await fetch("/api/auth/signup", {

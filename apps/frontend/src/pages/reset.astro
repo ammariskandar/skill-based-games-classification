@@ -8,6 +8,14 @@ export const prerender = false;
 if (Astro.cookies.has("sessionid")) {
   return Astro.redirect("/");
 }
+
+// Honeypot field name is randomized per page render: browser/password-manager
+// autofill matches recognizable names like `company_website`, which would make
+// a real user's request look like a bot.  Bots that fill every text input are
+// still caught because the (now unknown) trap field must stay empty.
+const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
+  .toString(36)
+  .slice(2, 8)}`;
 ---
 
 <BaseLayout
@@ -74,10 +82,11 @@ if (Astro.cookies.has("sessionid")) {
         data-recovery-panel="username"
       >
         <form id="forgot-username-form" class="flex flex-col gap-4" novalidate>
-          <!-- Honeypot trap (off-screen) -->
+          <!-- Honeypot trap (off-screen, randomized name) -->
           <input
             type="text"
-            name="company_website"
+            id="hp-trap-username"
+            name={honeypotName}
             tabindex="-1"
             autocomplete="off"
             class="hidden-field"
@@ -153,10 +162,11 @@ if (Astro.cookies.has("sessionid")) {
         class="hidden"
       >
         <form id="forgot-password-form" class="flex flex-col gap-4" novalidate>
-          <!-- Honeypot trap (off-screen) -->
+          <!-- Honeypot trap (off-screen, randomized name) -->
           <input
             type="text"
-            name="company_website"
+            id="hp-trap-password"
+            name={honeypotName}
             tabindex="-1"
             autocomplete="off"
             class="hidden-field"
@@ -451,6 +461,7 @@ if (Astro.cookies.has("sessionid")) {
     form: HTMLFormElement,
     action: string,
     successPanelId: string,
+    trapInputId: string,
   ): Promise<void> {
     hideError();
     const recaptchaToken = await executeRecaptcha(action).catch(() => {
@@ -459,9 +470,14 @@ if (Astro.cookies.has("sessionid")) {
     });
     if (recaptchaToken === null) return;
 
-    const honeypot = form.querySelector<HTMLInputElement>(
-      'input[name="company_website"]',
-    )?.value;
+    const trapInput = document.getElementById(
+      trapInputId,
+    ) as HTMLInputElement | null;
+    const honeypot = trapInput?.value ?? "";
+    // Keep the randomized trap name out of the JSON payload entirely (the
+    // backend schema forbids unknown fields) — only its value travels, under
+    // the canonical `company_website` key.
+    if (trapInput) trapInput.disabled = true;
 
     const formData = new FormData(form);
     const body: Record<string, string> = {};
@@ -469,7 +485,7 @@ if (Astro.cookies.has("sessionid")) {
       body[key] = String(value);
     });
     body.recaptcha_token = recaptchaToken;
-    body.company_website = honeypot ?? "";
+    body.company_website = honeypot;
 
     try {
       const res = await fetch(url, {
@@ -507,6 +523,7 @@ if (Astro.cookies.has("sessionid")) {
       forgotUsernameForm,
       "forgot_username",
       "username-success",
+      "hp-trap-username",
     );
   });
 
@@ -520,6 +537,7 @@ if (Astro.cookies.has("sessionid")) {
       forgotPasswordForm,
       "forgot_password",
       "password-success",
+      "hp-trap-password",
     );
   });
 </script>

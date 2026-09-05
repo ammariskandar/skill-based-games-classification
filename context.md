@@ -2627,6 +2627,14 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - **Deferred by design** — the “BFF internal shared-secret header” remains
   follow-up work (unchanged from SBGC-218); the one-chance model relies on
   cache state + signed tokens, not client-side tamper resistance.
+- **Fix (post-merge review)** — the recovery/signup honeypot field used a
+  recognizable fixed name (`company_website`), which browser / password-manager
+  autofill can populate and turn a real user into a “bot” (400).  The trap
+  field name is now randomized per page render and read by id
+  (`reset.astro`, `signup.astro`, `reset-password.astro`), so autofill cannot
+  match it while bots that fill every field are still rejected.  Backend
+  honeypot rejections on the recovery endpoints log a warning (trap length)
+  for ops visibility.
 - Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
   `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).

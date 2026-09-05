@@ -10,6 +10,7 @@ The browser never reaches these endpoints directly — the Astro BFF relays
 them server-to-server (see apps/frontend/src/pages/api/auth/).
 """
 
+import logging
 import uuid
 
 from api.errors import STANDARD_ERROR_RESPONSES
@@ -70,6 +71,8 @@ from authentication.tokens import (
     send_username_recovery_email,
     verify_recaptcha,
 )
+
+logger = logging.getLogger(__name__)
 
 auth_router = Router(tags=["Authentication"])
 
@@ -387,6 +390,10 @@ def forgot_username_endpoint(
 ) -> JsonResponse:
     # Honeypot trap — a bot that populates the hidden field is rejected silently.
     if payload.company_website:
+        logger.warning(
+            "Recovery honeypot triggered on forgot-username (trap length %d).",
+            len(payload.company_website),
+        )
         return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
 
     email = payload.email.strip().lower()
@@ -432,6 +439,10 @@ def forgot_password_endpoint(
 ) -> JsonResponse:
     # Honeypot trap.
     if payload.company_website:
+        logger.warning(
+            "Recovery honeypot triggered on forgot-password (trap length %d).",
+            len(payload.company_website),
+        )
         return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
 
     email = payload.email.strip().lower()
