@@ -125,9 +125,9 @@ if (Astro.cookies.has("sessionid")) {
 
   const LOCKOUT_MS = 30 * 60 * 1000;
   const LOCKOUT_KEY = "mygamedna:bot_lockout";
-  const SITE_KEY =
-    import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY ||
-    "6LeZf6otAAAAAN2UlbBGMCW2eNklYdkg-8a3mQxw";
+  // reCAPTCHA v3 is opt-in: without a site key the page skips it and sends a
+  // `test-recaptcha-token` the DEBUG backend accepts (no real reCAPTCHA round-trip).
+  const SITE_KEY = import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY || "";
 
   type Recaptcha = {
     ready: (cb: () => void) => void;
@@ -160,12 +160,13 @@ if (Astro.cookies.has("sessionid")) {
 
   initAntiTamper();
 
-  // Load reCAPTCHA v3 dynamically (the script tag cannot use an expression
-  // src); `grecaptcha.ready()` below waits for it to finish loading.
-  const recaptchaScript = document.createElement("script");
-  recaptchaScript.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
-  recaptchaScript.async = true;
-  document.head.appendChild(recaptchaScript);
+  // Load reCAPTCHA v3 dynamically only when a site key is configured.
+  if (SITE_KEY) {
+    const recaptchaScript = document.createElement("script");
+    recaptchaScript.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+    recaptchaScript.async = true;
+    document.head.appendChild(recaptchaScript);
+  }
 
   const form = document.getElementById("signup-form") as HTMLFormElement | null;
   const usernameInput = document.getElementById(
@@ -202,6 +203,10 @@ if (Astro.cookies.has("sessionid")) {
   }
 
   function executeRecaptcha(action: string): Promise<string> {
+    // No configured key → dev fallback token (the DEBUG backend bypasses it).
+    if (!SITE_KEY) {
+      return Promise.resolve("test-recaptcha-token");
+    }
     return new Promise((resolve, reject) => {
       if (!grecaptcha) {
         reject(new Error("reCAPTCHA not loaded"));
