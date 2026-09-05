@@ -74,6 +74,7 @@ if (Astro.cookies.has("sessionid")) {
               name="email"
               type="email"
               required
+              pattern="[^\s@]+@[^\s@]+\.[^\s@]{2,}"
               maxlength="254"
               autocomplete="email"
               class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
@@ -363,6 +364,9 @@ if (Astro.cookies.has("sessionid")) {
   // still trims defensively), and the Verify button stays disabled until the
   // value looks like a real address (`user@domain.tld`).  The user expects a
   // malformed address to *fail*, not to be silently rewritten.
+  // NOTE: keep in sync with the `pattern` attribute on the email <input> — it
+  // makes single-label addresses like `k@c` natively invalid so the browser's
+  // hover bubble appears (type="email" alone accepts them, so no bubble).
   const EMAIL_VALID_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   // Whether a verification email was already requested for the current value;
   // drives the "Email Sent ✓ → Resend verification" label cycle.
