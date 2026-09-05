@@ -2631,12 +2631,13 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   recognizable fixed name (`company_website`), which browser / password-manager
   autofill can populate and turn a real user into a “bot” (400).  Final state:
   - Honeypot traps (`reset.astro`, `signup.astro`, `reset-password.astro`) are
-    randomized-per-render **and** `readonly` + `disabled` + 1Password/
-    LastPass ignore markers; the real forms never send the value (always
-    `company_website: ""`), so browser autofill is structurally incapable of
-    tripping the trap.  The server still rejects non-empty values from direct
-    API callers (the honeypot now catches only naive non-JS bots; reCAPTCHA v3
-    + rate limits remain the automation gate).  Honeypot rejections on the
+    off-screen `name="cvv"` fields.  CVV is the one field browsers deliberately
+    NEVER autofill (card security codes are never filled automatically), so a
+    real user always submits it empty — no false positives — while the name has
+    no honeypot tell (the old `honey_<random>` prefix was trivially
+    recognisable to sophisticated bots).  The submit handlers read the trap and
+    send its value as `company_website`, so form-filling bots that populate
+    every field are rejected by the server (400).  Honeypot rejections on the
     recovery endpoints log a warning (trap length) for ops.
   - Autofill is **allowed** on the recovery pages (decision after Chrome's
     cumulative parse-time heuristics defeated every suppression attempt — name/

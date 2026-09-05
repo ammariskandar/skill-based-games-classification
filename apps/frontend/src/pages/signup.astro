@@ -9,14 +9,6 @@ export const prerender = false;
 if (Astro.cookies.has("sessionid")) {
   return Astro.redirect("/");
 }
-
-// Honeypot field name is randomized per page render so browser / password-
-// manager autofill (which matches recognizable names like `company_website`)
-// cannot populate the trap and turn a real user into a "bot".  Bots that fill
-// every text input are still caught server-side.
-const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
-  .toString(36)
-  .slice(2, 8)}`;
 ---
 
 <BaseLayout title="Sign Up - MyGameDNA">
@@ -42,19 +34,15 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
       </div>
 
       <form id="signup-form" class="flex flex-col gap-4" novalidate>
-        <!-- Honeypot trap (off-screen, randomized name).  Disabled + readonly
-             so no browser / password-manager autofill can ever populate it, and
-             the submit handler always sends an empty `company_website`. -->
+        <!-- Honeypot trap (off-screen).  Named `cvv`: browsers deliberately
+             NEVER autofill card security codes, so a real user always submits
+             this empty, while bots that fill every field populate it and trip
+             the server-side `company_website` check. -->
         <input
           type="text"
-          id="signup-hp-trap"
-          name={honeypotName}
+          name="cvv"
           tabindex="-1"
           autocomplete="off"
-          readonly
-          disabled
-          data-lpignore="true"
-          data-1p-ignore
           class="hidden-field"
           style="position: absolute; left: -9999px;"
           aria-hidden="true"
@@ -560,6 +548,11 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
     }
   }
 
+  // Honeypot trap value: the off-screen `cvv` field that browsers deliberately
+  // never autofill — empty for real users, populated by form-filling bots.
+  const readHoneypot = (): string =>
+    form?.querySelector<HTMLInputElement>('input[name="cvv"]')?.value ?? "";
+
   verifyButton?.addEventListener("click", async () => {
     if (Date.now() < verifyButtonLockedUntil) return;
     const typedEmail = emailInput?.value ?? "";
@@ -575,7 +568,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
         body: JSON.stringify({
           email: typedEmail,
           recaptcha_token: recaptchaToken,
-          company_website: "",
+          company_website: readHoneypot(),
         }),
       });
       const data = await res.json();
@@ -646,10 +639,9 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
           password: passwordInput?.value ?? "",
           challenge_id: challengeId,
           recaptcha_token: recaptchaToken,
-          // The honeypot trap is disabled/readonly in the DOM and is NEVER
-          // sent from this page — browser autofill therefore cannot trip it.
-          // The server still rejects non-empty values from direct callers.
-          company_website: "",
+          // Honeypot trap: browsers never autofill `cvv`, so this is empty for
+          // real users but populated for bots that fill every field.
+          company_website: readHoneypot(),
         }),
       });
 
