@@ -16,6 +16,7 @@ MANAGE="$APPS_DIR/manage.py"
 ACCEPTED_WARNINGS="security.W005 security.W021"
 
 # Controlled dummy production values — no real credentials.
+export DJANGO_DEBUG=false
 export DJANGO_SECRET_KEY="abCDefGHijKLmnOPqrSTuvWXyz01-234567890abCDefGHuvWXyz"
 export DATABASE_URL="postgresql://u:p@example.neon.tech/db?sslmode=require"
 export DJANGO_ALLOWED_HOSTS="example.com"
