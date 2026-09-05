@@ -2664,7 +2664,7 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   guidance (and memory-limit research) shows password-reuse bans push users
   toward weaker passwords.
 - Tests: backend `authentication/tests/test_reset_api.py` (17); frontend
-  `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
+  `reset_bff.test.ts` (8).  Full backend suite green (2097 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).
 
 ## 2026-09-05 — SBGC-218 sign-up flow, email verification challenge & anti-abuse
