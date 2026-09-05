@@ -1,36 +1,129 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-export const prerender = true;
+// SSR only: an already-authenticated visitor is bounced home.  A bare
+// `sessionid` presence is the guard — the authoritative check is the BFF
+// `/api/auth/status` call that the navbar island performs client-side.
+export const prerender = false;
+
+if (Astro.cookies.has("sessionid")) {
+  return Astro.redirect("/");
+}
 ---
 
-<BaseLayout
-  title="Log In"
-  description="Sign in to your MyGameDNA account to save favourites and contribute classifications."
-  canonicalPath="/login"
-  robots="noindex, follow"
->
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Log In</h1>
+<BaseLayout title="Login - MyGameDNA">
+  <main
+    class="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12"
+  >
+    <div class="rounded-xl border border-border bg-surface p-8 shadow-sm">
+      <header class="mb-6 text-center">
+        <h1 class="text-2xl font-bold tracking-tight text-text">Log In</h1>
+        <p class="mt-1 text-sm text-muted">Sign in to your MyGameDNA account</p>
+      </header>
 
-  <div class="mt-8">
-    <div class="rounded-lg border border-border bg-surface p-8 text-center">
-      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
-        Final Product
-      </p>
-      <h2 class="mt-2 text-xl font-semibold text-text">
-        Accounts are not yet available
-      </h2>
-      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
-        User accounts, authentication, and personal profiles will be introduced
-        in a future phase. You can browse all public pages, catalogue, and
-        rankings without signing in.
-      </p>
-      <a
-        href="/catalogue"
-        class="mt-4 inline-block text-sm font-medium text-blue hover:underline"
+      <div
+        id="login-error-banner"
+        role="alert"
+        class="mb-6 hidden rounded-lg border border-red/30 bg-red/10 p-3 text-sm text-red"
       >
-        Browse Catalogue →
-      </a>
+        <span id="login-error-message">Invalid credentials.</span>
+      </div>
+
+      <form id="login-form" class="flex flex-col gap-4">
+        <div>
+          <label for="username" class="block text-sm font-medium text-text">
+            Username
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            maxlength="150"
+            autocomplete="username"
+            autofocus
+            class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-text">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            maxlength="128"
+            autocomplete="current-password"
+            class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+          />
+        </div>
+
+        <button
+          id="login-submit"
+          type="submit"
+          class="mt-2 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+        >
+          <span>Log In</span>
+        </button>
+      </form>
     </div>
-  </div>
+  </main>
 </BaseLayout>
+
+<script>
+  import { writeCachedAuthStatus } from "../lib/auth-status";
+
+  const form = document.getElementById("login-form") as HTMLFormElement | null;
+  const submitBtn = document.getElementById(
+    "login-submit",
+  ) as HTMLButtonElement | null;
+  const errorBanner = document.getElementById("login-error-banner");
+  const errorMsg = document.getElementById("login-error-message");
+
+  if (form && submitBtn && errorBanner && errorMsg) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorBanner.classList.add("hidden");
+      submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+      const payload = {
+        username: formData.get("username"),
+        password: formData.get("password"),
+      };
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Seed the client cache so the navbar paints the username instantly
+          // on the landing page instead of waiting for /api/auth/status.
+          writeCachedAuthStatus({
+            authenticated: true,
+            username: data.username ?? null,
+          });
+          window.location.href = "/";
+          return;
+        }
+
+        errorMsg.textContent = data.error?.message || "Invalid credentials.";
+        errorBanner.classList.remove("hidden");
+      } catch {
+        errorMsg.textContent =
+          "Service temporarily unavailable. Please try again later.";
+        errorBanner.classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

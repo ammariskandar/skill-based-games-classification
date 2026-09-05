@@ -5,6 +5,7 @@ Creates the single NinjaAPI instance for version 1, registers routers,
 and attaches standard exception handlers.
 """
 
+from authentication.api import auth_router
 from classifications.api import router as classifications_router
 from django.conf import settings
 from games.api import router as games_router
@@ -37,3 +38,4 @@ api.add_router("", system_router)
 api.add_router("/games/", games_router)
 api.add_router("/classifications/", classifications_router)
 api.add_router("/rankings/", rankings_router)
+api.add_router("/auth/", auth_router)

@@ -1,0 +1,93 @@
+---
+/**
+ * Flash toast banner — SBGC-217.
+ *
+ * Reads the ephemeral `flash_toast` cookie set by the auth BFF (login/logout)
+ * and renders a self-dismissing, manually-dismissable notification.  The
+ * cookie is cleared immediately on mount so a refresh never re-triggers it.
+ * Mounted once in BaseLayout.
+ */
+---
+
+<div
+  id="app-toast"
+  role="alert"
+  aria-live="polite"
+  class="fixed bottom-5 right-5 z-50 hidden max-w-sm items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 shadow-xl"
+>
+  <div class="flex items-center gap-2">
+    <span aria-hidden="true" class="h-2 w-2 rounded-full bg-green"></span>
+    <span id="toast-message" class="text-sm font-medium text-text"></span>
+  </div>
+  <button
+    id="toast-close"
+    type="button"
+    class="p-1 text-muted transition-colors hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+    aria-label="Close notification"
+  >
+    <svg
+      class="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M6 18L18 6M6 6l12 12"></path>
+    </svg>
+  </button>
+</div>
+
+<script>
+  function handleFlashToast(): void {
+    const toast = document.getElementById("app-toast");
+    const toastMsg = document.getElementById("toast-message");
+    const closeBtn = document.getElementById("toast-close");
+    if (!toast || !toastMsg) return;
+
+    const match = document.cookie.match(/(?:^|; )flash_toast=([^;]*)/);
+    if (!match) return;
+
+    const toastType = decodeURIComponent(match[1]);
+
+    // Expire the cookie immediately so a refresh never re-activates the toast.
+    document.cookie = "flash_toast=; Path=/; Max-Age=0; SameSite=Lax";
+
+    let message: string | null = null;
+    if (toastType === "login_success") {
+      message = "Successfully logged in.";
+    } else if (toastType === "logout_success") {
+      message = "Successfully logged out.";
+    }
+
+    if (!message) return;
+    toastMsg.textContent = message;
+
+    toast.classList.remove("hidden");
+    toast.classList.add("flex");
+
+    let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      dismiss();
+    }, 5000);
+
+    function dismiss(): void {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      toast!.classList.add("opacity-0", "translate-y-2");
+      setTimeout(() => {
+        toast!.classList.add("hidden");
+        toast!.classList.remove("flex", "opacity-0", "translate-y-2");
+      }, 300);
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", dismiss);
+    }
+  }
+
+  handleFlashToast();
+  document.addEventListener("astro:page-load", handleFlashToast);
+</script>

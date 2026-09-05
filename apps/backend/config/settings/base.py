@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     # SBGC-37 — application boundaries (no models yet)
     "games.apps.GamesConfig",
     "classifications.apps.ClassificationsConfig",
+    # SBGC-217 — session-backed authentication engine (no models).
+    "authentication.apps.AuthenticationConfig",
 ]
 
 MIDDLEWARE = [

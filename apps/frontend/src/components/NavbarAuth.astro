@@ -1,0 +1,61 @@
+---
+/**
+ * Navbar authentication controls — SBGC-217.
+ *
+ * Pure SSR markup: the logged-out state is always the server-rendered
+ * default so pre-rendered pages (`/about`, `/methodology`) stay 100% static
+ * with zero layout shift at first paint.
+ *
+ * The client-side swap (cached username → logged-in state, followed by a
+ * background `/api/auth/status` re-validation) is handled by a single
+ * synchronous inline script in `Header.astro`, which runs during HTML
+ * parsing — before the browser paints — so the controls never visibly
+ * toggle between states on navigation.
+ *
+ * Rendered once per Header breakpoint (desktop + compact).  The `compact`
+ * prop only changes the root data-attribute so scripts can address each
+ * instance independently — there are no shared element IDs.
+ */
+interface Props {
+  compact?: boolean;
+  class?: string;
+}
+
+const { compact = false } = Astro.props;
+const idPrefix = compact ? "compact" : "desktop";
+---
+
+<div
+  class:list={["flex items-center gap-3", Astro.props.class ?? ""]}
+  data-navbar-auth={idPrefix}
+>
+  <!-- Logged out (SSR default) -->
+  <div data-auth-logged-out class="flex items-center">
+    <a
+      href="/login"
+      class="inline-block whitespace-nowrap rounded px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+    >
+      Login / Sign Up
+    </a>
+  </div>
+
+  <!-- Logged in (hidden until the cached/refreshed status confirms a session) -->
+  <div data-auth-logged-in class="hidden items-center gap-3">
+    <a
+      data-auth-username
+      href="/profile"
+      title="View Profile"
+      class="inline-block max-w-[120px] truncate whitespace-nowrap rounded border border-border bg-surface px-2.5 py-1 text-sm font-medium text-text transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+    >
+      User
+    </a>
+    <form action="/api/auth/logout" method="POST" class="inline">
+      <button
+        type="submit"
+        class="inline-block whitespace-nowrap rounded px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-red focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+      >
+        Logout
+      </button>
+    </form>
+  </div>
+</div>

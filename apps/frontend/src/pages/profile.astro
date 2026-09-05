@@ -1,42 +1,59 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+// SSR only: unauthenticated visitors are redirected to /login.
+export const prerender = false;
+
+if (!Astro.cookies.has("sessionid")) {
+  return Astro.redirect("/login");
+}
 ---
 
-<BaseLayout
-  title="Profile"
-  description="Your MyGameDNA profile, favourites, and classification contributions."
-  canonicalPath="/profile"
-  robots="noindex, follow"
->
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Profile</h1>
+<BaseLayout title="Profile - MyGameDNA">
+  <main class="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight text-text sm:text-4xl">
+        Profile
+      </h1>
+      <p class="mt-2 text-base text-muted">
+        User settings and classification contribution history
+      </p>
+    </header>
 
-  <div class="mt-8">
-    <div class="rounded-lg border border-border bg-surface p-8 text-center">
-      <p class="text-sm font-semibold uppercase tracking-wider text-muted">
-        Final Product
-      </p>
-      <h2 class="mt-2 text-xl font-semibold text-text">
-        Profiles require authentication
-      </h2>
-      <p class="mt-2 mx-auto max-w-lg text-sm text-muted">
-        User profiles, favourites, and community classification contributions
-        will be available once accounts and authentication are implemented in a
-        future phase.
-      </p>
-      <div class="mt-4 flex justify-center gap-3">
-        <a
-          href="/login"
-          class="inline-block text-sm font-medium text-blue hover:underline"
+    <div class="rounded-xl border border-border bg-surface p-8 text-center">
+      <div
+        class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-blue"
+      >
+        <svg
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
         >
-          Log In →
-        </a>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          ></path>
+        </svg>
+      </div>
+      <h3 class="mt-4 text-lg font-semibold text-text">
+        Account Details Coming Soon
+      </h3>
+      <p class="mt-2 text-sm text-muted">
+        Profile customization and submission management are currently under
+        development.
+      </p>
+      <div class="mt-6">
         <a
           href="/catalogue"
-          class="inline-block text-sm font-medium text-blue hover:underline"
+          class="inline-flex items-center rounded-lg bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
         >
-          Browse Catalogue →
+          Explore Catalogue
         </a>
       </div>
     </div>
-  </div>
+  </main>
 </BaseLayout>
