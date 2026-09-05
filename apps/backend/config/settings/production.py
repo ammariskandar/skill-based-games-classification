@@ -1,5 +1,5 @@
 """
-Production settings — SBGC-41 / SBGC-43.
+Production settings — SBGC-41 / SBGC-43 / SBGC-104.
 
 Used by WSGI entry points for deployed environments (Gunicorn on Render).
 
@@ -13,12 +13,21 @@ SBGC-43 additions:
 - Non-default ADMIN_URL_PATH required.
 - Structured CSRF trusted-origin parsing with hostname and port validation.
 - Validated DJANGO_LOG_LEVEL (default INFO).
+
+SBGC-104 additions:
+- DJANGO_DEBUG must never be truthy in production (fail-fast).
+- RECAPTCHA_SECRET_KEY and STEAM_WEB_API_KEY are required (fail-fast).
+- Strict boolean parsing for DB_SSL_REQUIRE (and DJANGO_DEBUG guard).
 """
 
 from django.core.exceptions import ImproperlyConfigured
 
 from config.database import build_database_config
-from config.env_typing import env_optional_str, env_str
+from config.env_typing import (
+    env_optional_str,
+    env_str,
+    get_env_bool,
+)
 from config.security import (
     parse_allowed_hosts,
     parse_non_negative_integer,
@@ -29,6 +38,12 @@ from config.security import (
 from config.settings.base import *  # noqa: F403
 
 DEBUG = False
+
+# -- Debug invariant — SBGC-104 ----------------------------------------------
+# Production must never run with DEBUG enabled.  Reject a truthy DJANGO_DEBUG
+# at import time rather than silently ignoring the operator's request.
+if get_env_bool("DJANGO_DEBUG", default=False):
+    raise ImproperlyConfigured("DJANGO_DEBUG must not be enabled in production.")
 
 # Django Ninja — SBGC-38
 NINJA_API_DOCS_ENABLED = False
@@ -42,6 +57,7 @@ DATABASES = build_database_config(
     BASE_DIR,  # noqa: F405
     allow_sqlite_fallback=False,
     require_postgresql=True,
+    ssl_require=get_env_bool("DB_SSL_REQUIRE", default=True),
 )
 
 # ---------------------------------------------------------------------------
@@ -103,6 +119,22 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+
+# ---------------------------------------------------------------------------
+# External service credentials — SBGC-104 (required in production)
+# ---------------------------------------------------------------------------
+
+# reCAPTCHA v3 secret: without it the score gate silently bypasses (DEBUG-only
+# behaviour), which must never happen in production.
+_recaptcha_secret = env_optional_str(env, "RECAPTCHA_SECRET_KEY")  # noqa: F405
+if not _recaptcha_secret or not _recaptcha_secret.strip():
+    raise ImproperlyConfigured("RECAPTCHA_SECRET_KEY must be set in production.")
+
+# Steam Web API key: declared as a Render secret; authenticated Steam calls
+# (metadata refresh / import) require it.
+_steam_api_key = env_optional_str(env, "STEAM_WEB_API_KEY")  # noqa: F405
+if not _steam_api_key or not _steam_api_key.strip():
+    raise ImproperlyConfigured("STEAM_WEB_API_KEY must be set in production.")
 
 # -- HSTS (staged) ------------------------------------------------------------
 

@@ -82,7 +82,8 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
     Return a minimal environment dict with valid production dummy values.
 
     Includes: DJANGO_SECRET_KEY, DATABASE_URL, DJANGO_ALLOWED_HOSTS,
-    CSRF_TRUSTED_ORIGINS, ADMIN_URL_PATH.
+    CSRF_TRUSTED_ORIGINS, ADMIN_URL_PATH, and (SBGC-104) the required
+    RECAPTCHA_SECRET_KEY and STEAM_WEB_API_KEY secrets.
 
     Use for subprocess tests that import config.settings.production.
     """
@@ -94,6 +95,8 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
         ADMIN_URL_PATH="mygamedna-prod",
         DJANGO_LOG_LEVEL="INFO",
         DJANGO_SECURE_HSTS_SECONDS="3600",
+        RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret",
+        STEAM_WEB_API_KEY="dummy-steam-api-key",
     )
     env.update(overrides)
     return env

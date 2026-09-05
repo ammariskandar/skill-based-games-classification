@@ -34,6 +34,12 @@ services:
         value: INFO
       - key: STEAM_WEB_API_KEY
         sync: false
+      # SBGC-104 — reCAPTCHA v3 secret; production refuses to boot without it.
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
+      - key: DB_SSL_REQUIRE
+        value: "true"
       - key: DJANGO_SECURE_HSTS_SECONDS
         value: "0"
       - key: WEB_CONCURRENCY

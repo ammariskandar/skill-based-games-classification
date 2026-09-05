@@ -11,7 +11,7 @@ these values in production.
 import os
 
 from config.database import build_database_config
-from config.env_typing import env_str
+from config.env_typing import env_str, get_env_bool
 from config.settings.base import *  # noqa: F403
 
 DEBUG = True
@@ -20,7 +20,12 @@ DEBUG = True
 NINJA_API_DOCS_ENABLED = True
 
 # Database — SBGC-39
-DATABASES = build_database_config(DATABASE_URL, BASE_DIR, allow_sqlite_fallback=True)  # noqa: F405
+DATABASES = build_database_config(
+    DATABASE_URL,  # noqa: F405
+    BASE_DIR,  # noqa: F405
+    allow_sqlite_fallback=True,
+    ssl_require=get_env_bool("DB_SSL_REQUIRE", default=False),
+)
 
 # ---------------------------------------------------------------------------
 # Security — SBGC-41 (development — permissive)

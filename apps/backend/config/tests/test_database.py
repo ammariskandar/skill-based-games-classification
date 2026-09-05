@@ -389,6 +389,8 @@ class SettingsModuleBehaviorTests(SimpleTestCase):
                 "DJANGO_ALLOWED_HOSTS": "example.com",
                 "CSRF_TRUSTED_ORIGINS": "https://example.com",
                 "ADMIN_URL_PATH": "mygamedna-prod",
+                "RECAPTCHA_SECRET_KEY": "dummy-recaptcha-secret",
+                "STEAM_WEB_API_KEY": "dummy-steam-api-key",
             },
         )
         # Settings load must succeed; database connection failure is expected

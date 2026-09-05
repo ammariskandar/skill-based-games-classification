@@ -2570,6 +2570,49 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-05 — SBGC-104 audit & secure secrets, environment variables & settings
+
+- **Production fail-fast guards** (`config/settings/production.py`) — on top of
+  the existing SBGC-41/43 validators (50+ char secret key, no insecure
+  prefixes, validated `DJANGO_ALLOWED_HOSTS`/CSRF origins, PostgreSQL-only
+  `DATABASE_URL`), production now also raises `ImproperlyConfigured` at boot
+  when `DJANGO_DEBUG` is truthy, when `RECAPTCHA_SECRET_KEY` is missing/blank
+  (its absence silently disables the score gate), or when `STEAM_WEB_API_KEY`
+  is missing/blank.
+- **Strict environment parsing** (`config/env_typing.py`) — `get_env_bool()`
+  accepts only `true/1/yes/on` vs `false/0/no/off` (anything else fails fast
+  instead of silently flipping a security flag) and `get_env_list()` for
+  comma-separated values.  Wired into the `DJANGO_DEBUG` production guard and
+  the new `DB_SSL_REQUIRE` toggle.
+- **Database** (`config/database.py`) — `build_database_config()` gains an
+  `ssl_require` option that sets PostgreSQL `OPTIONS['sslmode']='require'`
+  (production defaults to enabled, development opt-in); `mask_database_url()`
+  redacts embedded passwords for diagnostics.  Connection-string secrets are
+  never printed by any settings/database error path.
+- **Steam secret scrubbing** (`games/services/steam/client.py`) —
+  `sanitize_steam_url()` redacts `key=` query parameters and transport
+  failures are now logged with the scrubbed URL only.  The API key itself
+  travels exclusively in the `x-webapi-key` header (already true) and is never
+  echoed in logs, reprs, or exceptions.
+- **Environment templates & hygiene** — `.gitignore` now also excludes
+  `.python-version` and key material (`*.pem`, `*.key`, `*.p12`, `*.pfx`);
+  `apps/backend/.env.example` documents `DJANGO_DEBUG`, `DB_SSL_REQUIRE`,
+  `RECAPTCHA_SECRET_KEY`, and smtp4dev email settings with placeholder values
+  (no real credentials); `apps/frontend/.env.example` documents the
+  server-only vs `PUBLIC_`-prefixed split; `render.yaml` declares
+  `RECAPTCHA_SECRET_KEY` and `DB_SSL_REQUIRE` for the backend service.
+- **Frontend SSR/client isolation audit** — verified that every non-`PUBLIC_`
+  `import.meta.env` read lives in an SSR context (`src/pages/api/**`,
+  `src/pages/verify-email.astro`, `src/lib/server/**`); client components only
+  see `PUBLIC_` variables and Astro built-ins.
+- **Tests** — new `config/tests/test_security_settings.py` (24): production
+  DEBUG/secret/allowed-hosts/reCAPTCHA/Steam guards, cookie security flags,
+  strict bool parsing, `mask_database_url()`, Steam URL sanitisation, and
+  transport-failure log scrubbing.  Shared production dummy env
+  (`config.testing.prod_test_env`) and the deploy-check script now include the
+  two new required secrets.  Full backend suite green (2122 OK, 25 skipped);
+  frontend 696; `makemigrations --check` clean (no models).
+
 ## 2026-09-05 — SBGC-219 account credential recovery & one-chance password reset
 
 - **Zero-enumeration recovery entrypoints** (both on `auth_router`):

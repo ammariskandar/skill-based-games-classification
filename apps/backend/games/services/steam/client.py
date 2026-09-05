@@ -1,8 +1,14 @@
 """
-Steam HTTP client — SBGC-42 / SBGC-168 / SBGC-53.
+Steam HTTP client — SBGC-42 / SBGC-168 / SBGC-53 / SBGC-104.
 
 Synchronous, injectable client for the Steam Web API.  Uses Requests
 with urllib3 Retry for bounded idempotent retries.
+
+SBGC-104 changes:
+- API-key query strings are redacted from any URL that reaches a log line
+  (``sanitize_steam_url``) and transport failures are logged with the
+  scrubbed URL — the key itself is only ever sent in the ``x-webapi-key``
+  header and never appears in logs or exception messages.
 
 SBGC-168 changes:
 - Origins from games.services.steam.constants (immutable code constants).
@@ -20,6 +26,7 @@ SBGC-53 changes:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from collections.abc import Mapping
 from enum import Enum
@@ -42,6 +49,8 @@ from games.services.steam.errors import (
     SteamUpstreamError,
 )
 
+logger = logging.getLogger(__name__)
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -60,6 +69,24 @@ _NON_RETRYABLE = frozenset({401, 403})
 
 # Allowed HTTP methods for retry.
 _RETRY_METHODS = frozenset({"GET", "HEAD"})
+
+# API keys carried in query strings (legacy/diagnostic URLs) — redacted.
+_STEAM_KEY_QUERY_RE = re.compile(r"([?&]key=)[^&]+", re.IGNORECASE)
+
+
+# ---------------------------------------------------------------------------
+# Log scrubbing
+# ---------------------------------------------------------------------------
+
+
+def sanitize_steam_url(url: str) -> str:
+    """Return *url* with any ``key=`` query parameter redacted.
+
+    The current client sends the API key via the ``x-webapi-key`` header, but
+    URLs are scrubbed defensively before they are ever logged or embedded in
+    an error message, so a query-string key can never leak.
+    """
+    return _STEAM_KEY_QUERY_RE.sub(r"\1[REDACTED]", url)
 
 
 # ---------------------------------------------------------------------------
@@ -285,10 +312,13 @@ class SteamClient:
                 stream=True,
             )
         except requests.exceptions.Timeout as exc:
+            _log_transport_failure(exc, url)
             raise SteamTimeoutError("Steam request timed out.") from exc
         except requests.exceptions.ConnectionError as exc:
+            _log_transport_failure(exc, url)
             raise SteamConnectionError("Could not connect to Steam.") from exc
         except requests.exceptions.RequestException as exc:
+            _log_transport_failure(exc, url)
             raise SteamConnectionError("Steam request failed.") from exc
 
         try:
@@ -368,6 +398,17 @@ class SteamClient:
                 f"Steam client error (HTTP {status}).", status=status
             )
         return SteamUpstreamError(f"Steam error (HTTP {status}).", status=status)
+
+
+def _log_transport_failure(exc: requests.RequestException, fallback_url: str) -> None:
+    """Log a transport failure with a scrubbed request URL (never the key)."""
+    request = getattr(exc, "request", None)
+    raw_url = getattr(request, "url", None) or fallback_url
+    logger.warning(
+        "Steam upstream failure on %s: %s",
+        sanitize_steam_url(str(raw_url)),
+        type(exc).__name__,
+    )
 
 
 # ---------------------------------------------------------------------------
