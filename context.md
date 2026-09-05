@@ -2641,7 +2641,11 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     recovery endpoints log a warning (trap length) for ops.
   - `/reset` page: autofill disabled entirely (executive decision) — email /
     username fields are `autocomplete="off"` + render `readonly`
-    (`lib/autofill-guard.ts` lifts it on focus) + manager-ignore markers.
+    (`lib/autofill-guard.ts` lifts it on focus) + manager-ignore markers, and
+    their `name` attributes are randomized per render (values read by id) so
+    Chrome has no stable field-name key for remembered-value autofill or
+    username+email paired fills — this closed a gap where the Forgot Password
+    tab (a username+email pair) still autofilled its email field.
   - `/reset-password` page: password fields use `autocomplete="new-password"`
     (NOT `off` — Chrome maps `off` on a password field to current-password and
     offers saved credentials, which is exactly the reported regression) so

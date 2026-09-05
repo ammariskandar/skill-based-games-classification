@@ -16,6 +16,18 @@ if (Astro.cookies.has("sessionid")) {
 const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   .toString(36)
   .slice(2, 8)}`;
+
+// The visible fields also get randomized `name` attributes per render.  Chrome
+// keys remembered-value autofill and username+email pairing on stable field
+// names, so a fixed `name="email"` lets it re-fill this form from earlier
+// submissions even with `autocomplete="off"` — randomizing the names gives it
+// no stable key to autofill from.  Values are read by id, never by name.
+const emailFieldName = `email_${Date.now().toString(36)}${Math.random()
+  .toString(36)
+  .slice(2, 8)}`;
+const usernameFieldName = `login_${Date.now().toString(36)}${Math.random()
+  .toString(36)
+  .slice(2, 8)}`;
 ---
 
 <BaseLayout
@@ -115,7 +127,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
             <div id="username-email-field" class="email-field relative mt-1.5">
               <input
                 id="username-email"
-                name="email"
+                name={emailFieldName}
                 type="text"
                 inputmode="email"
                 autocomplete="off"
@@ -209,7 +221,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
             </label>
             <input
               id="reset-username"
-              name="username"
+              name={usernameFieldName}
               type="text"
               autocomplete="off"
               minlength="4"
@@ -235,7 +247,7 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
             <div id="reset-email-field" class="email-field relative mt-1.5">
               <input
                 id="reset-email"
-                name="email"
+                name={emailFieldName}
                 type="text"
                 inputmode="email"
                 autocomplete="off"
@@ -497,11 +509,14 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   resetUsername?.addEventListener("input", syncUsernameGate);
 
   // ── form submission ──────────────────────────────────────────────────────
-  async function submitRecovery(
+  // Field `name` attributes are randomized (no stable autofill key), so the
+  // payload is built explicitly from field ids — never from FormData.
+  async function postRecovery(
     url: string,
     form: HTMLFormElement,
     action: string,
     successPanelId: string,
+    payload: Record<string, string>,
   ): Promise<void> {
     hideError();
     const recaptchaToken = await executeRecaptcha(action).catch(() => {
@@ -510,16 +525,14 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
     });
     if (recaptchaToken === null) return;
 
-    const formData = new FormData(form);
-    const body: Record<string, string> = {};
-    formData.forEach((value, key) => {
-      body[key] = String(value);
-    });
-    body.recaptcha_token = recaptchaToken;
-    // The honeypot trap is disabled/readonly in the DOM and is NEVER sent
-    // from this page — browser autofill therefore cannot trip it.  The server
-    // still rejects non-empty values from direct callers.
-    body.company_website = "";
+    const body: Record<string, string> = {
+      ...payload,
+      recaptcha_token: recaptchaToken,
+      // The honeypot trap is disabled/readonly in the DOM and is NEVER sent
+      // from this page — browser autofill therefore cannot trip it.  The server
+      // still rejects non-empty values from direct callers.
+      company_website: "",
+    };
 
     try {
       const res = await fetch(url, {
@@ -552,11 +565,12 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   ) as HTMLFormElement | null;
   forgotUsernameForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitRecovery(
+    void postRecovery(
       "/api/auth/forgot-username",
       forgotUsernameForm,
       "forgot_username",
       "username-success",
+      { email: usernameEmail.input?.value ?? "" },
     );
   });
 
@@ -565,11 +579,15 @@ const honeypotName = `honey_${Date.now().toString(36)}${Math.random()
   ) as HTMLFormElement | null;
   forgotPasswordForm?.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitRecovery(
+    void postRecovery(
       "/api/auth/forgot-password",
       forgotPasswordForm,
       "forgot_password",
       "password-success",
+      {
+        username: resetUsername?.value ?? "",
+        email: resetEmail.input?.value ?? "",
+      },
     );
   });
 </script>
