@@ -66,3 +66,34 @@ def email_is_registered(email: str) -> bool:
         normalize_email(stored) == canonical
         for stored in gmail_users.values_list("email", flat=True)
     )
+
+
+def resolve_active_user_by_email(email: str) -> User | None:
+    """Return the active user whose stored email is equivalent to *email*.
+
+    Mirrors :func:`email_is_registered` but resolves the actual account so the
+    recovery endpoints (SBGC-219) can dispatch account-specific mail (username
+    reminders, password-reset links).  Only ``is_active`` accounts are eligible
+    for recovery.
+    """
+    canonical = normalize_email(email)
+    if not canonical:
+        return None
+
+    user = User.objects.filter(email__iexact=canonical, is_active=True).first()
+    if user is not None:
+        return user
+
+    # Non-Gmail canonical keys are unchanged from the raw address, so the exact
+    # lookup above already decided the result.
+    if not canonical.endswith(f"@{GMAIL_CANONICAL_DOMAIN}"):
+        return None
+
+    gmail_users = User.objects.filter(
+        Q(email__iendswith="@gmail.com") | Q(email__iendswith="@googlemail.com"),
+        is_active=True,
+    )
+    for stored in gmail_users.only("id", "email"):
+        if normalize_email(stored.email) == canonical:
+            return stored
+    return None

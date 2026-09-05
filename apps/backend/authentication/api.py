@@ -10,6 +10,7 @@ The browser never reaches these endpoints directly — the Astro BFF relays
 them server-to-server (see apps/frontend/src/pages/api/auth/).
 """
 
+import logging
 import uuid
 
 from api.errors import STANDARD_ERROR_RESPONSES
@@ -21,18 +22,30 @@ from django.views.decorators.debug import sensitive_post_parameters
 from games.errors import ErrorCode
 from ninja import Query, Router
 
-from authentication.emails import email_is_registered
+from authentication.emails import (
+    email_is_registered,
+    normalize_email,
+    resolve_active_user_by_email,
+)
 from authentication.schemas import (
     AuthStatusResponseSchema,
+    BurnResetTokenRequestSchema,
     CheckUsernameRequestSchema,
     CheckUsernameResponseSchema,
     ConfirmEmailRequestSchema,
     ConfirmEmailResponseSchema,
+    ForgotPasswordRequestSchema,
+    ForgotUsernameRequestSchema,
+    GenericRecoveryResponseSchema,
     LoginRequestSchema,
+    ResetActionSuccessResponseSchema,
+    ResetPasswordConfirmRequestSchema,
     SignUpRequestSchema,
     VerificationStatusResponseSchema,
     VerifyEmailRequestSchema,
     VerifyEmailResponseSchema,
+    VerifyResetTokenRequestSchema,
+    VerifyResetTokenResponseSchema,
 )
 from authentication.throttling import (
     clear_failed_login,
@@ -41,15 +54,25 @@ from authentication.throttling import (
     record_failed_login,
 )
 from authentication.tokens import (
+    burn_reset_session_nonce,
+    claim_password_reset_token,
     confirm_email_challenge,
     create_email_challenge,
+    create_password_reset_token,
     delete_challenge,
     get_challenge,
+    get_reset_session,
     increment_resend_attempt,
     is_signup_rate_limited,
+    revoke_all_user_sessions,
     send_existing_account_email,
+    send_password_changed_notification,
+    send_password_reset_email,
+    send_username_recovery_email,
     verify_recaptcha,
 )
+
+logger = logging.getLogger(__name__)
 
 auth_router = Router(tags=["Authentication"])
 
@@ -333,3 +356,231 @@ def signup_endpoint(request: HttpRequest, payload: SignUpRequestSchema) -> JsonR
     return JsonResponse(
         {"authenticated": True, "username": user.get_username()}, status=201
     )
+
+
+# ── SBGC-219 account recovery & one-chance password reset ───────────────────
+
+
+def _recovery_rate_limited(request: HttpRequest, email: str) -> JsonResponse | None:
+    """Return a 429 response when the recovery rate limit is hit, else None."""
+    if not is_signup_rate_limited(get_client_ip(request), email):
+        return None
+    response = _json(
+        429,
+        ErrorCode.RATE_LIMITED.value,
+        "Too many recovery requests. Please try again later.",
+    )
+    response["Retry-After"] = "1800"
+    return response
+
+
+@auth_router.post(
+    "/forgot-username",
+    response={
+        200: GenericRecoveryResponseSchema,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="auth_forgot_username",
+    summary="Email a username reminder when the address matches an account",
+    url_name="auth-forgot-username",
+)
+def forgot_username_endpoint(
+    request: HttpRequest, payload: ForgotUsernameRequestSchema
+) -> JsonResponse:
+    # Honeypot trap — a bot that populates the hidden field is rejected silently.
+    if payload.company_website:
+        logger.warning(
+            "Recovery honeypot triggered on forgot-username (trap length %d).",
+            len(payload.company_website),
+        )
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    email = payload.email.strip().lower()
+
+    rate_limited = _recovery_rate_limited(request, email)
+    if rate_limited is not None:
+        return rate_limited
+
+    if not verify_recaptcha(payload.recaptcha_token, get_client_ip(request)):
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    increment_resend_attempt(get_client_ip(request), email)
+
+    # Zero enumeration: a missing account silently skips the email and the
+    # response body stays byte-identical to the success case.
+    user = resolve_active_user_by_email(email)
+    if user is not None:
+        send_username_recovery_email(user)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": (
+                "If the provided details match an account, instructions have been sent."
+            ),
+        }
+    )
+
+
+@auth_router.post(
+    "/forgot-password",
+    response={
+        200: GenericRecoveryResponseSchema,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="auth_forgot_password",
+    summary="Email a one-chance reset link when username and email match",
+    url_name="auth-forgot-password",
+)
+def forgot_password_endpoint(
+    request: HttpRequest, payload: ForgotPasswordRequestSchema
+) -> JsonResponse:
+    # Honeypot trap.
+    if payload.company_website:
+        logger.warning(
+            "Recovery honeypot triggered on forgot-password (trap length %d).",
+            len(payload.company_website),
+        )
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    email = payload.email.strip().lower()
+
+    rate_limited = _recovery_rate_limited(request, email)
+    if rate_limited is not None:
+        return rate_limited
+
+    if not verify_recaptcha(payload.recaptcha_token, get_client_ip(request)):
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    increment_resend_attempt(get_client_ip(request), email)
+
+    # Dual-match requirement: username (case-insensitive) AND a canonical email
+    # match against the stored record.  Gmail dot-aliases resolve because the
+    # stored address is canonicalised before comparison.
+    user = User.objects.filter(
+        username__iexact=payload.username,
+        is_active=True,
+    ).first()
+    email_matches = user is not None and normalize_email(user.email) == normalize_email(
+        email
+    )
+
+    if user is not None and email_matches:
+        token = create_password_reset_token(user)
+        send_password_reset_email(user, token)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": (
+                "If the provided details match an account, instructions have been sent."
+            ),
+        }
+    )
+
+
+@auth_router.post(
+    "/verify-reset-token",
+    response={
+        200: VerifyResetTokenResponseSchema,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="auth_verify_reset_token",
+    summary="Exchange a signed reset token for a one-chance session nonce",
+    url_name="auth-verify-reset-token",
+)
+def verify_reset_token_endpoint(
+    request: HttpRequest, payload: VerifyResetTokenRequestSchema
+) -> VerifyResetTokenResponseSchema:
+    session_nonce = claim_password_reset_token(payload.token)
+    if session_nonce is None:
+        return VerifyResetTokenResponseSchema(valid=False, session_nonce=None)
+    return VerifyResetTokenResponseSchema(valid=True, session_nonce=session_nonce)
+
+
+@auth_router.post(
+    "/burn-reset-token",
+    response={
+        200: ResetActionSuccessResponseSchema,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="auth_burn_reset_token",
+    summary="Burn a claimed reset session (anti-abandonment invalidation)",
+    url_name="auth-burn-reset-token",
+)
+def burn_reset_token_endpoint(
+    request: HttpRequest, payload: BurnResetTokenRequestSchema
+) -> JsonResponse:
+    burn_reset_session_nonce(payload.session_nonce)
+    return JsonResponse({"success": True})
+
+
+@auth_router.post(
+    "/reset-password-confirm",
+    response={
+        200: ResetActionSuccessResponseSchema,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="auth_reset_password_confirm",
+    summary="Set a new password with a one-chance reset session nonce",
+    url_name="auth-reset-password-confirm",
+)
+@sensitive_post_parameters("new_password")
+def reset_password_confirm_endpoint(
+    request: HttpRequest, payload: ResetPasswordConfirmRequestSchema
+) -> JsonResponse:
+    # Honeypot trap.
+    if payload.company_website:
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    if not verify_recaptcha(payload.recaptcha_token, get_client_ip(request)):
+        return _json(400, ErrorCode.BAD_REQUEST.value, "Invalid request.")
+
+    # The nonce is the human-session credential: it exists only after the token
+    # was claimed, and it is burned the moment it is redeemed.
+    data = get_reset_session(payload.session_nonce)
+    if not data:
+        return _json(
+            400,
+            ErrorCode.EXPIRED_RESET_TOKEN.value,
+            "This reset session has expired or has already been used.",
+        )
+
+    user = User.objects.filter(pk=data.get("user_id"), is_active=True).first()
+    if user is None:
+        return _json(
+            400,
+            ErrorCode.EXPIRED_RESET_TOKEN.value,
+            "This reset session has expired or has already been used.",
+        )
+
+    # Do not let a reset silently no-op: the new password must differ from the
+    # current one (no reuse-history checks — those push users toward weaker
+    # passwords).  Deliberately checked BEFORE the nonce is burned so an
+    # accidental reuse can be corrected in place instead of forcing a fresh
+    # reset link.
+    if user.check_password(payload.new_password):
+        return _json(
+            400,
+            ErrorCode.BAD_REQUEST.value,
+            "Your new password must be different from your current password.",
+        )
+
+    # One-chance guarantee: consume the nonce AND its parent token now, so a
+    # reload, back-navigation, or duplicate submission cannot replay it.
+    burn_reset_session_nonce(payload.session_nonce)
+
+    user.set_password(payload.new_password)
+    user.save()
+
+    # Kick every existing session for this user out of django_session.
+    revoke_all_user_sessions(user.pk)
+    # Alert the account owner.  No auto-login: the user signs in fresh.
+    send_password_changed_notification(user)
+
+    return JsonResponse({"success": True})

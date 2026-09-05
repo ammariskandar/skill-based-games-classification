@@ -34,12 +34,18 @@ if (Astro.cookies.has("sessionid")) {
       </div>
 
       <form id="signup-form" class="flex flex-col gap-4" novalidate>
-        <!-- Honeypot trap (off-screen) -->
+        <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
+             card security codes) AND readonly + disabled so aggressive
+             real-user autofill — which fills every empty text field — cannot
+             populate it either.  A bot that force-fills the field trips the
+             server-side `company_website` check. -->
         <input
           type="text"
-          name="company_website"
+          name="cvv"
           tabindex="-1"
           autocomplete="off"
+          readonly
+          disabled
           class="hidden-field"
           style="position: absolute; left: -9999px;"
           aria-hidden="true"
@@ -56,7 +62,12 @@ if (Astro.cookies.has("sessionid")) {
             required
             minlength="4"
             maxlength="20"
-            autocomplete="username"
+            autocomplete="off"
+            readonly
+            data-autofill-guard
+            data-randomize-name
+            data-lpignore="true"
+            data-1p-ignore
             class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
           />
           <span
@@ -161,6 +172,8 @@ if (Astro.cookies.has("sessionid")) {
 
 <script>
   import { initAntiTamper } from "../lib/anti-tamper";
+  import { initAutofillGuard } from "../lib/autofill-guard";
+  import { enableRandomizedFieldNames } from "../lib/random-form-names";
   import { isPasswordStrong } from "../lib/password-strength";
   import { writeCachedAuthStatus } from "../lib/auth-status";
   import { captureDeviceSignature } from "../lib/device-signature";
@@ -222,6 +235,12 @@ if (Astro.cookies.has("sessionid")) {
   }
 
   initAntiTamper();
+  // Username renders readonly so only the email field can be autofilled;
+  // focusing the username lifts the attribute so typing works normally.  Its
+  // id + name are re-randomized on a deferred task (after this script has
+  // captured its element references) so Chrome cannot autofill it either.
+  initAutofillGuard();
+  setTimeout(() => enableRandomizedFieldNames(), 0);
 
   // Load reCAPTCHA v3 dynamically only when a site key is configured.
   if (SITE_KEY) {
@@ -532,6 +551,11 @@ if (Astro.cookies.has("sessionid")) {
     }
   }
 
+  // Honeypot trap value: the off-screen `cvv` field that browsers deliberately
+  // never autofill — empty for real users, populated by form-filling bots.
+  const readHoneypot = (): string =>
+    form?.querySelector<HTMLInputElement>('input[name="cvv"]')?.value ?? "";
+
   verifyButton?.addEventListener("click", async () => {
     if (Date.now() < verifyButtonLockedUntil) return;
     const typedEmail = emailInput?.value ?? "";
@@ -547,7 +571,7 @@ if (Astro.cookies.has("sessionid")) {
         body: JSON.stringify({
           email: typedEmail,
           recaptcha_token: recaptchaToken,
-          company_website: "",
+          company_website: readHoneypot(),
         }),
       });
       const data = await res.json();
@@ -608,9 +632,6 @@ if (Astro.cookies.has("sessionid")) {
 
     try {
       const recaptchaToken = await executeRecaptcha("signup_submit");
-      const honeypot = form.querySelector<HTMLInputElement>(
-        'input[name="company_website"]',
-      )?.value;
 
       const res = await fetch("/api/auth/signup", {
         method: "POST",
@@ -621,7 +642,9 @@ if (Astro.cookies.has("sessionid")) {
           password: passwordInput?.value ?? "",
           challenge_id: challengeId,
           recaptcha_token: recaptchaToken,
-          company_website: honeypot ?? "",
+          // Honeypot trap: browsers never autofill `cvv`, so this is empty for
+          // real users but populated for bots that fill every field.
+          company_website: readHoneypot(),
         }),
       });
 

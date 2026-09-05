@@ -1,0 +1,21 @@
+---
+/**
+ * Persistent spam advisory banner — SBGC-219.
+ *
+ * Full-width amber alert mounted directly above the site footer (via
+ * BaseLayout's `showSpamWarning` prop) on the account-recovery pages.  It
+ * reminds users to check spam/junk before hammering the recovery endpoints —
+ * the backend enforces a 30-minute lockout after repeated requests.
+ */
+---
+
+<div
+  class="w-full border-y border-amber-500/30 bg-amber-500/10 px-4 py-3 text-center"
+  role="alert"
+>
+  <p class="text-sm font-medium text-amber-300">
+    <span class="mr-1.5 font-bold">Please Note:</span>
+    Check your spam or junk folder before requesting a reset multiple times. Repeated
+    requests will temporarily lock access for 30 minutes.
+  </p>
+</div>

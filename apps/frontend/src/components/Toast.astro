@@ -61,6 +61,9 @@
       message = "Successfully logged out.";
     } else if (toastType === "signup_success") {
       message = "Welcome! Account created successfully.";
+    } else if (toastType === "password_reset_success") {
+      message =
+        "Password reset successfully. Please log in with your new password.";
     }
 
     if (!message) return;

@@ -1,36 +1,544 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-// Static placeholder — the password-reset flow is intentionally out of scope
-// for SBGC-218 (Rule 1: no invented account-recovery behavior).  The login
-// page's "Reset >>" link lands here until a dedicated reset ticket ships.
-export const prerender = true;
+// SSR only: an already-authenticated visitor is bounced home.  The 30-minute
+// bot lockout (localStorage) is enforced client-side below.
+export const prerender = false;
+
+if (Astro.cookies.has("sessionid")) {
+  return Astro.redirect("/");
+}
 ---
 
 <BaseLayout
-  title="Reset Password"
-  description="Reset your MyGameDNA account password."
+  title="Account Recovery - MyGameDNA"
+  description="Recover your MyGameDNA username or reset your password."
   robots="noindex, follow"
+  showSpamWarning
 >
   <main
     class="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12"
   >
-    <div class="rounded-xl border border-border bg-surface p-8 text-center">
-      <h1 class="text-2xl font-bold tracking-tight text-text">
-        Reset Password
-      </h1>
-      <p class="mt-3 text-sm text-muted">
-        Password reset isn't available yet. You can still log in if you remember
-        your credentials.
-      </p>
-      <div class="mt-6 flex flex-col items-center gap-3">
-        <a
-          href="/login"
-          class="inline-flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90"
-        >
-          Back to Log In
-        </a>
+    <div class="rounded-xl border border-border bg-surface p-8 shadow-sm">
+      <header class="mb-6 text-center">
+        <h1 class="text-2xl font-bold tracking-tight text-text">
+          Account Recovery
+        </h1>
+        <p class="mt-1 text-sm text-muted">
+          Recover your username or reset your password
+        </p>
+      </header>
+
+      <div
+        id="recovery-error-banner"
+        role="alert"
+        class="mb-6 hidden rounded-lg border border-red/30 bg-red/10 p-3 text-sm text-red"
+      >
+        <span id="recovery-error-message">Something went wrong.</span>
       </div>
+
+      <div
+        role="tablist"
+        aria-label="Recovery type"
+        class="mb-6 grid grid-cols-2 gap-1 rounded-lg bg-surface-2 p-1"
+      >
+        <button
+          id="tab-username"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-username"
+          data-recovery-tab="username"
+          class="rounded-md px-3 py-2 text-sm font-medium text-muted transition-colors aria-selected:bg-surface aria-selected:text-text aria-selected:shadow-sm"
+        >
+          Forgot Username
+        </button>
+        <button
+          id="tab-password"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-password"
+          data-recovery-tab="password"
+          class="rounded-md px-3 py-2 text-sm font-medium text-muted transition-colors aria-selected:bg-surface aria-selected:text-text aria-selected:shadow-sm"
+        >
+          Forgot Password
+        </button>
+      </div>
+
+      <!-- ── Tab 1: Forgot Username ─────────────────────────────────────── -->
+      <section
+        id="panel-username"
+        role="tabpanel"
+        aria-labelledby="tab-username"
+        data-recovery-panel="username"
+      >
+        <form id="forgot-username-form" class="flex flex-col gap-4" novalidate>
+          <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
+               card security codes) AND readonly + disabled so aggressive
+               real-user autofill — which fills every empty text field — cannot
+               populate it either.  A bot that force-fills the field trips the
+               server-side `company_website` check. -->
+          <input
+            type="text"
+            name="cvv"
+            tabindex="-1"
+            autocomplete="off"
+            readonly
+            disabled
+            class="hidden-field"
+            style="position: absolute; left: -9999px;"
+            aria-hidden="true"
+          />
+
+          <div>
+            <label
+              for="username-email"
+              class="block text-sm font-medium text-text"
+            >
+              Email address
+            </label>
+            <div id="username-email-field" class="email-field relative mt-1.5">
+              <input
+                id="username-email"
+                name="email"
+                type="text"
+                inputmode="email"
+                autocomplete="email"
+                autocapitalize="none"
+                spellcheck="false"
+                maxlength="254"
+                aria-invalid="false"
+                aria-required="true"
+                aria-describedby="username-email-hint"
+                class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+              />
+              <div
+                id="username-email-hint"
+                role="tooltip"
+                class="email-validation-hint pointer-events-none absolute left-0 top-full z-20 mt-2 w-max max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-snug text-text shadow-xl"
+              >
+                Emails must contain @ and a valid web domain after it i.e.
+                abc@email.com
+              </div>
+            </div>
+            <p class="mt-1 text-xs text-muted">
+              We'll email your username to this address if an account exists.
+            </p>
+          </div>
+
+          <button
+            id="forgot-username-submit"
+            type="submit"
+            disabled
+            class="mt-4 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+          >
+            <span>Find Username</span>
+          </button>
+        </form>
+
+        <div
+          id="username-success"
+          class="hidden rounded-lg border border-green/30 bg-green/10 p-4 text-sm text-green"
+          role="status"
+        >
+          <p class="font-medium">Request received.</p>
+          <p class="mt-1">
+            If an account matches that email, your username has been sent.
+            Please check your inbox and spam folder.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── Tab 2: Forgot Password ─────────────────────────────────────── -->
+      <section
+        id="panel-password"
+        role="tabpanel"
+        aria-labelledby="tab-password"
+        data-recovery-panel="password"
+        class="hidden"
+      >
+        <form id="forgot-password-form" class="flex flex-col gap-4" novalidate>
+          <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
+               card security codes) AND readonly + disabled so aggressive
+               real-user autofill — which fills every empty text field — cannot
+               populate it either.  A bot that force-fills the field trips the
+               server-side `company_website` check. -->
+          <input
+            type="text"
+            name="cvv"
+            tabindex="-1"
+            autocomplete="off"
+            readonly
+            disabled
+            class="hidden-field"
+            style="position: absolute; left: -9999px;"
+            aria-hidden="true"
+          />
+
+          <div>
+            <label
+              for="reset-username"
+              class="block text-sm font-medium text-text"
+            >
+              Username
+            </label>
+            <input
+              id="reset-username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              minlength="4"
+              maxlength="20"
+              aria-required="true"
+              class="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+            />
+            <span
+              id="reset-username-hint"
+              class="mt-1 block min-h-4 text-xs text-muted"></span>
+          </div>
+
+          <div>
+            <label
+              for="reset-email"
+              class="block text-sm font-medium text-text"
+            >
+              Email address
+            </label>
+            <div id="reset-email-field" class="email-field relative mt-1.5">
+              <input
+                id="reset-email"
+                name="email"
+                type="text"
+                inputmode="email"
+                autocomplete="email"
+                autocapitalize="none"
+                spellcheck="false"
+                maxlength="254"
+                aria-invalid="false"
+                aria-required="true"
+                aria-describedby="reset-email-hint"
+                class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-dim focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue"
+              />
+              <div
+                id="reset-email-hint"
+                role="tooltip"
+                class="email-validation-hint pointer-events-none absolute left-0 top-full z-20 mt-2 w-max max-w-xs rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-snug text-text shadow-xl"
+              >
+                Emails must contain @ and a valid web domain after it i.e.
+                abc@email.com
+              </div>
+            </div>
+            <p class="mt-1 text-xs text-muted">
+              The username and email must both match your account.
+            </p>
+          </div>
+
+          <button
+            id="forgot-password-submit"
+            type="submit"
+            disabled
+            class="mt-4 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+          >
+            <span>Send Reset Link</span>
+          </button>
+        </form>
+
+        <div
+          id="password-success"
+          class="hidden rounded-lg border border-green/30 bg-green/10 p-4 text-sm text-green"
+          role="status"
+        >
+          <p class="font-medium">Request received.</p>
+          <p class="mt-1">
+            If an account matches those details, a password reset link has been
+            sent. Please check your inbox and spam folder.
+          </p>
+        </div>
+      </section>
     </div>
   </main>
 </BaseLayout>
+
+<style>
+  /* Custom email-validation tooltip (see signup.astro) — shown on hover/focus
+     of the field row only while an incomplete address is present. */
+  .email-validation-hint {
+    display: none;
+  }
+
+  .email-field[data-email-invalid="true"]:hover .email-validation-hint,
+  .email-field[data-email-invalid="true"]:focus-within .email-validation-hint {
+    display: block;
+  }
+</style>
+
+<script>
+  const LOCKOUT_MS = 30 * 60 * 1000;
+  const LOCKOUT_KEY = "mygamedna:bot_lockout";
+  // reCAPTCHA v3 is opt-in: without a site key the page skips it and sends a
+  // `test-recaptcha-token` the DEBUG backend accepts.
+  const SITE_KEY = import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY || "";
+
+  type Recaptcha = {
+    ready: (cb: () => void) => void;
+    execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+  };
+  const grecaptcha = (window as unknown as { grecaptcha?: Recaptcha })
+    .grecaptcha;
+
+  const EMAIL_VALID_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const USERNAME_REGEX = /^[a-zA-Z0-9_-]{4,20}$/;
+
+  function isBotLockedOut(): boolean {
+    try {
+      const lockedAt = Number(localStorage.getItem(LOCKOUT_KEY) || 0);
+      return lockedAt > 0 && Date.now() - lockedAt < LOCKOUT_MS;
+    } catch {
+      return false;
+    }
+  }
+
+  function setBotLockout(): void {
+    try {
+      localStorage.setItem(LOCKOUT_KEY, String(Date.now()));
+    } catch {
+      /* storage unavailable */
+    }
+    window.location.href = "/signup-error";
+  }
+
+  if (isBotLockedOut()) {
+    window.location.href = "/signup-error";
+  }
+
+  // Load reCAPTCHA v3 dynamically only when a site key is configured.
+  if (SITE_KEY) {
+    const recaptchaScript = document.createElement("script");
+    recaptchaScript.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+    recaptchaScript.async = true;
+    document.head.appendChild(recaptchaScript);
+  }
+
+  const errorBanner = document.getElementById("recovery-error-banner");
+  const errorMsg = document.getElementById("recovery-error-message");
+
+  function showError(message: string): void {
+    if (!errorBanner || !errorMsg) return;
+    errorMsg.textContent = message;
+    errorBanner.classList.remove("hidden");
+  }
+
+  function hideError(): void {
+    errorBanner?.classList.add("hidden");
+  }
+
+  function executeRecaptcha(action: string): Promise<string> {
+    if (!SITE_KEY) return Promise.resolve("test-recaptcha-token");
+    return new Promise((resolve, reject) => {
+      if (!grecaptcha) {
+        reject(new Error("reCAPTCHA not loaded"));
+        return;
+      }
+      grecaptcha.ready(() => {
+        grecaptcha.execute(SITE_KEY, { action }).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  // ── tab switching ────────────────────────────────────────────────────────
+  const tabButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>("[data-recovery-tab]"),
+  );
+  const panels = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-recovery-panel]"),
+  );
+
+  function activateTab(name: string): void {
+    for (const button of tabButtons) {
+      const selected = button.dataset.recoveryTab === name;
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+    }
+    for (const panel of panels) {
+      const active = panel.dataset.recoveryPanel === name;
+      panel.classList.toggle("hidden", !active);
+    }
+    hideError();
+  }
+
+  for (const button of tabButtons) {
+    button.addEventListener("click", () => {
+      activateTab(button.dataset.recoveryTab ?? "username");
+    });
+  }
+
+  // ── email fields (shared by both tabs) ───────────────────────────────────
+  interface EmailFieldState {
+    container: HTMLElement | null;
+    input: HTMLInputElement | null;
+  }
+
+  function initEmailField(
+    containerId: string,
+    inputId: string,
+  ): EmailFieldState {
+    const container = document.getElementById(containerId);
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    if (!input) return { container: null, input: null };
+
+    const sync = (): void => {
+      const value = input.value;
+      const incomplete = value !== "" && !EMAIL_VALID_REGEX.test(value);
+      container?.setAttribute(
+        "data-email-invalid",
+        incomplete ? "true" : "false",
+      );
+      input.setAttribute("aria-invalid", incomplete ? "true" : "false");
+    };
+
+    // Block spaces while typing — a malformed address should fail, not be
+    // silently rewritten (the backend still trims defensively).
+    input.addEventListener("keydown", (event) => {
+      if (event.key === " ") event.preventDefault();
+    });
+    input.addEventListener("input", sync);
+    sync();
+    return { container, input };
+  }
+
+  function emailLooksValid(input: HTMLInputElement | null): boolean {
+    return input ? EMAIL_VALID_REGEX.test(input.value) : false;
+  }
+
+  const usernameEmail = initEmailField(
+    "username-email-field",
+    "username-email",
+  );
+  const resetEmail = initEmailField("reset-email-field", "reset-email");
+  const resetUsername = document.getElementById(
+    "reset-username",
+  ) as HTMLInputElement | null;
+  const resetUsernameHint = document.getElementById("reset-username-hint");
+
+  const forgotUsernameSubmit = document.getElementById(
+    "forgot-username-submit",
+  ) as HTMLButtonElement | null;
+  const forgotPasswordSubmit = document.getElementById(
+    "forgot-password-submit",
+  ) as HTMLButtonElement | null;
+
+  function syncUsernameGate(): void {
+    const value = resetUsername?.value ?? "";
+    const validFormat = USERNAME_REGEX.test(value);
+    if (forgotPasswordSubmit) {
+      forgotPasswordSubmit.disabled = !(
+        validFormat && emailLooksValid(resetEmail.input)
+      );
+    }
+    if (resetUsernameHint) {
+      if (value === "") {
+        resetUsernameHint.textContent = "";
+      } else if (!validFormat) {
+        resetUsernameHint.textContent =
+          "Username must be 4-20 letters, numbers, _ or -.";
+        resetUsernameHint.className = "mt-1 block min-h-4 text-xs text-red";
+      } else {
+        resetUsernameHint.textContent = "";
+        resetUsernameHint.className = "mt-1 block min-h-4 text-xs text-muted";
+      }
+    }
+  }
+
+  usernameEmail.input?.addEventListener("input", () => {
+    if (forgotUsernameSubmit) {
+      forgotUsernameSubmit.disabled = !emailLooksValid(usernameEmail.input);
+    }
+  });
+
+  resetEmail.input?.addEventListener("input", syncUsernameGate);
+  resetUsername?.addEventListener("input", syncUsernameGate);
+
+  // ── form submission ──────────────────────────────────────────────────────
+  // Field `name` attributes are randomized (no stable autofill key), so the
+  // payload is built explicitly from field ids — never from FormData.
+  async function postRecovery(
+    url: string,
+    form: HTMLFormElement,
+    action: string,
+    successPanelId: string,
+    payload: Record<string, string>,
+  ): Promise<void> {
+    hideError();
+    const recaptchaToken = await executeRecaptcha(action).catch(() => {
+      showError("Could not verify you are human. Please try again.");
+      return null;
+    });
+    if (recaptchaToken === null) return;
+
+    const body: Record<string, string> = {
+      ...payload,
+      recaptcha_token: recaptchaToken,
+      // Honeypot trap: an off-screen field named `cvv`, which browsers never
+      // autofill — a real user always submits it empty.  A bot that fills every
+      // form field populates it and trips the server-side check.
+      company_website:
+        form.querySelector<HTMLInputElement>('input[name="cvv"]')?.value ?? "",
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (res.status === 429) {
+        setBotLockout();
+        return;
+      }
+      if (!res.ok) {
+        showError(data.error?.message || "Something went wrong. Try again.");
+        return;
+      }
+
+      // Generic success — identical whether or not an account matched.
+      form.classList.add("hidden");
+      const panel = document.getElementById(successPanelId);
+      panel?.classList.remove("hidden");
+    } catch {
+      showError("Service temporarily unavailable. Please try again later.");
+    }
+  }
+
+  const forgotUsernameForm = document.getElementById(
+    "forgot-username-form",
+  ) as HTMLFormElement | null;
+  forgotUsernameForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void postRecovery(
+      "/api/auth/forgot-username",
+      forgotUsernameForm,
+      "forgot_username",
+      "username-success",
+      { email: usernameEmail.input?.value ?? "" },
+    );
+  });
+
+  const forgotPasswordForm = document.getElementById(
+    "forgot-password-form",
+  ) as HTMLFormElement | null;
+  forgotPasswordForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void postRecovery(
+      "/api/auth/forgot-password",
+      forgotPasswordForm,
+      "forgot_password",
+      "password-success",
+      {
+        username: resetUsername?.value ?? "",
+        email: resetEmail.input?.value ?? "",
+      },
+    );
+  });
+</script>

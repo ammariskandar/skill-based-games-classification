@@ -1,5 +1,5 @@
 """
-Authentication request/response schemas — SBGC-217 / SBGC-218.
+Authentication request/response schemas — SBGC-217 / SBGC-218 / SBGC-219.
 
 Zero-PII: the only identity attribute ever returned to the client is the
 public ``username`` string.  Database IDs, email addresses, staff/superuser
@@ -7,6 +7,9 @@ flags, hashes, and timestamps are never part of these contracts.
 
 SBGC-218 adds the pre-registration sign-up schemas (username availability,
 email verification challenge, verification status, and final registration).
+
+SBGC-219 adds the account-recovery schemas (forgot username / password,
+token verification, one-chance session nonce, and password confirmation).
 """
 
 import re
@@ -97,3 +100,63 @@ class SignUpRequestSchema(ApiRequestSchema):
         if not USERNAME_REGEX.match(value):
             raise ValueError(USERNAME_FORMAT_MESSAGE)
         return value
+
+
+# ── SBGC-219 account-recovery schemas ────────────────────────────────────────
+
+
+# Shared generic success body for the recovery entrypoints.  The payload is
+# byte-identical whether or not a matching account exists — the existence of an
+# account is only ever communicated inside the email, never in the API response.
+GENERIC_RECOVERY_MESSAGE = (
+    "If the provided details match an account, instructions have been sent."
+)
+
+
+class ForgotUsernameRequestSchema(ApiRequestSchema):
+    email: str = Field(..., max_length=254)
+    recaptcha_token: str
+    company_website: str = ""  # Honeypot field
+
+
+class ForgotPasswordRequestSchema(ApiRequestSchema):
+    username: str = Field(..., min_length=4, max_length=20)
+    email: str = Field(..., max_length=254)
+    recaptcha_token: str
+    company_website: str = ""  # Honeypot field
+
+    @field_validator("username")
+    @classmethod
+    def validate_username_format(cls, value: str) -> str:
+        if not USERNAME_REGEX.match(value):
+            raise ValueError(USERNAME_FORMAT_MESSAGE)
+        return value
+
+
+class VerifyResetTokenRequestSchema(ApiRequestSchema):
+    token: str
+
+
+class VerifyResetTokenResponseSchema(Schema):
+    valid: bool
+    session_nonce: str | None = None
+
+
+class ResetPasswordConfirmRequestSchema(ApiRequestSchema):
+    session_nonce: str
+    new_password: str = Field(..., min_length=8, max_length=128)
+    recaptcha_token: str
+    company_website: str = ""  # Honeypot field
+
+
+class BurnResetTokenRequestSchema(ApiRequestSchema):
+    session_nonce: str
+
+
+class GenericRecoveryResponseSchema(Schema):
+    success: bool = True
+    message: str = GENERIC_RECOVERY_MESSAGE
+
+
+class ResetActionSuccessResponseSchema(Schema):
+    success: bool = True

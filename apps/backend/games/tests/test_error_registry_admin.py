@@ -8,13 +8,15 @@ read-only permissions.
 
 from __future__ import annotations
 
+from html import escape
+
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 from django.test import TestCase
 from django.urls import reverse
 
-from games.errors import ErrorCode
+from games.errors import ERROR_REGISTRY, ErrorCode
 from games.models import ErrorRegistryEntry
 
 
@@ -41,6 +43,18 @@ class ErrorRegistryAdminTests(TestCase):
         content = response.content.decode()
         for code in ErrorCode:
             self.assertIn(code.value, content)
+
+    def test_admin_error_registry_surfaces_api_route_column(self):
+        """Every row names the API route / page that can emit the code."""
+        self.client.force_login(self.superuser)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("API Route / Page", content)
+        for metadata in ERROR_REGISTRY.values():
+            self.assertTrue(metadata.surfaced_at)
+            # Template auto-escapes HTML, so compare against the escaped text.
+            self.assertIn(escape(metadata.surfaced_at), content)
 
     def test_admin_error_registry_denies_anonymous(self):
         response = self.client.get(self.url)
