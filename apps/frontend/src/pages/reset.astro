@@ -74,15 +74,18 @@ if (Astro.cookies.has("sessionid")) {
         data-recovery-panel="username"
       >
         <form id="forgot-username-form" class="flex flex-col gap-4" novalidate>
-          <!-- Honeypot trap (off-screen).  Named `cvv`: browsers deliberately
-               NEVER autofill card security codes, so a real user always submits
-               this empty, while bots that fill every field populate it and trip
-               the server-side `company_website` check. -->
+          <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
+               card security codes) AND readonly + disabled so aggressive
+               real-user autofill — which fills every empty text field — cannot
+               populate it either.  A bot that force-fills the field trips the
+               server-side `company_website` check. -->
           <input
             type="text"
             name="cvv"
             tabindex="-1"
             autocomplete="off"
+            readonly
+            disabled
             class="hidden-field"
             style="position: absolute; left: -9999px;"
             aria-hidden="true"
@@ -156,15 +159,18 @@ if (Astro.cookies.has("sessionid")) {
         class="hidden"
       >
         <form id="forgot-password-form" class="flex flex-col gap-4" novalidate>
-          <!-- Honeypot trap (off-screen).  Named `cvv`: browsers deliberately
-               NEVER autofill card security codes, so a real user always submits
-               this empty, while bots that fill every field populate it and trip
-               the server-side `company_website` check. -->
+          <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
+               card security codes) AND readonly + disabled so aggressive
+               real-user autofill — which fills every empty text field — cannot
+               populate it either.  A bot that force-fills the field trips the
+               server-side `company_website` check. -->
           <input
             type="text"
             name="cvv"
             tabindex="-1"
             autocomplete="off"
+            readonly
+            disabled
             class="hidden-field"
             style="position: absolute; left: -9999px;"
             aria-hidden="true"

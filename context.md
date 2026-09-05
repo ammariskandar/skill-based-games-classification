@@ -2631,14 +2631,16 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   recognizable fixed name (`company_website`), which browser / password-manager
   autofill can populate and turn a real user into a “bot” (400).  Final state:
   - Honeypot traps (`reset.astro`, `signup.astro`, `reset-password.astro`) are
-    off-screen `name="cvv"` fields.  CVV is the one field browsers deliberately
-    NEVER autofill (card security codes are never filled automatically), so a
-    real user always submits it empty — no false positives — while the name has
-    no honeypot tell (the old `honey_<random>` prefix was trivially
-    recognisable to sophisticated bots).  The submit handlers read the trap and
-    send its value as `company_website`, so form-filling bots that populate
-    every field are rejected by the server (400).  Honeypot rejections on the
-    recovery endpoints log a warning (trap length) for ops.
+    off-screen `name="cvv"` fields that are ALSO `readonly` + `disabled`.
+    CVV is a field browsers deliberately never autofill (card security codes
+    are never filled automatically) and the name has no honeypot tell (the old
+    `honey_<random>` prefix was trivially recognisable to sophisticated bots);
+    the `readonly` + `disabled` flags additionally stop aggressive real-user
+    autofill that fills *every* empty text field in a form (observed filling
+    the trap with the user's own email).  The submit handlers read the trap and
+    send its value as `company_website`, so only a bot that force-fills the
+    field is rejected by the server (400).  Honeypot rejections on the recovery
+    endpoints log a warning (trap length) for ops.
   - Autofill is **allowed** on the recovery pages (decision after Chrome's
     cumulative parse-time heuristics defeated every suppression attempt — name/
     id randomization, keyword-free initial HTML, unassociated captions).  The
