@@ -1,6 +1,7 @@
 ---
 import Navigation from "./Navigation.astro";
 import HeaderSearch from "./HeaderSearch.astro";
+import NavbarAuth from "./NavbarAuth.astro";
 ---
 
 <header
@@ -31,6 +32,7 @@ import HeaderSearch from "./HeaderSearch.astro";
           >
             About
           </a>
+          <NavbarAuth />
         </div>
         <HeaderSearch />
       </div>
@@ -70,6 +72,7 @@ import HeaderSearch from "./HeaderSearch.astro";
           >
             <div class="shell-gutter py-3">
               <Navigation class="flex-col items-start gap-1" />
+              <NavbarAuth compact class="mt-2" />
             </div>
           </div>
         </details>

@@ -2570,6 +2570,47 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-05 — SBGC-217 frontend login, BFF session proxy & backend auth engine
+
+- Canonical authentication architecture (new, authoritative — SBGC-207 Product
+  Gaps):
+  1. **Django database-backed opaque sessions** — the `sessionid` is stored in
+     `django_session`; zero client-side JWTs. Cookie hardening (HttpOnly,
+     SameSite=Lax, Secure in production) was already in place from SBGC-41.
+  2. **Astro Node SSR BFF** — the browser never calls Django auth endpoints
+     directly; `apps/frontend/src/pages/api/auth/{login,logout,status}.ts`
+     relay server-to-server and manage the HttpOnly session cookie.
+  3. **Zero-PII contract** — a successful response is exactly
+     `{"authenticated": true, "username": "<username>"}`; never database IDs,
+     emails, roles, staff/superuser flags, hashes, or timestamps.
+  4. **Dual-key brute-force rate limit** — 5 failed logins / 60s per client IP
+     **and** per normalized username (Django cache), returning 429
+     `RATE_LIMITED` with `Retry-After: 60`.
+  5. **Hybrid rendering + navbar island** — pre-rendered static pages (`/about`,
+     `/methodology`) remain 100% static (`prerender = true`); `NavbarAuth.astro`
+     hydrates client-side via `GET /api/auth/status`.
+  6. **Ephemeral cookie toast** — a 5-second `flash_toast` cookie drives the
+     self-dismissing `Toast.astro` banner on login/logout.
+- Backend: new `authentication` Django app (`apps.py`, `schemas.py`,
+  `throttling.py`, `api.py`) with **no models → zero migrations**.
+  `LoginRequestSchema` extends `ApiRequestSchema` (`extra="forbid"`).
+  `POST /api/v1/auth/login` (rate-limit → `authenticate()` → `login()` →
+  `request.session.cycle_key()`; `@sensitive_post_parameters("password")`;
+  byte-identical 401 for missing user vs. wrong password via Django's dummy
+  hash equalization), `GET /status`, and `POST /logout` (flush + cookie delete).
+  Router mounted at `/auth/` in `api/v1.py`; `AUTHENTICATION_ERROR` and
+  `RATE_LIMITED` codes reused from `games/errors.py`.
+- Frontend: `pages/login.astro` (SSR session guard + client `fetch` submit +
+  inline error banner), `pages/profile.astro` (SSR guard skeleton),
+  `NavbarAuth.astro` (desktop + compact instances, rendered inside the existing
+  `data-desktop-collapsible`/`data-compact-collapsible` containers so the search
+  toggle hides them identically to the main links), and `Toast.astro` (mounted
+  once in `BaseLayout`).  Login page uses `Astro.cookies.has("sessionid")` to
+  redirect already-authenticated visitors home.
+- Tests: backend `authentication/tests/test_auth_api.py` (8) +
+  `test_throttling.py` (7); frontend `lib/server/api/__tests__/auth_bff.test.ts`
+  (6).  Full backend suite green; frontend 645; `makemigrations --check` clean.
+
 ## 2026-08-31 — SBGC-103 comprehensive failure paths & epic SBGC-15 audit
 
 - Final epic-closing work: two matrix suites plus one cleanup (dead-code
