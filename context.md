@@ -2634,9 +2634,12 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - **Deferred** — the "BFF internal shared-secret header" (`X-BFF-Secret`) defense
   is noted but not implemented: the ticket only lists it in the defense table
   with no enforcement spec; it is tracked as follow-up work.
-- Tests: backend `authentication/tests/test_signup.py` (13); frontend
-  `signup_bff.test.ts` (5).  Full backend suite green; frontend 657;
-  `makemigrations --check` clean (no models).
+- Tests: backend `authentication/tests/test_signup.py` (13) +
+  `test_emails.py` (16) + `test_auth_api.py` (8) + `test_throttling.py` (7);
+  frontend `signup_bff.test.ts` (5) + `device-signature.test.ts` (20) +
+  `signup-resume.test.ts` (11) + `auth-status.test.ts` (7).  Full backend suite
+  green (2080 OK, 25 skipped); frontend 688; `makemigrations --check` clean
+  (no models).
 
 ## 2026-09-05 — SBGC-217 frontend login, BFF session proxy & backend auth engine
 
