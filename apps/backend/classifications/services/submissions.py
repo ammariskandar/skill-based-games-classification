@@ -87,6 +87,24 @@ def group_set_has_role_conflict(groups) -> bool:
     return has_moderator and has_community_leader
 
 
+def _role_from_flags(has_moderator: bool, has_community_leader: bool) -> EditorialRole:
+    """Resolve an editorial role from aggregated group flags.
+
+    A user whose Groups set both the Moderator and Community Leader flags is
+    a conflict and raises ``EditorialRoleError`` rather than silently
+    resolving to a higher role.
+    """
+    if has_moderator and has_community_leader:
+        raise EditorialRoleError(
+            "User resolves to both Moderator and Community Leader groups."
+        )
+    if has_moderator:
+        return EditorialRole.MODERATOR
+    if has_community_leader:
+        return EditorialRole.COMMUNITY_LEADER
+    return EditorialRole.COMMUNITY
+
+
 def resolve_editorial_role(user) -> str:
     """Return the user's current editorial statistical role.
 
@@ -111,17 +129,48 @@ def resolve_editorial_role(user) -> str:
     has_moderator, has_community_leader = _resolve_group_flags(
         groups.all() if groups is not None else None
     )
+    return _role_from_flags(has_moderator, has_community_leader)
 
-    if has_moderator and has_community_leader:
-        raise EditorialRoleError(
-            "User resolves to both Moderator and Community Leader groups."
+
+def resolve_editorial_roles(users) -> dict[int, str | None]:
+    """Resolve editorial roles for many users in a single batched query.
+
+    Returns ``{user.pk: role}`` where ``role`` is an ``EditorialRole`` member
+    or ``None`` when the user's Groups resolve to both Moderator and
+    Community Leader (the batch equivalent of ``resolve_editorial_role``
+    raising ``EditorialRoleError``).  Superusers always resolve to
+    ``SUPERUSER`` without any profile lookup.
+
+    Query cost is O(1): one batched ``EditorialGroupProfile`` lookup covers
+    every supplied user, regardless of how many users there are (SBGC-204).
+    """
+    users = list(users)
+    user_ids = [u.pk for u in users if u.pk is not None]
+
+    flags: dict[int, tuple[bool, bool]] = {}
+    profile_rows = EditorialGroupProfile.objects.filter(
+        group__user__id__in=user_ids
+    ).values("group__user__id", "is_moderator", "is_community_leader")
+    for row in profile_rows:
+        uid = row["group__user__id"]
+        has_moderator, has_community_leader = flags.get(uid, (False, False))
+        flags[uid] = (
+            has_moderator or row["is_moderator"],
+            has_community_leader or row["is_community_leader"],
         )
 
-    if has_moderator:
-        return EditorialRole.MODERATOR
-    if has_community_leader:
-        return EditorialRole.COMMUNITY_LEADER
-    return EditorialRole.COMMUNITY
+    resolved: dict[int, str | None] = {}
+    for user in users:
+        if user.pk is None:
+            continue
+        if getattr(user, "is_superuser", False):
+            resolved[user.pk] = EditorialRole.SUPERUSER
+            continue
+        try:
+            resolved[user.pk] = _role_from_flags(*flags.get(user.pk, (False, False)))
+        except EditorialRoleError:
+            resolved[user.pk] = None
+    return resolved
 
 
 def create_submission(
@@ -292,5 +341,6 @@ __all__ = [
     "create_submission",
     "group_set_has_role_conflict",
     "resolve_editorial_role",
+    "resolve_editorial_roles",
     "update_submission",
 ]

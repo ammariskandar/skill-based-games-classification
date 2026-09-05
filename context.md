@@ -2610,6 +2610,33 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 - Tests: backend `authentication/tests/test_auth_api.py` (8) +
   `test_throttling.py` (7); frontend `lib/server/api/__tests__/auth_bff.test.ts`
   (6).  Full backend suite green; frontend 645; `makemigrations --check` clean.
+## 2026-08-31 — SBGC-204 admin editorial role resolution N+1 fix
+
+- Review 4 finding R4-17: `EditorialClassificationAdmin.get_form` resolved the
+  evaluator `data-role-map` with a per-user loop (`resolve_editorial_role(u)`
+  per active user → `O(N)` `EditorialGroupProfile` lookups).  Replaced with
+  `resolve_editorial_roles(users)` in `classifications/services/submissions.py`
+  — a single batched `group__user__id__in` query aggregated into an in-memory
+  `{user_id: (has_moderator, has_community_leader)}` flag map; role precedence
+  and the Moderator/Community-Leader conflict rule are shared via the new
+  `_role_from_flags` helper (also used by `resolve_editorial_role`, which is
+  behavior-identical).  The Admin Add/Change form now renders with `O(1)`
+  queries regardless of how many candidate users exist.
+- Tests:
+  - `classifications/tests/test_admin.py` —
+    `EditorialClassificationAdminQueryTests` (2 tests): the Add form's query
+    count is byte-identical when scaled from 3 to 18 editorial candidates
+    (`assertNumQueries`), and the rendered `data-role-map` preserves every
+    role (Moderator / Community Leader / Community / conflicted → null /
+    Superuser) with the exact `BASE_WEIGHTS`.
+  - `classifications/tests/test_submissions.py` —
+    `ResolveEditorialRolesTests` (2 tests): batch results match per-user
+    `resolve_editorial_role` exactly (incl. conflict → `None` and superuser),
+    and the batch is a single query for 15+ users.
+- Validation: full backend suite 1970 run / 25 skipped / 0 failures (2036
+  found); `classifications` app 456 run / 12 skipped / 0 failures;
+  `ruff check`/`ruff format --check` clean; basedpyright 0/0/0;
+  `makemigrations --check` clean (no schema change).
 
 ## 2026-08-31 — SBGC-103 comprehensive failure paths & epic SBGC-15 audit
 

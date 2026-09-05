@@ -32,6 +32,7 @@ from classifications.services.submissions import (
     EditorialRoleError,
     group_set_has_role_conflict,
     resolve_editorial_role,
+    resolve_editorial_roles,
 )
 
 
@@ -339,15 +340,16 @@ class EditorialClassificationAdmin(admin.ModelAdmin):
                 role = None
 
             role_map = {}
-            for u in User.objects.filter(is_active=True):
-                try:
-                    resolved = resolve_editorial_role(u)
-                    role_map[str(u.pk)] = {
-                        "role": resolved,
-                        "weight": str(BASE_WEIGHTS[resolved]),
-                    }
-                except EditorialRoleError:
-                    role_map[str(u.pk)] = {"role": None, "weight": None}
+            users = list(User.objects.filter(is_active=True))
+            # SBGC-204: resolve every candidate role in one batched query (the
+            # previous per-user loop was O(N) on EditorialGroupProfile lookups).
+            for uid, resolved in resolve_editorial_roles(users).items():
+                role_map[str(uid)] = {
+                    "role": resolved,
+                    "weight": (
+                        str(BASE_WEIGHTS[resolved]) if resolved is not None else None
+                    ),
+                }
 
             if "submitted_by" in form.base_fields:
                 form.base_fields["submitted_by"].widget.attrs["data-role-map"] = (

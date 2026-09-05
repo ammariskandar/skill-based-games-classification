@@ -23,6 +23,7 @@ from classifications.services.submissions import (
     ScoreDistribution,
     create_submission,
     resolve_editorial_role,
+    resolve_editorial_roles,
     update_submission,
 )
 
@@ -97,6 +98,55 @@ class RoleResolutionTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             profile.full_clean()
+
+
+class ResolveEditorialRolesTests(TestCase):
+    """SBGC-204 — batched role resolution matches the per-user resolver."""
+
+    def test_batch_matches_singular_resolution(self):
+        mod = _user("batch-mod")
+        mod_group = Group.objects.create(name="batch-mod-group")
+        EditorialGroupProfile.objects.create(group=mod_group, is_moderator=True)
+        mod.groups.add(mod_group)
+
+        cl = _user("batch-cl")
+        cl_group = Group.objects.create(name="batch-cl-group")
+        EditorialGroupProfile.objects.create(group=cl_group, is_community_leader=True)
+        cl.groups.add(cl_group)
+
+        community = _user("batch-community")
+        superuser = User.objects.create_superuser(username="batch-su", password="p")
+
+        conflicted = _user("batch-conflict")
+        conflict_mod = Group.objects.create(name="batch-conflict-mod")
+        conflict_cl = Group.objects.create(name="batch-conflict-cl")
+        EditorialGroupProfile.objects.create(group=conflict_mod, is_moderator=True)
+        EditorialGroupProfile.objects.create(
+            group=conflict_cl, is_community_leader=True
+        )
+        conflicted.groups.add(conflict_mod, conflict_cl)
+
+        users = [mod, cl, community, superuser, conflicted]
+        expected: dict[int, str | None] = {}
+        for user in users:
+            try:
+                expected[user.pk] = resolve_editorial_role(user)  # type: ignore[index]
+            except EditorialRoleError:
+                expected[user.pk] = None
+
+        self.assertEqual(resolve_editorial_roles(users), expected)
+
+    def test_batch_uses_single_query_regardless_of_user_count(self):
+        for i in range(15):
+            user = _user(f"batch-scale-{i}")
+            group = Group.objects.create(name=f"batch-scale-group-{i}")
+            EditorialGroupProfile.objects.create(group=group, is_moderator=(i % 2 == 0))
+            user.groups.add(group)
+
+        users = list(User.objects.filter(is_active=True))
+        with self.assertNumQueries(1):
+            result = resolve_editorial_roles(users)
+        self.assertEqual(len(result), len(users))
 
 
 class SubmissionWorkflowTests(TestCase):
