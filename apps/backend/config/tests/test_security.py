@@ -457,10 +457,11 @@ class ProductionCookieHeaderTests(SimpleTestCase):
         rc, stdout, stderr = self._prod_shell(
             "from django.conf import settings; "
             "assert settings.SECURE_CONTENT_TYPE_NOSNIFF is True; "
-            "assert settings.X_FRAME_OPTIONS == 'DENY'; "
+            "assert settings.X_FRAME_OPTIONS == 'SAMEORIGIN'; "
             "assert settings.SECURE_REFERRER_POLICY"
             " == 'strict-origin-when-cross-origin'; "
-            "assert settings.SECURE_CROSS_ORIGIN_OPENER_POLICY == 'same-origin'; "
+            "assert settings.SECURE_CROSS_ORIGIN_OPENER_POLICY"
+            " == 'same-origin-allow-popups'; "
             "print('HEADERS_OK')"
         )
         self.assertEqual(rc, 0, f"stderr: {stderr}")
@@ -526,10 +527,10 @@ class TestSettingsIsolationTests(SimpleTestCase):
 
 class RequestSizeTests(SimpleTestCase):
     def test_data_upload_max_memory_size(self):
-        self.assertEqual(settings.DATA_UPLOAD_MAX_MEMORY_SIZE, 2_621_440)
+        self.assertEqual(settings.DATA_UPLOAD_MAX_MEMORY_SIZE, 1_048_576)
 
     def test_file_upload_max_memory_size(self):
-        self.assertEqual(settings.FILE_UPLOAD_MAX_MEMORY_SIZE, 2_621_440)
+        self.assertEqual(settings.FILE_UPLOAD_MAX_MEMORY_SIZE, 1_048_576)
 
     def test_max_number_fields(self):
         self.assertEqual(settings.DATA_UPLOAD_MAX_NUMBER_FIELDS, 1_000)

@@ -11,9 +11,11 @@ APPS_DIR="$REPO_ROOT/apps/backend"
 PYTHON="$APPS_DIR/.venv/bin/python3"
 MANAGE="$APPS_DIR/manage.py"
 
-# Accepted staged-HSTS warnings (space-separated).
-# Remove as each deployment stage progresses.
-ACCEPTED_WARNINGS="security.W005 security.W021"
+# Accepted Django deploy warnings (space-separated).
+# SBGC-105: HSTS is full-strength (no W005/W021), but X_FRAME_OPTIONS is
+# deliberately SAMEORIGIN to preserve Django Admin modals/popups, so Django's
+# security.W019 (expects DENY) is the single accepted, documented warning.
+ACCEPTED_WARNINGS="security.W019"
 
 # Controlled dummy production values — no real credentials.
 export DJANGO_DEBUG=false

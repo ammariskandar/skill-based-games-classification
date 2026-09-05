@@ -574,12 +574,18 @@ class DeploymentCheckTests(SimpleTestCase):
         )
         self.assertNotEqual(rc, 0)
 
-    def test_deploy_check_script_has_accepted_warning_list(self):
-        """The deploy check script uses the shared classifier module."""
+    def test_deploy_check_script_allowlists_sameorigin_frame_warning(self):
+        """The deploy check script accepts only the documented W019 trade-off.
+
+        SBGC-105 uses X_FRAME_OPTIONS=SAMEORIGIN for Admin modals, so Django's
+        security.W019 (expects DENY) is allowlisted; staged-HSTS warnings
+        (W005/W021) and W004 must NOT be allowlisted.
+        """
         script = (_ROOT_DIR / "scripts" / "backend-deploy-check.sh").read_text()
         self.assertIn("ACCEPTED_WARNINGS", script)
-        self.assertIn("security.W005", script)
-        self.assertIn("security.W021", script)
+        self.assertIn("security.W019", script)
+        self.assertNotIn("security.W005", script)
+        self.assertNotIn("security.W021", script)
         self.assertNotIn("security.W004", script)
         self.assertIn("deploy_warnings", script)
         self.assertIn("--fail-level ERROR", script)
@@ -808,8 +814,11 @@ class DeployCheckScriptTests(SimpleTestCase):
         self.assertEqual(proc.returncode, 0, f"Deploy check failed:\n{proc.stderr}")
         self.assertIn("Deploy check passed", proc.stdout)
 
-    def test_script_accepts_staged_hsts_warnings(self):
+    def test_script_passes_with_hsts_enabled(self):
         proc = self._run_script()
-        self.assertIn("ACCEPTED", proc.stdout)
-        self.assertIn("security.W005", proc.stdout)
-        self.assertIn("security.W021", proc.stdout)
+        self.assertIn("Deploy check passed", proc.stdout)
+        # The SAMEORIGIN framing trade-off is accepted; staged-HSTS warnings
+        # must never return.
+        self.assertIn("security.W019", proc.stdout)
+        self.assertNotIn("security.W005", proc.stdout)
+        self.assertNotIn("security.W021", proc.stdout)

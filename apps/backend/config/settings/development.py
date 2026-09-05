@@ -51,8 +51,10 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# HSTS disabled in development.
+# HSTS disabled in development — never cache localhost/127.0.0.1.
 SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
 
 # SBGC-50 — enable the seed_development_data management command.
 DEVELOPMENT_SEEDING_ENABLED = True

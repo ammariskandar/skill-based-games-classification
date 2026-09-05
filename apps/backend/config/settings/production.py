@@ -136,16 +136,16 @@ _steam_api_key = env_optional_str(env, "STEAM_WEB_API_KEY")  # noqa: F405
 if not _steam_api_key or not _steam_api_key.strip():
     raise ImproperlyConfigured("STEAM_WEB_API_KEY must be set in production.")
 
-# -- HSTS (staged) ------------------------------------------------------------
-
-_hsts_raw = env_str(env, "DJANGO_SECURE_HSTS_SECONDS", default="0")  # noqa: F405
+# -- HSTS (production-only) — SBGC-105 --------------------------------------
+# Full-strength HSTS by default (1 year, includeSubDomains, preload).  The
+# duration remains env-configurable for staged rollouts, but production's
+# default is no longer zero.
+_hsts_raw = env_str(env, "DJANGO_SECURE_HSTS_SECONDS", default="31536000")  # noqa: F405
 SECURE_HSTS_SECONDS = parse_non_negative_integer(_hsts_raw)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 # -- Response protections -----------------------------------------------------
-
-SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = "DENY"
-SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
-SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+# nosniff / Referrer-Policy / X-Frame-Options (SAMEORIGIN) / COOP
+# (same-origin-allow-popups) are defined once in base.py (all environments)
+# and inherited here — see SBGC-105.

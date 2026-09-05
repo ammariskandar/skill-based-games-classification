@@ -2570,6 +2570,47 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-05 — SBGC-105 harden Django runtime security, HTTP headers, DoS boundaries & ingress
+
+- **Modern headers (all environments)** — `base.py` now sets
+  `SECURE_CONTENT_TYPE_NOSNIFF`, `SECURE_REFERRER_POLICY
+  ="strict-origin-when-cross-origin"`, `X_FRAME_OPTIONS="SAMEORIGIN"` (Admin
+  modals/popups still work), and `SECURE_CROSS_ORIGIN_OPENER_POLICY
+  ="same-origin-allow-popups"`.  The obsolete `X-XSS-Protection`/
+  `SECURE_BROWSER_XSS_FILTER` is deliberately absent (deprecated; introduces
+  side channels).  Production inherits these; its old `DENY`/`same-origin`
+  overrides were removed.  Deploy check now reports security.W019 (Django
+  expects DENY) which is allowlisted in `backend-deploy-check.sh` as the
+  documented SAMEORIGIN trade-off.
+- **HSTS full-strength in production** — `SECURE_HSTS_SECONDS` defaults to
+  31536000 (env-tunable for staged rollouts) with `SECURE_HSTS_INCLUDE_SUBDOMAINS`
+  and `SECURE_HSTS_PRELOAD` now `True`; `render.yaml` ships `"31536000"`.
+  Development/test explicitly zero HSTS (never cache localhost).  The staged
+  W005/W021 allowlist was removed from the deploy-check script and its tests.
+- **DoS request boundaries** — request-body ceilings lowered to 1 MiB
+  (`DATA_UPLOAD_MAX_MEMORY_SIZE`, `FILE_UPLOAD_MAX_MEMORY_SIZE` = 1_048_576)
+  with the existing 1,000-field / 20-file caps; oversized multipart bodies
+  raise `RequestDataTooBig`.
+- **Password validators** — `MinimumLengthValidator` formally declares
+  `min_length: 8` (all four standard validators were already present).
+  Password hashing stays PBKDF2-only in tests (the ticket suggested MD5 for
+  speed, but an accepted SBGC-41 invariant asserts PBKDF2-only configuration;
+  test hashing already runs fine).
+- **Clean security logging** — dedicated `django.security` and
+  `django.security.DisallowedHost` loggers (console, WARNING, no propagation)
+  keep hostile-host probes to a single quiet line instead of a 500-style
+  traceback.
+- **Ingress boundary verification** — new executable
+  `scripts/verify-ingress-boundary.sh`: external `/api/v1/*` (incl.
+  `/auth/login`) must return 403/404 at the edge, external Admin must reach
+  Django (200/302), and the internal BFF API URL must answer 200.
+- **Tests** — new `config/tests/test_security_headers.py` (4): nosniff /
+  Referrer-Policy / SAMEORIGIN / COOP present, X-XSS-Protection absent, HSTS
+  emitted when configured (and absent when zero), and the >1 MiB payload
+  boundary raises `RequestDataTooBig`.
+  Full backend suite green (2126 OK, 25 skipped); frontend 696;
+  `makemigrations --check` clean (no models).
+
 ## 2026-09-05 — SBGC-104 audit & secure secrets, environment variables & settings
 
 - **Production fail-fast guards** (`config/settings/production.py`) — on top of
