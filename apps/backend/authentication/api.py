@@ -551,10 +551,6 @@ def reset_password_confirm_endpoint(
             "This reset session has expired or has already been used.",
         )
 
-    # One-chance guarantee: consume the nonce AND its parent token now, so a
-    # reload, back-navigation, or duplicate submission cannot replay it.
-    burn_reset_session_nonce(payload.session_nonce)
-
     user = User.objects.filter(pk=data.get("user_id"), is_active=True).first()
     if user is None:
         return _json(
@@ -562,6 +558,22 @@ def reset_password_confirm_endpoint(
             ErrorCode.EXPIRED_RESET_TOKEN.value,
             "This reset session has expired or has already been used.",
         )
+
+    # Do not let a reset silently no-op: the new password must differ from the
+    # current one (no reuse-history checks — those push users toward weaker
+    # passwords).  Deliberately checked BEFORE the nonce is burned so an
+    # accidental reuse can be corrected in place instead of forcing a fresh
+    # reset link.
+    if user.check_password(payload.new_password):
+        return _json(
+            400,
+            ErrorCode.BAD_REQUEST.value,
+            "Your new password must be different from your current password.",
+        )
+
+    # One-chance guarantee: consume the nonce AND its parent token now, so a
+    # reload, back-navigation, or duplicate submission cannot replay it.
+    burn_reset_session_nonce(payload.session_nonce)
 
     user.set_password(payload.new_password)
     user.save()

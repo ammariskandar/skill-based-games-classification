@@ -380,6 +380,43 @@ class ResetPasswordConfirmTests(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("OldPass1!"))
 
+    def test_reusing_current_password_rejected_without_burning_nonce(self):
+        with patch("authentication.tokens.send_mail") as mail:
+            nonce = self._obtain_nonce(mail)
+
+            # Submitting the *current* password must be rejected…
+            response = _post(
+                self.client,
+                RESET_CONFIRM_URL,
+                {
+                    "session_nonce": nonce,
+                    "new_password": "OldPass1!",
+                    "recaptcha_token": RECAPTCHA_TOKEN,
+                },
+            )
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.json()["error"]["code"], "BAD_REQUEST")
+            self.assertEqual(
+                response.json()["error"]["message"],
+                "Your new password must be different from your current password.",
+            )
+
+            # …without consuming the one-chance nonce, so the user can correct
+            # the password in place instead of requesting a fresh reset link.
+            response = _post(
+                self.client,
+                RESET_CONFIRM_URL,
+                {
+                    "session_nonce": nonce,
+                    "new_password": "BrandNewPass9!",
+                    "recaptcha_token": RECAPTCHA_TOKEN,
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            self.user.refresh_from_db()
+            self.assertTrue(self.user.check_password("BrandNewPass9!"))
+            self.assertFalse(self.user.check_password("OldPass1!"))
+
     def test_honeypot_rejected(self):
         with patch("authentication.tokens.send_mail") as mail:
             nonce = self._obtain_nonce(mail)

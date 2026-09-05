@@ -2654,7 +2654,14 @@ Findings are advisory until accepted by the owner. Remediation requires separate
     with a `readonly`-until-focus lift (`lib/autofill-guard.ts`) and field
     name/id randomization (`lib/random-form-names.ts`), and the password field
     keeps `autocomplete="new-password"`.
-- Tests: backend `authentication/tests/test_reset_api.py` (16); frontend
+- **Post-merge hardening** — `reset-password-confirm` rejects reusing the
+  **current** password (400 `BAD_REQUEST`, “Your new password must be different
+  from your current password.”).  The check runs *before* the one-chance nonce
+  is burned, so an accidental reuse can be corrected in place instead of
+  forcing a fresh reset email.  Deliberately no reuse-history checks — NIST
+  guidance (and memory-limit research) shows password-reuse bans push users
+  toward weaker passwords.
+- Tests: backend `authentication/tests/test_reset_api.py` (17); frontend
   `reset_bff.test.ts` (8).  Full backend suite green (2096 OK, 25 skipped);
   frontend 696; `makemigrations --check` clean (no models).
 
