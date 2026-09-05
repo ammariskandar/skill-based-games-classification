@@ -8,6 +8,8 @@ read-only permissions.
 
 from __future__ import annotations
 
+from html import escape
+
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.http import HttpRequest
@@ -51,7 +53,8 @@ class ErrorRegistryAdminTests(TestCase):
         self.assertIn("API Route / Page", content)
         for metadata in ERROR_REGISTRY.values():
             self.assertTrue(metadata.surfaced_at)
-            self.assertIn(metadata.surfaced_at, content)
+            # Template auto-escapes HTML, so compare against the escaped text.
+            self.assertIn(escape(metadata.surfaced_at), content)
 
     def test_admin_error_registry_denies_anonymous(self):
         response = self.client.get(self.url)
