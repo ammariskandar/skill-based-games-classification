@@ -134,17 +134,35 @@ def review_login(request: HttpRequest):
 
 
 def dependency_registry_view(request: HttpRequest) -> HttpResponse:
-    """Render the tech stack catalog to authenticated staff.
+    """Render the tech stack catalog to authorized staff/superusers.
 
-    Authorization is the authoritative boundary: anonymous callers are
-    redirected to the admin login and authenticated non-staff callers receive
-    403.  The obfuscated admin path is defence-in-depth only (SBGC-105/106).
+    Authorization mirrors the Django Admin boundary (SBGC-105/106 defence in
+    depth): the caller must be an active staff member, and either a superuser
+    (who always bypasses) or granted the ``security.view_dependencyregistryentry``
+    permission through the Admin user/group permission picker (e.g. assigned to
+    a Moderator role).  Anonymous callers are redirected to the admin login;
+    authenticated callers without the grant receive 403.
     """
-    if not request.user.is_authenticated:
+    user = request.user
+    if not getattr(user, "is_authenticated", False):
         login_url = reverse("admin:login")
         return redirect(f"{login_url}?next={quote(request.path)}")
-    if not getattr(request.user, "is_staff", False):
-        raise PermissionDenied("Administrative staff credentials required.")
+
+    can_view = bool(
+        getattr(user, "is_active", False)  # pyright: ignore[reportAttributeAccessIssue]
+        and getattr(user, "is_staff", False)  # pyright: ignore[reportAttributeAccessIssue]
+        and (  # pyright: ignore[reportAttributeAccessIssue]
+            getattr(user, "is_superuser", False)  # pyright: ignore[reportAttributeAccessIssue]
+            or user.has_perm(  # pyright: ignore[reportAttributeAccessIssue]
+                "security.view_dependencyregistryentry"
+            )
+        )
+    )
+    if not can_view:
+        raise PermissionDenied(
+            "Requires active staff access with the "
+            "security.view_dependencyregistryentry permission."
+        )
 
     return render(
         request,

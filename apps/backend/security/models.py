@@ -22,7 +22,10 @@ class ErrorRegistryEntry(models.Model):
         managed = False
         verbose_name = "Error Registry"
         verbose_name_plural = "Error Registry"
-        default_permissions = ()
+        # A real ``security.view_errorregistryentry`` permission is created at
+        # post_migrate so superusers always pass and moderators can be granted
+        # read access through the Admin group/permission picker (SBGC-108).
+        default_permissions = ("view",)
 
     def __str__(self) -> str:
         return "Error Registry"
@@ -39,7 +42,8 @@ class DependencyRegistryEntry(models.Model):
         managed = False
         verbose_name = "Tech Stack Registry"
         verbose_name_plural = "Tech Stack Registry"
-        default_permissions = ()
+        # Real ``security.view_dependencyregistryentry`` permission (SBGC-108).
+        default_permissions = ("view",)
 
     def __str__(self) -> str:
         return "Tech Stack Registry"

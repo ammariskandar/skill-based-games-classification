@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
@@ -101,6 +101,19 @@ class DependencyRegistryAccessTests(TestCase):
         self.non_staff = User.objects.create_user(
             username="user-dep", password="user-pass-123"
         )
+        self.superuser = User.objects.create_superuser(
+            username="root-dep", email="root-dep@example.com", password="root-pass-123"
+        )
+
+    def _grant_view(self, user: User) -> None:
+        permission = Permission.objects.get(codename="view_dependencyregistryentry")
+        user.user_permissions.add(permission)
+
+    def _grant_both_registry_views(self, user: User) -> None:
+        self._grant_view(user)
+        user.user_permissions.add(
+            Permission.objects.get(codename="view_errorregistryentry")
+        )
 
     def test_registry_unauthenticated_redirects(self):
         response = self.client.get(self.url)
@@ -112,7 +125,13 @@ class DependencyRegistryAccessTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 403)
 
+    def test_registry_staff_without_permission_forbidden(self):
+        self.client.force_login(self.staff)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
     def test_registry_staff_authorized(self):
+        self._grant_view(self.staff)
         self.client.force_login(self.staff)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -120,8 +139,53 @@ class DependencyRegistryAccessTests(TestCase):
         for tool in ("django", "astro", "pip-audit"):
             self.assertIn(tool, content)
 
+    def test_registry_superuser_authorized(self):
+        # Superusers bypass the grantable permission entirely.
+        self.client.force_login(self.superuser)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("django", response.content.decode())
+
+    def test_registry_admin_changelist_requires_permission(self):
+        """Admin sidebar route enforces the same grant as the direct view."""
+        admin_url = reverse("admin:security_dependencyregistryentry_changelist")
+        self.client.force_login(self.staff)
+        self.assertEqual(self.client.get(admin_url).status_code, 403)
+        self._grant_view(self.staff)
+        self.assertEqual(self.client.get(admin_url).status_code, 200)
+
+    def test_grantable_view_permission_exists(self):
+        # The Security app exposes a real permission for the roles/permissions
+        # picker so moderators can be granted read access via a Group.
+        permission = Permission.objects.get(codename="view_dependencyregistryentry")
+        self.assertEqual(permission.content_type.app_label, "security")
+        error_view = Permission.objects.get(codename="view_errorregistryentry")
+        self.assertEqual(error_view.content_type.app_label, "security")
+
+    def test_security_registry_permissions_are_view_only(self):
+        """Only read grants exist for the catalog models.
+
+        The read-only registries must never surface add/change/delete grants in
+        the roles/permissions picker: moderators can be handed view access and
+        nothing else.
+        """
+        registry_content_types = Permission.objects.filter(
+            content_type__app_label="security",
+            content_type__model__in=("errorregistryentry", "dependencyregistryentry"),
+        )
+        codenames = {perm.codename for perm in registry_content_types.all()}
+        self.assertEqual(
+            codenames,
+            {"view_errorregistryentry", "view_dependencyregistryentry"},
+        )
+
     def test_registries_share_security_app_category(self):
-        """Error + tech-stack registries share one non-Games Admin category."""
+        """Error + tech-stack registries share one non-Games Admin category.
+
+        Sidebar visibility follows per-model view permissions, so the staff
+        member must hold both grants to see both catalog entries.
+        """
+        self._grant_both_registry_views(self.staff)
         self.client.force_login(self.staff)
         request = RequestFactory().get("/")
         request.user = self.staff

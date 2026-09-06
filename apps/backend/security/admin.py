@@ -9,6 +9,7 @@ category, separate from the Games domain.  Each model is unmanaged
 """
 
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from django.template.response import TemplateResponse
 from games.errors import ERROR_REGISTRY
 
@@ -16,13 +17,14 @@ from security.models import DependencyRegistryEntry, ErrorRegistryEntry
 from security.views import dependency_registry_view
 
 
-def _is_active_staff(request) -> bool:
-    user = request.user  # pyright: ignore[reportAttributeAccessIssue]
-    return bool(user.is_active and user.is_staff)  # pyright: ignore[reportAttributeAccessIssue]
-
-
 class ReadOnlyRegistryAdmin(admin.ModelAdmin):
-    """Shared read-only behavior for the virtual registry catalogs."""
+    """Shared read-only behavior for the virtual registry catalogs.
+
+    Access follows Django's standard permission model: superusers bypass, and
+    staff/group members granted the model's ``view`` permission (e.g.
+    ``security.view_errorregistryentry``) may read the catalog.  The registries
+    are never editable or deletable, even by superusers.
+    """
 
     def has_add_permission(self, request):
         return False
@@ -33,14 +35,19 @@ class ReadOnlyRegistryAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
-    def has_module_permission(self, request):
-        # The security app carries no real permission codenames; keep its
-        # catalog entries visible to any active staff member in the sidebar.
-        return _is_active_staff(request)
+    def _require_view_permission(self, request) -> None:
+        """Enforce the built-in changelist guard bypassed by our overrides.
 
-    def has_view_permission(self, request, obj=None):
-        # Read-only registry: any active staff member may view the catalog.
-        return _is_active_staff(request)
+        Django's stock ``changelist_view`` raises ``PermissionDenied`` unless the
+        caller passes ``has_view_or_change_permission``; the custom changelist
+        views below replace that method wholesale, so the guard is reinstated
+        here.  Superusers bypass, permission-granted staff pass, everyone else
+        is denied (403).
+        """
+        if not self.has_view_or_change_permission(request):
+            raise PermissionDenied(
+                "You do not have the view permission for this Security registry."
+            )
 
 
 @admin.register(ErrorRegistryEntry)
@@ -50,6 +57,7 @@ class ErrorRegistryAdmin(ReadOnlyRegistryAdmin):
     change_list_template = "admin/security/error_registry.html"
 
     def changelist_view(self, request, extra_context=None):
+        self._require_view_permission(request)
         context = {
             **self.admin_site.each_context(request),
             "title": "System Error Code Registry",
@@ -66,10 +74,12 @@ class ErrorRegistryAdmin(ReadOnlyRegistryAdmin):
 class DependencyRegistryAdmin(ReadOnlyRegistryAdmin):
     """Admin sidebar entry rendering the tech-stack dependency catalog.
 
-    Delegates to the staff-guarded ``dependency_registry_view``, which enforces
-    the authorization contract (anonymous -> login redirect, non-staff -> 403,
-    staff -> 200) and renders ``admin/security/dependency_registry.html``.
+    Delegates to the authorization-enforcing ``dependency_registry_view``,
+    which mirrors the standard Admin permission model (superuser bypass, or a
+    grant of ``security.view_dependencyregistryentry``) and renders
+    ``admin/security/dependency_registry.html``.
     """
 
     def changelist_view(self, request, extra_context=None):
+        self._require_view_permission(request)
         return dependency_registry_view(request)
