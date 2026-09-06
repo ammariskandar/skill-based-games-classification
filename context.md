@@ -2570,6 +2570,45 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-107 multi-tier atomic rate limiting, hashed keys & circuit breakers
+
+- **New `security/throttling.py`** — the public API throttle engine:
+  `hash_identifier()` (truncated SHA-256 so raw PII never lands in cache keys),
+  `increment_atomic_bucket()` (scalar `add`/`incr`), `check_rate_limit_atomic()`
+  (two-bucket weighted sliding window with dynamic `1 <= Retry-After <= W`),
+  `resolve_client_ip()` (strict `X-Client-Real-IP` trust only from
+  `TRUSTED_INTERNAL_PROXIES`), `build_throttle_response()`, a reusable
+  `enforce_ip_rate_limit()`, the idempotent `check_username` global
+  circuit-breaker state machine (CLOSED → OPEN at 500/60s), and per-IP
+  abuse-strike escalation (3 strikes / 15 min → 30 min lockout).
+- **`CIRCUIT_BREAKER_OPEN`** added to `games/errors.py` (503) and its admin
+  error registry entry.
+- **`check-username` adaptive pipeline** — circuit breaker → lockout →
+  per-IP (30/60s) → global counter → DB query.  The username format is still
+  rejected by `CheckUsernameRequestSchema` (422) before the function runs, so
+  malformed requests never increment the per-IP or global counters.
+- **Endpoint throttle integration** — `status` (60/60s), `search-index`
+  (10/60s), and `games/*` read endpoints (`game_catalogue`, `game_detail`,
+  `homepage_carousel`; 120/60s) via `enforce_ip_rate_limit()`.  The legacy
+  failed-login/recovery throttle (`authentication.throttling`) is unchanged.
+- **Cache & IP settings** — `base.py` now configures PostgreSQL `DatabaseCache`
+  (`django_cache` table via `manage.py createcachetable`, no migrations) and
+  `TRUSTED_INTERNAL_PROXIES` (explicit IPs only).  `test.py` overrides the cache
+  with `LocMemCache` and disables `API_RATE_LIMITING_ENABLED` so shared cache
+  counters never leak across the 2,136-test suite; the engine is tested directly
+  with the flag re-enabled.
+- **Frontend BFF** — `src/lib/server/trusted-client-ip.ts` derives the client IP
+  from the verified `cf-connecting-ip` edge header; `check-username.ts` forwards
+  `X-Client-Real-IP` and relays `Retry-After`/`X-Circuit-Breaker`.  New
+  `components/common/RateLimitBanner.astro` and `signup.astro` 429/503
+  escalation (transient countdown vs. 30-min lockout vs. circuit-breaker notice).
+- **Tests** — new `security/tests/test_throttling.py` (7): trusted-proxy IP
+  resolution, dynamic Retry-After range, syntax-bypass counter isolation,
+  rejected-request breaker isolation, per-IP limit + strike escalation,
+  circuit-breaker trip/recovery, and concurrent increment resilience.  Full
+  backend suite green; `makemigrations --check` clean (DatabaseCache table is
+  not a model).
+
 ## 2026-09-06 — SBGC-106 secure Django Admin, adaptive VPN gate & anti-sabotage throttling
 
 - **Admin path obfuscation retained** — the existing `ADMIN_URL_PATH`

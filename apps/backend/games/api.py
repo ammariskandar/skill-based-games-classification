@@ -29,6 +29,7 @@ from django.shortcuts import get_object_or_404
 from ninja import Query, Router, Schema, Status
 from ninja.errors import AuthorizationError
 from ninja.security import django_auth
+from security.throttling import enforce_ip_rate_limit
 
 from games.errors import ErrorCode
 from games.models import Game, SourceType
@@ -557,6 +558,11 @@ def steam_refresh(request, game_id: int):
     url_name="homepage-carousel",
 )
 def homepage_carousel(request):
+    limited = enforce_ip_rate_limit(
+        request, "read", limit=120, window_seconds=60, message="Too many requests."
+    )
+    if limited is not None:
+        return limited
     games = list(
         Game.objects.publicly_listable()
         .steam()
@@ -590,6 +596,15 @@ def homepage_carousel(request):
     url_name="game-search-index",
 )
 def game_search_index(request):
+    limited = enforce_ip_rate_limit(
+        request,
+        "search_idx",
+        limit=10,
+        window_seconds=60,
+        message="Search index rate limit exceeded.",
+    )
+    if limited is not None:
+        return limited
     games = list(Game.objects.publicly_listable().order_by("name", "id"))
     return SearchIndexResponse(
         games=[
@@ -627,6 +642,12 @@ def game_catalogue(
     request,
     query: GameCatalogueQuerySchema = _catalogue_query,
 ):
+    limited = enforce_ip_rate_limit(
+        request, "read", limit=120, window_seconds=60, message="Too many requests."
+    )
+    if limited is not None:
+        return limited
+
     # The cover-last checkbox submits `coverless_last=true` when checked and
     # `coverless_last=false` (hidden input) when unchecked; a checked checkbox
     # therefore produces both values, where the explicit `true` must win.  Read
@@ -671,6 +692,12 @@ def game_catalogue(
     url_name="game-detail",
 )
 def game_detail(request, slug: ValidGameSlug):
+    limited = enforce_ip_rate_limit(
+        request, "read", limit=120, window_seconds=60, message="Too many requests."
+    )
+    if limited is not None:
+        return limited
+
     game = Game.objects.publicly_listable().filter(slug=slug).first()
     if game is None:
         raise ApiException(404, ErrorCode.GAME_NOT_FOUND.value, "Game not found.")

@@ -41,6 +41,7 @@ class ErrorCode(StrEnum):
     EMAIL_NOT_VERIFIED = "EMAIL_NOT_VERIFIED"
     EXPIRED_RESET_TOKEN = "EXPIRED_RESET_TOKEN"
     RATE_LIMITED = "RATE_LIMITED"
+    CIRCUIT_BREAKER_OPEN = "CIRCUIT_BREAKER_OPEN"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
     HTTP_ERROR = "HTTP_ERROR"
     INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR"
@@ -180,6 +181,18 @@ ERROR_REGISTRY: dict[ErrorCode, ErrorMetadata] = {
         description=(
             "A rate limit was encountered (for example Steam API throttling "
             "during import or metadata refresh)."
+        ),
+        sample_details=[],
+    ),
+    ErrorCode.CIRCUIT_BREAKER_OPEN: ErrorMetadata(
+        code=ErrorCode.CIRCUIT_BREAKER_OPEN,
+        http_status=503,
+        category=ErrorCategory.SYSTEM,
+        surfaced_at="Auth API — GET /api/v1/auth/check-username (global load-shedding)",
+        description=(
+            "The username-check circuit breaker is open after sustained global "
+            "demand exceeded the acceptance threshold; verification is "
+            "temporarily paused for a short window."
         ),
         sample_details=[],
     ),

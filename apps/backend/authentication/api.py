@@ -15,12 +15,25 @@ import uuid
 
 from api.errors import STANDARD_ERROR_RESPONSES
 from api.schemas import ApiErrorResponse
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.debug import sensitive_post_parameters
 from games.errors import ErrorCode
 from ninja import Query, Router
+from security.throttling import (
+    LOCKOUT_SECONDS,
+    build_throttle_response,
+    check_rate_limit_atomic,
+    enforce_ip_rate_limit,
+    hash_identifier,
+    is_ip_locked_out,
+    is_username_circuit_open,
+    record_accepted_username_query,
+    record_ip_abuse_strike,
+    resolve_client_ip,
+)
 
 from authentication.emails import (
     email_is_registered,
@@ -160,7 +173,12 @@ def login_endpoint(request: HttpRequest, payload: LoginRequestSchema) -> JsonRes
     summary="Return the current authentication state",
     url_name="auth-status",
 )
-def status_endpoint(request: HttpRequest) -> AuthStatusResponseSchema:
+def status_endpoint(request: HttpRequest) -> AuthStatusResponseSchema | JsonResponse:
+    limited = enforce_ip_rate_limit(
+        request, "status", limit=60, window_seconds=60, message="Too many requests."
+    )
+    if limited is not None:
+        return limited
     if request.user.is_authenticated:
         return AuthStatusResponseSchema(
             authenticated=True, username=request.user.get_username()
@@ -201,7 +219,79 @@ def logout_endpoint(request: HttpRequest) -> JsonResponse:
 )
 def check_username(
     request, query: CheckUsernameRequestSchema = _username_query
-) -> CheckUsernameResponseSchema:
+) -> CheckUsernameResponseSchema | JsonResponse:
+    # SBGC-107 — adaptive pipeline.  The username format is already validated
+    # by ``CheckUsernameRequestSchema`` (422) before this function runs, so
+    # malformed requests never reach — and therefore never increment — the
+    # per-IP or global counters.  The throttle/circuit-breaker work is a no-op
+    # when API_RATE_LIMITING_ENABLED is false (test settings).
+    if getattr(settings, "API_RATE_LIMITING_ENABLED", True):
+        # 1. Global circuit breaker (load-shedding) fast-fail.
+        is_open, cb_retry = is_username_circuit_open()
+        if is_open:
+            return build_throttle_response(
+                status=503,
+                code=ErrorCode.CIRCUIT_BREAKER_OPEN,
+                message=(
+                    "Service under high validation demand. Verification is "
+                    "temporarily paused. Please try again shortly."
+                ),
+                retry_after=cb_retry,
+                extra_headers={"X-Circuit-Breaker": "OPEN"},
+            )
+
+        client_ip = resolve_client_ip(request)
+
+        # 2. 30-minute abuse lockout.
+        if is_ip_locked_out(client_ip, "check_username"):
+            return build_throttle_response(
+                status=429,
+                code=ErrorCode.RATE_LIMITED,
+                message=(
+                    "Too many username checks. Your access is temporarily "
+                    "restricted for 30 minutes."
+                ),
+                retry_after=LOCKOUT_SECONDS,
+            )
+
+        # 3. Per-IP rate limit (30 requests / 60s).
+        ip_scope = f"ip:{hash_identifier(client_ip)}:check_user"
+        is_limited, retry_after = check_rate_limit_atomic(
+            ip_scope, limit=30, window_seconds=60
+        )
+        if is_limited:
+            tripped_lockout = record_ip_abuse_strike(client_ip)
+            if tripped_lockout:
+                return build_throttle_response(
+                    status=429,
+                    code=ErrorCode.RATE_LIMITED,
+                    message=(
+                        "Repeated rate-limit violations. Your access is locked "
+                        "for 30 minutes."
+                    ),
+                    retry_after=LOCKOUT_SECONDS,
+                )
+            return build_throttle_response(
+                status=429,
+                code=ErrorCode.RATE_LIMITED,
+                message=f"Rate limit exceeded. Please wait {retry_after} seconds.",
+                retry_after=retry_after,
+            )
+
+        # 4. Atomically count one accepted query and trip the breaker at 500.
+        tripped, cb_wait = record_accepted_username_query()
+        if tripped:
+            return build_throttle_response(
+                status=503,
+                code=ErrorCode.CIRCUIT_BREAKER_OPEN,
+                message=(
+                    "Service under high validation demand. Verification is "
+                    "temporarily paused. Please try again shortly."
+                ),
+                retry_after=cb_wait,
+                extra_headers={"X-Circuit-Breaker": "OPEN"},
+            )
+
     available = not User.objects.filter(username__iexact=query.username).exists()
     return CheckUsernameResponseSchema(available=available, username=query.username)
 
