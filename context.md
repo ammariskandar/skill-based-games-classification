@@ -2601,9 +2601,34 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   Lifecycle status is architectural (Core / Required / Dev tool), never a
   static CVE claim.  Access contract tested: anonymous → redirect to admin
   login, authenticated non-staff → 403, staff → 200.
-- **Tests** — new `security/tests/test_dependency_registry.py` (7): registry
-  uniqueness / non-empty fields / valid enums / ecosystem breadth, plus the
-  three-way authorization contract.
+- **Django version rationale (SBGC-108 corrections)** — the supported window
+  is `>=5.2,<6.1`: 5.2 is the LTS line and 6.0 the current feature release
+  (pinned patch `Django==6.0.8` in `requirements.txt`); the `<6.1` upper bound
+  blocks unvetted minor upgrades where deprecated APIs are removed and
+  `django-ninja` compatibility is unverified.  Documented in
+  `dependencies.py`, `pyproject.toml`, and `requirements.txt`.
+- **Curated registry maintenance contract** — `TECH_STACK_REGISTRY` is a
+  manually maintained architectural catalog, decoupled from raw lockfile
+  parsing, and covers non-manifest components (`smtp4dev` Docker, stdlib
+  `ipaddress`, PostgreSQL).  New manifest-parity test parses
+  `requirements.txt` + frontend `dependencies` and fails when a runtime
+  package lacks a registry entry; the registry now covers every declared
+  package.  Subjective/marketing justifications were replaced with objective
+  architectural facts.
+- **CI audit enforcement** — the pip-audit / npm-audit gates now run inside
+  `ci.yml` (every PR/push) with explicit `continue-on-error: false`;
+  `security-scan.yml` is the weekly scheduled lane.  Exceptions must be
+  time-bounded ignores with a tracking issue — never `continue-on-error: true`
+  or `|| true`.
+- **Admin category regrouping (SBGC-108 corrections)** — the read-only
+  Error Registry moved out of the Games app into the `security` app
+  (`security/models.py`, state-only migrations), and both it and the Tech
+  Stack Registry are now registered under one shared Security admin category
+  (sidebar shows both, separate from Games).
+- **Tests** — `security/tests/test_dependency_registry.py` (9): registry
+  uniqueness / non-empty fields / valid enums / ecosystem breadth, manifest
+  parity, the three-way authorization contract, and the shared
+  Security-admin-category assertion.
 - **Docs** — README prerequisites table (Python >=3.12, Node >=24 LTS, npm
   >=10, PostgreSQL >=16) and dependency-audit commands; context.md records the
   CI policy.  Deploy check (`backend-deploy-check.sh`) remains configuration

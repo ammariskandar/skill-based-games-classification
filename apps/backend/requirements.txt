@@ -1,5 +1,9 @@
 annotated-types==0.8.0
 asgiref==3.12.1
+# SBGC-108 — Django stays within the supported architectural window
+# >=5.2,<6.1 (5.2 LTS .. current 6.0 feature release).  The exact pin below is
+# the audited patch release inside that window; the upper bound <6.1 blocks
+# unvetted minor upgrades until django-ninja compatibility is verified.
 Django==6.0.8
 django-environ==0.14.0
 django-ninja==1.6.2

@@ -1,12 +1,10 @@
 name: Security Scan
 
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   schedule:
-    # Weekly Monday 06:00 UTC — advisories land independently of PRs.
+    # Weekly Monday 06:00 UTC — advisories land independently of PRs.  The
+    # authoritative per-PR/push audit gates run inside ci.yml so results are
+    # never duplicated; this lane is the scheduled reminder lane.
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
@@ -32,10 +30,12 @@ jobs:
       - name: Install pip-audit
         run: python -m pip install pip-audit==2.10.1
 
-      # SBGC-108 policy: any known vulnerability FAILS the job.  The pipeline
-      # must never be silenced with `|| true`; exceptions require an explicit,
-      # time-bounded ignore argument plus a tracking issue.
+      # SBGC-108 policy: any known vulnerability FAILS the job
+      # (continue-on-error: false).  Exceptions MUST be time-bounded and
+      # tracked; masking with `|| true` or flipping continue-on-error is
+      # prohibited and would silently disable the gate.
       - name: Audit backend dependencies
+        continue-on-error: false
         run: python -m pip_audit --desc on -r apps/backend/requirements.txt
 
   frontend-npm-audit:
@@ -57,4 +57,5 @@ jobs:
       # SBGC-108 policy: high/critical findings FAIL the job; low/moderate are
       # advisory-only for routine maintenance and do not block delivery.
       - name: Audit frontend dependencies (high/critical gate)
+        continue-on-error: false
         run: npm audit --audit-level=high --workspace=apps/frontend

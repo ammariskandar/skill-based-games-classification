@@ -215,6 +215,17 @@ apps/backend/.venv/bin/python -m pip install <package>
 apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
 ```
 
+Every new runtime dependency must also be recorded in the curated tech-stack
+catalog (`apps/backend/security/dependencies.py` — `TECH_STACK_REGISTRY`),
+which is a manually maintained architectural registry, intentionally decoupled
+from raw lockfile parsing so it can also track non-manifest components
+(`smtp4dev` Docker container, Python standard-library `ipaddress`, PostgreSQL
+as a system prerequisite).  The manifest-parity test
+(`security.tests.test_dependency_registry`) fails if a package is added to
+`requirements.txt` or the frontend `dependencies` without a registry entry.
+See the module docstring in `apps/backend/security/dependencies.py` for the
+full contract.
+
 ### Dependency audits (SBGC-108)
 
 Backend and frontend dependency sets are scanned as a non-bypassable CI gate

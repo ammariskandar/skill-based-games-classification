@@ -15,9 +15,9 @@ from django.contrib.auth.models import User
 from django.http import HttpRequest
 from django.test import TestCase
 from django.urls import reverse
+from security.models import ErrorRegistryEntry
 
 from games.errors import ERROR_REGISTRY, ErrorCode
-from games.models import ErrorRegistryEntry
 
 
 class ErrorRegistryAdminTests(TestCase):
@@ -29,7 +29,7 @@ class ErrorRegistryAdminTests(TestCase):
         cls.superuser = User.objects.create_superuser(
             username="registry-super", password="pw"
         )
-        cls.url = reverse("admin:games_errorregistryentry_changelist")
+        cls.url = reverse("admin:security_errorregistryentry_changelist")
 
     def test_admin_error_registry_accessible_by_staff(self):
         self.client.force_login(self.staff)
