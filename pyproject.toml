@@ -32,7 +32,9 @@ select = [
     "UP",  # pyupgrade
     "B",   # flake8-bugbear
     "DJ",  # flake8-django
-]
+    "S608",  # flake8-bandit — hardcoded SQL built from untrusted strings
+]      
+
 ignore = [
     "DJ001",  # avoid false positives before models exist
     "D",      # skip docstring rules for now

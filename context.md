@@ -2570,6 +2570,40 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-185 SQLi defense-in-depth, Neon least-privilege scoping & verification report
+
+- **Post-execution report** — `docs/sql-injection-defense-in-depth.md` records
+  the full playbook integration and audit outcome: code-level audit (zero raw
+  SQL construction in application code; the only `cursor.execute` calls live
+  in PostgreSQL introspection tests and are constant or parameterised), an
+  injection-class probe log (boolean/time/error/UNION/second-order/robustness
+  — all not exploitable, pinned by 7 new automated probes in
+  `security/tests/test_sql_injection_defense.py`), and the Neon/Render
+  runbook.
+- **Neon least-privilege role** — new `scripts/db-provision-app-role.sql`
+  provisions the DML-only runtime role (`app_django`) with `NOSUPERUSER
+  NOCREATEDB NOCREATEROLE NOREPLICATION`, default privileges, and an explicit
+  grant on the unmanaged `django_cache` table.  No `REPLICATION` is the
+  control that neutralises CVE-2026-6471 ("PostGREShell") escalation and the
+  large-object / `COPY ... FROM PROGRAM` class regardless of mechanism;
+  operator actions (confirm Neon compute on a patched build ≥ 16.15 / 17.11 /
+  18.6, audit `pg_roles.rolreplication`) are recorded in the report.
+- **Pooler-aware migration seam** — `scripts/backend-migrate.sh` fails fast
+  when migrations would run against the Neon `-pooler` host (DDL must hit the
+  direct compute endpoint via `MIGRATION_DATABASE_URL`, the SBGC-52 dual-string
+  model); `production.py` pins `CONN_MAX_AGE = 0` for transaction-mode
+  PgBouncer and documents the restriction.
+- **Scan-branch throttling toggles** — `API_RATE_LIMITING_ENABLED` and
+  `ADMIN_THROTTLING_ENABLED` are now env-tunable (strict booleans, default
+  enabled) so a dedicated security-scan/preview branch can disable the SBGC-107
+  load-shedders while automated SQLi probes run; never disabled on
+  production-traffic branches.
+- **Tooling** — Ruff `S608` (flake8-bandit hardcoded-SQL) enabled in
+  `pyproject.toml`, replacing a separate bandit dependency.
+- **Docs** — `.env.example` documents `DATABASE_URL` (scoped role) vs
+  `MIGRATION_DATABASE_URL` (owner) and the role-provisioning command;
+  `scripts/README.md` covers the new runbook.
+
 ## 2026-09-06 — SBGC-109 security posture verification & remediation sweep
 
 - **Unified posture runner** — new `scripts/verify-security-posture.sh`

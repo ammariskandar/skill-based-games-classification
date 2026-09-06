@@ -19,6 +19,19 @@ if [ -n "${MIGRATION_DATABASE_URL:-}" ]; then
   export DATABASE_URL="$MIGRATION_DATABASE_URL"
 fi
 
+# SBGC-185 — Neon PgBouncer (-pooler suffix) runs in transaction mode and
+# does not support the DDL/session semantics migrations rely on.  Migrations
+# and createcachetable must always hit the direct (unpooled) compute endpoint,
+# so refuse to run when the effective URL still targets a pooled host.
+case "$DATABASE_URL" in
+  *"-pooler."*)
+    echo "ERROR: DATABASE_URL targets the Neon PgBouncer pooler (-pooler)."
+    echo "Migrations must run against the direct compute endpoint. Set"
+    echo "MIGRATION_DATABASE_URL to the non-pooled connection string."
+    exit 1
+    ;;
+esac
+
 python manage.py migrate --noinput --settings=config.settings.production
 # SBGC-107 — provision the DatabaseCache table (idempotent).
 python manage.py createcachetable --settings=config.settings.production

@@ -60,6 +60,14 @@ DATABASES = build_database_config(
     ssl_require=get_env_bool("DB_SSL_REQUIRE", default=True),
 )
 
+# SBGC-185 — Neon PgBouncer is transaction-mode pooling (-pooler hostname).
+# Long-lived connections would carry session state across pooled transactions,
+# so Django must never reuse a connection between requests when DATABASE_URL
+# points at the pooled endpoint.  CONN_MAX_AGE = 0 disables persistent
+# connections; schema migrations and ``createcachetable`` must bypass the
+# pooler entirely via MIGRATION_DATABASE_URL (see scripts/backend-migrate.sh).
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+
 # ---------------------------------------------------------------------------
 # Logging — SBGC-43
 # ---------------------------------------------------------------------------

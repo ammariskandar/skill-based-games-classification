@@ -46,3 +46,21 @@ application banner headers (`X-Powered-By` / WSGI runtime).
 ```bash
 bash scripts/verify-ingress-boundary.sh [PUBLIC_BASE_URL] [INTERNAL_API_URL]
 ```
+
+### `db-provision-app-role.sql`
+
+Least-privilege PostgreSQL role provisioning for Neon/Render (SBGC-185).
+Creates or resets the scoped DML-only runtime role (`app_django` by default)
+with `NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION`, grants DML on the
+public schema plus default privileges, and grants access to the unmanaged
+`django_cache` table when present.  Idempotent — safe on every release.
+
+```bash
+psql "$MIGRATION_DATABASE_URL" \
+  -v app_user="$APP_DJANGO_DB_USER" \
+  -v app_password="$APP_DJANGO_DB_PASSWORD" \
+  -f scripts/db-provision-app-role.sql
+```
+
+See [docs/sql-injection-defense-in-depth.md](../docs/sql-injection-defense-in-depth.md)
+for the full playbook, audit, and CVE-2026-6471 notes.

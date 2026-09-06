@@ -11,7 +11,7 @@ from pathlib import Path
 import environ
 
 from config.admin import validate_admin_url_path
-from config.env_typing import env_str, get_env_list
+from config.env_typing import env_str, get_env_bool, get_env_list
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # config/settings/base.py -> config/settings -> config -> apps/backend
@@ -276,12 +276,18 @@ DJANGO_OWNER_USERNAME = env_str(env, "DJANGO_OWNER_USERNAME", default="")
 
 # SBGC-106 — admin write/delete throttling.  Disabled in test settings so the
 # shared LocMemCache state never leaks across unrelated admin tests.
-ADMIN_THROTTLING_ENABLED = True
+# SBGC-185 — environment-tunable (default enabled) so a dedicated security
+# scan/preview branch can disable pacing while an active SQLi probe suite runs
+# (the load-shedder would otherwise swallow the probes); never disable on a
+# production-traffic branch.
+ADMIN_THROTTLING_ENABLED = get_env_bool("ADMIN_THROTTLING_ENABLED", default=True)
 
 # SBGC-107 — public API rate limiting & circuit breaker.  Disabled in test
 # settings so the shared LocMemCache counters never leak across unrelated API
 # tests; the engine is tested directly in security.tests.test_throttling.
-API_RATE_LIMITING_ENABLED = True
+# SBGC-185 — environment-tunable for the same scan-branch reason as
+# ADMIN_THROTTLING_ENABLED above.
+API_RATE_LIMITING_ENABLED = get_env_bool("API_RATE_LIMITING_ENABLED", default=True)
 
 # SBGC-107 — strictly explicit IP addresses (no hostnames) trusted to supply
 # ``X-Client-Real-IP``.  Any other REMOTE_ADDR is treated as untrusted.
