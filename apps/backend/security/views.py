@@ -1,16 +1,19 @@
-"""Admin security views — SBGC-106."""
+"""Admin security views — SBGC-106 / SBGC-108."""
 
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpRequest, JsonResponse
+from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from security.dependencies import TECH_STACK_REGISTRY
 from security.models_cache import (
     APPROVED,
     PENDING,
@@ -125,3 +128,30 @@ def review_login(request: HttpRequest):
             return render(request, "admin/review_login.html", context)
 
     return render(request, "admin/review_login.html", context)
+
+
+# ── SBGC-108 staff tech-stack registry ──────────────────────────────────────
+
+
+def dependency_registry_view(request: HttpRequest) -> HttpResponse:
+    """Render the tech stack catalog to authenticated staff.
+
+    Authorization is the authoritative boundary: anonymous callers are
+    redirected to the admin login and authenticated non-staff callers receive
+    403.  The obfuscated admin path is defence-in-depth only (SBGC-105/106).
+    """
+    if not request.user.is_authenticated:
+        login_url = reverse("admin:login")
+        return redirect(f"{login_url}?next={quote(request.path)}")
+    if not getattr(request.user, "is_staff", False):
+        raise PermissionDenied("Administrative staff credentials required.")
+
+    return render(
+        request,
+        "admin/security/dependency_registry.html",
+        {
+            "dependencies": TECH_STACK_REGISTRY,
+            "title": "Tech Stack & Dependency Registry",
+            "is_nav_sidebar_enabled": True,
+        },
+    )

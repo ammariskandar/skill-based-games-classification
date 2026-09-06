@@ -156,6 +156,15 @@ skill-based-games-classification/
 
 ## Getting started
 
+### Prerequisites
+
+| Runtime     | Minimum supported          | Notes                          |
+| ----------- | -------------------------- | ------------------------------ |
+| Python      | `>=3.12`                   | CI canonical runtime is 3.12   |
+| Node.js     | `>=24.0.0` (LTS)           | CI canonical runtime is 24.x   |
+| npm         | `>=10.0.0`                 | Bundled with modern Node       |
+| PostgreSQL  | `>=16.0` (production/dev)  | SQLite is accepted for tests   |
+
 ```bash
 # Use the correct Node.js version
 nvm use
@@ -206,6 +215,22 @@ apps/backend/.venv/bin/python -m pip install <package>
 apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
 ```
 
+### Dependency audits (SBGC-108)
+
+Backend and frontend dependency sets are scanned as a non-bypassable CI gate
+(see [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml)):
+
+```bash
+# Backend vulnerability audit (any finding fails the gate)
+./.venv/bin/pip-audit --desc on -r apps/backend/requirements.txt
+
+# Frontend vulnerability audit (high/critical findings fail the gate)
+npm audit --audit-level=high --workspace=apps/frontend
+```
+
+Masking either command with `|| true` is prohibited.  Exceptions require an
+explicit, time-bounded ignore plus a tracking issue.
+
 ### Code quality
 
 ```bash
@@ -239,6 +264,12 @@ GitHub Actions runs on every pull request to `main` and every push to `main`
 - **Backend (SQLite)** — Ruff lint/format, BasedPyright type check, Django
   system check, and the Django test suite.
 - **Backend (PostgreSQL 16)** — the PostgreSQL test lane.
+- **Security scan** ([.github/workflows/security-scan.yml](.github/workflows/security-scan.yml))
+  — `pip-audit` (backend) and `npm audit --audit-level=high` (frontend)
+  dependency vulnerability gates, plus a weekly scheduled run.
+
+Workflow-level tokens default to `contents: read`; jobs never receive broader
+scopes, and all third-party actions are pinned to immutable commit SHAs.
 
 ## Design reference
 

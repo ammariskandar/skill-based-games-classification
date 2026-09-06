@@ -1,0 +1,60 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Weekly Monday 06:00 UTC — advisories land independently of PRs.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+# SBGC-108 — read-only default; audit jobs only report by exit code and never
+# need check/pull-request write tokens.
+permissions:
+  contents: read
+
+jobs:
+  backend-pip-audit:
+    name: Backend (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit==2.10.1
+
+      # SBGC-108 policy: any known vulnerability FAILS the job.  The pipeline
+      # must never be silenced with `|| true`; exceptions require an explicit,
+      # time-bounded ignore argument plus a tracking issue.
+      - name: Audit backend dependencies
+        run: python -m pip_audit --desc on -r apps/backend/requirements.txt
+
+  frontend-npm-audit:
+    name: Frontend (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # SBGC-108 policy: high/critical findings FAIL the job; low/moderate are
+      # advisory-only for routine maintenance and do not block delivery.
+      - name: Audit frontend dependencies (high/critical gate)
+        run: npm audit --audit-level=high --workspace=apps/frontend

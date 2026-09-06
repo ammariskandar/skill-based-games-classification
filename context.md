@@ -2570,6 +2570,45 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-108 dependency controls, CI hardening & admin tech-stack registry
+
+- **Least-privilege CI** — `.github/workflows/ci.yml` and the new
+  `.github/workflows/security-scan.yml` both default to
+  `permissions: contents: read`; no job requests check/pull-request write
+  tokens.  All third-party actions are pinned to immutable commit SHAs with
+  inline release-tag comments (`actions/checkout` v7.0.1, `actions/setup-node`
+  v7.0.0, `actions/setup-python` v7.0.0).
+- **Runtime baseline aligned to Node 24 LTS** — root and `apps/frontend`
+  `package.json` engines now require `node >=24.0.0` and `npm >=10.0.0`;
+  `.nvmrc` is `24`; CI runs Node `24.x`.  Python baseline `>=3.12` documented
+  (repo has no `[project]` package metadata — pyproject.toml is ruff config;
+  CI canonical Python stays 3.12).
+- **Non-bypassable vulnerability gates** — new `security-scan.yml` workflow
+  (PR/push + weekly): backend `pip-audit --desc on` fails on any known
+  vulnerability; frontend `npm audit --audit-level=high` fails on
+  high/critical (low/moderate advisory-only).  `|| true` masking is
+  prohibited.  `pip-audit` added to `requirements.txt` as a dev/CI tool.
+- **Clean audited baseline** — dependency bumps to clear the first audit run:
+  Django 6.0.7 → 6.0.8, requests 2.32.5 → 2.33.0, sqlparse 0.5.5 → 0.6.0;
+  frontend `nanoid` fixed via `npm audit fix` and `path-to-regexp` forced to
+  the patched 6.3.0 via a root `overrides` entry (clears
+  GHSA-9wv6-86v2-598j without the breaking `@astrojs/vercel` downgrade that
+  `npm audit fix --force` would propose).
+- **Tech-stack registry** — new `security/dependencies.py`
+  (`TECH_STACK_REGISTRY` with `Ecosystem`/`LifecycleStatus` enums and
+  `DependencyItem` justification fields) renders in Django Admin at
+  `/{ADMIN_URL_PATH}/security/dependencies/` for authenticated staff.
+  Lifecycle status is architectural (Core / Required / Dev tool), never a
+  static CVE claim.  Access contract tested: anonymous → redirect to admin
+  login, authenticated non-staff → 403, staff → 200.
+- **Tests** — new `security/tests/test_dependency_registry.py` (7): registry
+  uniqueness / non-empty fields / valid enums / ecosystem breadth, plus the
+  three-way authorization contract.
+- **Docs** — README prerequisites table (Python >=3.12, Node >=24 LTS, npm
+  >=10, PostgreSQL >=16) and dependency-audit commands; context.md records the
+  CI policy.  Deploy check (`backend-deploy-check.sh`) remains configuration
+  only — it never requires a live database connection.
+
 ## 2026-09-06 — SBGC-107 multi-tier atomic rate limiting, hashed keys & circuit breakers
 
 - **New `security/throttling.py`** — the public API throttle engine:

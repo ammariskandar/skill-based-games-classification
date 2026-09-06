@@ -1,3 +1,8 @@
+# Repository Python baseline: >=3.12 (SBGC-108).
+# pyproject.toml is the shared tool config (ruff); there is no [project]
+# package definition — runtime deps are pinned in apps/backend/requirements.txt
+# and the CI canonical runtime is Python 3.12 (config/settings + pyright target).
+
 [tool.ruff]
 # Target Python 3.12
 target-version = "py312"

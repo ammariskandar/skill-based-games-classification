@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="module">
+  <p style="margin-bottom: 1rem; color: var(--body-quiet-color);">
+    Architectural dependency catalog: runtime boundary, lifecycle status,
+    affected subsystems, alternatives, and design justification.  This registry
+    is a static architecture record — live vulnerability state comes from the
+    CI audit gates (<code>pip-audit</code> / <code>npm audit</code>), never
+    from this page.
+  </p>
+  <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead>
+      <tr style="border-bottom: 2px solid var(--hairline-color); background: var(--darkened-bg);">
+        <th style="padding: 0.5rem; font-weight: 600;">Dependency</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Ecosystem</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Lifecycle</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Version Spec</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Affects</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Alternatives</th>
+        <th style="padding: 0.5rem; font-weight: 600;">Justification</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dep in dependencies %}
+      <tr style="border-bottom: 1px solid var(--hairline-color); vertical-align: top;">
+        <td style="padding: 0.5rem;"><code><strong>{{ dep.name }}</strong></code></td>
+        <td style="padding: 0.5rem;">{{ dep.ecosystem.value }}</td>
+        <td style="padding: 0.5rem;">{{ dep.lifecycle_status.value }}</td>
+        <td style="padding: 0.5rem; font-family: var(--font-family-monospace); font-size: 0.85rem;">{{ dep.version_spec }}</td>
+        <td style="padding: 0.5rem; font-size: 0.85rem;">{{ dep.affects_subsystem }}</td>
+        <td style="padding: 0.5rem; font-size: 0.85rem; color: var(--body-quiet-color);">{{ dep.alternatives }}</td>
+        <td style="padding: 0.5rem; font-size: 0.85rem; color: var(--body-quiet-color);">{{ dep.justification }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

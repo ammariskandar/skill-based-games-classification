@@ -2,11 +2,15 @@
   "name": "skill-based-games-classification",
   "private": true,
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
   },
   "workspaces": [
     "apps/frontend"
   ],
+  "overrides": {
+    "path-to-regexp": "6.3.0"
+  },
   "scripts": {
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "source apps/backend/.venv/bin/activate && python apps/backend/manage.py runserver",
