@@ -164,3 +164,25 @@ SECURE_HSTS_PRELOAD = True
 # nosniff / Referrer-Policy / X-Frame-Options (SAMEORIGIN) / COOP
 # (same-origin-allow-popups) are defined once in base.py (all environments)
 # and inherited here — see SBGC-105.
+
+# -- Dual-superuser quota handles — SBGC-186 ---------------------------------
+# The rotation engine names exactly two designated superusers (separate from
+# the owner).  Both, plus the owner, must be non-empty and distinct; this is
+# checked last so more specific fail-fast diagnostics above still report first.
+_owner_handle = env_optional_str(env, "DJANGO_OWNER_USERNAME")  # noqa: F405
+_superuser1_handle = env_optional_str(env, "DJANGO_SUPERUSER_1")  # noqa: F405
+_superuser2_handle = env_optional_str(env, "DJANGO_SUPERUSER_2")  # noqa: F405
+_quota_handles: list[str] = []
+for _handle_name, _handle_value in (
+    ("DJANGO_OWNER_USERNAME", _owner_handle),
+    ("DJANGO_SUPERUSER_1", _superuser1_handle),
+    ("DJANGO_SUPERUSER_2", _superuser2_handle),
+):
+    if not _handle_value or not _handle_value.strip():
+        raise ImproperlyConfigured(f"{_handle_name} is required in production.")
+    _quota_handles.append(_handle_value.strip())
+if len(set(_quota_handles)) != 3:
+    raise ImproperlyConfigured(
+        "DJANGO_OWNER_USERNAME, DJANGO_SUPERUSER_1, and DJANGO_SUPERUSER_2 "
+        "must be distinct in production."
+    )

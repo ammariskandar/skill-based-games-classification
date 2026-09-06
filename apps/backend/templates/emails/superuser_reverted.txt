@@ -1,0 +1,7 @@
+Security rotation notice.
+
+Designated Superuser '{{ restored_username }}' has logged in after a period of
+inactivity. Moderator '{{ moderator_username }}' has been reverted to a
+standard Moderator role.
+
+The dual-superuser quota has been restored.

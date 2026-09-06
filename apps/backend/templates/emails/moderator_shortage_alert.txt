@@ -1,0 +1,7 @@
+Security rotation alert.
+
+Designated Superuser '{{ inactive_username }}' has been inactive for
+{{ inactivity_days }} days, but no eligible Moderators exist to be promoted.
+
+The superuser pool is temporarily degraded. Please review administrator
+staffing immediately.
