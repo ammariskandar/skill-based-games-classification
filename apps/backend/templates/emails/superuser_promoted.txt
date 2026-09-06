@@ -1,0 +1,8 @@
+Security rotation notice.
+
+Moderator '{{ moderator_username }}' has been temporarily elevated to
+Superuser because designated Superuser '{{ inactive_username }}' has not
+authenticated for {{ inactivity_days }} days.
+
+Please review this automatic promotion. The promotion is temporary and will be
+reverted automatically when '{{ inactive_username }}' next logs in.

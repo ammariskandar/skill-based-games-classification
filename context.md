@@ -2570,6 +2570,38 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-186 dual-superuser quota, inactivity rotation & moderator promotion
+
+- **Rotation engine** — new `security/superuser_rotation.py` (inactivity
+  demotion, top-moderator promotion with random tie-break, atomic restoration)
+  and `security/management/commands/process_daily_logins_and_superuser_rotation.py`
+  (nightly batch: flush buffered logins + evaluate the two designated
+  superusers).  The non-owner superuser count is held at ≤ 2 across every
+  transition.
+- **Daily login buffering** — `security/tracking.py` buffers each distinct
+  login day in cache (`cache.add` dedup, list buffer) and
+  `authentication/signals.py` connects the `user_logged_in` signal to both the
+  buffer and the synchronous dormant-superuser restoration hook.
+- **Account extension** — `authentication.models.UserSecurityProfile`
+  (one-to-one, `auth_user_security_profile` table, migration `0001_initial`)
+  records `last_login_date`, cumulative `daily_login_count`, and the
+  `is_dormant_superuser` / `is_temporary_superuser` markers.
+- **Config & guard** — `DJANGO_SUPERUSER_1` / `DJANGO_SUPERUSER_2` /
+  `SUPERUSER_INACTIVITY_DAYS` (180) / `MODERATOR_GROUP_NAME` declared in
+  `base.py`; `production.py` fails fast when owner + both designated handles
+  are missing or not distinct.  `backend-deploy-check.sh` and the shared
+  `prod_test_env` fixture supply distinct dummy handles.
+- **Group protection** — `security/admin_hooks.ProtectedGroupAdminMixin` blocks
+  rename/delete of the rotation-critical `Moderator` group; applied to the
+  existing `classifications.admin.EditorialGroupAdmin` (the repo's single Group
+  admin) rather than a second, conflicting registration.
+- **Notifications** — three new `templates/emails/*.txt` rendered by
+  `security.notifications` for promotion, reversion, and moderator shortage.
+- **Tests** — `security/tests/test_superuser_rotation.py` (16): buffering,
+  inactivity demotion, top-moderator promotion + tie-break, quota invariant,
+  atomic restoration, group protection, shortage path, and the production
+  quota-handle guard.
+
 ## 2026-09-06 — SBGC-185 SQLi defense-in-depth, Neon least-privilege scoping & verification report
 
 - **Post-execution report** — `docs/sql-injection-defense-in-depth.md` records

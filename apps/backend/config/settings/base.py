@@ -12,6 +12,7 @@ import environ
 
 from config.admin import validate_admin_url_path
 from config.env_typing import env_str, get_env_bool, get_env_list
+from config.security import parse_non_negative_integer
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # config/settings/base.py -> config/settings -> config -> apps/backend
@@ -61,7 +62,8 @@ INSTALLED_APPS = [
     # SBGC-37 — application boundaries (no models yet)
     "games.apps.GamesConfig",
     "classifications.apps.ClassificationsConfig",
-    # SBGC-217 — session-backed authentication engine (no models).
+    # SBGC-217 — session-backed authentication engine.
+    # SBGC-186 — adds the UserSecurityProfile one-to-one account extension.
     "authentication.apps.AuthenticationConfig",
     # SBGC-106 — adaptive admin security perimeter (no models).
     "security.apps.SecurityConfig",
@@ -273,6 +275,18 @@ RECAPTCHA_SITE_KEY = env_str(env, "RECAPTCHA_SITE_KEY", default="")
 # SBGC-106 — username of the system owner permitted to reactivate a
 # security-locked account.  Empty disables owner-exclusive reactivation.
 DJANGO_OWNER_USERNAME = env_str(env, "DJANGO_OWNER_USERNAME", default="")
+
+# SBGC-186 — designated superusers subject to the dual-superuser quota.
+# Empty in non-production environments; production requires both and the owner
+# to be non-empty and distinct (see config.settings.production).
+DJANGO_SUPERUSER_1 = env_str(env, "DJANGO_SUPERUSER_1", default="")
+DJANGO_SUPERUSER_2 = env_str(env, "DJANGO_SUPERUSER_2", default="")
+
+# SBGC-186 — superuser rotation thresholds.
+SUPERUSER_INACTIVITY_DAYS = parse_non_negative_integer(
+    env_str(env, "SUPERUSER_INACTIVITY_DAYS", default="180")
+)
+MODERATOR_GROUP_NAME = env_str(env, "MODERATOR_GROUP_NAME", default="Moderator")
 
 # SBGC-106 — admin write/delete throttling.  Disabled in test settings so the
 # shared LocMemCache state never leaks across unrelated admin tests.

@@ -15,7 +15,7 @@ from django.forms.models import BaseInlineFormSet
 from django.shortcuts import redirect
 from django.utils import timezone
 from games.models import Game
-from security.admin_hooks import HardenedUserAdmin
+from security.admin_hooks import HardenedUserAdmin, ProtectedGroupAdminMixin
 from security.throttling_admin import (
     HardenedModelAdmin,
     HardenedModelAdminMixin,
@@ -475,7 +475,9 @@ class EditorialGroupProfileInline(admin.StackedInline):
     verbose_name_plural = "Editorial role"
 
 
-class EditorialGroupAdmin(HardenedModelAdminMixin, GroupAdmin):
+class EditorialGroupAdmin(
+    HardenedModelAdminMixin, ProtectedGroupAdminMixin, GroupAdmin
+):
     is_high_risk = True
     inlines = [EditorialGroupProfileInline]
 

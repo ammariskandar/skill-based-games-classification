@@ -98,6 +98,10 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
         RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret",
         RECAPTCHA_SITE_KEY="dummy-recaptcha-site-key",
         STEAM_WEB_API_KEY="dummy-steam-api-key",
+        # SBGC-186 — dual-superuser quota handles (distinct dummy values).
+        DJANGO_OWNER_USERNAME="owner_test",
+        DJANGO_SUPERUSER_1="superuser1_test",
+        DJANGO_SUPERUSER_2="superuser2_test",
     )
     env.update(overrides)
     return env

@@ -30,6 +30,10 @@ export DJANGO_SECURE_HSTS_SECONDS="3600"
 export RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret"
 export RECAPTCHA_SITE_KEY="dummy-recaptcha-site-key"
 export STEAM_WEB_API_KEY="dummy-steam-api-key"
+# SBGC-186 — dual-superuser quota handles (distinct dummy values).
+export DJANGO_OWNER_USERNAME="owner_test"
+export DJANGO_SUPERUSER_1="superuser1_test"
+export DJANGO_SUPERUSER_2="superuser2_test"
 
 set +e
 output=$("$PYTHON" "$MANAGE" check --deploy \

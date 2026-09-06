@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 
 from security.models_cache import (
@@ -42,3 +43,27 @@ class HardenedUserAdmin(HardenedModelAdminMixin, UserAdmin):
                     )
                 clear_user_security_locked(obj.pk)
         super().save_model(request, obj, form, change)
+
+
+class ProtectedGroupAdminMixin:
+    """SBGC-186 — protect the rotation-critical Moderator group from rename/delete.
+
+    Applied to the group admin (``classifications.admin.EditorialGroupAdmin``)
+    so the group the rotation engine relies on can never be renamed or removed
+    through the Django Admin.  Only the ``name`` change of the protected group
+    is blocked; membership and other groups remain editable.
+    """
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.name == settings.MODERATOR_GROUP_NAME:
+            return False
+        return super().has_delete_permission(request, obj)  # type: ignore[reportAttributeAccessIssue]
+
+    def save_model(self, request, obj, form, change):
+        if change and "name" in form.changed_data:
+            original = Group.objects.get(pk=obj.pk)
+            if original.name == settings.MODERATOR_GROUP_NAME:
+                raise PermissionDenied(
+                    "The protected 'Moderator' group cannot be renamed."
+                )
+        super().save_model(request, obj, form, change)  # type: ignore[reportAttributeAccessIssue]
