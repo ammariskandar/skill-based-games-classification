@@ -3,7 +3,9 @@ True end-to-end N=1 Superuser classification workflow — SBGC-66 (section 11).
 
 Exercises the real submission service, persistence, calculation service,
 and read contract without fabricating a derived snapshot.  The superuser is
-``thenamesammaris``; no real password is committed (test-only credential).
+``n1_superuser``; no real password is committed (test-only credential).
+SBGC-109: fixture renamed from a development-owner username to a neutral
+placeholder so no personal identifier ships in tracked files.
 """
 
 from __future__ import annotations
@@ -34,8 +36,8 @@ class N1SuperuserEndToEndTests(TestCase):
             source_type=SourceType.MANUAL,
         )
         self.superuser = User.objects.create_superuser(
-            "thenamesammaris",
-            email="thenamesammaris@example.com",
+            "n1_superuser",
+            email="n1_superuser@example.com",
             password="test-only-password",
         )
 
@@ -50,7 +52,7 @@ class N1SuperuserEndToEndTests(TestCase):
         )
 
         # -- source submission persisted exactly ---------------------------
-        self.assertEqual(submission.submitted_by.username, "thenamesammaris")
+        self.assertEqual(submission.submitted_by.username, "n1_superuser")
         self.assertEqual(submission.submitted_role, EditorialRole.SUPERUSER)
         challenge = submission.challenge_profile
         reward = submission.reward_profile

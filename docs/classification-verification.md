@@ -132,7 +132,9 @@ File: `classifications/tests/test_recalculation_status.py`.
 
 File: `classifications/tests/test_n1_superuser_e2e.py` (1 test).
 
-- Superuser `thenamesammaris` (test-only credential, no committed password).
+- Superuser `n1_superuser` (test-only credential, no committed password;
+  renamed from a development-owner identifier during the SBGC-109 repo-hygiene
+  scrub).
 - Disposable Game `SBGC 66 N1 Classification Test`
   (`sbgc-66-n1-classification-test`).
 - One submission via `create_submission`: Challenge `50/30/20`, Reward
@@ -201,7 +203,7 @@ rather than crashing).
 
 ## Human verification checklist (4 steps)
 
-1. Open the temporary N=1 submission and verify `thenamesammaris`, `Superuser`
+1. Open the temporary N=1 submission and verify `n1_superuser`, `Superuser`
    provenance, and the six submitted values.
 2. Open the current Final Classification and verify the Challenge result, Reward
    result, provisional Confidence Level, and status.

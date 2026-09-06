@@ -246,6 +246,19 @@ npm audit --audit-level=high --workspace=apps/frontend
 Masking either command with `|| true` is prohibited.  Exceptions require an
 explicit, time-bounded ignore plus a tracking issue.
 
+### Security posture verification (SBGC-109)
+
+A single command runs the full Epic SBGC-16 posture gate — dependency audits,
+a tracked-repo secret/owner-identifier/certificate scan, migration-drift and
+configuration-only deploy checks, and the automated security test suite:
+
+```bash
+bash scripts/verify-security-posture.sh
+```
+
+The live ingress/banner audit (`verify-ingress-boundary.sh`) and both scripts'
+contracts are documented in [scripts/README.md](scripts/README.md).
+
 ### Code quality
 
 ```bash
