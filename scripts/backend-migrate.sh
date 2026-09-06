@@ -19,4 +19,6 @@ if [ -n "${MIGRATION_DATABASE_URL:-}" ]; then
   export DATABASE_URL="$MIGRATION_DATABASE_URL"
 fi
 
-exec python manage.py migrate --noinput --settings=config.settings.production
+python manage.py migrate --noinput --settings=config.settings.production
+# SBGC-107 — provision the DatabaseCache table (idempotent).
+python manage.py createcachetable --settings=config.settings.production

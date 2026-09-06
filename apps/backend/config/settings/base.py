@@ -11,7 +11,7 @@ from pathlib import Path
 import environ
 
 from config.admin import validate_admin_url_path
-from config.env_typing import env_str
+from config.env_typing import env_str, get_env_list
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # config/settings/base.py -> config/settings -> config -> apps/backend
@@ -111,6 +111,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Environment-specific modules use config.database.build_database_config
 # to produce the final DATABASES entry with the correct fallback policy.
 DATABASE_URL = env_str(env, "DATABASE_URL", default="")
+
+
+# Cache — SBGC-107
+# PostgreSQL DatabaseCache synchronizes rate-limit and circuit-breaker state
+# across WSGI workers without an external daemon.  The ``django_cache`` table
+# is managed by ``manage.py createcachetable`` (no model migrations).  Test
+# settings override this with LocMemCache.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+        "TIMEOUT": 300,
+        "OPTIONS": {
+            "MAX_ENTRIES": 50000,
+            "CULL_FREQUENCY": 4,
+        },
+    }
+}
 
 
 # Password validation
@@ -259,6 +277,17 @@ DJANGO_OWNER_USERNAME = env_str(env, "DJANGO_OWNER_USERNAME", default="")
 # SBGC-106 — admin write/delete throttling.  Disabled in test settings so the
 # shared LocMemCache state never leaks across unrelated admin tests.
 ADMIN_THROTTLING_ENABLED = True
+
+# SBGC-107 — public API rate limiting & circuit breaker.  Disabled in test
+# settings so the shared LocMemCache counters never leak across unrelated API
+# tests; the engine is tested directly in security.tests.test_throttling.
+API_RATE_LIMITING_ENABLED = True
+
+# SBGC-107 — strictly explicit IP addresses (no hostnames) trusted to supply
+# ``X-Client-Real-IP``.  Any other REMOTE_ADDR is treated as untrusted.
+TRUSTED_INTERNAL_PROXIES = get_env_list(
+    "TRUSTED_INTERNAL_PROXIES", default=["127.0.0.1", "::1"]
+)
 
 # Logging — SBGC-43 / SBGC-105
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.

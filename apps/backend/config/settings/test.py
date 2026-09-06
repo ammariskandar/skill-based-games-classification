@@ -52,6 +52,20 @@ RECAPTCHA_SITE_KEY = "test-recaptcha-site-key"
 # The throttle logic is tested directly in security.tests.test_admin_security.
 ADMIN_THROTTLING_ENABLED = False
 
+# SBGC-107 — disable public API rate limiting in the shared test suite so the
+# LocMemCache counters never leak across unrelated API tests.  The engine is
+# tested directly in security.tests.test_throttling with the flag re-enabled.
+API_RATE_LIMITING_ENABLED = False
+
+# SBGC-107 — deterministic LocMemCache for tests (DatabaseCache requires the
+# django_cache table, which is not provisioned for the in-memory test run).
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test-locmem-cache",
+    }
+}
+
 # No CORS middleware.
 
 SECURE_SSL_REDIRECT = False

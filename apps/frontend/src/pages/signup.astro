@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PasswordStrengthMeter from "../components/ui/PasswordStrengthMeter.astro";
+import RateLimitBanner from "../components/common/RateLimitBanner.astro";
 
 // SSR only. An already-authenticated visitor is bounced home; the 30-minute
 // bot lockout (localStorage) is enforced client-side below.
@@ -32,6 +33,8 @@ if (Astro.cookies.has("sessionid")) {
       >
         <span id="signup-error-message">Something went wrong.</span>
       </div>
+
+      <RateLimitBanner id="rate-limit-banner" />
 
       <form id="signup-form" class="flex flex-col gap-4" novalidate>
         <!-- Honeypot trap (off-screen).  Named `cvv` (browsers never autofill
@@ -339,6 +342,39 @@ if (Astro.cookies.has("sessionid")) {
     errorBanner.classList.remove("hidden");
   }
 
+  const rateLimitBanner = document.getElementById("rate-limit-banner");
+  const rateLimitMessage = document.getElementById("rate-limit-banner-message");
+  const rateLimitCountdown = document.getElementById(
+    "rate-limit-banner-countdown",
+  );
+  let rateLimitTimer: ReturnType<typeof setInterval> | null = null;
+
+  function hideRateLimitBanner(): void {
+    if (rateLimitTimer) {
+      clearInterval(rateLimitTimer);
+      rateLimitTimer = null;
+    }
+    rateLimitBanner?.classList.add("hidden");
+  }
+
+  function showRateLimitBanner(message: string, seconds: number): void {
+    if (!rateLimitBanner) return;
+    rateLimitBanner.classList.remove("hidden");
+    if (rateLimitMessage) rateLimitMessage.textContent = message;
+    if (!rateLimitCountdown) return;
+    let remaining = seconds;
+    rateLimitCountdown.textContent = `(${remaining}s)`;
+    if (rateLimitTimer) clearInterval(rateLimitTimer);
+    rateLimitTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        hideRateLimitBanner();
+        return;
+      }
+      rateLimitCountdown.textContent = `(${remaining}s)`;
+    }, 1000);
+  }
+
   function executeRecaptcha(action: string): Promise<string> {
     // No configured key → dev fallback token (the DEBUG backend bypasses it).
     if (!SITE_KEY) {
@@ -385,18 +421,44 @@ if (Astro.cookies.has("sessionid")) {
     fetch(`/api/auth/check-username?username=${encodeURIComponent(value)}`, {
       headers: { Accept: "application/json" },
     })
-      .then((res) => res.json())
-      .then((data: { available?: boolean }) => {
-        usernameAvailable = Boolean(data.available);
-        if (usernameBadge) {
-          usernameBadge.textContent = usernameAvailable
-            ? "Available ✓"
-            : "Taken ✕";
-          usernameBadge.className = usernameAvailable
-            ? "mt-1 block min-h-4 text-xs text-green"
-            : "mt-1 block min-h-4 text-xs text-red";
+      .then((res) => {
+        if (res.status === 429) {
+          const retryAfter = Number(res.headers.get("Retry-After") || "0");
+          if (retryAfter >= 1800) {
+            setBotLockout();
+            return;
+          }
+          showRateLimitBanner(
+            "Username checks are paused. Please wait before trying again.",
+            Math.max(1, retryAfter || 30),
+          );
+          usernameAvailable = false;
+          updateSubmitState();
+          return;
         }
-        updateSubmitState();
+        if (res.status === 503) {
+          const retryAfter = Number(res.headers.get("Retry-After") || "60");
+          showRateLimitBanner(
+            "Username verification is experiencing high traffic. System validation will resume automatically.",
+            Math.max(1, retryAfter),
+          );
+          usernameAvailable = false;
+          updateSubmitState();
+          return;
+        }
+        return res.json().then((data: { available?: boolean }) => {
+          hideRateLimitBanner();
+          usernameAvailable = Boolean(data.available);
+          if (usernameBadge) {
+            usernameBadge.textContent = usernameAvailable
+              ? "Available ✓"
+              : "Taken ✕";
+            usernameBadge.className = usernameAvailable
+              ? "mt-1 block min-h-4 text-xs text-green"
+              : "mt-1 block min-h-4 text-xs text-red";
+          }
+          updateSubmitState();
+        });
       })
       .catch(() => {
         usernameAvailable = false;
