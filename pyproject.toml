@@ -1,3 +1,13 @@
+# Repository Python baseline: >=3.12 (SBGC-108).
+# pyproject.toml is the shared tool config (ruff); there is no [project]
+# package definition — runtime deps are pinned in apps/backend/requirements.txt
+# and the CI canonical runtime is Python 3.12 (config/settings + pyright target).
+#
+# Django constraint (SBGC-108): the project tracks the supported window
+# >=5.2,<6.1 — 5.2 LTS and the current 6.0 feature release (exact patch pins in
+# apps/backend/requirements.txt).  <6.1 blocks unvetted minor upgrades where
+# deprecated APIs are removed and django-ninja compatibility is unverified.
+
 [tool.ruff]
 # Target Python 3.12
 target-version = "py312"

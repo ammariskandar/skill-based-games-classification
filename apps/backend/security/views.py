@@ -1,16 +1,19 @@
-"""Admin security views — SBGC-106."""
+"""Admin security views — SBGC-106 / SBGC-108."""
 
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpRequest, JsonResponse
+from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from security.dependencies import TECH_STACK_REGISTRY
 from security.models_cache import (
     APPROVED,
     PENDING,
@@ -125,3 +128,48 @@ def review_login(request: HttpRequest):
             return render(request, "admin/review_login.html", context)
 
     return render(request, "admin/review_login.html", context)
+
+
+# ── SBGC-108 staff tech-stack registry ──────────────────────────────────────
+
+
+def dependency_registry_view(request: HttpRequest) -> HttpResponse:
+    """Render the tech stack catalog to authorized staff/superusers.
+
+    Authorization mirrors the Django Admin boundary (SBGC-105/106 defence in
+    depth): the caller must be an active staff member, and either a superuser
+    (who always bypasses) or granted the ``security.view_dependencyregistryentry``
+    permission through the Admin user/group permission picker (e.g. assigned to
+    a Moderator role).  Anonymous callers are redirected to the admin login;
+    authenticated callers without the grant receive 403.
+    """
+    user = request.user
+    if not getattr(user, "is_authenticated", False):
+        login_url = reverse("admin:login")
+        return redirect(f"{login_url}?next={quote(request.path)}")
+
+    can_view = bool(
+        getattr(user, "is_active", False)  # pyright: ignore[reportAttributeAccessIssue]
+        and getattr(user, "is_staff", False)  # pyright: ignore[reportAttributeAccessIssue]
+        and (  # pyright: ignore[reportAttributeAccessIssue]
+            getattr(user, "is_superuser", False)  # pyright: ignore[reportAttributeAccessIssue]
+            or user.has_perm(  # pyright: ignore[reportAttributeAccessIssue]
+                "security.view_dependencyregistryentry"
+            )
+        )
+    )
+    if not can_view:
+        raise PermissionDenied(
+            "Requires active staff access with the "
+            "security.view_dependencyregistryentry permission."
+        )
+
+    return render(
+        request,
+        "admin/security/dependency_registry.html",
+        {
+            "dependencies": TECH_STACK_REGISTRY,
+            "title": "Tech Stack & Dependency Registry",
+            "is_nav_sidebar_enabled": True,
+        },
+    )

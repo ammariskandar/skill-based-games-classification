@@ -10,4 +10,5 @@ urlpatterns = [
     path("waiting-room/", views.waiting_room, name="waiting_room"),
     path("challenge-status/", views.challenge_status, name="challenge_status"),
     path("review-login/", views.review_login, name="review_login"),
+    path("dependencies/", views.dependency_registry_view, name="dependency_registry"),
 ]
