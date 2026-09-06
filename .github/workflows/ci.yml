@@ -63,13 +63,15 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: apps/backend/requirements.txt
+          cache-dependency-path: |
+            apps/backend/requirements.txt
+            apps/backend/requirements-dev.txt
 
       - name: Create virtual environment
         run: python -m venv apps/backend/.venv
 
       - name: Install dependencies
-        run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt
+        run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements-dev.txt
 
       - name: Lint (Ruff)
         run: apps/backend/.venv/bin/ruff check apps/backend
@@ -113,13 +115,15 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: apps/backend/requirements.txt
+          cache-dependency-path: |
+            apps/backend/requirements.txt
+            apps/backend/requirements-dev.txt
 
       - name: Create virtual environment
         run: python -m venv apps/backend/.venv
 
       - name: Install dependencies
-        run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements.txt
+        run: apps/backend/.venv/bin/python -m pip install -r apps/backend/requirements-dev.txt
 
       - name: Run PostgreSQL tests
         run: npm run test:backend:postgresql
@@ -141,14 +145,16 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: apps/backend/requirements.txt
+          cache-dependency-path: |
+            apps/backend/requirements.txt
+            apps/backend/requirements-dev.txt
 
       - name: Install pip-audit
         run: python -m pip install pip-audit==2.10.1
 
       - name: Audit backend dependencies
         continue-on-error: false
-        run: python -m pip_audit --desc on -r apps/backend/requirements.txt
+        run: python -m pip_audit --desc on -r apps/backend/requirements-dev.txt
 
   frontend-npm-audit:
     name: Dependency audit (npm audit)

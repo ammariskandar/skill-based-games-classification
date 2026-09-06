@@ -214,30 +214,36 @@ See [docs/environment-variables.md](docs/environment-variables.md).
 # Frontend
 npm install <package> --workspace=apps/frontend
 
-# Backend — install into the virtual environment, then freeze
+# Backend — install into the virtual environment, then record the EXACT pin.
+# Production runtime packages belong in apps/backend/requirements.txt;
+# development/CI tools (ruff, basedpyright, stubs, pip-audit) belong in
+# apps/backend/requirements-dev.txt.  Requirements are fully pinned (==) and
+# the dev manifest inherits the production one via `-r requirements.txt`.
 apps/backend/.venv/bin/python -m pip install <package>
-apps/backend/.venv/bin/python -m pip freeze > apps/backend/requirements.txt
+apps/backend/.venv/bin/python -m pip freeze | grep -i '^<package>=='
+# add the pinned line to the correct manifest (requirements.txt or -dev.txt)
 ```
 
-Every new runtime dependency must also be recorded in the curated tech-stack
-catalog (`apps/backend/security/dependencies.py` — `TECH_STACK_REGISTRY`),
-which is a manually maintained architectural registry, intentionally decoupled
-from raw lockfile parsing so it can also track non-manifest components
-(`smtp4dev` Docker container, Python standard-library `ipaddress`, PostgreSQL
-as a system prerequisite).  The manifest-parity test
+Every new dependency must also be recorded in the curated tech-stack catalog
+(`apps/backend/security/dependencies.py` — `TECH_STACK_REGISTRY`), which is a
+manually maintained architectural registry, intentionally decoupled from raw
+lockfile parsing so it can also track non-manifest components (`smtp4dev`
+Docker container, Python standard-library `ipaddress`, PostgreSQL as a system
+prerequisite).  The manifest-parity test
 (`security.tests.test_dependency_registry`) fails if a package is added to
-`requirements.txt` or the frontend `dependencies` without a registry entry.
-See the module docstring in `apps/backend/security/dependencies.py` for the
-full contract.
+`requirements.txt`, `requirements-dev.txt`, or the frontend `dependencies`
+without a registry entry.  See the module docstring in
+`apps/backend/security/dependencies.py` for the full contract.
 
-### Dependency audits (SBGC-108)
+### Dependency audits (SBGC-108 / SBGC-196)
 
 Backend and frontend dependency sets are scanned as a non-bypassable CI gate
 (see [.github/workflows/security-scan.yml](.github/workflows/security-scan.yml)):
 
 ```bash
-# Backend vulnerability audit (any finding fails the gate)
-./.venv/bin/pip-audit --desc on -r apps/backend/requirements.txt
+# Backend vulnerability audit (any finding fails the gate).  The dev manifest
+# inherits requirements.txt, so one audit covers runtime + tooling sets.
+./.venv/bin/pip-audit --desc on -r apps/backend/requirements-dev.txt
 
 # Frontend vulnerability audit (high/critical findings fail the gate)
 npm audit --audit-level=high --workspace=apps/frontend

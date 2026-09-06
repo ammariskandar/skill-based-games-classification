@@ -49,3 +49,7 @@ services:
         value: "31536000"
       - key: WEB_CONCURRENCY
         value: "2"
+      # SBGC-196 — pin the Python runtime (audit R4-16): Render builds and
+      # runs on exactly this patch version regardless of platform defaults.
+      - key: PYTHON_VERSION
+        value: "3.12.9"

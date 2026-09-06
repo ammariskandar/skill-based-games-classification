@@ -1,29 +1,40 @@
-annotated-types==0.8.0
-asgiref==3.12.1
-# SBGC-108 — Django stays within the supported architectural window
-# >=5.2,<6.1 (5.2 LTS .. current 6.0 feature release).  The exact pin below is
-# the audited patch release inside that window; the upper bound <6.1 blocks
-# unvetted minor upgrades until django-ninja compatibility is verified.
+# =============================================================================
+# Production runtime manifest — SBGC-104 / SBGC-196.
+#
+# Installed on Render during the build phase (scripts/backend-build.sh) and
+# kept STRICTLY runtime-only: no linters, type checkers, stubs, or audit tools
+# (those live in requirements-dev.txt and are never installed in production
+# containers).
+#
+# Every line is an EXACT pin (==) so the resolved set is reproducible; the
+# SBGC-108 CI audit gates scan this fully resolved set.
+# =============================================================================
+
+# Core framework — SBGC-108: Django stays within the supported architectural
+# window >=5.2,<6.1 (5.2 LTS .. current 6.0 feature release).  The exact pin
+# below is the audited patch release inside that window; the upper bound <6.1
+# blocks unvetted minor upgrades until django-ninja compatibility is verified.
 Django==6.0.8
 django-environ==0.14.0
 django-ninja==1.6.2
-psycopg==3.3.4
-psycopg-binary==3.3.4
+asgiref==3.12.1
+sqlparse==0.6.0
+
+# Data validation — Django Ninja / Pydantic runtime requirements.
 pydantic==2.13.4
 pydantic_core==2.46.4
-# SBGC-42 — Steam HTTP client
-requests==2.33.0
-ruff==0.16.0
-sqlparse==0.6.0
+annotated-types==0.8.0
 typing-inspection==0.4.2
 typing_extensions==4.16.0
-# SBGC-43 — production operations
+
+# PostgreSQL driver (binary wheels; no compile step on Render).
+psycopg==3.3.4
+psycopg-binary==3.3.4
+
+# SBGC-42 — Steam HTTP client.
+requests==2.33.0
+urllib3==2.7.0
+
+# SBGC-43 — production operations: WSGI server + WhiteNoise static serving.
 gunicorn==23.0.0
 whitenoise==6.9.0
-urllib3==2.7.0
-# SBGC-53 — Django static typing (BasedPyright/mypy stubs)
-django-stubs==6.0.2
-django-stubs-ext==6.0.2
-basedpyright==1.32.1
-# SBGC-108 — CI dependency vulnerability audit (dev/CI tool).
-pip-audit==2.10.1

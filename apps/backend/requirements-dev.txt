@@ -1,0 +1,20 @@
+# =============================================================================
+# Development & CI manifest — SBGC-196.
+#
+# Used for local development venvs (npm run install:backend), CI quality gates,
+# and dependency audits (pip-audit resolves the inherited production manifest).
+# Inherits requirements.txt so a dev venv is a strict superset of the runtime
+# set.  NEVER installed on Render — production installs requirements.txt only.
+# =============================================================================
+-r requirements.txt
+
+# Linting & formatting (ruff).
+ruff==0.16.0
+
+# Static type checking (basedpyright + django-stubs for Django 6).
+basedpyright==1.32.1
+django-stubs==6.0.2
+django-stubs-ext==6.0.2
+
+# CI dependency vulnerability audit.
+pip-audit==2.10.1
