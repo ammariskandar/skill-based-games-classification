@@ -15,6 +15,9 @@ apply_admin_branding()
 urlpatterns = [
     # SBGC-43 — health-check endpoint (public, no auth, no DB).
     path("health/", health),
+    # SBGC-106 — admin security perimeter (waiting room / review login).
+    # Must precede the admin include so /<admin>/security/* resolves here.
+    path(f"{settings.ADMIN_URL_PATH}/security/", include("security.urls")),
     # SBGC-40 — admin route controlled by validated ADMIN_URL_PATH.
     path(f"{settings.ADMIN_URL_PATH}/", admin.site.urls),
     # SBGC-37/38 — versioned API prefix.

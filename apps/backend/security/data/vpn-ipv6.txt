@@ -1,0 +1,8 @@
+# VPN / datacenter IPv6 subnets — SBGC-106.
+#
+# One CIDR block per line; '#' starts a comment; blank lines are ignored.
+#
+# 2001:db8::/32 is the IETF documentation range and is committed as a safe,
+# self-contained placeholder so the matcher exercises the real load/merge/
+# bisect path.  Replace with a curated feed before production reliance.
+2001:db8::/32

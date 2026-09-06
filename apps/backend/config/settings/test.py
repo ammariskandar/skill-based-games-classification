@@ -43,6 +43,15 @@ ALLOWED_HOSTS = ["testserver", "127.0.0.1", "localhost"]
 
 CSRF_TRUSTED_ORIGINS = ["http://testserver"]
 
+# SBGC-106 — a non-empty site key renders the reCAPTCHA challenge into the
+# admin login template so the obfuscated-path test can assert it is enabled.
+RECAPTCHA_SITE_KEY = "test-recaptcha-site-key"
+
+# SBGC-106 — disable admin write/delete throttling in the shared test suite so
+# the LocMemCache pacing counters never leak across unrelated admin tests.
+# The throttle logic is tested directly in security.tests.test_admin_security.
+ADMIN_THROTTLING_ENABLED = False
+
 # No CORS middleware.
 
 SECURE_SSL_REDIRECT = False

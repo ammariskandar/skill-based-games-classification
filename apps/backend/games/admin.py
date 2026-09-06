@@ -7,6 +7,7 @@ from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Prefetch
 from django.template.response import TemplateResponse
+from security.throttling_admin import HardenedModelAdmin
 
 from games.errors import ERROR_REGISTRY
 from games.forms import GameForm
@@ -73,7 +74,7 @@ def _apply_listing_status(
 
 
 @admin.register(Game)
-class GameAdmin(admin.ModelAdmin):
+class GameAdmin(HardenedModelAdmin):
     form = GameForm
 
     list_display = (

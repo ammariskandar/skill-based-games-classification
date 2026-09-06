@@ -1,0 +1,70 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Security Verification Required{% endblock %}
+
+{% block usertools %}{% endblock %}
+{% block nav-global %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div id="content-main" style="max-width: 720px; margin: 2rem auto;">
+  <h1>Security Verification Required</h1>
+
+  <div id="countdown" class="errornote" style="background:#fff3cd;color:#856404;border-color:#ffc107;">
+    Session review: <span id="countdown-timer">--:--</span>
+  </div>
+
+  <div class="module">
+    <p>
+      Your login originated from a commercial VPN or datacenter IP address. An
+      alert has been dispatched to administrators for authorization. If
+      unapproved after 30 minutes, your session will automatically activate in
+      Read-Only mode.
+    </p>
+  </div>
+
+  <form method="post" action="{% url 'admin:logout' %}">
+    {% csrf_token %}
+    <button type="submit">{% translate 'Log Out' %}</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var remaining = {{ remaining_seconds }};
+  var timer = document.getElementById("countdown-timer");
+  var pollUrl = "{% url 'security:challenge_status' %}";
+  var indexUrl = "{% url 'admin:index' %}";
+  var loginUrl = "{% url 'admin:login' %}?error=locked";
+
+  function format(seconds) {
+    if (seconds < 0) { seconds = 0; }
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  function tick() {
+    timer.textContent = format(remaining);
+    if (remaining > 0) { remaining -= 1; }
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  function poll() {
+    fetch(pollUrl, { credentials: "same-origin" })
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        if (data.status === "APPROVED" || data.status === "READ_ONLY") {
+          window.location.href = indexUrl;
+        } else if (data.status === "REJECTED") {
+          window.location.href = loginUrl;
+        }
+      });
+  }
+  setInterval(poll, 5000);
+})();
+</script>
+{% endblock %}

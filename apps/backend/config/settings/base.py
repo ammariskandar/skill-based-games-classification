@@ -63,6 +63,8 @@ INSTALLED_APPS = [
     "classifications.apps.ClassificationsConfig",
     # SBGC-217 — session-backed authentication engine (no models).
     "authentication.apps.AuthenticationConfig",
+    # SBGC-106 — adaptive admin security perimeter (no models).
+    "security.apps.SecurityConfig",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +75,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # SBGC-106 — adaptive admin perimeter (VPN waiting room + read-only).
+    "security.middleware.AdminSecurityMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -86,13 +90,14 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.recaptcha_site_key",
             ],
         },
     },
@@ -242,6 +247,18 @@ DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@local
 # SBGC-218 — reCAPTCHA v3 secret (never hardcoded; read from environment).
 # Empty means the score check is bypassed (local development without a key).
 RECAPTCHA_SECRET_KEY = env_str(env, "RECAPTCHA_SECRET_KEY", default="")
+
+# SBGC-106 — reCAPTCHA v3 site key (public; rendered into the admin login
+# page).  Empty means the admin login page omits the reCAPTCHA challenge.
+RECAPTCHA_SITE_KEY = env_str(env, "RECAPTCHA_SITE_KEY", default="")
+
+# SBGC-106 — username of the system owner permitted to reactivate a
+# security-locked account.  Empty disables owner-exclusive reactivation.
+DJANGO_OWNER_USERNAME = env_str(env, "DJANGO_OWNER_USERNAME", default="")
+
+# SBGC-106 — admin write/delete throttling.  Disabled in test settings so the
+# shared LocMemCache state never leaks across unrelated admin tests.
+ADMIN_THROTTLING_ENABLED = True
 
 # Logging — SBGC-43 / SBGC-105
 # DJANGO_LOG_LEVEL controls the root Django logger threshold.

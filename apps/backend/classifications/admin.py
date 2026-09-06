@@ -8,7 +8,6 @@ import json
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
@@ -16,6 +15,11 @@ from django.forms.models import BaseInlineFormSet
 from django.shortcuts import redirect
 from django.utils import timezone
 from games.models import Game
+from security.admin_hooks import HardenedUserAdmin
+from security.throttling_admin import (
+    HardenedModelAdmin,
+    HardenedModelAdminMixin,
+)
 
 from classifications.calculations.constants import MASTER_VERSION
 from classifications.models import (
@@ -204,7 +208,7 @@ class EditorialClassificationAdminForm(forms.ModelForm):
 
 
 @admin.register(EditorialClassification)
-class EditorialClassificationAdmin(admin.ModelAdmin):
+class EditorialClassificationAdmin(HardenedModelAdmin):
     form = EditorialClassificationAdminForm
 
     # A native FK <select> renders its option list full-width, so an absurdly
@@ -471,7 +475,8 @@ class EditorialGroupProfileInline(admin.StackedInline):
     verbose_name_plural = "Editorial role"
 
 
-class EditorialGroupAdmin(GroupAdmin):
+class EditorialGroupAdmin(HardenedModelAdminMixin, GroupAdmin):
+    is_high_risk = True
     inlines = [EditorialGroupProfileInline]
 
     def changelist_view(self, request, extra_context=None):
@@ -506,7 +511,7 @@ class EditorialUserChangeForm(BaseUserChangeForm):
         return groups
 
 
-class EditorialUserAdmin(BaseUserAdmin):
+class EditorialUserAdmin(HardenedUserAdmin):
     form = EditorialUserChangeForm
 
 

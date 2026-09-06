@@ -390,6 +390,7 @@ class SettingsModuleBehaviorTests(SimpleTestCase):
                 "CSRF_TRUSTED_ORIGINS": "https://example.com",
                 "ADMIN_URL_PATH": "mygamedna-prod",
                 "RECAPTCHA_SECRET_KEY": "dummy-recaptcha-secret",
+                "RECAPTCHA_SITE_KEY": "dummy-recaptcha-site-key",
                 "STEAM_WEB_API_KEY": "dummy-steam-api-key",
             },
         )
