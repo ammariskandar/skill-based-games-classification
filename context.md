@@ -2570,6 +2570,39 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-109 security posture verification & remediation sweep
+
+- **Unified posture runner** — new `scripts/verify-security-posture.sh`
+  (executable) runs the six Epic SBGC-16 gates and fails fast on any
+  violation: backend `pip-audit`, frontend `npm audit --audit-level=high`, a
+  tracked-repo scan for the development owner identifier / private-key
+  material / certificate files (excluding the immutable `context.md` journal
+  and the runner itself), Django `makemigrations --check`, the
+  configuration-only `backend-deploy-check.sh`, and the full `security.tests`
+  suite.
+- **Banner-header hygiene** — Django never emits `Server`/`X-Powered-By` and
+  the SBGC-105 header baseline (`nosniff`, `SAMEORIGIN`, `strict-origin-when-
+  cross-origin`, COOP) is intact; pinned by the new
+  `security/tests/test_security_posture.py`.  On the Astro SSR side, new
+  `apps/frontend/src/middleware.ts` strips `Server` and `X-Powered-By` from
+  every SSR response via the unit-tested
+  `lib/server/banner-headers.ts` helper (Astro's own runtime emits neither;
+  the middleware guarantees it at the application boundary — CDN/edge `Server`
+  identity is owned by the platform, WSGI `gunicorn` banners by the proxy
+  layer).  `verify-ingress-boundary.sh` extended with public-egress and
+  internal banner audits.
+- **Repo-hygiene scrub** — the SBGC-66 N=1 fixture superuser
+  `thenamesammaris` (test-only credential) was renamed to the neutral
+  `n1_superuser` in `classifications/tests/test_n1_superuser_e2e.py` and
+  `docs/classification-verification.md`; `context.md` keeps the historical
+  reference.  `.env.example` files verified sanitized
+  (`DJANGO_OWNER_USERNAME=your_owner_username` placeholder only); no
+  certificates or private keys are tracked; `DJANGO_OWNER_USERNAME` reads
+  strictly from the environment and an empty value fails closed (no
+  reactivation bypass) — both pinned by tests.
+- **Docs** — README gains a security-posture section; `scripts/README.md`
+  documents `verify-security-posture.sh` and `verify-ingress-boundary.sh`.
+
 ## 2026-09-06 — DatabaseCache table provisioning for local dev (SBGC-107 follow-up)
 
 - The SBGC-107 default cache backend is `DatabaseCache` (`django_cache` table,
