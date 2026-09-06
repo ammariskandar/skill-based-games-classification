@@ -179,6 +179,10 @@ cp apps/backend/.env.example apps/backend/.env
 # Create the backend virtual environment (first time only)
 npm run install:backend
 
+# Prepare the backend database: applies schema migrations AND provisions the
+# DatabaseCache table (django_cache) used by rate limiting / admin throttling
+npm run migrate
+
 # Start the Astro dev server
 npm run dev:frontend
 

@@ -2570,6 +2570,18 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — DatabaseCache table provisioning for local dev (SBGC-107 follow-up)
+
+- The SBGC-107 default cache backend is `DatabaseCache` (`django_cache` table,
+  created via `manage.py createcachetable`, no model migrations).  Production
+  provisioning (`scripts/backend-migrate.sh`) already created the table, but
+  local development had no equivalent step, so any dev/admin page touching the
+  cache on a pre-SBGC-107 or freshly created SQLite dev database failed with
+  `OperationalError: no such table: django_cache`.  The root `npm run migrate`
+  script now runs `createcachetable` after `migrate` (idempotent), mirroring
+  production, and the README quickstart runs `npm run migrate` before starting
+  the dev server.
+
 ## 2026-09-06 — SBGC-108 dependency controls, CI hardening & admin tech-stack registry
 
 - **Least-privilege CI** — `.github/workflows/ci.yml` and the new
@@ -2633,6 +2645,25 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   >=10, PostgreSQL >=16) and dependency-audit commands; context.md records the
   CI policy.  Deploy check (`backend-deploy-check.sh`) remains configuration
   only — it never requires a live database connection.
+- **Grantable read permissions for the Security catalogs (SBGC-108
+  follow-up)** — both read-only registries (Error Registry + Tech Stack
+  Registry) now follow Django's standard Admin permission model instead of
+  "any active staff".  Each unmanaged catalog model declares
+  ``default_permissions = ("view",)`` (security migrations `0001`/`0002`), so
+  `post_migrate` creates the real, grantable permissions
+  `security.view_errorregistryentry` and `security.view_dependencyregistryentry`
+  that appear in the Admin user/group roles & permissions picker — Moderator
+  groups can be granted read access, and only read access (no add/change/delete
+  grants exist for the catalogs).  Superusers always pass; staff without the
+  grant receive 403.  Access enforcement was tightened where the custom
+  `changelist_view` overrides had bypassed Django's built-in guard
+  (`security/admin.py` `_require_view_permission`), and
+  `dependency_registry_view` now mirrors the Admin boundary exactly (active
+  staff + superuser bypass or the view permission).  Tests extended in
+  `security/tests/test_dependency_registry.py` and
+  `games/tests/test_error_registry_admin.py` to cover denial-without-grant,
+  grant, superuser bypass, view-only permission surface, and admin-side route
+  enforcement.
 
 ## 2026-09-06 — SBGC-107 multi-tier atomic rate limiting, hashed keys & circuit breakers
 
