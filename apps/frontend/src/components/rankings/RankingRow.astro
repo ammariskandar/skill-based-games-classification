@@ -5,21 +5,21 @@ import type { RankingItem } from "../../lib/server/api";
 interface Props {
   game: RankingItem;
   selected: boolean;
+  /** Full-page selection URL (?game=slug with the active view preserved). */
+  href: string;
   eager?: boolean;
 }
 
-const { game, selected, eager = false } = Astro.props;
+const { game, selected, href, eager = false } = Astro.props;
 const score = formatRankingScore(game.score);
 const heroUrl = (game.hero_url ?? "").trim();
 const hasHero = heroUrl !== "";
 ---
 
-<button
-  type="button"
+<a
+  href={href}
   class:list={["ranking-row", selected && "is-selected"]}
-  data-ranking-row
-  data-slug={game.slug}
-  aria-pressed={selected ? "true" : "false"}
+  aria-current={selected ? "true" : undefined}
   aria-label={`${game.name}, ranking score ${score}`}
 >
   <span class="ranking-row__media">
@@ -36,11 +36,11 @@ const hasHero = heroUrl !== "";
   </span>
   <span class="ranking-row__name">{game.name}</span>
   <span class="ranking-row__score" aria-hidden="true">{score}</span>
-</button>
+</a>
 
-<!-- `is:global` is deliberate: the ranking list rows are replaced at runtime
-     by the same-origin client transition, so their scoped selectors would not
-     match newly-created DOM.  The class names are rankings-specific. -->
+<!-- `is:global` is deliberate: row class names are also matched by the shared
+     rankings stylesheet, and the list is rendered server-side only (SBGC-200
+     MPA restoration removed the client-side row replacement). -->
 <style is:global>
   .ranking-row {
     display: flex;
@@ -50,6 +50,7 @@ const hasHero = heroUrl !== "";
     padding: 0.75rem;
     text-align: left;
     color: var(--color-text);
+    text-decoration: none;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);

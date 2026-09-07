@@ -74,6 +74,27 @@ export function sortKeyFor(
   return `${dimension}-${direction}`;
 }
 
+/**
+ * Parse a composite ``?sort=`` value (e.g. ``micro-desc``) into its
+ * dimension + direction, or ``null`` when it is not a known choice.
+ *
+ * The sort form submits this single composite key; the URL model keeps the
+ * canonical ``dimension`` / ``direction`` pair for every other control.
+ */
+export function parseSortKey(
+  raw: string | null,
+): { dimension: RankingDimension; direction: RankingDirection } | null {
+  if (raw === null) return null;
+  const trimmed = raw.trim();
+  const option = SORT_OPTIONS.find(
+    (candidate) =>
+      sortKeyFor(candidate.dimension, candidate.direction) === trimmed,
+  );
+  return option
+    ? { dimension: option.dimension, direction: option.direction }
+    : null;
+}
+
 function normalizeProfile(raw: string | null): RankingProfile {
   return raw !== null && RANKING_PROFILES.includes(raw as RankingProfile)
     ? (raw as RankingProfile)
@@ -110,10 +131,15 @@ function normalizeGame(raw: string | null): string | null {
 export function parseRankingsState(
   searchParams: URLSearchParams,
 ): RankingsState {
+  const sort = parseSortKey(searchParams.get("sort"));
   return {
     profile: normalizeProfile(searchParams.get("profile")),
-    dimension: normalizeDimension(searchParams.get("dimension")),
-    direction: normalizeDirection(searchParams.get("direction")),
+    dimension: sort
+      ? sort.dimension
+      : normalizeDimension(searchParams.get("dimension")),
+    direction: sort
+      ? sort.direction
+      : normalizeDirection(searchParams.get("direction")),
     page: parsePositiveInt(searchParams.get("page")),
     game: normalizeGame(searchParams.get("game")),
   };
