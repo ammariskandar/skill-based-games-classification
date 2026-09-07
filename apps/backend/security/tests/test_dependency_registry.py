@@ -56,25 +56,31 @@ class RegistryStructureTests(TestCase):
         self.assertGreaterEqual(len(ecosystems), 4, "Registry is too narrow.")
 
     def test_manifest_packages_are_registered(self):
-        """Every manifest-declared runtime package has an architectural entry.
+        """Every manifest-declared package has an architectural entry.
 
-        Parses ``apps/backend/requirements.txt`` (the single backend venv
-        manifest) and the ``dependencies`` block of ``apps/frontend/package.json``
-        and asserts each declared package maps to a registry entry.  Adding a
-        new runtime dependency without an architectural entry fails here, which
-        forces the curation contract in ``security/dependencies.py``.
+        Parses ``apps/backend/requirements.txt`` (production runtime),
+        ``apps/backend/requirements-dev.txt`` (development/CI tools, which
+        inherits the production manifest via ``-r``), and the ``dependencies``
+        block of ``apps/frontend/package.json``, and asserts each declared
+        package maps to a registry entry.  Adding a new dependency to either
+        backend manifest (or frontend) without an architectural entry fails
+        here, which forces the curation contract in ``security/dependencies.py``.
         """
 
         def _normalize(name: str) -> str:
             return name.strip().lower().replace("-", "_")
 
-        manifest_names: set[str] = set()
-        requirements = _BACKEND_DIR / "requirements.txt"
-        for line in requirements.read_text().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            manifest_names.add(line.split("==", 1)[0].strip())
+        def _parse_requirements(path: Path) -> set[str]:
+            names: set[str] = set()
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or line.startswith("-r"):
+                    continue
+                names.add(line.split("==", 1)[0].strip())
+            return names
+
+        manifest_names = _parse_requirements(_BACKEND_DIR / "requirements.txt")
+        manifest_names |= _parse_requirements(_BACKEND_DIR / "requirements-dev.txt")
 
         frontend_package = json.loads(
             (_BACKEND_DIR.parent / "frontend" / "package.json").read_text()

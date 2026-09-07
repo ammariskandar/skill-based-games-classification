@@ -2570,6 +2570,35 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-196 Render production build & runtime pinning (audit R4-01 / R4-16)
+
+- **Build installs production deps** — `scripts/backend-build.sh` now runs
+  `python -m pip install --no-cache-dir -r requirements.txt` before
+  `collectstatic` (audit R4-01): a custom Render buildCommand replaces the
+  platform's default install, so a clean build previously failed with
+  `ModuleNotFoundError`.  The migration boundary is preserved — migrate and
+  createcachetable stay exclusively in the pre-deploy phase
+  (`scripts/backend-migrate.sh`).
+- **Manifest split** — dev/CI tools (ruff, basedpyright, django-stubs,
+  django-stubs-ext, pip-audit) moved out of `requirements.txt` into the new
+  `apps/backend/requirements-dev.txt`, which inherits the pinned production
+  manifest via `-r requirements.txt`.  Render installs the runtime-only
+  manifest; local/CI venvs install the dev manifest
+  (`npm run install:backend`, CI backend + PostgreSQL jobs).  Exact `==` pins
+  retained (repo reproducibility policy).
+- **Audit coverage preserved** — the manifest-parity test now parses both
+  backend manifests (skipping the `-r` include); the pip-audit gates in
+  `ci.yml` and `security-scan.yml` audit `requirements-dev.txt` (resolves the
+  inherited production manifest), so both the runtime and tooling sets stay
+  scanned.
+- **Runtime pinning** — `render.yaml` adds `PYTHON_VERSION=3.12.9` (audit
+  R4-16).  Node was already aligned to 24 LTS (`.nvmrc`=24, engines
+  `node >=24.0.0`) from SBGC-108 — no change needed.
+- **Docs** — README dependency how-to/audit commands updated for the two
+  manifests; `backend-build.sh` verified in a clean throwaway venv (20
+  production packages only, collectstatic green) and `backend-deploy-check.sh`
+  still passes.
+
 ## 2026-09-06 — SBGC-186 dual-superuser quota, inactivity rotation & moderator promotion
 
 - **Rotation engine** — new `security/superuser_rotation.py` (inactivity
