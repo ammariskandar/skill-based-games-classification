@@ -30,22 +30,27 @@ const presentation = presentClassification(classification, slug);
   {
     presentation.kind === "ready" && (
       <div class="classification__body">
-        <div class="classification__profiles">
-          <ClassificationProfile
-            title="Challenge"
-            profile={presentation.challenge}
-          />
-          <ClassificationProfile title="Reward" profile={presentation.reward} />
-        </div>
-
-        {presentation.confidence !== null && (
-          <div class="classification__confidence">
-            <ClassificationConfidence
-              level={presentation.confidence}
-              label={presentation.confidenceLabel}
+        <div class="classification__grid">
+          <div class="classification__profiles">
+            <ClassificationProfile
+              title="Challenge"
+              profile={presentation.challenge}
+            />
+            <ClassificationProfile
+              title="Reward"
+              profile={presentation.reward}
             />
           </div>
-        )}
+
+          {presentation.confidence !== null && (
+            <div class="classification__confidence">
+              <ClassificationConfidence
+                level={presentation.confidence}
+                label={presentation.confidenceLabel}
+              />
+            </div>
+          )}
+        </div>
 
         {(presentation.regime === "provisional" || presentation.isStale) && (
           <div class="classification__state">
@@ -68,10 +73,6 @@ const presentation = presentClassification(classification, slug);
 </section>
 
 <style>
-  .classification {
-    max-width: 56rem;
-  }
-
   .classification__heading {
     font-size: 1.25rem;
     line-height: 1.75rem;
@@ -88,15 +89,28 @@ const presentation = presentClassification(classification, slug);
     margin-top: 1.25rem;
   }
 
+  .classification__grid {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (min-width: 64rem) {
+    .classification__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+    }
+  }
+
   .classification__profiles {
     display: grid;
     gap: 1.75rem;
   }
 
   .classification__confidence {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--color-border);
+    padding: 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
   }
 
   .classification__state {

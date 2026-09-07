@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   CLASSIFICATION_DIMENSION_ORDER,
   DOMINANT_COPY,
+  confidenceTone,
   dominantBadgeHtml,
   dominantForProfile,
   dominantRegionHtml,
@@ -35,6 +36,26 @@ describe("profileDimensions", () => {
       { key: "macro", label: "Macro", value: 31 },
       { key: "mystiko", label: "Mystiko", value: 18 },
     ]);
+  });
+});
+
+describe("confidenceTone", () => {
+  it("maps the four colour tiers across every boundary", () => {
+    expect(confidenceTone(100)).toBe("green");
+    expect(confidenceTone(65)).toBe("green");
+    expect(confidenceTone(64)).toBe("amber");
+    expect(confidenceTone(30)).toBe("amber");
+    expect(confidenceTone(29)).toBe("orange");
+    expect(confidenceTone(25)).toBe("orange");
+    expect(confidenceTone(24)).toBe("maroon");
+    expect(confidenceTone(0)).toBe("maroon");
+  });
+
+  it("handles fractional confidence levels", () => {
+    expect(confidenceTone(72.1)).toBe("green");
+    expect(confidenceTone(64.9)).toBe("amber");
+    expect(confidenceTone(25.5)).toBe("orange");
+    expect(confidenceTone(24.9)).toBe("maroon");
   });
 });
 

@@ -300,20 +300,22 @@ const upscalingEnabled = isImageUpscalingEnabled(
     font-size: 0.75rem;
   }
 
-  /* Narrow/mobile: stack the reserved layout rather than squeezing the
-     portrait Capsule and square slot side by side. Only when the slot is
-     actually present (not `hidden`) do we split the shared height. */
+  /* The Capsule and radar visualization slot stay side-by-side at every
+     viewport (SBGC-220 follow-up): stacking on narrow screens shrank the
+     square radar slot until it was barely legible. */
+
+  /* Mobile hero: give the blurred banner ~20% more vertical height while
+     keeping the Capsule + radar at their current size.  The frame grows from
+     16:9 to 3:2, and the foreground group's height drops from 72% to 60% so
+     the Capsule/radar keep the same absolute pixels (the stretch is invisible
+     on the blurred background). */
   @media (max-width: 640px) {
-    .game-image__foreground--group {
-      flex-direction: column;
-      gap: 0.5rem;
+    .game-image__frame {
+      aspect-ratio: 3 / 2;
     }
 
-    .game-image__foreground--group:has(.game-image__visualization:not([hidden]))
-      .game-image__enhance--capsule,
-    .game-image__foreground--group:has(.game-image__visualization:not([hidden]))
-      .game-image__visualization {
-      height: 50%;
+    .game-image__foreground--group {
+      height: 60%;
     }
   }
 
