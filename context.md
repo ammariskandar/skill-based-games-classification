@@ -2570,6 +2570,35 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-197 resumable epoch acquisition & atomic classification finalization (R4-02)
+
+- **Resumable claims** — new `claim_game_calculation_attempt()` allocates the
+  next free attempt number for (epoch, game) under a row lock, SKIPs Games
+  that already SUCCEEDED in the epoch (idempotent resume), and returns
+  EXHAUSTED once the per-Game budget (max four) is spent — re-invoking
+  `run_daily_classification` against an interrupted epoch can no longer collide
+  on the `(game, epoch, attempt_number)` unique constraint.
+- **Three-phase engine** — the calculation lifecycle is now claim (short
+  transactional claim) → `execute_pure_calculation()` (freeze + engine with
+  zero DB locks/transactions) → `finalize_successful_calculation()` (snapshot
+  insert + demote/promote current + boundary persistence + attempt
+  `RUNNING -> SUCCEEDED` in ONE atomic block).  A finalization failure rolls
+  the whole block back and the attempt is recorded FAILED in an isolated
+  transaction (`record_failed_calculation_attempt`), so audit records and
+  published snapshots can never drift (attempt was previously flipped
+  SUCCEEDED before persistence).
+- **Attempt state** — `CalculationAttempt.Status` gains `RUNNING` (migration
+  `0007_alter_calculationattempt_status`); claimed in-flight/crashed attempts
+  are distinguishable from completed failures.
+- **Daily command** — `run_daily_classification` rewritten around the claim
+  pipeline; it still performs in-invocation retry waves (attempts 1-4 with
+  delay) but resumed epochs continue numbering and skip succeeded Games.
+- **Tests** — `classifications/tests/test_epoch_resumption.py` (5,
+  `TransactionTestCase`): interrupted-run allocation, budget exhaustion,
+  succeeded-skip, finalization rollback of promotion/demotion, and an
+  end-to-end command resume.  All 22 pre-existing engine/persistence tests
+  pass unchanged.
+
 ## 2026-09-06 — SBGC-196 Render production build & runtime pinning (audit R4-01 / R4-16)
 
 - **Build installs production deps** — `scripts/backend-build.sh` now runs

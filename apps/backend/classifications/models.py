@@ -629,6 +629,11 @@ class CalculationAttempt(models.Model):
     """
 
     class Status(models.TextChoices):
+        # SBGC-197 — RUNNING marks a claimed attempt whose calculation is in
+        # flight (or that crashed between claim and finalization); finalize
+        # transitions RUNNING -> SUCCEEDED and the failure path RUNNING ->
+        # FAILED.
+        RUNNING = "running", "Running"
         SUCCEEDED = "succeeded", "Succeeded"
         FAILED = "failed", "Failed"
 
