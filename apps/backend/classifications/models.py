@@ -485,6 +485,9 @@ class CalculationEpoch(models.Model):
     games_attempted = models.PositiveIntegerField(default=0)
     games_succeeded = models.PositiveIntegerField(default=0)
     games_failed = models.PositiveIntegerField(default=0)
+    # SBGC-198 — Games skipped because their published result already matched
+    # the frozen input population and the current normative algorithm versions.
+    games_skipped_unchanged = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-cutoff_at"]

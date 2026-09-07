@@ -91,10 +91,11 @@ MAX_ATTEMPTS_PER_GAME_EPOCH = 4
 
 
 class ClaimStatus(StrEnum):
-    """Outcome of a Phase-1 transactional attempt claim (SBGC-197)."""
+    """Outcome of a Phase-1 transactional attempt claim (SBGC-197 / 198)."""
 
     CLAIMED = "claimed"
     SKIPPED_ALREADY_SUCCEEDED = "skipped_already_succeeded"
+    SKIPPED_UNCHANGED = "skipped_unchanged"
     EXHAUSTED = "exhausted"
 
 
@@ -182,17 +183,22 @@ def execute_pure_calculation(
     *,
     game: Game,
     cutoff_at,
+    frozen_population: tuple[PopulationSnapshot, int, int] | None = None,
     bootstrap_replicates: int | None = None,
     governance_draws: int | None = None,
 ) -> PureCalculationResult:
-    """Phase 2 — freeze inputs and run the engine with zero DB locks held.
+    """Phase 2 — run the engine with zero DB locks held.
 
-    Reads the frozen population and stored boundary, then executes the
-    CPU-heavy numerical work outside any ``transaction.atomic`` context or
-    row lock (SBGC-197).  Returns a ``PureCalculationResult`` carrying the
-    engine output and its input diagnostics for Phase 3 persistence.
+    Accepts an already-frozen ``(population, received, invalid)`` triple when
+    the caller computed it for a content-addressed skip check (SBGC-198), so
+    the calculated result is guaranteed to match the population that was
+    hash-checked; otherwise freezes at ``cutoff_at`` first.  The CPU-heavy
+    numerical work runs outside any ``transaction.atomic`` context or row
+    lock (SBGC-197).
     """
-    population, received, invalid = freeze_population(game, cutoff_at)
+    if frozen_population is None:
+        frozen_population = freeze_population(game, cutoff_at)
+    population, received, invalid = frozen_population
     boundary = stored_boundary(game)
     result = calculate_game(
         population,
@@ -240,6 +246,79 @@ def claim_game_calculation_attempt(
             started_at=timezone.now(),
         )
         return ClaimStatus.CLAIMED, attempt
+
+
+def get_current_normative_versions() -> tuple[str, str, str, str]:
+    """The normative algorithm-version tuple baked into every new snapshot.
+
+    ``(master, methods, bhpcm, confidence_final)`` — the four version fields a
+    ``ClassificationSnapshot`` persists.  A deliberate algorithm change bumps
+    one of the constants in ``classifications.calculations.constants``, which
+    forces every game to recompute (SBGC-198).
+    """
+    return (MASTER_VERSION, METHODS_VERSION, BHPCM_VERSION, CONFIDENCE_FINAL_VERSION)
+
+
+def should_skip_unchanged_game(
+    game_id: int, input_population_hash: str
+) -> tuple[bool, ClassificationSnapshot | None]:
+    """Content-addressed skip check (R4-03).
+
+    Returns ``(True, snapshot)`` when the published current snapshot for the
+    Game already reflects the same frozen input population hash AND the same
+    normative algorithm versions — recomputation is a pure function of those
+    inputs, so it would produce an identical snapshot.  Only a non-stale
+    current snapshot qualifies: a stale retained fallback means a newer epoch
+    attempted (and failed) to refresh, so the Game must recompute.  No rows
+    are locked and no engine work runs on the skip path.
+    """
+    current = (
+        ClassificationSnapshot.objects.filter(
+            game_id=game_id, is_current=True, is_stale=False
+        )
+        .only(
+            "input_population_hash",
+            "master_version",
+            "methods_version",
+            "bhpcm_version",
+            "confidence_final_version",
+        )
+        .first()
+    )
+    if current is None:
+        return False, None
+    if current.input_population_hash != input_population_hash:
+        return False, None
+    snapshot_versions = (
+        current.master_version,
+        current.methods_version,
+        current.bhpcm_version,
+        current.confidence_final_version,
+    )
+    if snapshot_versions != get_current_normative_versions():
+        return False, None
+    return True, current
+
+
+def check_and_claim_game_calculation(
+    epoch: CalculationEpoch,
+    game_id: int,
+    input_population_hash: str,
+) -> tuple[ClaimStatus, CalculationAttempt | None, ClassificationSnapshot | None]:
+    """Content-addressed skip evaluation followed by a claim (SBGC-198).
+
+    Returns ``(SKIPPED_UNCHANGED, None, snapshot)`` when the published result
+    already matches, otherwise delegates to the Phase-1 claim
+    (``claim_game_calculation_attempt``) and returns its outcome with no
+    snapshot.
+    """
+    is_unchanged, existing_snapshot = should_skip_unchanged_game(
+        game_id=game_id, input_population_hash=input_population_hash
+    )
+    if is_unchanged:
+        return ClaimStatus.SKIPPED_UNCHANGED, None, existing_snapshot
+    claim_status, attempt = claim_game_calculation_attempt(epoch, game_id)
+    return claim_status, attempt, None
 
 
 def record_failed_calculation_attempt(
@@ -689,13 +768,16 @@ __all__ = [
     "MAX_ATTEMPTS_PER_GAME_EPOCH",
     "PublishedClassification",
     "PureCalculationResult",
+    "check_and_claim_game_calculation",
     "claim_game_calculation_attempt",
     "execute_pure_calculation",
     "fail_engine_attempt",
     "finalize_successful_calculation",
     "freeze_population",
+    "get_current_normative_versions",
     "get_published_classification",
     "record_failed_calculation_attempt",
     "run_game_calculation",
+    "should_skip_unchanged_game",
     "stored_boundary",
 ]
