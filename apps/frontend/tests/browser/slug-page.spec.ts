@@ -62,27 +62,22 @@ test("skill classification and confidence share a grid parent", async ({
   expect(layout!.parentClass).toContain("classification__grid");
 });
 
-test("submit classification button is inert with integration hooks", async ({
-  page,
-}) => {
+test("submit score button is wired to the modal", async ({ page }) => {
   await page.goto("/dev/slug-page");
   const button = page.locator("#submit-classification-btn");
   await button.waitFor();
 
   await expect(button).toHaveAttribute("type", "button");
   await expect(button).toHaveAttribute("data-game-slug", "fixture-game");
-  await expect(button).toHaveText("Submit Classification");
+  await expect(button).toHaveAttribute("aria-haspopup", "dialog");
+  await expect(button).toHaveAttribute(
+    "aria-controls",
+    "score-submission-modal",
+  );
+  await expect(button).toHaveText("Submit a classification score");
 
-  // SBGC-220 scope: no modal markup or dialog is mounted for this button.
-  const hasModal = await page.evaluate(() => {
-    const btn = document.getElementById("submit-classification-btn");
-    if (!btn) return true;
-    return Boolean(
-      document.querySelector("#submit-classification-modal") ??
-      btn.querySelector("dialog"),
-    );
-  });
-  expect(hasModal).toBe(false);
+  // The dialog it controls is present in the document.
+  await expect(page.locator("#score-submission-modal")).toBeAttached();
 });
 
 test("similar games scaffold renders heading and four skeleton cards", async ({

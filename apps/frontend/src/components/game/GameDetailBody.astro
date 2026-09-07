@@ -3,6 +3,8 @@ import GameImage from "./GameImage.astro";
 import GameInformation from "./GameInformation.astro";
 import SimilarGamesScaffold from "./SimilarGamesScaffold.astro";
 import ClassificationDisplay from "../classification/ClassificationDisplay.astro";
+import SubmitScoreButton from "../submission/SubmitScoreButton.astro";
+import ScoreSubmissionModal from "../submission/ScoreSubmissionModal.astro";
 import { presentClassification } from "../../lib/classification-presentation";
 import type {
   GameDetailGame,
@@ -55,16 +57,11 @@ const rewardVector = presentation.kind === "ready" ? presentation.reward : null;
     <ClassificationDisplay classification={classification} slug={game.slug} />
   </div>
 
-  <!-- Inert submit scaffold (SBGC-220). SBGC-215 wires the click handler,
-       modal, and rainbow animation; this button deliberately has none. -->
-  <button
-    type="button"
-    id="submit-classification-btn"
-    data-game-slug={game.slug}
-    class="mt-6 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-3 text-xl font-semibold text-bg transition-colors hover:bg-blue/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue motion-reduce:transition-none"
-  >
-    Submit Classification
-  </button>
+  <div class="mt-6">
+    <SubmitScoreButton gameSlug={game.slug} />
+  </div>
+
+  <ScoreSubmissionModal gameSlug={game.slug} gameName={game.name} />
 
   <div class="mt-10">
     <SimilarGamesScaffold />
