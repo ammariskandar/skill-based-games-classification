@@ -8,30 +8,73 @@ interface Props {
 
 const { state } = Astro.props;
 const currentKey = sortKeyFor(state.dimension, state.direction);
+// Sort always resets to page 1 but preserves the active profile and selected
+// Game.  Defaults are omitted so `/rankings` remains the default-state URL.
+const preserveProfile = state.profile !== "unified";
+const preserveGame = state.game !== null;
 ---
 
-<label class="rankings-sort">
-  <span class="rankings-sort__label" id="rankings-sort-label">Sort</span>
-  <select
-    class="rankings-sort__select"
-    data-rankings-sort
-    aria-labelledby="rankings-sort-label"
-  >
-    {
-      SORT_OPTIONS.map((option) => {
-        const key = sortKeyFor(option.dimension, option.direction);
-        return (
-          <option value={key} selected={key === currentKey}>
-            {option.label}
-          </option>
-        );
-      })
-    }
-  </select>
-</label>
+<form
+  class="rankings-sort"
+  method="get"
+  action="/rankings"
+  data-rankings-sort-form
+>
+  {
+    preserveProfile && (
+      <input type="hidden" name="profile" value={state.profile} />
+    )
+  }
+  {preserveGame && <input type="hidden" name="game" value={state.game} />}
+
+  <label class="rankings-sort__control">
+    <span class="rankings-sort__label" id="rankings-sort-label">Sort</span>
+    <select
+      class="rankings-sort__select"
+      name="sort"
+      data-rankings-sort
+      aria-labelledby="rankings-sort-label"
+    >
+      {
+        SORT_OPTIONS.map((option) => {
+          const key = sortKeyFor(option.dimension, option.direction);
+          return (
+            <option value={key} selected={key === currentKey}>
+              {option.label}
+            </option>
+          );
+        })
+      }
+    </select>
+  </label>
+
+  <noscript>
+    <button type="submit" class="rankings-sort__apply"> Apply </button>
+  </noscript>
+</form>
+
+<script>
+  // Progressive enhancement only: submit the GET form on change so the sort
+  // control remains a single step with JavaScript.  Without JavaScript the
+  // <noscript> submit button performs the identical MPA navigation.
+  document
+    .querySelectorAll<HTMLFormElement>("[data-rankings-sort-form]")
+    .forEach((form) => {
+      const select = form.querySelector<HTMLSelectElement>(
+        "[data-rankings-sort]",
+      );
+      select?.addEventListener("change", () => form.submit());
+    });
+</script>
 
 <style>
   .rankings-sort {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rankings-sort__control {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -60,5 +103,17 @@ const currentKey = sortKeyFor(state.dimension, state.direction);
   .rankings-sort__select:focus-visible {
     outline: 2px solid var(--color-blue);
     outline-offset: 2px;
+  }
+
+  .rankings-sort__apply {
+    flex: none;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
   }
 </style>

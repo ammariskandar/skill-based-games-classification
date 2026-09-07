@@ -70,3 +70,51 @@ export function createRankingsLoader(
     }
   };
 }
+
+// ── AbortController-managed fetch (SBGC-200) ──────────────────────────────
+
+/** The in-flight ranking request's controller, or null when none is pending. */
+let activeAbortController: AbortController | null = null;
+
+/** Exposed for tests: the controller backing the latest unresolved request. */
+export function activeRankingsAbortController(): AbortController | null {
+  return activeAbortController;
+}
+
+/**
+ * Fetch rankings with in-flight request cancellation.
+ *
+ * Starting a new request aborts any unresolved previous request before
+ * dispatching, so rapid tab/sort/page interactions never leave superseded
+ * requests consuming bandwidth or server compute.  An optional external
+ * ``signal`` is forwarded to ``fetch``; when absent, the module-level
+ * controller's signal is used and cleared once the request settles.
+ */
+export async function fetchRankings(
+  target: RankingsLoadTarget,
+  signal?: AbortSignal,
+): Promise<RankingResponse> {
+  if (activeAbortController) {
+    activeAbortController.abort();
+  }
+
+  const controller = new AbortController();
+  activeAbortController = controller;
+  const requestSignal = signal ?? controller.signal;
+
+  try {
+    const response = await fetch(buildRankingsUrl(target), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: requestSignal,
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+    return (await response.json()) as RankingResponse;
+  } finally {
+    if (activeAbortController === controller) {
+      activeAbortController = null;
+    }
+  }
+}

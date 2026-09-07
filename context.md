@@ -2570,6 +2570,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-07 — SBGC-200 rankings MPA restoration & removal of dual markup (R4-06)
+
+- **Single markup authority restored** — the ~550-line client controller in
+  `pages/rankings.astro` (plus `escapeHtml` / `rowHtml` / `detailHtml` string
+  generators) is removed.  Astro components are now the sole renderer for
+  rows, detail, and radar; tabs/pagination were already semantic `<a>` links.
+  The radar is server-rendered by `RadarChart.astro` and self-initializes on
+  `astro:page-load`, so no page-level script is needed.
+- **Native MPA navigation** — `RankingRow` changed from `<button>` to an
+  `<a href="?game=slug">` (selection preserved via `rankingsHref`), and the
+  sort control became a GET form (`<select name="sort">` + hidden profile/game
+  + `<noscript>` submit + auto-submit-on-change enhancement).  Back/Forward
+  are now native browser navigation — no custom `pushState`/`popstate`.
+- **Composite sort param** — `parseSortKey()` + `sort` precedence in
+  `parseRankingsState()` parse the form's `?sort=micro-desc` into the existing
+  dimension/direction model; tabs/pagination/rows keep emitting the canonical
+  `dimension`/`direction` pair.
+- **AbortController** — `rankings-load.ts` gains `fetchRankings()` (aborts the
+  previous in-flight request, `activeRankingsAbortController()` accessor);
+  existing `buildRankingsUrl`/`createRankingsLoader` retained (still tested).
+- **Decisions recorded** — the viewport-driven page-size correction was dropped
+  because it required the exact client-side list re-render the audit removes
+  (server page size is now fixed); tests are co-located at `src/lib/*.test.ts`
+  (vitest convention).  Frontend suite 708 tests, `astro check` clean, build
+  green.
+
 ## 2026-09-06 — SBGC-198 content-addressed skip for unchanged daily classifications (R4-03)
 
 - **Content-addressed gate** — new `should_skip_unchanged_game()` /

@@ -5,6 +5,7 @@ import {
   DEFAULT_RANKINGS_STATE,
   formatRankingScore,
   parseRankingsState,
+  parseSortKey,
   rankingsHref,
   rankingsNeedsNoindex,
   SORT_OPTIONS,
@@ -144,5 +145,35 @@ describe("calculatePageSize", () => {
   it("targets approximately five rows at the reference geometry", () => {
     // ~5 rows when a row + gap is ~110px and the list is ~560px tall.
     expect(calculatePageSize(560, 100, 10)).toBe(5);
+  });
+});
+
+describe("parseSortKey / sort param", () => {
+  it("parses every known composite key", () => {
+    for (const option of SORT_OPTIONS) {
+      expect(
+        parseSortKey(sortKeyFor(option.dimension, option.direction)),
+      ).toEqual({
+        dimension: option.dimension,
+        direction: option.direction,
+      });
+    }
+  });
+
+  it("returns null for unknown or missing keys", () => {
+    expect(parseSortKey(null)).toBeNull();
+    expect(parseSortKey("bogus")).toBeNull();
+    expect(parseSortKey("micro-up")).toBeNull();
+  });
+
+  it("sort param takes precedence over dimension/direction", () => {
+    const state = parseRankingsState(
+      new URLSearchParams(
+        "sort=mystiko-asc&dimension=macro&direction=desc&profile=challenge",
+      ),
+    );
+    expect(state.dimension).toBe("mystiko");
+    expect(state.direction).toBe("asc");
+    expect(state.profile).toBe("challenge");
   });
 });
