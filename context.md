@@ -2570,6 +2570,29 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-06 — SBGC-198 content-addressed skip for unchanged daily classifications (R4-03)
+
+- **Content-addressed gate** — new `should_skip_unchanged_game()` /
+  `check_and_claim_game_calculation()` in `classifications/services/calculations.py`
+  compare the frozen input-population hash and the current normative
+  algorithm-version tuple (master / methods / bhpcm / confidence-final)
+  against the published current snapshot; an exact match skips the Game with
+  zero row locks, zero engine/bootstrap work, and zero duplicate snapshots.
+  Only a non-stale current snapshot qualifies — a stale retained fallback
+  (a newer epoch that attempted and failed to refresh) forces recomputation.
+- **Single freeze** — `execute_pure_calculation()` accepts an optional frozen
+  population triple so the daily command freezes once and calculates exactly
+  the population it hash-checked (no double read, no hash/result drift).
+- **Epoch audit counter** — `CalculationEpoch.games_skipped_unchanged`
+  (migration `0008`); `run_daily_classification` reports skipped-unchanged in
+  its completion line and counter.
+- **Tests** — `classifications/tests/test_content_addressed_skip.py` (7,
+  `TransactionTestCase`): identical-population skip (engine not called),
+  command counter + no duplicate snapshot, new-submission forces recalculation,
+  version-bump (older stored version) forces recalculation, missing/stale
+  current forces calculation, failed-prior-attempt-without-snapshot forces
+  calculation, and canonical hash ordering invariance.
+
 ## 2026-09-06 — SBGC-197 resumable epoch acquisition & atomic classification finalization (R4-02)
 
 - **Resumable claims** — new `claim_game_calculation_attempt()` allocates the

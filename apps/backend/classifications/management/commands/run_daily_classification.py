@@ -1,13 +1,20 @@
 """
-Run the canonical daily derived-classification epoch — SBGC-65 / SBGC-197.
+Run the canonical daily derived-classification epoch — SBGC-65 / SBGC-197 / SBGC-198.
 
-Claims and calculates each Game through the three-phase pipeline (claim →
-calculate → finalize).  Engine failures are retried within the invocation
-(initial attempt plus three retries = maximum four attempts per Game per
-epoch), and re-invoking the command against the same epoch resumes safely:
-Games that already SUCCEEDED are skipped and still-failed Games continue at
-their next free attempt number — never colliding on the
-``(game, epoch, attempt_number)`` unique constraint (R4-02).
+Each Game is evaluated through the three-phase pipeline (claim → calculate →
+finalize), with two content-aware gates ahead of any attempt claim:
+
+1. Resume gate — a Game that already SUCCEEDED earlier in this epoch is
+   skipped (SBGC-197 idempotent resume).
+2. Content-addressed gate (SBGC-198 / R4-03) — if the published current
+   snapshot already reflects the same frozen input population hash AND the
+   same normative algorithm versions, the Game is skipped entirely: no
+   attempt is claimed, no CPU/bootstrap work runs, and no duplicate snapshot
+   is created.  Epoch audit counters record the skip.
+
+Engine failures are retried within the invocation (maximum four attempts per
+Game per epoch); a failed attempt marks any retained fallback snapshot stale,
+which forces the next wave (and later epochs) to recompute rather than skip.
 
 The engine is scheduler-vendor independent: a deployment cron (or platform
 scheduler) invokes this command once per day; nothing here depends on a
@@ -16,7 +23,6 @@ specific scheduler product.
 
 from __future__ import annotations
 
-import logging
 import time
 
 from django.conf import settings
@@ -25,7 +31,7 @@ from django.utils import timezone
 from games.models import Game
 
 from classifications.calculations.constants import MASTER_VERSION
-from classifications.models import CalculationEpoch
+from classifications.models import CalculationAttempt, CalculationEpoch
 from classifications.services.calculations import (
     MAX_ATTEMPTS_PER_GAME_EPOCH,
     ClaimStatus,
@@ -33,10 +39,10 @@ from classifications.services.calculations import (
     execute_pure_calculation,
     fail_engine_attempt,
     finalize_successful_calculation,
+    freeze_population,
+    should_skip_unchanged_game,
 )
 from classifications.services.notifications import CalculationFailureNotifier
-
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -110,22 +116,43 @@ class Command(BaseCommand):
             cutoff = epoch.cutoff_at
 
         succeeded = 0
+        skipped_unchanged = 0
         failed: list[Game] = []
         pending: list[Game] = list(games)
         for wave in range(1, MAX_ATTEMPTS_PER_GAME_EPOCH + 1):
             wave_failed: list[Game] = []
             for game in pending:
-                claim_status, attempt = claim_game_calculation_attempt(epoch, game.pk)
-                if claim_status is ClaimStatus.SKIPPED_ALREADY_SUCCEEDED:
-                    # Idempotent resume: the Game already SUCCEEDED this epoch.
+                # Resume gate: already SUCCEEDED earlier in this epoch.
+                if CalculationAttempt.objects.filter(
+                    epoch=epoch,
+                    game=game,
+                    status=CalculationAttempt.Status.SUCCEEDED,
+                ).exists():
                     succeeded += 1
+                    continue
+
+                # Freeze once and reuse the population for both the
+                # content-addressed check and the calculation itself.
+                population, received, invalid = freeze_population(game, cutoff)
+
+                # Content-addressed gate: identical inputs + versions -> skip.
+                is_unchanged, snapshot = should_skip_unchanged_game(
+                    game.pk, population.population_hash
+                )
+                if is_unchanged:
+                    skipped_unchanged += 1
+                    assert snapshot is not None
                     self.stdout.write(
-                        f"Game {game.slug}: already SUCCEEDED in epoch "
-                        f"{epoch.epoch_id}. Skipping."
+                        f"Game {game.slug}: unchanged population and algorithm "
+                        f"versions. Skipping (reusing snapshot {snapshot.pk})."
                     )
                     continue
+
+                claim_status, attempt = claim_game_calculation_attempt(epoch, game.pk)
+                if claim_status is ClaimStatus.SKIPPED_ALREADY_SUCCEEDED:
+                    succeeded += 1
+                    continue
                 if claim_status is ClaimStatus.EXHAUSTED:
-                    # Attempt budget consumed by an earlier invocation.
                     failed.append(game)
                     continue
 
@@ -134,6 +161,7 @@ class Command(BaseCommand):
                     pure = execute_pure_calculation(
                         game=game,
                         cutoff_at=cutoff,
+                        frozen_population=(population, received, invalid),
                         bootstrap_replicates=options["bootstrap_replicates"],
                         governance_draws=options["governance_draws"],
                     )
@@ -172,6 +200,7 @@ class Command(BaseCommand):
         epoch.games_attempted = games.count()
         epoch.games_succeeded = succeeded
         epoch.games_failed = len(failed)
+        epoch.games_skipped_unchanged = skipped_unchanged
         epoch.status = (
             CalculationEpoch.Status.COMPLETED
             if not failed
@@ -183,6 +212,7 @@ class Command(BaseCommand):
                 "games_attempted",
                 "games_succeeded",
                 "games_failed",
+                "games_skipped_unchanged",
                 "status",
                 "completed_at",
             ]
@@ -190,8 +220,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Epoch {epoch_id} complete: {epoch.games_succeeded} succeeded, "
-                f"{epoch.games_failed} failed."
+                f"Epoch {epoch_id} complete: {succeeded} succeeded, "
+                f"{skipped_unchanged} skipped (unchanged), {len(failed)} failed."
             )
         )
 
