@@ -1,12 +1,13 @@
 """
-Run the canonical daily derived-classification epoch — SBGC-65.
+Run the canonical daily derived-classification epoch — SBGC-65 / SBGC-197.
 
-Freezes each Game's submission population at ``cutoff_at``, runs the
-calculation engine outside long transactions, and atomically promotes
-successful snapshots.  Engine failures are retried (initial attempt plus
-three retries = maximum four attempts per Game per epoch); only failed
-Games are retried.  After the final failed attempt the failure-notification
-scaffold is invoked.
+Claims and calculates each Game through the three-phase pipeline (claim →
+calculate → finalize).  Engine failures are retried within the invocation
+(initial attempt plus three retries = maximum four attempts per Game per
+epoch), and re-invoking the command against the same epoch resumes safely:
+Games that already SUCCEEDED are skipped and still-failed Games continue at
+their next free attempt number — never colliding on the
+``(game, epoch, attempt_number)`` unique constraint (R4-02).
 
 The engine is scheduler-vendor independent: a deployment cron (or platform
 scheduler) invokes this command once per day; nothing here depends on a
@@ -15,6 +16,7 @@ specific scheduler product.
 
 from __future__ import annotations
 
+import logging
 import time
 
 from django.conf import settings
@@ -26,11 +28,15 @@ from classifications.calculations.constants import MASTER_VERSION
 from classifications.models import CalculationEpoch
 from classifications.services.calculations import (
     MAX_ATTEMPTS_PER_GAME_EPOCH,
-    run_game_calculation,
+    ClaimStatus,
+    claim_game_calculation_attempt,
+    execute_pure_calculation,
+    fail_engine_attempt,
+    finalize_successful_calculation,
 )
-from classifications.services.notifications import (
-    CalculationFailureNotifier,
-)
+from classifications.services.notifications import CalculationFailureNotifier
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -103,43 +109,72 @@ class Command(BaseCommand):
             # Resuming a partially completed epoch: keep the original cutoff.
             cutoff = epoch.cutoff_at
 
-        failed_games: list[Game] = list(games)
-        for attempt_number in range(1, MAX_ATTEMPTS_PER_GAME_EPOCH + 1):
-            wave = list(failed_games)
-            if not wave:
-                break
-            still_failed: list[Game] = []
-            for game in wave:
+        succeeded = 0
+        failed: list[Game] = []
+        pending: list[Game] = list(games)
+        for wave in range(1, MAX_ATTEMPTS_PER_GAME_EPOCH + 1):
+            wave_failed: list[Game] = []
+            for game in pending:
+                claim_status, attempt = claim_game_calculation_attempt(epoch, game.pk)
+                if claim_status is ClaimStatus.SKIPPED_ALREADY_SUCCEEDED:
+                    # Idempotent resume: the Game already SUCCEEDED this epoch.
+                    succeeded += 1
+                    self.stdout.write(
+                        f"Game {game.slug}: already SUCCEEDED in epoch "
+                        f"{epoch.epoch_id}. Skipping."
+                    )
+                    continue
+                if claim_status is ClaimStatus.EXHAUSTED:
+                    # Attempt budget consumed by an earlier invocation.
+                    failed.append(game)
+                    continue
+
+                assert attempt is not None
                 try:
-                    run_game_calculation(
+                    pure = execute_pure_calculation(
                         game=game,
-                        epoch=epoch,
-                        attempt_number=attempt_number,
                         cutoff_at=cutoff,
                         bootstrap_replicates=options["bootstrap_replicates"],
                         governance_draws=options["governance_draws"],
-                        notifier=notifier,
                     )
-                except Exception:
-                    still_failed.append(game)
-            failed_games = still_failed
-            if not failed_games:
+                    finalize_successful_calculation(attempt, pure)
+                    succeeded += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Game {game.slug}: Attempt "
+                            f"{attempt.attempt_number} SUCCEEDED."
+                        )
+                    )
+                except Exception as exc:
+                    summary = f"{exc.__class__.__name__}: {exc}"[:1000]
+                    fail_engine_attempt(attempt, summary, notifier=notifier)
+                    self.stderr.write(
+                        self.style.ERROR(
+                            f"Game {game.slug}: Attempt "
+                            f"{attempt.attempt_number} FAILED: {exc}"
+                        )
+                    )
+                    wave_failed.append(game)
+
+            pending = wave_failed
+            if not pending:
                 break
-            if attempt_number < MAX_ATTEMPTS_PER_GAME_EPOCH:
+            if wave < MAX_ATTEMPTS_PER_GAME_EPOCH:
                 self.stdout.write(
                     self.style.WARNING(
-                        f"Retrying {len(failed_games)} failed game(s) "
-                        f"after {retry_delay}s (attempt {attempt_number + 1})."
+                        f"Retrying {len(pending)} failed game(s) after "
+                        f"{retry_delay}s (wave {wave + 1})."
                     )
                 )
                 time.sleep(retry_delay)
+        failed = [*failed, *pending]
 
         epoch.games_attempted = games.count()
-        epoch.games_succeeded = epoch.games_attempted - len(failed_games)
-        epoch.games_failed = len(failed_games)
+        epoch.games_succeeded = succeeded
+        epoch.games_failed = len(failed)
         epoch.status = (
             CalculationEpoch.Status.COMPLETED
-            if not failed_games
+            if not failed
             else CalculationEpoch.Status.PARTIAL
         )
         epoch.completed_at = timezone.now()
@@ -156,8 +191,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Epoch {epoch_id} complete: {epoch.games_succeeded} succeeded, "
-                f"{epoch.games_failed} failed after "
-                f"{MAX_ATTEMPTS_PER_GAME_EPOCH} attempts."
+                f"{epoch.games_failed} failed."
             )
         )
 

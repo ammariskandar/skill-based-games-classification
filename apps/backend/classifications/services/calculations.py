@@ -1,11 +1,16 @@
 """
-Derived-classification calculation service — SBGC-65.
+Derived-classification calculation service — SBGC-65 / SBGC-197.
 
-Freezes the submission population at an epoch cutoff, runs the pure
-calculation engine outside any long transaction, and persists the complete
-versioned snapshot atomically.  A new snapshot becomes current only when the
-engine returned READY; every other outcome leaves the previous successful
-snapshot as the published fallback.
+Runs the calculation lifecycle as three isolated phases (R4-02):
+
+1. Claim  — transactionally allocate/lock the next attempt (or skip Games
+   that already SUCCEEDED in the epoch, so a resumed epoch never collides).
+2. Compute — freeze the population and run the pure engine with zero DB
+   locks or transaction context held.
+3. Finalize — atomically persist the snapshot, demote/promote the single
+   current snapshot, persist the boundary, and mark the attempt SUCCEEDED;
+   a failure rolls the whole block back and records the attempt FAILED in an
+   isolated transaction.
 
 No statistical logic lives here — only the persistence/coordination
 boundary around ``classifications.calculations``.
@@ -15,6 +20,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
 
 from django.db import transaction
@@ -84,6 +90,28 @@ DOMAIN_OUTCOME_CATEGORY = "domain_outcome"
 MAX_ATTEMPTS_PER_GAME_EPOCH = 4
 
 
+class ClaimStatus(StrEnum):
+    """Outcome of a Phase-1 transactional attempt claim (SBGC-197)."""
+
+    CLAIMED = "claimed"
+    SKIPPED_ALREADY_SUCCEEDED = "skipped_already_succeeded"
+    EXHAUSTED = "exhausted"
+
+
+@dataclass(frozen=True)
+class PureCalculationResult:
+    """Phase-2 output: the engine result plus its frozen-input diagnostics.
+
+    Bundles everything Phase 3 needs to persist so the numerical work can run
+    with zero database locks or transaction context held (SBGC-197).
+    """
+
+    result: GameCalculationResult
+    received: int
+    invalid: int
+    cutoff_at: Any
+
+
 def freeze_population(game: Game, cutoff_at) -> tuple[PopulationSnapshot, int, int]:
     """Freeze the canonical valid submission population for one Game/epoch.
 
@@ -150,6 +178,152 @@ def stored_boundary(game: Game) -> BoundaryCalibrationData | None:
     )
 
 
+def execute_pure_calculation(
+    *,
+    game: Game,
+    cutoff_at,
+    bootstrap_replicates: int | None = None,
+    governance_draws: int | None = None,
+) -> PureCalculationResult:
+    """Phase 2 — freeze inputs and run the engine with zero DB locks held.
+
+    Reads the frozen population and stored boundary, then executes the
+    CPU-heavy numerical work outside any ``transaction.atomic`` context or
+    row lock (SBGC-197).  Returns a ``PureCalculationResult`` carrying the
+    engine output and its input diagnostics for Phase 3 persistence.
+    """
+    population, received, invalid = freeze_population(game, cutoff_at)
+    boundary = stored_boundary(game)
+    result = calculate_game(
+        population,
+        game_identifier=str(game.pk),
+        stored_boundary=boundary,
+        bootstrap_replicates=bootstrap_replicates,
+        governance_draws=governance_draws,
+    )
+    return PureCalculationResult(
+        result=result, received=received, invalid=invalid, cutoff_at=cutoff_at
+    )
+
+
+def claim_game_calculation_attempt(
+    epoch: CalculationEpoch, game_id: int
+) -> tuple[ClaimStatus, CalculationAttempt | None]:
+    """Phase 1 — transactionally claim the next attempt for (epoch, game).
+
+    Serialises on the epoch row, SKIPs Games that already SUCCEEDED in the
+    epoch (idempotent resume), and allocates the next free ``attempt_number``
+    so re-running an interrupted epoch never collides on the
+    ``(game, epoch, attempt_number)`` unique constraint (R4-02).  Returns
+    EXHAUSTED once the per-Game attempt budget (max four) is consumed.
+    """
+    with transaction.atomic():
+        CalculationEpoch.objects.select_for_update().get(pk=epoch.pk)
+        existing = list(
+            CalculationAttempt.objects.select_for_update()
+            .filter(epoch=epoch, game_id=game_id)
+            .order_by("attempt_number")
+        )
+        if any(
+            attempt.status == CalculationAttempt.Status.SUCCEEDED
+            for attempt in existing
+        ):
+            return ClaimStatus.SKIPPED_ALREADY_SUCCEEDED, None
+        next_number = existing[-1].attempt_number + 1 if existing else 1
+        if next_number > MAX_ATTEMPTS_PER_GAME_EPOCH:
+            return ClaimStatus.EXHAUSTED, None
+        attempt = CalculationAttempt.objects.create(
+            epoch=epoch,
+            game_id=game_id,
+            attempt_number=next_number,
+            status=CalculationAttempt.Status.RUNNING,
+            started_at=timezone.now(),
+        )
+        return ClaimStatus.CLAIMED, attempt
+
+
+def record_failed_calculation_attempt(
+    attempt: CalculationAttempt,
+    *,
+    failure_category: str,
+    error_summary: str,
+) -> None:
+    """Record an attempt as FAILED in an isolated transaction (Phase 3).
+
+    Runs after the finalization block has fully rolled back so failure state
+    persists independently of the success path (R4-02).
+    """
+    with transaction.atomic():
+        attempt.status = CalculationAttempt.Status.FAILED
+        attempt.failure_category = failure_category
+        attempt.error_summary = error_summary
+        attempt.completed_at = timezone.now()
+        attempt.save(
+            update_fields=[
+                "status",
+                "failure_category",
+                "error_summary",
+                "completed_at",
+            ]
+        )
+
+
+def fail_engine_attempt(
+    attempt: CalculationAttempt,
+    error_summary: str,
+    *,
+    notifier: CalculationFailureNotifier | None = None,
+) -> None:
+    """Engine-failure orchestration: FAILED record + stale fallback + notice."""
+    record_failed_calculation_attempt(
+        attempt,
+        failure_category=ENGINE_FAILURE_CATEGORY,
+        error_summary=error_summary,
+    )
+    _mark_current_stale(attempt.game)
+    logger.error(
+        "Classification calculation failed for game %s attempt %s: %s",
+        attempt.game.pk,
+        attempt.attempt_number,
+        error_summary,
+    )
+    _maybe_notify_exhaustion(
+        notifier, attempt.game, attempt.epoch, attempt.attempt_number, error_summary
+    )
+
+
+def finalize_successful_calculation(
+    attempt: CalculationAttempt, pure: PureCalculationResult
+) -> ClassificationSnapshot:
+    """Phase 3 — atomically publish snapshot, boundary, and SUCCEEDED state.
+
+    Snapshot insertion, demotion/promotion of the single current snapshot,
+    boundary persistence, and the attempt ``RUNNING -> SUCCEEDED`` transition
+    commit in one transaction.  Any failure rolls the entire block back,
+    leaving the previous current snapshot untouched and the attempt still
+    recordable as FAILED in isolation (R4-02).
+    """
+    with transaction.atomic():
+        snapshot = _persist_snapshot(
+            game=attempt.game,
+            epoch=attempt.epoch,
+            result=pure.result,
+            received=pure.received,
+            invalid=pure.invalid,
+            cutoff_at=pure.cutoff_at,
+            attempt_count=attempt.attempt_number,
+            failure_category=(
+                "" if pure.result.status == READY else DOMAIN_OUTCOME_CATEGORY
+            ),
+        )
+        if pure.result.status == READY:
+            _persist_boundary(attempt.game, pure.result)
+        attempt.status = CalculationAttempt.Status.SUCCEEDED
+        attempt.completed_at = timezone.now()
+        attempt.save(update_fields=["status", "completed_at"])
+        return snapshot
+
+
 def run_game_calculation(
     *,
     game: Game,
@@ -160,10 +334,17 @@ def run_game_calculation(
     governance_draws: int | None = None,
     notifier: CalculationFailureNotifier | None = None,
 ) -> CalculationAttempt:
-    """Execute one calculation attempt for one Game inside an epoch.
+    """Execute one explicit-attempt calculation for one Game inside an epoch.
 
-    Freezes inputs, computes outside any database transaction, then persists
-    the complete snapshot in a short atomic block.
+    Single-attempt primitive used by the admin recalculation action and direct
+    test callers (which always target a fresh epoch/attempt).  The daily
+    scheduler command uses the dynamic claim/allocate pipeline instead, which
+    provides idempotent resume; this function drives the same
+    claim -> calculate -> finalize phases for a caller-supplied attempt number.
+
+    Freezes inputs and computes outside any database transaction, then
+    finalizes the complete snapshot + boundary + SUCCEEDED state in a single
+    short atomic block (R4-02).
 
     A legitimate mathematical/domain result — READY or a valid non-error
     status such as NO_SUBMISSIONS, INSUFFICIENT_ANCHOR, or
@@ -178,76 +359,48 @@ def run_game_calculation(
         game=game,
         epoch=epoch,
         attempt_number=attempt_number,
-        status=CalculationAttempt.Status.FAILED,
+        status=CalculationAttempt.Status.RUNNING,
         started_at=timezone.now(),
     )
 
-    population, received, invalid = freeze_population(game, cutoff_at)
-    boundary = stored_boundary(game)
-
     try:
-        result = calculate_game(
-            population,
-            game_identifier=str(game.pk),
-            stored_boundary=boundary,
+        pure = execute_pure_calculation(
+            game=game,
+            cutoff_at=cutoff_at,
             bootstrap_replicates=bootstrap_replicates,
             governance_draws=governance_draws,
         )
     except Exception as exc:
+        fail_engine_attempt(attempt, _safe_summary(exc), notifier=notifier)
+        raise
+
+    if pure.result.status != READY and pure.result.status not in DOMAIN_STATUSES:
+        # Engine-level calculation defect (e.g. CALCULATION_ERROR or
+        # UNIFIED_CALCULATION_ERROR): a retryable operational failure, not a
+        # legitimate domain outcome.
+        summary = f"calculation status {pure.result.status}"
+        fail_engine_attempt(attempt, summary, notifier=notifier)
+        raise RuntimeError(summary)
+
+    # Phase 3: atomic finalization.  A failure here rolls back the snapshot
+    # + boundary writes; the attempt is then recorded FAILED in isolation.
+    try:
+        finalize_successful_calculation(attempt, pure)
+    except Exception as exc:
         summary = _safe_summary(exc)
-        attempt.failure_category = ENGINE_FAILURE_CATEGORY
-        attempt.error_summary = summary
-        attempt.completed_at = timezone.now()
-        attempt.save(
-            update_fields=["failure_category", "error_summary", "completed_at"]
+        record_failed_calculation_attempt(
+            attempt,
+            failure_category=ENGINE_FAILURE_CATEGORY,
+            error_summary=summary,
         )
-        _mark_current_stale(game)
         logger.error(
-            "Classification calculation failed for game %s attempt %s: %s",
+            "Classification finalization failed for game %s attempt %s: %s",
             game.pk,
             attempt_number,
             summary,
         )
         _maybe_notify_exhaustion(notifier, game, epoch, attempt_number, summary)
         raise
-
-    if result.status != READY and result.status not in DOMAIN_STATUSES:
-        # Engine-level calculation defect (e.g. CALCULATION_ERROR or
-        # UNIFIED_CALCULATION_ERROR): a retryable operational failure, not a
-        # legitimate domain outcome.
-        summary = f"calculation status {result.status}"
-        attempt.failure_category = ENGINE_FAILURE_CATEGORY
-        attempt.error_summary = summary
-        attempt.completed_at = timezone.now()
-        attempt.save(
-            update_fields=["failure_category", "error_summary", "completed_at"]
-        )
-        _mark_current_stale(game)
-        logger.error(
-            "Classification calculation failed for game %s attempt %s: %s",
-            game.pk,
-            attempt_number,
-            summary,
-        )
-        _maybe_notify_exhaustion(notifier, game, epoch, attempt_number, summary)
-        raise RuntimeError(summary)
-
-    # Legitimate domain outcome -> becomes the current published state.
-    attempt.status = CalculationAttempt.Status.SUCCEEDED
-    attempt.completed_at = timezone.now()
-    attempt.save(update_fields=["status", "completed_at"])
-    _persist_snapshot(
-        game=game,
-        epoch=epoch,
-        result=result,
-        received=received,
-        invalid=invalid,
-        cutoff_at=cutoff_at,
-        attempt_count=attempt_number,
-        failure_category="" if result.status == READY else DOMAIN_OUTCOME_CATEGORY,
-    )
-    if result.status == READY:
-        _persist_boundary(game, result)
     return attempt
 
 
@@ -530,12 +683,19 @@ def _method_view(snapshot, prefix: str) -> dict[str, Any] | None:
 
 
 __all__ = [
+    "ClaimStatus",
     "DOMAIN_STATUSES",
     "ENGINE_FAILURE_CATEGORY",
     "MAX_ATTEMPTS_PER_GAME_EPOCH",
     "PublishedClassification",
+    "PureCalculationResult",
+    "claim_game_calculation_attempt",
+    "execute_pure_calculation",
+    "fail_engine_attempt",
+    "finalize_successful_calculation",
     "freeze_population",
     "get_published_classification",
+    "record_failed_calculation_attempt",
     "run_game_calculation",
     "stored_boundary",
 ]
