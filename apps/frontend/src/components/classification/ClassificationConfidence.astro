@@ -1,4 +1,6 @@
 ---
+import { confidenceTone } from "../../lib/classification-presentation";
+
 interface Props {
   level: number;
   label: string | null;
@@ -6,6 +8,7 @@ interface Props {
 
 const { level, label } = Astro.props;
 const descriptor = label ? `${label} confidence` : null;
+const tone = confidenceTone(level);
 ---
 
 <section class="confidence" aria-labelledby="confidence-heading">
@@ -13,7 +16,7 @@ const descriptor = label ? `${label} confidence` : null;
     Classification confidence
   </h3>
 
-  <p class="confidence__value">{level}%</p>
+  <p class={`confidence__value confidence__value--${tone}`}>{level}%</p>
 
   {descriptor && <p class="confidence__descriptor">{descriptor}</p>}
 </section>
@@ -29,11 +32,35 @@ const descriptor = label ? `${label} confidence` : null;
 
   .confidence__value {
     margin-top: 0.5rem;
-    font-size: 2.25rem;
+    font-size: 3rem;
     line-height: 1.1;
     font-weight: 600;
     color: var(--color-text);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Desktop-only bump: ~10% larger than the 3rem baseline, rounded up to the
+     nearest convenient half-rem. */
+  @media (min-width: 64rem) {
+    .confidence__value {
+      font-size: 3.5rem;
+    }
+  }
+
+  .confidence__value--green {
+    color: var(--color-green);
+  }
+
+  .confidence__value--amber {
+    color: var(--color-amber);
+  }
+
+  .confidence__value--orange {
+    color: var(--color-orange-dark);
+  }
+
+  .confidence__value--maroon {
+    color: var(--color-maroon);
   }
 
   .confidence__descriptor {

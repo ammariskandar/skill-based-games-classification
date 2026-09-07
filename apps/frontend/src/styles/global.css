@@ -16,6 +16,11 @@
   --color-orange: #ffa657;
   --color-red: #f85149;
   --color-yellow: #d2991d;
+  /* Confidence-tier accent hues (SBGC-220): readable amber / dark orange /
+     maroon for the large percentage readout. Never use bright yellow. */
+  --color-amber: #d09628;
+  --color-orange-dark: #c05a1a;
+  --color-maroon: #ad3b30;
   --color-chart-grid: #30363d;
   --color-chart-bg: #161b22;
   --color-chart-fg: #e6edf3;

@@ -364,6 +364,25 @@ export function presentClassification(
   };
 }
 
+/* ── confidence percentage colour tier (SBGC-220) ─────────────────────── */
+
+export type ConfidenceTone = "green" | "amber" | "orange" | "maroon";
+
+/**
+ * Resolve the confidence-percentage colour tier from a 0–100 confidence level.
+ *
+ *   >= 65%  green
+ *   30–64%  amber (dark yellow — never bright yellow)
+ *   25–29%  dark orange
+ *   < 25%   maroon/red
+ */
+export function confidenceTone(level: number): ConfidenceTone {
+  if (level >= 65) return "green";
+  if (level >= 30) return "amber";
+  if (level >= 25) return "orange";
+  return "maroon";
+}
+
 function warnMalformed(
   slug: string | undefined,
   profile: string,

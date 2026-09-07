@@ -1,0 +1,27 @@
+---
+// Static scaffold for the future Similar Games recommendation feature
+// (SBGC-215). No data, no hydration, no recommendation logic — only the
+// responsive skeleton geometry the real cards will eventually inhabit.
+// Reduced-motion users get a static (non-pulsing) card background.
+const CARD_COUNT = 4;
+---
+
+<section class="similar-games" aria-labelledby="similar-games-heading">
+  <h2 id="similar-games-heading" class="text-xl font-semibold text-text">
+    Similar Games
+  </h2>
+
+  <div
+    class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+    aria-hidden="true"
+  >
+    {
+      Array.from({ length: CARD_COUNT }).map(() => (
+        <div
+          class="aspect-video rounded-lg border border-border bg-surface motion-safe:animate-pulse"
+          data-similar-games-card
+        />
+      ))
+    }
+  </div>
+</section>

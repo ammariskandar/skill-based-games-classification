@@ -1,0 +1,72 @@
+---
+import GameImage from "./GameImage.astro";
+import GameInformation from "./GameInformation.astro";
+import SimilarGamesScaffold from "./SimilarGamesScaffold.astro";
+import ClassificationDisplay from "../classification/ClassificationDisplay.astro";
+import { presentClassification } from "../../lib/classification-presentation";
+import type {
+  GameDetailGame,
+  GameFinalClassification,
+} from "../../lib/server/api/games";
+
+interface Props {
+  game: GameDetailGame;
+  classification: GameFinalClassification | null;
+}
+
+const { game, classification } = Astro.props;
+
+const presentation = presentClassification(classification, game.slug);
+const challengeVector =
+  presentation.kind === "ready" ? presentation.challenge : null;
+const rewardVector = presentation.kind === "ready" ? presentation.reward : null;
+---
+
+<article>
+  <header>
+    <p class="text-sm font-semibold uppercase tracking-wider text-muted">
+      {game.source === "steam" ? "Steam" : "Manual"}
+    </p>
+    <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+      {game.name}
+    </h1>
+  </header>
+
+  <!-- Hero banner: capsule + radar (GameImage), then the Game Information
+       trigger spans the full hero width directly beneath it. -->
+  <div class="mt-8 space-y-4">
+    <GameImage
+      src={game.image_url}
+      name={game.name}
+      slug={game.slug}
+      source={game.source}
+      libraryHeroUrl={game.library_hero_url}
+      libraryCapsuleUrl={game.library_capsule_url}
+      challenge={challengeVector}
+      reward={rewardVector}
+    />
+
+    <GameInformation game={game} />
+  </div>
+
+  <!-- Dual panel: Skill Classification bar charts and Confidence gauge card
+       sit side-by-side inside ClassificationDisplay (see its grid layout). -->
+  <div class="mt-10">
+    <ClassificationDisplay classification={classification} slug={game.slug} />
+  </div>
+
+  <!-- Inert submit scaffold (SBGC-220). SBGC-215 wires the click handler,
+       modal, and rainbow animation; this button deliberately has none. -->
+  <button
+    type="button"
+    id="submit-classification-btn"
+    data-game-slug={game.slug}
+    class="mt-6 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-3 text-xl font-semibold text-bg transition-colors hover:bg-blue/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue motion-reduce:transition-none"
+  >
+    Submit Classification
+  </button>
+
+  <div class="mt-10">
+    <SimilarGamesScaffold />
+  </div>
+</article>

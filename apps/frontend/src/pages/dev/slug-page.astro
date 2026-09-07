@@ -1,0 +1,61 @@
+---
+import "../../styles/global.css";
+import GameDetailBody from "../../components/game/GameDetailBody.astro";
+import type {
+  GameDetailGame,
+  GameFinalClassification,
+} from "../../lib/server/api/games";
+
+// Dev-only test fixture (SBGC-220). Renders the real GameDetailBody component
+// with static data so the Playwright suite (apps/frontend/tests/browser) can
+// assert the slug-page layout structure without the Django backend. Not linked
+// from any production page.
+export const prerender = true;
+
+const image = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"></svg>',
+)}`;
+
+const game: GameDetailGame = {
+  id: 1,
+  slug: "fixture-game",
+  name: "Fixture Game",
+  source: "manual",
+  external_id: null,
+  content_type: "game",
+  description: "A static fixture game for the slug-page layout test.",
+  release_date: null,
+  developer: "Fixture Studio",
+  image_url: image,
+  library_hero_url: null,
+  library_capsule_url: null,
+  metadata_updated_at: "2026-01-01T00:00:00Z",
+};
+
+const classification: GameFinalClassification = {
+  status: "ready",
+  regime: "unified",
+  challenge: { micro: 40, macro: 30, mystiko: 30 },
+  reward: { micro: 30, macro: 40, mystiko: 30 },
+  confidence_level: 87,
+  confidence_label: "High",
+  submission_count: 12,
+  calculation_version: "1.0.0",
+  calculated_at: "2026-01-01T00:00:00Z",
+  is_stale: false,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slug-page layout fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter py-8">
+      <GameDetailBody game={game} classification={classification} />
+    </main>
+  </body>
+</html>
