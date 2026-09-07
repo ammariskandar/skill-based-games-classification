@@ -1,0 +1,377 @@
+---
+import ManualScoreForm from "./ManualScoreForm.astro";
+import SubmittedScoresView from "./SubmittedScoresView.astro";
+
+interface Props {
+  gameSlug: string;
+  gameName: string;
+}
+
+const { gameSlug, gameName } = Astro.props;
+const loginHref = `/login?redirect=/games/${encodeURIComponent(gameSlug)}`;
+const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
+---
+
+<dialog
+  id="score-submission-modal"
+  class="submission-modal"
+  aria-labelledby="submission-modal-title"
+>
+  <div class="submission-modal__panel">
+    <header class="submission-modal__header">
+      <div>
+        <p class="submission-modal__game">{gameName}</p>
+        <h2 id="submission-modal-title" class="submission-modal__title">
+          Submit a classification score
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="submission-modal__close"
+        data-submission-close
+        aria-label="Close modal"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="submission-modal__body">
+      <div
+        class="submission-state"
+        data-submission-state="unauthenticated"
+        hidden
+      >
+        <p class="submission-state__message">Please log in to submit a score</p>
+        <a href={loginHref} class="submission-state__link"> Log in </a>
+      </div>
+
+      <div class="submission-state" data-submission-state="choice" hidden>
+        <div class="questionnaire-card">
+          <img
+            class="questionnaire-card__illustration"
+            src="/icons/recommendationengineicon.png"
+            alt="Guided Score Builder icon"
+            width="512"
+            height="512"
+            loading="lazy"
+          />
+          <a href={questionnaireHref} class="questionnaire-card__action">
+            Guided Score Builder
+          </a>
+          <p class="questionnaire-card__subline">
+            Fine-tune your ratings in a few quick steps.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="submission-state__skip"
+          data-submission-skip
+        >
+          Skip to manual score submission
+        </button>
+      </div>
+
+      <div class="submission-state" data-submission-state="manual" hidden>
+        <ManualScoreForm />
+      </div>
+
+      <div class="submission-state" data-submission-state="submitted" hidden>
+        <SubmittedScoresView />
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import {
+    getCachedSubmission,
+    isUserAuthenticated,
+    saveSubmissionToCache,
+  } from "../../lib/score-submission-store";
+  import { isProfileValid } from "../../lib/score-validation";
+  import type { ProfileScores } from "../../lib/score-validation";
+
+  const dialogElement = document.getElementById(
+    "score-submission-modal",
+  ) as HTMLDialogElement | null;
+  const triggerElement = document.getElementById(
+    "submit-classification-btn",
+  ) as HTMLButtonElement | null;
+  if (!dialogElement || !triggerElement) {
+    throw new Error("Score submission modal wiring failed");
+  }
+  const dialog: HTMLDialogElement = dialogElement;
+  const trigger: HTMLButtonElement = triggerElement;
+
+  const gameSlug = trigger.dataset.gameSlug ?? "";
+
+  type StateName = "unauthenticated" | "choice" | "manual" | "submitted";
+
+  const stateViews: Record<StateName, HTMLElement | null> = {
+    unauthenticated: dialog.querySelector(
+      '[data-submission-state="unauthenticated"]',
+    ),
+    choice: dialog.querySelector('[data-submission-state="choice"]'),
+    manual: dialog.querySelector('[data-submission-state="manual"]'),
+    submitted: dialog.querySelector('[data-submission-state="submitted"]'),
+  };
+
+  const skipBtn = dialog.querySelector<HTMLButtonElement>(
+    "[data-submission-skip]",
+  );
+  const closeBtn = dialog.querySelector<HTMLButtonElement>(
+    "[data-submission-close]",
+  );
+
+  let activeState: StateName = "choice";
+
+  function showState(name: StateName): void {
+    activeState = name;
+    for (const [key, el] of Object.entries(stateViews)) {
+      if (el) el.hidden = key !== name;
+    }
+  }
+
+  function setSubmittedValue(key: string, value: number): void {
+    const cell = dialog.querySelector(`[data-submitted="${key}"]`);
+    if (cell) cell.textContent = String(value);
+  }
+
+  function renderSubmitted(submission: {
+    challenge: ProfileScores;
+    reward: ProfileScores;
+    submittedAt: string;
+  }): void {
+    setSubmittedValue("challenge.micro", submission.challenge.micro);
+    setSubmittedValue("challenge.mystiko", submission.challenge.mystiko);
+    setSubmittedValue("challenge.macro", submission.challenge.macro);
+    setSubmittedValue("reward.micro", submission.reward.micro);
+    setSubmittedValue("reward.mystiko", submission.reward.mystiko);
+    setSubmittedValue("reward.macro", submission.reward.macro);
+
+    const timestamp = dialog.querySelector("[data-submitted-timestamp]");
+    if (timestamp) {
+      timestamp.textContent = new Date(submission.submittedAt).toLocaleString();
+    }
+
+    showState("submitted");
+  }
+
+  function focusFirst(container: HTMLElement | null): void {
+    const target = container?.querySelector<HTMLElement>(
+      "button, a[href], input, select, textarea",
+    );
+    target?.focus();
+  }
+
+  function openModal(): void {
+    const cached = getCachedSubmission(gameSlug);
+    if (cached) {
+      renderSubmitted(cached);
+    } else if (!isUserAuthenticated()) {
+      showState("unauthenticated");
+    } else {
+      showState("choice");
+    }
+
+    if (!dialog.open) dialog.showModal();
+    focusFirst(stateViews[activeState]);
+  }
+
+  trigger.addEventListener("click", openModal);
+
+  skipBtn?.addEventListener("click", () => {
+    const form = dialog.querySelector("[data-manual-score-form]");
+    form?.dispatchEvent(new CustomEvent("score-form-reset", { bubbles: true }));
+    showState("manual");
+    focusFirst(stateViews.manual);
+  });
+
+  closeBtn?.addEventListener("click", () => dialog.close());
+
+  dialog.addEventListener("score-submit", (event) => {
+    const detail = (event as CustomEvent).detail as
+      { challenge: ProfileScores; reward: ProfileScores } | undefined;
+    if (
+      !detail ||
+      !isProfileValid(detail.challenge) ||
+      !isProfileValid(detail.reward)
+    ) {
+      return;
+    }
+
+    saveSubmissionToCache({
+      gameSlug,
+      submittedAt: new Date().toISOString(),
+      challenge: detail.challenge,
+      reward: detail.reward,
+    });
+
+    renderSubmitted({
+      challenge: detail.challenge,
+      reward: detail.reward,
+      submittedAt: new Date().toISOString(),
+    });
+  });
+
+  // Escape / close returns focus to the trigger (showModal fires `close` on
+  // Escape natively).
+  dialog.addEventListener("close", () => {
+    trigger.focus();
+  });
+</script>
+
+<style>
+  .submission-modal {
+    /* Native modal <dialog>s are centred by `margin: auto` on a fit-content
+       box, but Tailwind preflight zeroes margins on every element. Restore
+       auto margins (and pin fixed/inset explicitly) so the dialog centres
+       over the backdrop instead of hugging the top-left. */
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(92vw, 44rem);
+    max-height: 85dvh;
+    padding: 0;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .submission-modal::backdrop {
+    background: rgb(0 0 0 / 0.8);
+  }
+
+  .submission-modal__panel {
+    display: flex;
+    flex-direction: column;
+    max-height: 85dvh;
+  }
+
+  .submission-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .submission-modal__game {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .submission-modal__title {
+    margin: 0.25rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .submission-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .submission-modal__close:hover {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
+  .submission-modal__body {
+    padding: 1.25rem;
+    overflow-y: auto;
+  }
+
+  .submission-state__message {
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .submission-state__link {
+    display: inline-flex;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .submission-state__link:hover {
+    background: var(--color-surface-3);
+  }
+
+  .questionnaire-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    text-align: center;
+  }
+
+  .questionnaire-card__illustration {
+    display: block;
+    width: 3.75rem;
+    height: 3.75rem;
+  }
+
+  .questionnaire-card__action {
+    display: inline-flex;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: var(--color-blue);
+    color: var(--color-bg);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .questionnaire-card__action:hover {
+    filter: brightness(1.08);
+  }
+
+  .questionnaire-card__subline {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .submission-state__skip {
+    display: block;
+    margin: 1rem auto 0;
+    border: none;
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .submission-state__skip:hover {
+    color: var(--color-text);
+  }
+</style>

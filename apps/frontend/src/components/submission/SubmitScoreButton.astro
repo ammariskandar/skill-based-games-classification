@@ -1,0 +1,20 @@
+---
+import "../../styles/rainbow-glow.css";
+
+interface Props {
+  gameSlug: string;
+}
+
+const { gameSlug } = Astro.props;
+---
+
+<button
+  type="button"
+  id="submit-classification-btn"
+  data-game-slug={gameSlug}
+  aria-haspopup="dialog"
+  aria-controls="score-submission-modal"
+  class="rainbow-glow-btn"
+>
+  Submit a classification score
+</button>

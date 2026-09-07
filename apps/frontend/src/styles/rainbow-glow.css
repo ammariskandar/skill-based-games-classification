@@ -1,0 +1,60 @@
+/* Rotating rainbow edge for the submit-score button — SBGC-215.
+ *
+ * The blue interior is a top background layer clipped to the padding-box; the
+ * rotating conic rainbow is a bottom layer clipped to the border-box, so it is
+ * visible only through the 2px transparent border — the "edge" ring. The
+ * registered custom property `--glow-angle` lets the conic start angle animate
+ * smoothly. Reduced-motion users get a static, high-contrast edge gradient.
+ */
+
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.rainbow-glow-btn {
+  display: block;
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(var(--color-blue, #58a6ff), var(--color-blue, #58a6ff))
+      padding-box,
+    conic-gradient(
+        from var(--glow-angle),
+        #ff4545,
+        #00ffcc,
+        #0077ff,
+        #ff00ea,
+        #ff4545
+      )
+      border-box;
+  padding: 0.875rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-bg, #0d1117);
+  text-align: center;
+  cursor: pointer;
+  animation: rotate-glow 4s linear infinite;
+}
+
+@keyframes rotate-glow {
+  0% {
+    --glow-angle: 0deg;
+  }
+
+  100% {
+    --glow-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rainbow-glow-btn {
+    animation: none;
+    background:
+      linear-gradient(var(--color-blue, #58a6ff), var(--color-blue, #58a6ff))
+        padding-box,
+      linear-gradient(135deg, #0077ff, #00ffcc) border-box;
+  }
+}

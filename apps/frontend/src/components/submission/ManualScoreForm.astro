@@ -1,0 +1,357 @@
+---
+const DIMENSIONS = [
+  { key: "micro", label: "Micro" },
+  { key: "mystiko", label: "Mystiko" },
+  { key: "macro", label: "Macro" },
+] as const;
+
+const PROFILES = [
+  { key: "challenge", label: "Challenge" },
+  { key: "reward", label: "Reward" },
+] as const;
+---
+
+<form class="manual-score-form" data-manual-score-form>
+  <div class="manual-score-form__grid">
+    {
+      PROFILES.map((profile) => (
+        <fieldset class="manual-score-form__panel" data-profile={profile.key}>
+          <legend class="manual-score-form__panel-title">
+            {profile.label}
+          </legend>
+
+          {DIMENSIONS.map((dim) => (
+            <div
+              class="score-field"
+              data-profile={profile.key}
+              data-dimension={dim.key}
+            >
+              <label
+                class="score-field__label"
+                for={`${profile.key}-${dim.key}`}
+              >
+                {dim.label}
+              </label>
+              <div class="score-field__control">
+                <button
+                  type="button"
+                  class="score-field__step"
+                  data-step="dec"
+                  data-profile={profile.key}
+                  data-dimension={dim.key}
+                  aria-label={`Decrease ${profile.label} ${dim.label}`}
+                >
+                  −
+                </button>
+                <input
+                  id={`${profile.key}-${dim.key}`}
+                  class="score-field__input"
+                  type="number"
+                  inputmode="numeric"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="0"
+                  data-profile={profile.key}
+                  data-dimension={dim.key}
+                />
+                <button
+                  type="button"
+                  class="score-field__step"
+                  data-step="inc"
+                  data-profile={profile.key}
+                  data-dimension={dim.key}
+                  aria-label={`Increase ${profile.label} ${dim.label}`}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <p class="score-field__total" data-total data-profile={profile.key}>
+            Total: 0 / 100
+          </p>
+          <p
+            class="score-field__status score-field__status--under"
+            data-status
+            data-profile={profile.key}
+          >
+            100 points remaining
+          </p>
+        </fieldset>
+      ))
+    }
+  </div>
+
+  <button
+    type="button"
+    class="manual-score-form__submit"
+    data-submit-scores
+    disabled
+  >
+    Submit Scores
+  </button>
+</form>
+
+<script>
+  import {
+    calculateProfileSum,
+    isProfileValid,
+  } from "../../lib/score-validation";
+
+  const DIMS = ["micro", "mystiko", "macro"] as const;
+  const PROFILES = ["challenge", "reward"] as const;
+
+  type ProfileKey = (typeof PROFILES)[number];
+  type DimensionKey = (typeof DIMS)[number];
+
+  const form = document.querySelector<HTMLFormElement>(
+    "[data-manual-score-form]",
+  );
+  if (!form) throw new Error("Manual score form root not found");
+
+  const submitBtn = form.querySelector<HTMLButtonElement>(
+    "[data-submit-scores]",
+  );
+  if (!submitBtn) throw new Error("Manual score submit button not found");
+
+  const state: Record<ProfileKey, Record<DimensionKey, number>> = {
+    challenge: { micro: 0, mystiko: 0, macro: 0 },
+    reward: { micro: 0, mystiko: 0, macro: 0 },
+  };
+
+  function inputFor(profile: ProfileKey, dim: DimensionKey): HTMLInputElement {
+    const el = form!.querySelector<HTMLInputElement>(
+      `input[data-profile="${profile}"][data-dimension="${dim}"]`,
+    );
+    if (!el) throw new Error(`Missing input ${profile}.${dim}`);
+    return el;
+  }
+
+  function renderPanel(profile: ProfileKey): void {
+    const total = calculateProfileSum(state[profile]);
+    const totalEl = form!.querySelector<HTMLElement>(
+      `[data-total][data-profile="${profile}"]`,
+    );
+    const statusEl = form!.querySelector<HTMLElement>(
+      `[data-status][data-profile="${profile}"]`,
+    );
+    if (!totalEl || !statusEl) return;
+
+    totalEl.textContent = `Total: ${total} / 100`;
+
+    if (total < 100) {
+      statusEl.textContent = `${100 - total} points remaining`;
+      statusEl.className = "score-field__status score-field__status--under";
+    } else if (total > 100) {
+      statusEl.textContent = `${total - 100} points over`;
+      statusEl.className = "score-field__status score-field__status--over";
+    } else {
+      statusEl.textContent = "Valid";
+      statusEl.className = "score-field__status score-field__status--valid";
+    }
+  }
+
+  function renderSubmit(): void {
+    submitBtn!.disabled = !(
+      isProfileValid(state.challenge) && isProfileValid(state.reward)
+    );
+  }
+
+  function render(): void {
+    for (const profile of PROFILES) renderPanel(profile);
+    renderSubmit();
+  }
+
+  function setValue(
+    profile: ProfileKey,
+    dim: DimensionKey,
+    value: number,
+  ): void {
+    const clamped = Math.min(100, Math.max(0, value));
+    state[profile][dim] = clamped;
+    inputFor(profile, dim).value = String(clamped);
+    render();
+  }
+
+  function currentValue(profile: ProfileKey, dim: DimensionKey): number {
+    return state[profile][dim];
+  }
+
+  function reset(): void {
+    for (const profile of PROFILES) {
+      for (const dim of DIMS) {
+        state[profile][dim] = 0;
+        inputFor(profile, dim).value = "0";
+      }
+    }
+    render();
+  }
+
+  form.addEventListener("click", (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-step]",
+    );
+    if (!btn) return;
+    const profile = btn.dataset.profile as ProfileKey | undefined;
+    const dim = btn.dataset.dimension as DimensionKey | undefined;
+    if (!profile || !dim) return;
+    const delta = btn.dataset.step === "inc" ? 1 : -1;
+    setValue(profile, dim, currentValue(profile, dim) + delta);
+  });
+
+  form.addEventListener("input", (event) => {
+    const input = event.target as HTMLInputElement;
+    if (!(input instanceof HTMLInputElement)) return;
+    const profile = input.dataset.profile as ProfileKey | undefined;
+    const dim = input.dataset.dimension as DimensionKey | undefined;
+    if (!profile || !dim) return;
+    const parsed = Number.parseInt(input.value, 10);
+    setValue(profile, dim, Number.isNaN(parsed) ? 0 : parsed);
+  });
+
+  submitBtn.addEventListener("click", () => {
+    if (!isProfileValid(state.challenge) || !isProfileValid(state.reward)) {
+      return;
+    }
+    // Submission is local and synchronous (no network in SBGC-215), so the
+    // SUBMITTING state collapses into an immediate hand-off to the modal.
+    submitBtn.disabled = true;
+    form.dispatchEvent(
+      new CustomEvent("score-submit", {
+        bubbles: true,
+        detail: {
+          challenge: { ...state.challenge },
+          reward: { ...state.reward },
+        },
+      }),
+    );
+  });
+
+  // The modal asks the form to clear itself whenever the manual view is
+  // re-entered (e.g. after a cache clear restores the unsubmitted flow).
+  form.addEventListener("score-form-reset", reset);
+
+  render();
+</script>
+
+<style>
+  .manual-score-form__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .manual-score-form__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .manual-score-form__panel {
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .manual-score-form__panel-title {
+    padding: 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .score-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.75rem;
+  }
+
+  .score-field__label {
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .score-field__control {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .score-field__step {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .score-field__step:hover {
+    background: var(--color-surface-3);
+  }
+
+  .score-field__input {
+    width: 3.5rem;
+    padding: 0.375rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .score-field__total {
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score-field__status {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+  }
+
+  .score-field__status--under {
+    color: var(--color-amber);
+  }
+
+  .score-field__status--over {
+    color: var(--color-red);
+  }
+
+  .score-field__status--valid {
+    color: var(--color-green);
+  }
+
+  .manual-score-form__submit {
+    display: block;
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-blue);
+    color: var(--color-bg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .manual-score-form__submit:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    cursor: not-allowed;
+  }
+</style>
