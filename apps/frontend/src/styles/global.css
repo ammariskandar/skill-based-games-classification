@@ -39,7 +39,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2")
+  src: url("https://fonts.gstatic.com/s/inter/v20/UcCo3FwrK3iLTcviYwY.woff2")
     format("woff2");
 }
 
@@ -54,6 +54,14 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* SBGC-222: force an explicit 700 weight for <strong>/<b>. Tailwind's preflight
+   uses the relative `bolder`, which some browsers resolve unpredictably with a
+   variable font — explicit 700 renders a consistent, visible bold. */
+b,
+strong {
+  font-weight: 700;
 }
 
 /* ── Progressive foldable / segmented viewport support ──

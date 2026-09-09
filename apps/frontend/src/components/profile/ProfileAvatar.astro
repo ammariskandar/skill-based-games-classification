@@ -4,20 +4,35 @@ interface Props {
   borderType: string;
   borderPresetId?: number | null;
   borderColor?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-const { avatarKey, borderType, borderPresetId, borderColor } = Astro.props;
+const {
+  avatarKey,
+  borderType,
+  borderPresetId,
+  borderColor,
+  size = "lg",
+} = Astro.props;
+
+const dimensionClasses = {
+  sm: "h-16 w-16",
+  md: "h-28 w-28",
+  lg: "h-40 w-40 sm:h-48 sm:w-48",
+}[size];
 ---
 
-<div class="relative h-40 w-40 flex-shrink-0 sm:h-48 sm:w-48">
-  <!-- Base avatar -->
+<div class={`relative ${dimensionClasses} flex-shrink-0`}>
+  <!-- Base circular avatar -->
   <div
+    id="profile-avatar-ring"
     class="relative z-0 h-full w-full overflow-hidden rounded-full bg-surface-2"
     style={borderType === "SOLID" && borderColor
-      ? `box-shadow: 0 0 0 4px ${borderColor};`
+      ? `box-shadow: 0 0 0 12px ${borderColor};`
       : undefined}
   >
     <img
+      id="profile-avatar-img"
       src={`/assets/avatars/${avatarKey}.avif`}
       alt="User Profile Picture"
       class="h-full w-full rounded-full object-cover"
@@ -27,17 +42,23 @@ const { avatarKey, borderType, borderPresetId, borderColor } = Astro.props;
     />
   </div>
 
-  <!-- Preset border overlay -->
-  {
-    borderType === "PRESET" && borderPresetId && (
-      <div class="pointer-events-none absolute -inset-1.5 z-10">
-        <img
-          src={`/assets/borders/border_${borderPresetId}.avif`}
-          alt=""
-          class="h-full w-full object-contain"
-          aria-hidden="true"
-        />
-      </div>
-    )
-  }
+  <!-- Preset border overlay. Always rendered (wrapper hidden unless active) so
+       the edit modal can toggle it without a full reload. The wrapper is inset
+       by -1.5 (6px) around the avatar and the border asset is contained inside,
+       keeping the frame concentric with the avatar at any size. -->
+  <div
+    id="profile-avatar-border-wrap"
+    class:list={[
+      "pointer-events-none absolute -inset-2.5 z-10",
+      { hidden: borderType !== "PRESET" },
+    ]}
+  >
+    <img
+      id="profile-avatar-border"
+      src={`/assets/borders/border_${borderPresetId ?? 1}.avif`}
+      alt=""
+      aria-hidden="true"
+      class="h-full w-full object-contain"
+    />
+  </div>
 </div>

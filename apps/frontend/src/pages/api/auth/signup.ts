@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 
+import { containsProfanity } from "../../../lib/profanity";
+
 /**
  * Astro BFF signup proxy — SBGC-218.
  *
@@ -26,6 +28,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         },
       }),
       { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const username =
+    body && typeof body === "object" && "username" in body
+      ? String((body as Record<string, unknown>).username ?? "")
+      : "";
+  if (containsProfanity(username)) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Username contains inappropriate language.",
+          details: [],
+        },
+      }),
+      { status: 422, headers: { "Content-Type": "application/json" } },
     );
   }
 

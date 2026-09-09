@@ -16,6 +16,7 @@ THENAMESAMMARIS_TOP_GAMES = [
     "Wobbly Life",
     "Dota 2",
     "Wuthering Waves",
+    "Persona 4 Golden",
 ]
 
 

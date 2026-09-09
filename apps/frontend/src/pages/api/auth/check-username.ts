@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 
 import { getTrustedClientIp } from "../../../lib/server/trusted-client-ip";
+import { containsProfanity } from "../../../lib/profanity";
 
 /**
  * Astro BFF check-username proxy — SBGC-218 / SBGC-107.
@@ -16,6 +17,12 @@ const BACKEND_URL = import.meta.env.DJANGO_API_URL || "http://127.0.0.1:8000";
 
 export const GET: APIRoute = async ({ request, url }) => {
   const username = url.searchParams.get("username") ?? "";
+  if (containsProfanity(username)) {
+    return new Response(JSON.stringify({ available: false }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const clientIp = request ? getTrustedClientIp(request) : "127.0.0.1";
   try {
     const backendRes = await fetch(

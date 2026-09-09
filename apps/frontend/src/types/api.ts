@@ -227,6 +227,7 @@ export interface PublicUserProfileDto {
   first_name: string;
   last_name: string;
   bio: string;
+  bio_mode: string;
   avatar_key: string;
   border_type: string;
   border_preset_id: number | null;

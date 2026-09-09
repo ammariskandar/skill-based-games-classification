@@ -23,7 +23,10 @@ const fullName = [firstName, lastName].filter(Boolean).join(" ");
     {
       isOwner && (
         <button
+          id="edit-profile-btn"
           type="button"
+          aria-haspopup="dialog"
+          aria-controls="edit-profile-modal"
           class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
         >
           Edit Profile
@@ -37,7 +40,12 @@ const fullName = [firstName, lastName].filter(Boolean).join(" ");
   <div class="mt-1 flex h-6 items-center">
     {
       fullName ? (
-        <p class="text-sm font-medium text-muted sm:text-base">{fullName}</p>
+        <p
+          id="profile-fullname"
+          class="text-sm font-medium text-muted sm:text-base"
+        >
+          {fullName}
+        </p>
       ) : (
         <span class="invisible select-none" aria-hidden="true">
           &nbsp;

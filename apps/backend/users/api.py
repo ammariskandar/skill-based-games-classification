@@ -1,17 +1,22 @@
-"""Users API router — SBGC-221.
+"""Users API router — SBGC-221 / SBGC-222.
 
-Owns the public profile read.  It maps persisted ``UserProfile``/``UserTopGame``
-data (plus a deterministic Game-DNA stub) into the public DTO and flags the
-viewer-owner state from the ambient request user.  It never calculates DNA and
-never writes.
+Owns the public profile read and the authenticated self-update.  It maps
+persisted ``UserProfile``/``UserTopGame`` data (plus a deterministic Game-DNA
+stub) into the public DTO and flags the viewer-owner state from the ambient
+request user.  It never calculates DNA and never writes on the read path; the
+``PATCH /me`` endpoint is the single write boundary for profile edits.
 """
 
 from __future__ import annotations
 
+import unicodedata
+
 from api.errors import ApiException
 from django.contrib.auth.models import User
+from django.db import transaction
 from games.models import Game
-from ninja import Router, Schema
+from ninja import Field, Router, Schema
+from pydantic import field_validator
 
 from users.models import UserProfile, UserTopGame
 
@@ -39,6 +44,7 @@ class PublicUserProfileOut(Schema):
     first_name: str
     last_name: str
     bio: str
+    bio_mode: str
     avatar_key: str
     border_type: str
     border_preset_id: int | None = None
@@ -50,10 +56,116 @@ class PublicUserProfileOut(Schema):
     is_viewer_owner: bool = False
 
 
+# Canonical avatar keys matching the 18 ingested AVIF assets (SBGC-221).
+AVATAR_KEYS = frozenset(
+    {
+        "male_1",
+        "male_2",
+        "male_3",
+        "male_4",
+        "male_5",
+        "female_1",
+        "female_2",
+        "female_3",
+        "female_4",
+        "female_5",
+        "anime_male_1",
+        "anime_male_2",
+        "anime_male_3",
+        "anime_male_4",
+        "anime_female_1",
+        "anime_female_2",
+        "anime_female_3",
+        "anime_female_4",
+    }
+)
+
 # Username whose Game DNA is stubbed from a canonical published classification
 # until real per-user submission DNA lands (SBGC-221 seeder contract).
 DNA_STUB_USERNAME = "thenamesammaris"
 DNA_STUB_GAME_SLUG = "portal-2"
+
+
+class ProfileUpdateIn(Schema):
+    first_name: str = Field(default="", max_length=100)
+    last_name: str = Field(default="", max_length=100)
+    bio: str = Field(default="", max_length=500)
+    bio_mode: str = Field(default="PLAIN", pattern="^(PLAIN|BBCODE)$")
+    avatar_key: str = Field(default="male_1", max_length=64)
+    border_type: str = Field(default="NONE", pattern="^(NONE|PRESET|SOLID)$")
+    border_preset_id: int | None = Field(default=None, ge=1, le=5)
+    border_color: str = Field(default="", pattern="^(|#[0-9A-Fa-f]{6})$")
+
+    @field_validator("avatar_key")
+    @classmethod
+    def validate_avatar_key(cls, value: str) -> str:
+        if value not in AVATAR_KEYS:
+            raise ValueError(f"Invalid avatar_key '{value}'.")
+        return value
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def validate_name_characters(cls, value: str) -> str:
+        # Full Unicode support: letters, digits, whitespace, hyphens,
+        # apostrophes, and combining/format marks (e.g. decomposed accents).
+        for ch in value:
+            category = unicodedata.category(ch)
+            if ch.isalnum() or ch.isspace() or ch in ("-", "'"):
+                continue
+            if category.startswith("M") or category == "Cf":
+                continue
+            raise ValueError(
+                "Names must contain only letters, numbers, spaces, hyphens, "
+                "and apostrophes."
+            )
+        return value.strip()
+
+
+@router.patch("/me", response=PublicUserProfileOut)
+def update_current_user_profile(request, payload: ProfileUpdateIn):
+    if not request.user.is_authenticated:
+        raise ApiException(401, "AUTHENTICATION_ERROR", "Authentication required.")
+
+    user = request.user
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    # Consistency validation for the border customization attributes.
+    if payload.border_type == UserProfile.BorderType.PRESET:
+        if payload.border_preset_id is None:
+            raise ApiException(
+                422,
+                "VALIDATION_ERROR",
+                "border_preset_id is required when border_type is PRESET.",
+            )
+        border_preset_id = payload.border_preset_id
+        border_color = ""
+    elif payload.border_type == UserProfile.BorderType.SOLID:
+        if not payload.border_color:
+            raise ApiException(
+                422,
+                "VALIDATION_ERROR",
+                "border_color is required when border_type is SOLID.",
+            )
+        border_preset_id = None
+        border_color = payload.border_color.upper()
+    else:
+        border_preset_id = None
+        border_color = ""
+
+    with transaction.atomic():
+        user.first_name = payload.first_name
+        user.last_name = payload.last_name
+        user.save(update_fields=["first_name", "last_name"])
+
+        profile.bio = payload.bio
+        profile.bio_mode = payload.bio_mode
+        profile.avatar_key = payload.avatar_key
+        profile.border_type = payload.border_type
+        profile.border_preset_id = border_preset_id
+        profile.border_color = border_color
+        profile.save()
+
+    return resolve_public_profile(user, viewer=user)
 
 
 @router.get("/{username}", response=PublicUserProfileOut)
@@ -64,6 +176,11 @@ def public_profile(request, username: str):
     if user is None:
         raise ApiException(404, "NOT_FOUND", "User not found.")
 
+    return resolve_public_profile(user, viewer=request.user)
+
+
+def resolve_public_profile(user: User, viewer: User | None) -> PublicUserProfileOut:
+    """Build the public DTO for *user* with ownership flagged for *viewer*."""
     profile = getattr(user, "profile", None)
 
     top_games: list[TopGameOut] = []
@@ -83,6 +200,7 @@ def public_profile(request, username: str):
         first_name=user.first_name,
         last_name=user.last_name,
         bio=profile.bio if profile else "",
+        bio_mode=profile.bio_mode if profile else UserProfile.BioMode.PLAIN,
         avatar_key=profile.avatar_key if profile else "male_1",
         border_type=(profile.border_type if profile else UserProfile.BorderType.NONE),
         border_preset_id=profile.border_preset_id if profile else None,
@@ -92,8 +210,9 @@ def public_profile(request, username: str):
         top_games=top_games,
         dna_scores=_dna_scores(user),
         is_viewer_owner=(
-            request.user.is_authenticated
-            and request.user.username.lower() == user.username.lower()
+            viewer is not None
+            and viewer.is_authenticated
+            and viewer.username.lower() == user.username.lower()
         ),
     )
 

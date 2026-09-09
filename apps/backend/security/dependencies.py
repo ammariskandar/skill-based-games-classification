@@ -288,6 +288,23 @@ TECH_STACK_REGISTRY: tuple[DependencyItem, ...] = (
     ),
     # ── Frontend & BFF architecture ──────────────────────────────────────────
     DependencyItem(
+        name="allprofanity",
+        version_spec="^2.4.0",
+        ecosystem=Ecosystem.FRONTEND_CORE,
+        affects_subsystem=(
+            "Content moderation — profanity gate for profile bios, display "
+            "names, and registration usernames (lib/profanity.ts, BFF validators)"
+        ),
+        lifecycle_status=LifecycleStatus.REQUIRED,
+        alternatives="bad-words, naughty-words, hand-rolled word lists",
+        justification=(
+            "Evasion-resistant multilingual profanity filter (leet-speak, masked "
+            "words, homoglyphs) with zero runtime dependencies, so it runs safely "
+            "in both the Astro BFF and the signup client. Custom banned terms "
+            "extend it via EXTRA_BANNED_WORDS in lib/profanity.ts."
+        ),
+    ),
+    DependencyItem(
         name="astro",
         version_spec="^7.1.3",
         ecosystem=Ecosystem.FRONTEND_CORE,
