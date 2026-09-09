@@ -147,9 +147,16 @@ export function renderBbCodeToHtml(input: string): string {
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue underline hover:text-blue">$2</a>',
   );
 
+  // A single image renders at full/original size; multiple images are
+  // constrained to micro-badge sizing (SBGC-222).
+  const imgCount = (input.match(/\[img\]/gi) ?? []).length;
+  const imgClass =
+    imgCount === 1
+      ? "inline-block h-auto max-w-full rounded mx-0.5"
+      : "inline-block max-h-12 max-w-24 object-cover align-middle rounded mx-0.5";
   html = html.replace(
     /\[img\](https:\/\/[^\]]+?)\[\/img\]/gi,
-    '<img src="$1" alt="User embedded badge" class="inline-block max-h-12 max-w-24 object-cover align-middle rounded mx-0.5" loading="lazy" />',
+    `<img src="$1" alt="User embedded badge" class="${imgClass}" loading="lazy" />`,
   );
 
   return html;

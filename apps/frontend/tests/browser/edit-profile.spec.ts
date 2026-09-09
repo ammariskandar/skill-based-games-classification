@@ -83,8 +83,11 @@ test("saving bbcode updates the bio card without a full reload", async ({
 
   await expect(page.locator("#edit-profile-modal")).not.toBeVisible();
 
-  const badge = page.locator('#profile-bio-card img[class*="max-h-12"]');
-  await expect(badge).toHaveCount(1);
+  // A single image embed renders at full size (no micro-badge constraint).
+  const image = page.locator("#profile-bio-card img");
+  await expect(image).toHaveCount(1);
+  await expect(image).toHaveAttribute("class", /max-w-full/);
+  await expect(image).not.toHaveAttribute("class", /max-h-12/);
   await expect(page.locator("#profile-bio-card")).toContainText("Hello");
   // Still on the fixture route — no navigation/reload occurred.
   expect(new URL(page.url()).pathname).toBe("/dev/edit-profile");

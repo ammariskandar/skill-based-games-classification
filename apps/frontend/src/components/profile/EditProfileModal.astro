@@ -84,13 +84,18 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
             class="h-full w-full rounded-full object-cover"
           />
         </div>
-        <img
-          id="modal-avatar-border"
-          src=""
-          alt=""
-          aria-hidden="true"
-          class="pointer-events-none absolute -inset-[3.75%] z-10 hidden object-contain"
-        />
+        <div
+          id="modal-avatar-border-wrap"
+          class="pointer-events-none absolute -inset-1.5 z-10 hidden"
+        >
+          <img
+            id="modal-avatar-border"
+            src=""
+            alt=""
+            aria-hidden="true"
+            class="h-full w-full object-contain"
+          />
+        </div>
       </div>
       <div>
         <p class="text-sm font-semibold text-text">{username}</p>
@@ -381,6 +386,9 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
   const modalAvatarRing = document.getElementById(
     "modal-avatar-ring",
   ) as HTMLDivElement;
+  const modalAvatarBorderWrap = document.getElementById(
+    "modal-avatar-border-wrap",
+  ) as HTMLDivElement;
   const modalAvatarBorder = document.getElementById(
     "modal-avatar-border",
   ) as HTMLImageElement;
@@ -427,13 +435,13 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
     modalAvatarImg.src = `/assets/avatars/${currentAvatarKey()}.avif`;
     const borderType = currentBorderType();
     modalAvatarRing.style.boxShadow = "";
-    modalAvatarBorder.classList.add("hidden");
+    modalAvatarBorderWrap.classList.add("hidden");
 
     if (borderType === "SOLID") {
       modalAvatarRing.style.boxShadow = `0 0 0 12px ${currentHexColor()}`;
     } else if (borderType === "PRESET") {
       modalAvatarBorder.src = `/assets/borders/border_${currentBorderPreset()}.avif`;
-      modalAvatarBorder.classList.remove("hidden");
+      modalAvatarBorderWrap.classList.remove("hidden");
     }
   }
 
@@ -592,21 +600,25 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
     const pageRing = document.getElementById(
       "profile-avatar-ring",
     ) as HTMLDivElement | null;
+    const pageBorderWrap = document.getElementById(
+      "profile-avatar-border-wrap",
+    ) as HTMLDivElement | null;
     const pageBorder = document.getElementById(
       "profile-avatar-border",
     ) as HTMLImageElement | null;
     if (pageAvatar) pageAvatar.src = `/assets/avatars/${data.avatar_key}.avif`;
     if (pageRing) pageRing.style.boxShadow = "";
-    if (pageBorder) pageBorder.classList.add("hidden");
+    if (pageBorderWrap) pageBorderWrap.classList.add("hidden");
     if (data.border_type === "SOLID" && pageRing && data.border_color) {
       pageRing.style.boxShadow = `0 0 0 12px ${data.border_color}`;
     } else if (
       data.border_type === "PRESET" &&
       pageBorder &&
+      pageBorderWrap &&
       data.border_preset_id
     ) {
       pageBorder.src = `/assets/borders/border_${data.border_preset_id}.avif`;
-      pageBorder.classList.remove("hidden");
+      pageBorderWrap.classList.remove("hidden");
     }
 
     renderBioCard(data.bio, data.bio_mode);

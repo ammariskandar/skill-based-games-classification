@@ -42,17 +42,23 @@ const dimensionClasses = {
     />
   </div>
 
-  <!-- Preset border overlay. Always rendered (hidden unless active) so the
-       edit modal can toggle it without a full reload. -inset-[3.75%] scales
-       the 524px border asset to hug the avatar (~+7.5%) at any size. -->
-  <img
-    id="profile-avatar-border"
-    src={`/assets/borders/border_${borderPresetId ?? 1}.avif`}
-    alt=""
-    aria-hidden="true"
+  <!-- Preset border overlay. Always rendered (wrapper hidden unless active) so
+       the edit modal can toggle it without a full reload. The wrapper is inset
+       by -1.5 (6px) around the avatar and the border asset is contained inside,
+       keeping the frame concentric with the avatar at any size. -->
+  <div
+    id="profile-avatar-border-wrap"
     class:list={[
-      "pointer-events-none absolute -inset-[3.75%] z-10 object-contain",
+      "pointer-events-none absolute -inset-1.5 z-10",
       { hidden: borderType !== "PRESET" },
     ]}
-  />
+  >
+    <img
+      id="profile-avatar-border"
+      src={`/assets/borders/border_${borderPresetId ?? 1}.avif`}
+      alt=""
+      aria-hidden="true"
+      class="h-full w-full object-contain"
+    />
+  </div>
 </div>
