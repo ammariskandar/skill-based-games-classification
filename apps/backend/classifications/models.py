@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -673,6 +674,135 @@ class CalculationAttempt(models.Model):
         return f"Attempt {self.attempt_number} for {game_id} in epoch {epoch_id}"
 
 
+class UserGameScoreSubmission(models.Model):
+    """One community user's score submission for one Game (SBGC-216).
+
+    Unlike editorial classifications (one per Game per user), community users
+    may hold multiple rows per Game over time: an in-place supersession update
+    rewrites the latest row within a 15-day window, while a submission >= 15
+    days after the latest row's ``created_at`` branches into a new standalone
+    row.  ``created_at`` anchors that temporal window and ``updated_at``
+    records the latest in-place supersession.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="community_submissions",
+        help_text="Community user who submitted this classification.",
+    )
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="community_submissions",
+        help_text="Game being classified.",
+    )
+
+    challenge_micro = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Challenge Micro score — moment-to-moment skill demands.",
+    )
+    challenge_mystiko = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Challenge Mystiko score — depth, knowledge, and discovery.",
+    )
+    challenge_macro = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Challenge Macro score — strategic and long-term demands.",
+    )
+
+    reward_micro = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Reward Micro score — moment-to-moment satisfaction.",
+    )
+    reward_mystiko = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Reward Mystiko score — intellectual satisfaction.",
+    )
+    reward_macro = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Reward Macro score — long-form satisfaction.",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="Timestamp of original submission (anchors the 15-day window).",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp of most recent in-place supersession update.",
+    )
+
+    class Meta:
+        db_table = "classifications_user_game_score_submission"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["user", "game", "-created_at"],
+                name="idx_user_game_created",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(challenge_micro__gte=0, challenge_micro__lte=100)
+                    & models.Q(challenge_mystiko__gte=0, challenge_mystiko__lte=100)
+                    & models.Q(challenge_macro__gte=0, challenge_macro__lte=100)
+                    & models.Q(
+                        challenge_micro=(
+                            100
+                            - models.F("challenge_mystiko")
+                            - models.F("challenge_macro")
+                        )
+                    )
+                ),
+                name="community_challenge_scores_total_100_ck",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(reward_micro__gte=0, reward_micro__lte=100)
+                    & models.Q(reward_mystiko__gte=0, reward_mystiko__lte=100)
+                    & models.Q(reward_macro__gte=0, reward_macro__lte=100)
+                    & models.Q(
+                        reward_micro=(
+                            100 - models.F("reward_mystiko") - models.F("reward_macro")
+                        )
+                    )
+                ),
+                name="community_reward_scores_total_100_ck",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        user_id = self.user_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return f"Community submission #{self.pk} for {game_id} by {user_id}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.challenge_sum != 100:
+            raise ValidationError(
+                {"challenge": ["Challenge profile scores must sum to 100."]}
+            )
+        if self.reward_sum != 100:
+            raise ValidationError(
+                {"reward": ["Reward profile scores must sum to 100."]}
+            )
+
+    @property
+    def challenge_sum(self) -> int:
+        return self.challenge_micro + self.challenge_mystiko + self.challenge_macro
+
+    @property
+    def reward_sum(self) -> int:
+        return self.reward_micro + self.reward_mystiko + self.reward_macro
+
+
 __all__ = [
     "BoundaryCalibration",
     "CalculationAttempt",
@@ -682,4 +812,5 @@ __all__ = [
     "EditorialClassification",
     "EditorialGroupProfile",
     "RewardProfile",
+    "UserGameScoreSubmission",
 ]

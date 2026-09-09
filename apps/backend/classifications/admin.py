@@ -30,6 +30,7 @@ from classifications.models import (
     EditorialClassification,
     EditorialGroupProfile,
     RewardProfile,
+    UserGameScoreSubmission,
 )
 from classifications.roles import BASE_WEIGHTS
 from classifications.services.submissions import (
@@ -675,3 +676,64 @@ class BoundaryCalibrationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(UserGameScoreSubmission)
+class UserGameScoreSubmissionAdmin(HardenedModelAdmin):
+    """Globally visible, read-only registry of community score submissions.
+
+    No user — including Superusers — may add, edit, or delete rows.  The list
+    is view-only audit surface for the community ingestion pipeline (SBGC-216).
+    """
+
+    list_display = (
+        "id",
+        "user_username",
+        "game_name",
+        "challenge_display",
+        "reward_display",
+        "created_at",
+        "updated_at",
+    )
+    list_select_related = ("user", "game")
+    search_fields = ("user__username", "game__name", "game__slug")
+    list_filter = ("created_at", "updated_at")
+    readonly_fields = [f.name for f in UserGameScoreSubmission._meta.fields]
+    date_hierarchy = "created_at"
+    list_per_page = 50
+
+    # --- Strict read-only policy (Owner & Superuser included) -----------
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # --- Global view availability ----------------------------------------
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_active and getattr(request.user, "is_staff", False)
+
+    def has_module_permission(self, request):
+        return request.user.is_active and getattr(request.user, "is_staff", False)
+
+    # --- Custom display helpers -------------------------------------------
+    @admin.display(description="User")
+    def user_username(self, obj):
+        return obj.user.username
+
+    @admin.display(description="Game")
+    def game_name(self, obj):
+        return obj.game.name
+
+    @admin.display(description="Challenge (Micro / Mystiko / Macro)")
+    def challenge_display(self, obj):
+        return (
+            f"{obj.challenge_micro} / {obj.challenge_mystiko} / {obj.challenge_macro}"
+        )
+
+    @admin.display(description="Reward (Micro / Mystiko / Macro)")
+    def reward_display(self, obj):
+        return f"{obj.reward_micro} / {obj.reward_mystiko} / {obj.reward_macro}"
