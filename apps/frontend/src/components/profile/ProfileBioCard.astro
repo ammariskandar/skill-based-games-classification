@@ -1,0 +1,36 @@
+---
+import { segmentBio } from "../../lib/bio-presentation";
+
+interface Props {
+  bio: string;
+}
+
+const { bio } = Astro.props;
+const trimmed = bio.trim();
+const segments = trimmed ? segmentBio(trimmed) : [];
+---
+
+<div
+  class="min-h-[160px] flex-1 rounded-xl border border-border bg-surface p-6"
+>
+  {
+    trimmed ? (
+      <p class="whitespace-pre-wrap text-[1.75rem] leading-relaxed text-text">
+        <span aria-hidden="true">"</span>
+        {segments.map((segment) => (
+          <span
+            class:list={[
+              segment.italic ? "italic" : undefined,
+              segment.red ? "text-red" : undefined,
+            ]}
+          >
+            {segment.text}
+          </span>
+        ))}
+        <span aria-hidden="true">"</span>
+      </p>
+    ) : (
+      <p class="text-sm text-muted">This user has not written a bio yet.</p>
+    )
+  }
+</div>

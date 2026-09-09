@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     # SBGC-217 — session-backed authentication engine.
     # SBGC-186 — adds the UserSecurityProfile one-to-one account extension.
     "authentication.apps.AuthenticationConfig",
+    # SBGC-221 — public user profile + ranked top-game strip.
+    "users.apps.UsersConfig",
     # SBGC-106 — adaptive admin security perimeter (no models).
     "security.apps.SecurityConfig",
 ]

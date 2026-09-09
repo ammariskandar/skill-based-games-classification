@@ -1,0 +1,43 @@
+---
+interface Props {
+  avatarKey: string;
+  borderType: string;
+  borderPresetId?: number | null;
+  borderColor?: string;
+}
+
+const { avatarKey, borderType, borderPresetId, borderColor } = Astro.props;
+---
+
+<div class="relative h-40 w-40 flex-shrink-0 sm:h-48 sm:w-48">
+  <!-- Base avatar -->
+  <div
+    class="relative z-0 h-full w-full overflow-hidden rounded-full bg-surface-2"
+    style={borderType === "SOLID" && borderColor
+      ? `box-shadow: 0 0 0 4px ${borderColor};`
+      : undefined}
+  >
+    <img
+      src={`/assets/avatars/${avatarKey}.avif`}
+      alt="User Profile Picture"
+      class="h-full w-full rounded-full object-cover"
+      width="192"
+      height="192"
+      loading="eager"
+    />
+  </div>
+
+  <!-- Preset border overlay -->
+  {
+    borderType === "PRESET" && borderPresetId && (
+      <div class="pointer-events-none absolute -inset-1.5 z-10">
+        <img
+          src={`/assets/borders/border_${borderPresetId}.avif`}
+          alt=""
+          class="h-full w-full object-contain"
+          aria-hidden="true"
+        />
+      </div>
+    )
+  }
+</div>

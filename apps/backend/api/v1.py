@@ -11,6 +11,7 @@ from django.conf import settings
 from games.api import router as games_router
 from games.rankings_api import router as rankings_router
 from ninja import NinjaAPI
+from users.api import router as users_router
 
 from api.errors import register_handlers
 from api.system import router as system_router
@@ -39,3 +40,4 @@ api.add_router("/games/", games_router)
 api.add_router("/classifications/", classifications_router)
 api.add_router("/rankings/", rankings_router)
 api.add_router("/auth/", auth_router)
+api.add_router("/users/", users_router)

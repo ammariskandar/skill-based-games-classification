@@ -1,0 +1,51 @@
+---
+import RadarChart from "../score/RadarChart.astro";
+import type { ProfileScoresDto } from "../../lib/server/api/users";
+import type { SkillProfileVector } from "../../lib/skill-dimensions";
+
+interface Props {
+  username: string;
+  dnaScores: ProfileScoresDto | null;
+}
+
+const { username, dnaScores } = Astro.props;
+
+const challenge: SkillProfileVector | null = dnaScores
+  ? {
+      micro: dnaScores.challenge_micro,
+      mystiko: dnaScores.challenge_mystiko,
+      macro: dnaScores.challenge_macro,
+    }
+  : null;
+const reward: SkillProfileVector | null = dnaScores
+  ? {
+      micro: dnaScores.reward_micro,
+      mystiko: dnaScores.reward_mystiko,
+      macro: dnaScores.reward_macro,
+    }
+  : null;
+---
+
+<section class="profile-game-dna" aria-labelledby="game-dna-heading">
+  <h2 id="game-dna-heading" class="text-xl font-semibold text-text">
+    {username}'s Game DNA
+  </h2>
+
+  {
+    challenge && reward ? (
+      <div class="mt-4 rounded-xl border border-border bg-surface p-4">
+        <RadarChart
+          challenge={challenge}
+          reward={reward}
+          gameTitle={`${username}'s Game DNA`}
+        />
+      </div>
+    ) : (
+      <div class="mt-4 rounded-xl border border-border bg-surface p-6 text-center">
+        <p class="text-sm text-muted">
+          This user's Game DNA is not available yet.
+        </p>
+      </div>
+    )
+  }
+</section>

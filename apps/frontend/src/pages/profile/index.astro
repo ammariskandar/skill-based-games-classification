@@ -1,0 +1,35 @@
+---
+import { getJSON } from "../../lib/server/api";
+
+// `/profile` redirects: unauthenticated viewers go to /login; authenticated
+// viewers go to their own `/profile/{username}`.
+export const prerender = false;
+
+const sessionId = Astro.cookies.get("sessionid")?.value;
+if (!sessionId) {
+  return Astro.redirect("/login");
+}
+
+type AuthStatus = { authenticated: boolean; username: string | null };
+
+async function resolveProfileTarget(sessionId: string): Promise<string> {
+  try {
+    const result = await getJSON<AuthStatus>("/api/v1/auth/status", {
+      headers: { Cookie: `sessionid=${sessionId}` },
+    });
+    if (
+      result.ok &&
+      "data" in result &&
+      result.data.authenticated &&
+      result.data.username
+    ) {
+      return `/profile/${encodeURIComponent(result.data.username)}`;
+    }
+  } catch {
+    // Fall back to /login if the auth status lookup fails.
+  }
+  return "/login";
+}
+
+return Astro.redirect(await resolveProfileTarget(sessionId));
+---

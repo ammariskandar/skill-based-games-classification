@@ -1,0 +1,48 @@
+---
+interface Props {
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  isOwner?: boolean;
+}
+
+const {
+  username,
+  firstName = "",
+  lastName = "",
+  isOwner = false,
+} = Astro.props;
+const fullName = [firstName, lastName].filter(Boolean).join(" ");
+---
+
+<header class="mb-8">
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-black tracking-tight text-text sm:text-4xl">
+      {username}'s Profile
+    </h1>
+    {
+      isOwner && (
+        <button
+          type="button"
+          class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
+        >
+          Edit Profile
+        </button>
+      )
+    }
+  </div>
+
+  <!-- Fixed-height container prevents layout shift across profiles with a
+       missing first/last name. -->
+  <div class="mt-1 flex h-6 items-center">
+    {
+      fullName ? (
+        <p class="text-sm font-medium text-muted sm:text-base">{fullName}</p>
+      ) : (
+        <span class="invisible select-none" aria-hidden="true">
+          &nbsp;
+        </span>
+      )
+    }
+  </div>
+</header>
