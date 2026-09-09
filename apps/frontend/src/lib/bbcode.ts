@@ -150,16 +150,19 @@ export function renderBbCodeToHtml(input: string): string {
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue underline hover:text-blue">$2</a>',
   );
 
-  // A single image renders at full/original size; multiple images are
-  // constrained to micro-badge sizing (SBGC-222).
+  // Image sizing tiers (SBGC-222): one image renders at full size, two images
+  // are reduced to half width each, and three or more become micro-badges.
   const imgCount = (input.match(/\[img\]/gi) ?? []).length;
   const imgClass =
     imgCount === 1
       ? "inline-block h-auto max-w-full rounded mx-0.5"
-      : "inline-block max-h-12 max-w-24 object-cover align-middle rounded mx-0.5";
+      : imgCount === 2
+        ? "inline-block h-auto rounded"
+        : "inline-block max-h-12 max-w-24 object-cover align-middle rounded mx-0.5";
+  const imgStyle = imgCount === 2 ? "max-width: 50%;" : "";
   html = html.replace(
     /\[img\](https:\/\/[^\]]+?)\[\/img\]/gi,
-    `<img src="$1" alt="User embedded badge" class="${imgClass}" loading="lazy" />`,
+    `<img src="$1" alt="User embedded badge" class="${imgClass}" style="${imgStyle}" loading="lazy" />`,
   );
 
   return html;

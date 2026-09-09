@@ -98,19 +98,29 @@ describe("stripBbCode", () => {
 });
 
 describe("renderBbCodeToHtml", () => {
-  it("constrains multiple embedded images to micro-badge sizing", () => {
-    const html = renderBbCodeToHtml(
-      "[img]https://example.com/a.png[/img] [img]https://example.com/b.png[/img]",
-    );
-    expect(html).toContain("max-h-12");
-    expect(html).toContain("max-w-24");
-    expect(html).toContain('loading="lazy"');
-  });
-
   it("renders a single image at full size", () => {
     const html = renderBbCodeToHtml("[img]https://example.com/badge.png[/img]");
     expect(html).not.toContain("max-h-12");
     expect(html).not.toContain("max-w-24");
     expect(html).toContain("max-w-full");
+  });
+
+  it("reduces two images to half width each", () => {
+    const html = renderBbCodeToHtml(
+      "[img]https://example.com/a.png[/img] [img]https://example.com/b.png[/img]",
+    );
+    expect(html).not.toContain("max-h-12");
+    expect(html).not.toContain("max-w-24");
+    // Both images carry the 50% cap.
+    expect(html.match(/max-width: 50%/g) ?? []).toHaveLength(2);
+  });
+
+  it("constrains three images to micro-badge sizing", () => {
+    const html = renderBbCodeToHtml(
+      "[img]https://example.com/a.png[/img] [img]https://example.com/b.png[/img] [img]https://example.com/c.png[/img]",
+    );
+    expect(html).toContain("max-h-12");
+    expect(html).toContain("max-w-24");
+    expect(html).toContain('loading="lazy"');
   });
 });

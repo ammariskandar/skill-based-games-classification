@@ -95,7 +95,7 @@ class UserTopGame(models.Model):
         UserProfile, on_delete=models.CASCADE, related_name="top_games"
     )
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    rank = models.PositiveSmallIntegerField(help_text="Order rank from 1 to 5.")
+    rank = models.PositiveSmallIntegerField(help_text="Order rank from 1 to 6.")
 
     class Meta:
         db_table = "auth_user_top_game"
