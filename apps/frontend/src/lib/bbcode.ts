@@ -149,7 +149,7 @@ export function renderBbCodeToHtml(input: string): string {
 
   html = html.replace(
     /\[img\](https:\/\/[^\]]+?)\[\/img\]/gi,
-    '<img src="$1" alt="User embedded badge" class="inline-block max-h-6 max-w-12 object-cover align-middle rounded mx-0.5" loading="lazy" />',
+    '<img src="$1" alt="User embedded badge" class="inline-block max-h-12 max-w-24 object-cover align-middle rounded mx-0.5" loading="lazy" />',
   );
 
   return html;

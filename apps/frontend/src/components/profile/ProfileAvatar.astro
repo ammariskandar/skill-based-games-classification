@@ -22,7 +22,7 @@ const dimensionClasses = {
 }[size];
 ---
 
-<div class={`relative ${dimensionClasses} flex-shrink-0 p-3.5`}>
+<div class={`relative ${dimensionClasses} flex-shrink-0`}>
   <!-- Base circular avatar -->
   <div
     id="profile-avatar-ring"
@@ -42,18 +42,17 @@ const dimensionClasses = {
     />
   </div>
 
-  <!-- Custom preset border overlay -->
-  {
-    borderType === "PRESET" && borderPresetId && (
-      <div class="pointer-events-none absolute -inset-1 z-10">
-        <img
-          id="profile-avatar-border"
-          src={`/assets/borders/border_${borderPresetId}.avif`}
-          alt=""
-          class="h-full w-full object-contain"
-          aria-hidden="true"
-        />
-      </div>
-    )
-  }
+  <!-- Preset border overlay. Always rendered (hidden unless active) so the
+       edit modal can toggle it without a full reload. -inset-[3.75%] scales
+       the 524px border asset to hug the avatar (~+7.5%) at any size. -->
+  <img
+    id="profile-avatar-border"
+    src={`/assets/borders/border_${borderPresetId ?? 1}.avif`}
+    alt=""
+    aria-hidden="true"
+    class:list={[
+      "pointer-events-none absolute -inset-[3.75%] z-10 object-contain",
+      { hidden: borderType !== "PRESET" },
+    ]}
+  />
 </div>

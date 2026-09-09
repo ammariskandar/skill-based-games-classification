@@ -98,8 +98,8 @@ describe("stripBbCode", () => {
 describe("renderBbCodeToHtml", () => {
   it("constrains embedded images to micro-badge sizing", () => {
     const html = renderBbCodeToHtml("[img]https://example.com/badge.png[/img]");
-    expect(html).toContain("max-h-6");
-    expect(html).toContain("max-w-12");
+    expect(html).toContain("max-h-12");
+    expect(html).toContain("max-w-24");
     expect(html).toContain('loading="lazy"');
   });
 });
