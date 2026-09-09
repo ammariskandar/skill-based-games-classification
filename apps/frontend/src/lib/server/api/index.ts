@@ -45,3 +45,10 @@ export type {
   PostOptions,
   RequestOptions,
 } from "./types";
+export { getUserProfile, UserNotFoundError } from "./users";
+export type {
+  ProfileScoresDto,
+  PublicUserProfileDto,
+  TopGameDto,
+  UserProfileOptions,
+} from "./users";

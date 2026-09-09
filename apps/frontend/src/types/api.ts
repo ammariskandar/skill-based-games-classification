@@ -200,3 +200,40 @@ export interface ApiErrorDto {
 export interface ApiErrorResponseDto {
   error: ApiErrorDto;
 }
+
+/* ── User profile DTOs (SBGC-221) ──────────────────────────────────────── */
+
+/** A ranked top-5 game entry on a public profile. */
+export interface TopGameDto {
+  rank: number;
+  game_name: string;
+  slug: string;
+  capsule_url: string | null;
+}
+
+/** Six persisted Game-DNA score components (Challenge/Reward × Micro/Mystiko/Macro). */
+export interface ProfileScoresDto {
+  challenge_micro: number;
+  challenge_mystiko: number;
+  challenge_macro: number;
+  reward_micro: number;
+  reward_mystiko: number;
+  reward_macro: number;
+}
+
+/** Public user profile payload (SBGC-221). */
+export interface PublicUserProfileDto {
+  username: string;
+  first_name: string;
+  last_name: string;
+  bio: string;
+  avatar_key: string;
+  border_type: string;
+  border_preset_id: number | null;
+  border_color: string;
+  is_steam_linked: boolean;
+  steam_profile_url: string | null;
+  top_games: TopGameDto[];
+  dna_scores: ProfileScoresDto | null;
+  is_viewer_owner: boolean;
+}

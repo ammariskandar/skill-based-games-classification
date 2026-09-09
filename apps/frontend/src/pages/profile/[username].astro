@@ -1,0 +1,130 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ErrorState from "../../components/ui/ErrorState.astro";
+import ProfileHeader from "../../components/profile/ProfileHeader.astro";
+import ProfileAvatar from "../../components/profile/ProfileAvatar.astro";
+import ProfileBioCard from "../../components/profile/ProfileBioCard.astro";
+import ProfileTopGames from "../../components/profile/ProfileTopGames.astro";
+import ProfileGameDNA from "../../components/profile/ProfileGameDNA.astro";
+import {
+  getUserProfile,
+  UserNotFoundError,
+  type PublicUserProfileDto,
+} from "../../lib/server/api";
+
+const username = Astro.params.username;
+
+if (!username) {
+  Astro.response.status = 404;
+  return Astro.rewrite("/404");
+}
+
+const sessionId = Astro.cookies.get("sessionid")?.value;
+
+type PageState =
+  | { kind: "profile"; profile: PublicUserProfileDto }
+  | { kind: "service-error" };
+
+let state: PageState;
+try {
+  state = {
+    kind: "profile",
+    profile: await getUserProfile(username, {
+      sessionId,
+      signal: Astro.request.signal,
+    }),
+  };
+} catch (error: unknown) {
+  if (error instanceof UserNotFoundError) {
+    Astro.response.status = 404;
+    return Astro.rewrite("/404");
+  }
+  // Timeout, network failure, or Django 5xx → real 5xx, never a 404 or 200.
+  Astro.response.status = 503;
+  state = { kind: "service-error" };
+}
+
+const profile = state.kind === "profile" ? state.profile : null;
+const title = profile ? `${profile.username}'s Profile` : "Profile";
+---
+
+<BaseLayout title={title} canonicalPath={`/profile/${username}`}>
+  {
+    profile === null ? (
+      <ErrorState
+        title="We couldn't load this profile right now."
+        message="Please try again in a moment."
+        code="SERVICE_UNAVAILABLE"
+        headingLevel="h1"
+      >
+        <div class="flex flex-wrap justify-center gap-4">
+          <a
+            href={Astro.url.pathname}
+            class="text-sm font-medium text-blue hover:underline"
+          >
+            Try again →
+          </a>
+          <a href="/" class="text-sm font-medium text-blue hover:underline">
+            Go Home →
+          </a>
+        </div>
+      </ErrorState>
+    ) : (
+      <div class="mx-auto max-w-7xl">
+        <ProfileHeader
+          username={profile.username}
+          firstName={profile.first_name}
+          lastName={profile.last_name}
+          isOwner={profile.is_viewer_owner}
+        />
+
+        <div class="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8">
+          <div class="flex flex-col items-center gap-4">
+            <ProfileAvatar
+              avatarKey={profile.avatar_key}
+              borderType={profile.border_type}
+              borderPresetId={profile.border_preset_id}
+              borderColor={profile.border_color}
+            />
+
+            {profile.is_steam_linked && profile.steam_profile_url ? (
+              <a
+                href={profile.steam_profile_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
+              >
+                <img
+                  src="/assets/Steam_icon_logo.webp"
+                  alt=""
+                  class="h-5 w-5 object-contain"
+                  aria-hidden="true"
+                />
+                View <strong class="font-bold">Steam</strong> Profile
+              </a>
+            ) : (
+              <span class="text-sm text-muted">Steam not linked</span>
+            )}
+          </div>
+
+          <ProfileBioCard bio={profile.bio} />
+        </div>
+
+        <div class="mt-12 grid gap-8 lg:grid-cols-12">
+          <div class="lg:col-span-6">
+            <ProfileGameDNA
+              username={profile.username}
+              dnaScores={profile.dna_scores}
+            />
+          </div>
+          <div class="lg:col-span-6">
+            <ProfileTopGames
+              topGames={profile.top_games}
+              isSteamLinked={profile.is_steam_linked}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+</BaseLayout>
