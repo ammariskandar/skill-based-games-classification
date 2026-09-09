@@ -17,7 +17,9 @@ describe("parseAndValidateBbCode", () => {
   it("renders whitelisted formatting to constrained HTML", () => {
     const result = parseAndValidateBbCode("[b]Hello[/b] [i]world[/i]");
     expect(result.isValid).toBe(true);
-    expect(result.html).toBe("<strong>Hello</strong> <em>world</em>");
+    expect(result.html).toBe(
+      '<strong class="font-bold">Hello</strong> <em>world</em>',
+    );
     expect(result.visibleCharCount).toBe(11);
   });
 

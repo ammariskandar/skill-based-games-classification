@@ -56,6 +56,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* SBGC-222: force an explicit 700 weight for <strong>/<b>. Tailwind's preflight
+   uses the relative `bolder`, which some browsers resolve unpredictably with a
+   variable font — explicit 700 renders a consistent, visible bold. */
+b,
+strong {
+  font-weight: 700;
+}
+
 /* ── Progressive foldable / segmented viewport support ──
    Browsers that do not understand the horizontal-viewport-segments media
    feature fall back to the regular viewport-width `lg` breakpoint.

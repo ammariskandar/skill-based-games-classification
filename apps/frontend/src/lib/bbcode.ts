@@ -132,7 +132,10 @@ export function parseAndValidateBbCode(rawText: string): ParseResult {
 export function renderBbCodeToHtml(input: string): string {
   let html = input;
 
-  html = html.replace(/\[b\](.*?)\[\/b\]/gi, "<strong>$1</strong>");
+  html = html.replace(
+    /\[b\](.*?)\[\/b\]/gi,
+    '<strong class="font-bold">$1</strong>',
+  );
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, "<em>$1</em>");
   html = html.replace(/\[u\](.*?)\[\/u\]/gi, "<u>$1</u>");
   html = html.replace(/\[s\](.*?)\[\/s\]/gi, "<s>$1</s>");
