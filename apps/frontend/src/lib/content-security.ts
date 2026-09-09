@@ -6,8 +6,8 @@
  * database.  This is defense-in-depth; Django remains the authoritative gate.
  */
 
-import allProfanity from "allprofanity";
 import { stripBbCode } from "./bbcode";
+import { containsProfanity } from "./profanity";
 
 export type BioMode = "PLAIN" | "BBCODE";
 
@@ -69,7 +69,7 @@ export function validateContentSecurity(
 
   // 5. Profanity sweep on the visible text.
   const visibleText = bioMode === "BBCODE" ? stripBbCode(bio) : bio;
-  if (allProfanity.check(visibleText)) {
+  if (containsProfanity(visibleText)) {
     return {
       isValid: false,
       error: "Bio contains inappropriate or restricted language.",

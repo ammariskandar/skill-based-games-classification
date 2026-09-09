@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 
 import { parseAndValidateBbCode } from "../../../lib/bbcode";
 import { validateContentSecurity } from "../../../lib/content-security";
+import { containsProfanity } from "../../../lib/profanity";
 
 /**
  * Astro BFF profile-update proxy — SBGC-222.
@@ -56,6 +57,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return errorResponse(
       "VALIDATION_ERROR",
       "Name fields cannot exceed 100 characters.",
+      422,
+    );
+  }
+
+  if (containsProfanity(first_name) || containsProfanity(last_name)) {
+    return errorResponse(
+      "VALIDATION_ERROR",
+      "Names cannot contain inappropriate language.",
       422,
     );
   }

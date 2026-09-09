@@ -178,6 +178,7 @@ if (Astro.cookies.has("sessionid")) {
   import { initAutofillGuard } from "../lib/autofill-guard";
   import { enableRandomizedFieldNames } from "../lib/random-form-names";
   import { isPasswordStrong } from "../lib/password-strength";
+  import { containsProfanity } from "../lib/profanity";
   import { writeCachedAuthStatus } from "../lib/auth-status";
   import { captureDeviceSignature } from "../lib/device-signature";
   import {
@@ -396,6 +397,7 @@ if (Astro.cookies.has("sessionid")) {
     const usernameOk =
       usernameInput?.value != null &&
       /^[a-zA-Z0-9_-]{4,20}$/.test(usernameInput.value) &&
+      !containsProfanity(usernameInput.value) &&
       usernameAvailable;
     const passwordOk = passwordInput
       ? isPasswordStrong(passwordInput.value)
@@ -414,6 +416,14 @@ if (Astro.cookies.has("sessionid")) {
       usernameBadge.textContent =
         "Username must be 4-20 letters, numbers, _ or -.";
       usernameBadge.className = "mt-1 block min-h-4 text-xs text-muted";
+      updateSubmitState();
+      return;
+    }
+
+    if (containsProfanity(value)) {
+      usernameAvailable = false;
+      usernameBadge.textContent = "Username contains inappropriate language.";
+      usernameBadge.className = "mt-1 block min-h-4 text-xs text-red";
       updateSubmitState();
       return;
     }
