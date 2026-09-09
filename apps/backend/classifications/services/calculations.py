@@ -61,7 +61,9 @@ from classifications.models import (
     ClassificationSnapshot,
     EditorialClassification,
     RewardProfile,
+    UserGameScoreSubmission,
 )
+from classifications.roles import EditorialRole
 from classifications.services.notifications import (
     CalculationFailureNotice,
     CalculationFailureNotifier,
@@ -152,6 +154,33 @@ def freeze_population(game: Game, cutoff_at) -> tuple[PopulationSnapshot, int, i
                 role=submission.submitted_role,
             )
         )
+    population = build_population_snapshot(candidates)
+    invalid = len(candidates) - population.raw_n
+
+    # 2. Pool community score submissions (SBGC-216) — same effective-state
+    #    cutoff semantics (updated_at <= cutoff) and canonical ordering.
+    community_records = UserGameScoreSubmission.objects.filter(
+        game=game, updated_at__lte=cutoff_at
+    ).order_by("pk")
+    for community in community_records:
+        received += 1
+        candidates.append(
+            SubmissionRecord(
+                identifier=f"community-{community.pk}",
+                challenge=Profile(
+                    micro=float(community.challenge_micro),
+                    macro=float(community.challenge_macro),
+                    mystiko=float(community.challenge_mystiko),
+                ),
+                reward=Profile(
+                    micro=float(community.reward_micro),
+                    macro=float(community.reward_macro),
+                    mystiko=float(community.reward_mystiko),
+                ),
+                role=EditorialRole.COMMUNITY,
+            )
+        )
+
     population = build_population_snapshot(candidates)
     invalid = len(candidates) - population.raw_n
     return population, received, invalid
