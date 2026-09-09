@@ -40,7 +40,15 @@ const idPrefix = compact ? "compact" : "desktop";
   </div>
 
   <!-- Logged in (hidden until the cached/refreshed status confirms a session) -->
-  <div data-auth-logged-in class="hidden items-center gap-3">
+  <div
+    data-auth-logged-in
+    class:list={[
+      "hidden gap-3",
+      // The compact (mobile hamburger) menu is a vertical stack, so its auth
+      // block stacks username above Logout instead of side-by-side.
+      compact ? "flex-col items-start" : "items-center",
+    ]}
+  >
     <a
       data-auth-username
       href="/profile"
