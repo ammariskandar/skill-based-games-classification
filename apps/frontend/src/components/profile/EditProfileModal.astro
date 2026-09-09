@@ -1,0 +1,754 @@
+---
+interface Props {
+  username: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
+  bioMode: string;
+  avatarKey: string;
+  borderType: string;
+  borderPresetId: number | null;
+  borderColor: string;
+}
+
+const {
+  username,
+  firstName,
+  lastName,
+  bio,
+  bioMode,
+  avatarKey,
+  borderType,
+  borderPresetId,
+  borderColor,
+} = Astro.props;
+
+const AVATAR_KEYS = [
+  "male_1",
+  "male_2",
+  "male_3",
+  "male_4",
+  "male_5",
+  "female_1",
+  "female_2",
+  "female_3",
+  "female_4",
+  "female_5",
+  "anime_male_1",
+  "anime_male_2",
+  "anime_male_3",
+  "anime_male_4",
+  "anime_female_1",
+  "anime_female_2",
+  "anime_female_3",
+  "anime_female_4",
+];
+
+const BORDER_PRESETS = [1, 2, 3, 4, 5];
+---
+
+<dialog
+  id="edit-profile-modal"
+  data-initial-mode={bioMode}
+  class="submission-modal w-full max-w-2xl rounded-xl border border-border bg-surface p-0 text-text backdrop:bg-black/60"
+>
+  <div class="flex flex-col gap-5 p-6">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold text-text">Edit Profile</h2>
+        <p class="mt-1 text-sm text-muted">{username}</p>
+      </div>
+      <button
+        id="edit-profile-close"
+        type="button"
+        aria-label="Close modal"
+        class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"
+      >
+        ✕
+      </button>
+    </header>
+
+    <!-- Live composited preview -->
+    <div
+      class="flex items-center gap-4 rounded-lg border border-border bg-surface-2 p-4"
+    >
+      <div class="relative h-24 w-24 flex-shrink-0 p-3.5">
+        <div
+          id="modal-avatar-ring"
+          class="relative z-0 h-full w-full overflow-hidden rounded-full bg-surface"
+        >
+          <img
+            id="modal-avatar-img"
+            src={`/assets/avatars/${avatarKey}.avif`}
+            alt="Avatar preview"
+            class="h-full w-full rounded-full object-cover"
+          />
+        </div>
+        <img
+          id="modal-avatar-border"
+          src=""
+          alt=""
+          aria-hidden="true"
+          class="pointer-events-none absolute -inset-1 z-10 hidden h-full w-full object-contain"
+        />
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-text">{username}</p>
+        <p class="mt-0.5 text-xs text-muted">Live preview</p>
+      </div>
+    </div>
+
+    <!-- Section 1: personal details -->
+    <section aria-labelledby="pf-details-heading">
+      <h3
+        id="pf-details-heading"
+        class="text-sm font-semibold uppercase tracking-wider text-muted"
+      >
+        Personal Details
+      </h3>
+      <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label class="block">
+          <span class="mb-1 block text-sm text-muted">First Name</span>
+          <input
+            id="pf-first-name"
+            type="text"
+            maxlength="100"
+            value={firstName}
+            class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+          />
+        </label>
+        <label class="block">
+          <span class="mb-1 block text-sm text-muted">Last Name</span>
+          <input
+            id="pf-last-name"
+            type="text"
+            maxlength="100"
+            value={lastName}
+            class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+          />
+        </label>
+      </div>
+    </section>
+
+    <!-- Section 2: avatar & border customizer -->
+    <section aria-labelledby="pf-avatar-heading">
+      <h3
+        id="pf-avatar-heading"
+        class="text-sm font-semibold uppercase tracking-wider text-muted"
+      >
+        Avatar & Border
+      </h3>
+
+      <div class="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-9">
+        {
+          AVATAR_KEYS.map((key) => (
+            <label class="cursor-pointer">
+              <input
+                type="radio"
+                name="pf-avatar"
+                value={key}
+                checked={key === avatarKey}
+                class="peer sr-only"
+              />
+              <img
+                src={`/assets/avatars/${key}.avif`}
+                alt={key}
+                loading="lazy"
+                class="h-10 w-10 rounded-full border-2 border-transparent object-cover peer-checked:border-blue"
+              />
+            </label>
+          ))
+        }
+      </div>
+
+      <fieldset class="mt-4">
+        <legend class="mb-2 text-sm text-muted">Border Type</legend>
+        <div class="flex flex-wrap gap-2">
+          <label
+            class="cursor-pointer rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          >
+            <input
+              type="radio"
+              name="pf-border-type"
+              value="NONE"
+              checked={borderType === "NONE"}
+              class="mr-1.5"
+            />
+            None
+          </label>
+          <label
+            class="cursor-pointer rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          >
+            <input
+              type="radio"
+              name="pf-border-type"
+              value="PRESET"
+              checked={borderType === "PRESET"}
+              class="mr-1.5"
+            />
+            Custom Preset
+          </label>
+          <label
+            class="cursor-pointer rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          >
+            <input
+              type="radio"
+              name="pf-border-type"
+              value="SOLID"
+              checked={borderType === "SOLID"}
+              class="mr-1.5"
+            />
+            Solid Color
+          </label>
+        </div>
+      </fieldset>
+
+      <div id="pf-border-preset-group" class="mt-3 hidden">
+        <div class="flex flex-wrap gap-2">
+          {
+            BORDER_PRESETS.map((n) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="pf-border-preset"
+                  value={n}
+                  checked={borderPresetId === n}
+                  class="peer sr-only"
+                />
+                <img
+                  src={`/assets/borders/border_${n}.avif`}
+                  alt={`Border ${n}`}
+                  loading="lazy"
+                  class="h-12 w-12 rounded-full border-2 border-transparent object-contain peer-checked:border-blue"
+                />
+              </label>
+            ))
+          }
+        </div>
+      </div>
+
+      <div id="pf-border-color-group" class="mt-3 hidden items-center gap-3">
+        <input
+          id="pf-border-color-picker"
+          type="color"
+          value={borderColor || "#00FFCC"}
+          class="h-9 w-12 cursor-pointer rounded border border-border bg-surface-2"
+        />
+        <input
+          id="pf-border-color-hex"
+          type="text"
+          maxlength="7"
+          placeholder="#00FFCC"
+          value={borderColor}
+          class="w-32 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+        />
+      </div>
+    </section>
+
+    <!-- Section 3: bio editor -->
+    <section aria-labelledby="pf-bio-heading">
+      <h3
+        id="pf-bio-heading"
+        class="text-sm font-semibold uppercase tracking-wider text-muted"
+      >
+        Bio
+      </h3>
+
+      <div class="mt-3 flex gap-2" role="tablist" aria-label="Bio editor mode">
+        <button
+          type="button"
+          role="tab"
+          data-bio-tab="PLAIN"
+          class="rounded-lg px-3 py-2 text-sm">Plain</button
+        >
+        <button
+          type="button"
+          role="tab"
+          data-bio-tab="BBCODE"
+          class="rounded-lg px-3 py-2 text-sm">BBCode</button
+        >
+      </div>
+
+      <div data-bio-panel="PLAIN" class="mt-3">
+        <textarea
+          id="pf-bio-plain"
+          maxlength="250"
+          rows="5"
+          class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+          >{bioMode === "PLAIN" ? bio : ""}</textarea
+        >
+        <p id="pf-plain-count" class="mt-1 text-xs text-muted">0 / 250</p>
+      </div>
+
+      <div data-bio-panel="BBCODE" class="mt-3 hidden">
+        <div class="mb-2 flex flex-wrap gap-1.5">
+          {
+            (["b", "i", "u", "s", "url", "img"] as const).map((tag) => (
+              <button
+                type="button"
+                data-bbcode-tag={tag}
+                class="rounded border border-border bg-surface-2 px-2 py-1 text-xs text-text hover:bg-surface-3"
+              >
+                [{tag}]
+              </button>
+            ))
+          }
+        </div>
+        <textarea
+          id="pf-bio-bbcode"
+          maxlength="500"
+          rows="5"
+          class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-sm text-text"
+          >{bioMode === "BBCODE" ? bio : ""}</textarea
+        >
+        <p id="pf-bbcode-count" class="mt-1 text-xs text-muted">
+          Visible: 0 / 250 | Raw: 0 / 500 | Embeds: 0 / 3
+        </p>
+      </div>
+    </section>
+
+    <p
+      id="pf-error"
+      class="hidden rounded-lg border border-red/30 bg-red/10 p-2 text-sm text-red"
+      role="alert"
+    >
+    </p>
+
+    <footer class="flex justify-end gap-3">
+      <button
+        id="edit-profile-cancel"
+        type="button"
+        class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text hover:bg-surface-3"
+      >
+        Cancel
+      </button>
+      <button
+        id="edit-profile-save"
+        type="button"
+        class="rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+      >
+        Save Changes
+      </button>
+    </footer>
+  </div>
+</dialog>
+
+<script>
+  import { parseAndValidateBbCode } from "../../lib/bbcode";
+  import { segmentBio } from "../../lib/bio-presentation";
+
+  const dialog = document.getElementById(
+    "edit-profile-modal",
+  ) as HTMLDialogElement | null;
+  const trigger = document.getElementById(
+    "edit-profile-btn",
+  ) as HTMLButtonElement | null;
+  if (!dialog || !trigger)
+    throw new Error("Edit profile modal or trigger is missing.");
+
+  const bioModeInitial: "PLAIN" | "BBCODE" =
+    dialog.dataset.initialMode === "BBCODE" ? "BBCODE" : "PLAIN";
+
+  const closeButton = document.getElementById(
+    "edit-profile-close",
+  ) as HTMLButtonElement | null;
+  const cancelButton = document.getElementById(
+    "edit-profile-cancel",
+  ) as HTMLButtonElement | null;
+  const saveButton = document.getElementById(
+    "edit-profile-save",
+  ) as HTMLButtonElement | null;
+  const errorEl = document.getElementById(
+    "pf-error",
+  ) as HTMLParagraphElement | null;
+
+  const firstNameInput = document.getElementById(
+    "pf-first-name",
+  ) as HTMLInputElement;
+  const lastNameInput = document.getElementById(
+    "pf-last-name",
+  ) as HTMLInputElement;
+  const plainTextarea = document.getElementById(
+    "pf-bio-plain",
+  ) as HTMLTextAreaElement;
+  const bbcodeTextarea = document.getElementById(
+    "pf-bio-bbcode",
+  ) as HTMLTextAreaElement;
+
+  const modalAvatarImg = document.getElementById(
+    "modal-avatar-img",
+  ) as HTMLImageElement;
+  const modalAvatarRing = document.getElementById(
+    "modal-avatar-ring",
+  ) as HTMLDivElement;
+  const modalAvatarBorder = document.getElementById(
+    "modal-avatar-border",
+  ) as HTMLImageElement;
+
+  const presetGroup = document.getElementById(
+    "pf-border-preset-group",
+  ) as HTMLDivElement;
+  const colorGroup = document.getElementById(
+    "pf-border-color-group",
+  ) as HTMLDivElement;
+  const colorPicker = document.getElementById(
+    "pf-border-color-picker",
+  ) as HTMLInputElement;
+  const colorHexInput = document.getElementById(
+    "pf-border-color-hex",
+  ) as HTMLInputElement;
+
+  function checkedRadio(name: string): HTMLInputElement | null {
+    return document.querySelector<HTMLInputElement>(
+      `input[name="${name}"]:checked`,
+    );
+  }
+
+  function currentAvatarKey(): string {
+    return checkedRadio("pf-avatar")?.value ?? "male_1";
+  }
+
+  function currentBorderType(): string {
+    return checkedRadio("pf-border-type")?.value ?? "NONE";
+  }
+
+  function currentBorderPreset(): number {
+    const value = checkedRadio("pf-border-preset")?.value;
+    return value ? Number(value) : 1;
+  }
+
+  function currentHexColor(): string {
+    let hex = colorHexInput.value.trim();
+    if (!hex.startsWith("#")) hex = `#${hex}`;
+    return hex.toUpperCase();
+  }
+
+  function syncPreview(): void {
+    modalAvatarImg.src = `/assets/avatars/${currentAvatarKey()}.avif`;
+    const borderType = currentBorderType();
+    modalAvatarRing.style.boxShadow = "";
+    modalAvatarBorder.classList.add("hidden");
+
+    if (borderType === "SOLID") {
+      modalAvatarRing.style.boxShadow = `0 0 0 12px ${currentHexColor()}`;
+    } else if (borderType === "PRESET") {
+      modalAvatarBorder.src = `/assets/borders/border_${currentBorderPreset()}.avif`;
+      modalAvatarBorder.classList.remove("hidden");
+    }
+  }
+
+  function syncBorderControls(): void {
+    const borderType = currentBorderType();
+    presetGroup.classList.toggle("hidden", borderType !== "PRESET");
+    colorGroup.classList.toggle("hidden", borderType !== "SOLID");
+    colorGroup.classList.toggle("flex", borderType === "SOLID");
+    syncPreview();
+  }
+
+  function activeBioMode(): "PLAIN" | "BBCODE" {
+    const activeTab = document.querySelector<HTMLButtonElement>(
+      'button[data-bio-tab][aria-selected="true"]',
+    );
+    return activeTab?.dataset.bioTab === "BBCODE" ? "BBCODE" : "PLAIN";
+  }
+
+  function activeBioValue(): string {
+    return activeBioMode() === "BBCODE"
+      ? bbcodeTextarea.value
+      : plainTextarea.value;
+  }
+
+  function updateCounters(): void {
+    const plain = plainTextarea.value;
+    const plainCount = document.getElementById("pf-plain-count");
+    if (plainCount) plainCount.textContent = `${plain.length} / 250`;
+
+    const raw = bbcodeTextarea.value;
+    const visible = raw.replace(
+      /\[\/?(?:b|i|u|s|color|url|img)(?:=[^\]]+)?\]/gi,
+      "",
+    ).length;
+    const embeds =
+      (raw.match(/\[img\]/gi) ?? []).length +
+      (raw.match(/\[url(?:=[^\]]+)?\]/gi) ?? []).length;
+    const bbcodeCount = document.getElementById("pf-bbcode-count");
+    if (bbcodeCount) {
+      bbcodeCount.textContent = `Visible: ${visible} / 250 | Raw: ${raw.length} / 500 | Embeds: ${embeds} / 3`;
+    }
+  }
+
+  function selectBioTab(mode: "PLAIN" | "BBCODE"): void {
+    for (const tab of document.querySelectorAll<HTMLButtonElement>(
+      "button[data-bio-tab]",
+    )) {
+      const selected = tab.dataset.bioTab === mode;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.classList.toggle("bg-surface-2", selected);
+      tab.classList.toggle("text-text", selected);
+      tab.classList.toggle("text-muted", !selected);
+    }
+    const plainPanel = document.querySelector<HTMLDivElement>(
+      '[data-bio-panel="PLAIN"]',
+    );
+    const bbcodePanel = document.querySelector<HTMLDivElement>(
+      '[data-bio-panel="BBCODE"]',
+    );
+    if (plainPanel) plainPanel.classList.toggle("hidden", mode !== "PLAIN");
+    if (bbcodePanel) bbcodePanel.classList.toggle("hidden", mode !== "BBCODE");
+    updateCounters();
+  }
+
+  function insertTag(tag: string): void {
+    const textarea = bbcodeTextarea;
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? textarea.value.length;
+    const selected = textarea.value.slice(start, end);
+    const wrapped = `[${tag}]${selected}[/${tag}]`;
+    textarea.value =
+      textarea.value.slice(0, start) + wrapped + textarea.value.slice(end);
+    textarea.focus();
+    textarea.setSelectionRange(
+      start + `[${tag}]`.length,
+      start + `[${tag}]`.length + selected.length,
+    );
+    updateCounters();
+  }
+
+  function showError(message: string): void {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.classList.remove("hidden");
+  }
+
+  function hideError(): void {
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.classList.add("hidden");
+  }
+
+  function renderBioCard(nextBio: string, mode: string): void {
+    const card = document.getElementById("profile-bio-card");
+    if (!card) return;
+    card.dataset.bioMode = mode;
+    card.replaceChildren();
+    const trimmed = nextBio.trim();
+
+    if (!trimmed) {
+      const p = document.createElement("p");
+      p.className = "text-sm text-muted";
+      p.textContent = "This user has not written a bio yet.";
+      card.appendChild(p);
+      return;
+    }
+
+    const p = document.createElement("p");
+    p.className =
+      "whitespace-pre-wrap text-[1.75rem] leading-relaxed text-text";
+
+    if (mode === "BBCODE") {
+      const parsed = parseAndValidateBbCode(trimmed);
+      p.innerHTML = parsed.isValid && parsed.html ? parsed.html : "";
+      card.appendChild(p);
+      return;
+    }
+
+    const open = document.createElement("span");
+    open.setAttribute("aria-hidden", "true");
+    open.textContent = '"';
+    p.appendChild(open);
+    for (const seg of segmentBio(trimmed)) {
+      const span = document.createElement("span");
+      span.textContent = seg.text;
+      if (seg.italic) span.classList.add("italic");
+      if (seg.red) span.classList.add("text-red");
+      p.appendChild(span);
+    }
+    const close = document.createElement("span");
+    close.setAttribute("aria-hidden", "true");
+    close.textContent = '"';
+    p.appendChild(close);
+    card.appendChild(p);
+  }
+
+  function updatePageProfile(data: {
+    first_name: string;
+    last_name: string;
+    bio: string;
+    bio_mode: string;
+    avatar_key: string;
+    border_type: string;
+    border_preset_id: number | null;
+    border_color: string;
+  }): void {
+    const fullName = [data.first_name, data.last_name]
+      .filter(Boolean)
+      .join(" ");
+    const nameEl = document.getElementById("profile-fullname");
+    if (nameEl) nameEl.textContent = fullName;
+
+    const pageAvatar = document.getElementById(
+      "profile-avatar-img",
+    ) as HTMLImageElement | null;
+    const pageRing = document.getElementById(
+      "profile-avatar-ring",
+    ) as HTMLDivElement | null;
+    const pageBorder = document.getElementById(
+      "profile-avatar-border",
+    ) as HTMLImageElement | null;
+    if (pageAvatar) pageAvatar.src = `/assets/avatars/${data.avatar_key}.avif`;
+    if (pageRing) pageRing.style.boxShadow = "";
+    if (pageBorder) pageBorder.classList.add("hidden");
+    if (data.border_type === "SOLID" && pageRing && data.border_color) {
+      pageRing.style.boxShadow = `0 0 0 12px ${data.border_color}`;
+    } else if (
+      data.border_type === "PRESET" &&
+      pageBorder &&
+      data.border_preset_id
+    ) {
+      pageBorder.src = `/assets/borders/border_${data.border_preset_id}.avif`;
+      pageBorder.classList.remove("hidden");
+    }
+
+    renderBioCard(data.bio, data.bio_mode);
+  }
+
+  trigger.addEventListener("click", () => {
+    hideError();
+    selectBioTab(bioModeInitial);
+    updateCounters();
+    syncBorderControls();
+    syncPreview();
+    dialog.showModal();
+    firstNameInput.focus();
+  });
+
+  const closeModal = (): void => {
+    dialog.close();
+    trigger.focus();
+  };
+
+  closeButton?.addEventListener("click", closeModal);
+  cancelButton?.addEventListener("click", closeModal);
+
+  for (const input of document.querySelectorAll<HTMLInputElement>(
+    'input[name="pf-avatar"]',
+  )) {
+    input.addEventListener("change", syncPreview);
+  }
+  for (const input of document.querySelectorAll<HTMLInputElement>(
+    'input[name="pf-border-type"]',
+  )) {
+    input.addEventListener("change", syncBorderControls);
+  }
+  for (const input of document.querySelectorAll<HTMLInputElement>(
+    'input[name="pf-border-preset"]',
+  )) {
+    input.addEventListener("change", syncPreview);
+  }
+  colorPicker.addEventListener("input", () => {
+    colorHexInput.value = colorPicker.value.toUpperCase();
+    syncPreview();
+  });
+  colorHexInput.addEventListener("input", () => {
+    const value = currentHexColor();
+    if (/^#[0-9A-Fa-f]{6}$/.test(value)) colorPicker.value = value;
+    syncPreview();
+  });
+
+  for (const tab of document.querySelectorAll<HTMLButtonElement>(
+    "button[data-bio-tab]",
+  )) {
+    tab.addEventListener("click", () =>
+      selectBioTab(tab.dataset.bioTab as "PLAIN" | "BBCODE"),
+    );
+  }
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    "button[data-bbcode-tag]",
+  )) {
+    button.addEventListener("click", () =>
+      insertTag(button.dataset.bbcodeTag ?? ""),
+    );
+  }
+  plainTextarea.addEventListener("input", updateCounters);
+  bbcodeTextarea.addEventListener("input", updateCounters);
+
+  saveButton?.addEventListener("click", async () => {
+    hideError();
+    const borderType = currentBorderType();
+    const payload = {
+      first_name: firstNameInput.value,
+      last_name: lastNameInput.value,
+      bio: activeBioValue(),
+      bio_mode: activeBioMode(),
+      avatar_key: currentAvatarKey(),
+      border_type: borderType,
+      border_preset_id: borderType === "PRESET" ? currentBorderPreset() : null,
+      border_color: borderType === "SOLID" ? currentHexColor() : "",
+    };
+
+    try {
+      const response = await fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = (await response.json()) as
+        | { error?: { message?: string } }
+        | {
+            first_name?: string;
+            last_name?: string;
+            bio?: string;
+            bio_mode?: string;
+            avatar_key?: string;
+            border_type?: string;
+            border_preset_id?: number | null;
+            border_color?: string;
+          };
+
+      if (!response.ok) {
+        const message =
+          data && "error" in data && data.error?.message
+            ? data.error.message
+            : "Unable to save changes.";
+        showError(message);
+        return;
+      }
+
+      updatePageProfile({
+        first_name:
+          data && "first_name" in data
+            ? (data.first_name ?? "")
+            : payload.first_name,
+        last_name:
+          data && "last_name" in data
+            ? (data.last_name ?? "")
+            : payload.last_name,
+        bio: data && "bio" in data ? (data.bio ?? "") : payload.bio,
+        bio_mode:
+          data && "bio_mode" in data
+            ? (data.bio_mode ?? "PLAIN")
+            : payload.bio_mode,
+        avatar_key:
+          data && "avatar_key" in data
+            ? (data.avatar_key ?? "male_1")
+            : payload.avatar_key,
+        border_type:
+          data && "border_type" in data
+            ? (data.border_type ?? "NONE")
+            : payload.border_type,
+        border_preset_id:
+          data && "border_preset_id" in data
+            ? (data.border_preset_id ?? null)
+            : payload.border_preset_id,
+        border_color:
+          data && "border_color" in data
+            ? (data.border_color ?? "")
+            : payload.border_color,
+      });
+      closeModal();
+    } catch {
+      showError("Network error — please try again.");
+    }
+  });
+</script>

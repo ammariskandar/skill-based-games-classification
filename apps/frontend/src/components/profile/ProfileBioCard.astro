@@ -1,34 +1,55 @@
 ---
+import { parseAndValidateBbCode } from "../../lib/bbcode";
 import { segmentBio } from "../../lib/bio-presentation";
 
 interface Props {
   bio: string;
+  bioMode?: string;
 }
 
-const { bio } = Astro.props;
+const { bio, bioMode = "PLAIN" } = Astro.props;
 const trimmed = bio.trim();
 const segments = trimmed ? segmentBio(trimmed) : [];
+
+// BBCode mode renders the whitelisted markup directly; if the stored markup is
+// somehow invalid, fall back to plain text so the card never breaks.
+let bbCodeHtml: string | null = null;
+if (bioMode === "BBCODE" && trimmed) {
+  const parsed = parseAndValidateBbCode(trimmed);
+  if (parsed.isValid && parsed.html) {
+    bbCodeHtml = parsed.html;
+  }
+}
 ---
 
 <div
+  id="profile-bio-card"
+  data-bio-mode={bioMode}
   class="min-h-[160px] flex-1 rounded-xl border border-border bg-surface p-6"
 >
   {
     trimmed ? (
-      <p class="whitespace-pre-wrap text-[1.75rem] leading-relaxed text-text">
-        <span aria-hidden="true">"</span>
-        {segments.map((segment) => (
-          <span
-            class:list={[
-              segment.italic ? "italic" : undefined,
-              segment.red ? "text-red" : undefined,
-            ]}
-          >
-            {segment.text}
-          </span>
-        ))}
-        <span aria-hidden="true">"</span>
-      </p>
+      bbCodeHtml !== null ? (
+        <p
+          class="whitespace-pre-wrap text-[1.75rem] leading-relaxed text-text"
+          set:html={bbCodeHtml}
+        />
+      ) : (
+        <p class="whitespace-pre-wrap text-[1.75rem] leading-relaxed text-text">
+          <span aria-hidden="true">"</span>
+          {segments.map((segment) => (
+            <span
+              class:list={[
+                segment.italic ? "italic" : undefined,
+                segment.red ? "text-red" : undefined,
+              ]}
+            >
+              {segment.text}
+            </span>
+          ))}
+          <span aria-hidden="true">"</span>
+        </p>
+      )
     ) : (
       <p class="text-sm text-muted">This user has not written a bio yet.</p>
     )

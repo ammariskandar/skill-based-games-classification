@@ -6,6 +6,7 @@ import ProfileAvatar from "../../components/profile/ProfileAvatar.astro";
 import ProfileBioCard from "../../components/profile/ProfileBioCard.astro";
 import ProfileTopGames from "../../components/profile/ProfileTopGames.astro";
 import ProfileGameDNA from "../../components/profile/ProfileGameDNA.astro";
+import EditProfileModal from "../../components/profile/EditProfileModal.astro";
 import {
   getUserProfile,
   UserNotFoundError,
@@ -92,7 +93,7 @@ const title = profile ? `${profile.username}'s Profile` : "Profile";
                 href={profile.steam_profile_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
+                class="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm text-text transition-colors hover:bg-surface-3"
               >
                 <img
                   src="/assets/Steam_icon_logo.webp"
@@ -107,7 +108,7 @@ const title = profile ? `${profile.username}'s Profile` : "Profile";
             )}
           </div>
 
-          <ProfileBioCard bio={profile.bio} />
+          <ProfileBioCard bio={profile.bio} bioMode={profile.bio_mode} />
         </div>
 
         <div class="mt-12 grid gap-8 lg:grid-cols-12">
@@ -125,6 +126,22 @@ const title = profile ? `${profile.username}'s Profile` : "Profile";
           </div>
         </div>
       </div>
+    )
+  }
+
+  {
+    profile && profile.is_viewer_owner && (
+      <EditProfileModal
+        username={profile.username}
+        firstName={profile.first_name}
+        lastName={profile.last_name}
+        bio={profile.bio}
+        bioMode={profile.bio_mode}
+        avatarKey={profile.avatar_key}
+        borderType={profile.border_type}
+        borderPresetId={profile.border_preset_id}
+        borderColor={profile.border_color}
+      />
     )
   }
 </BaseLayout>
