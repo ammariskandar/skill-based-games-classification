@@ -2570,6 +2570,38 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-173 versioned questionnaire registry & hybrid assembler
+
+- **Registry package** — `classifications/questionnaire/registry/v1/`
+  (`types.py`, `set_a.py`–`set_d.py`, `assembler.py`, `__init__.py`), pinned to
+  `v1.0.0`.  Sets A–D encode Q3–Q8 (Challenge) and Q9–Q14 (Reward) roots plus
+  their child branch nodes, each answer option carrying a signed
+  Micro/Macro/Mystiko `ScoreModifier` and an optional branch
+  `next_question_id`.
+- **Structural validation** — `build_set` validates at import time: six roots
+  per part, target integrity (Part 1 = CHALLENGE, Part 2 = REWARD), unique
+  option ids, no dangling branch targets, no profile crossings, branch
+  reachability from roots, and an acyclic branch graph.
+- **Hybrid assembler** — `assemble_questionnaire` routes Part 1 from the
+  dominant set and Part 2 either entirely from the dominant set (true
+  aesthetic) or as a 50/50 split (Q9–Q11 secondary, Q12–Q14 dominant) for a
+  hybrid, keeping every child branch with its root.  The `SPECIAL_FLOW`
+  outcome cannot be assembled.
+- **Endpoint** — `POST /api/v1/questionnaire/assemble-tree` returns the concrete
+  node graph (with options/modifiers) for a publicly-listed Game.  Pure read;
+  `404` for unknown/non-public Games, `422` for invalid options.
+- **Frontend mirror** — `src/lib/questionnaire/registry/v1/` (`types.ts`,
+  `set-a.ts`–`set-d.ts`, `assembler.ts`, `assembler.test.ts`) reproduces the
+  registry SDK exactly, with option ids derived identically
+  (`{question_id}_{slug(label)}`).
+- **Docs** — `docs/questionnaire-epic-sbgc-171.md` gains the SBGC-173 registry
+  layout/encoding notes; `docs/backend-api.md` documents the new endpoint.
+- **Tests** — 21 backend tests
+  (`classifications/tests/test_questionnaire_registry.py`) and 15 frontend
+  tests (registry + 16-aesthetic permutation matrix).  Backend `ruff` /
+  `basedpyright` clean; frontend `astro check`, ESLint, Prettier and the build
+  green; frontend suite 799 passing.
+
 ## 2026-09-10 — SBGC-172 questionnaire domain, game aesthetic field & combinatoric resolver
 
 - **Epic blueprint recorded** — `docs/questionnaire-epic-sbgc-171.md` captures

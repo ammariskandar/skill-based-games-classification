@@ -41,11 +41,19 @@ split Part 2 50/50.  The canonical primary aesthetic is persisted to
 
 ### Stage 2 — Question registry selection (SBGC-173)
 
-- Challenge (Q3–Q8): 100% from the dominant set (1A, 1B, 1C, or 1D).
-- Reward (Q9–Q14):
-  - True aesthetic → 100% from set 2X.
+The versioned registry is code-owned (`registry/v1/`, tag `v1.0.0`) and mirrored
+in Python and TypeScript.  `assemble_questionnaire` returns the concrete graph
+for a resolved aesthetic:
+
+- Challenge (Part 1, Q3–Q8): 100% from the dominant set (1A, 1B, 1C, or 1D),
+  child branches included.
+- Reward (Part 2, Q9–Q14):
+  - True aesthetic → 100% from the dominant set (2X).
   - Hybrid aesthetic → Q9–Q11 from the secondary set, Q12–Q14 from the
-    dominant set.
+    dominant set (the 50/50 split), with every child branch kept with its root.
+
+``POST /api/v1/questionnaire/assemble-tree`` resolves the Q1/Q2 answers and
+returns this graph for a publicly-listed Game.
 
 ### Stage 3 — Live radar engine & Q15 compensation (SBGC-174, SBGC-179)
 
@@ -145,3 +153,54 @@ updated_at)`) and emails a completion report to the triggering admin.
   SBGC-176.
 - **Frontend tests are co-located under `src/`**, matching the repository's
   vitest configuration rather than the blueprint's `tests/unit/` path.
+
+## 6. SBGC-173 implementation notes
+
+### Registry layout
+
+```text
+apps/backend/classifications/questionnaire/registry/v1/
+├── types.py        # schema, builders (opt/question/build_set), validation
+├── set_a.py        # Sensory   — Part 1 Q3–Q8 (15 nodes), Part 2 Q9–Q14 (17 nodes)
+├── set_b.py        # Fantasy   — Part 1 (11 nodes), Part 2 (10 nodes)
+├── set_c.py        # Narrative — Part 1 (10 nodes), Part 2 (10 nodes)
+├── set_d.py        # Challenge — Part 1 (12 nodes), Part 2 (11 nodes)
+└── assembler.py    # REGISTRY_MAP + assemble_questionnaire
+
+apps/frontend/src/lib/questionnaire/registry/v1/
+├── types.ts        # mirror + buildSet/validateQuestionSet
+├── set-a.ts … set-d.ts
+├── assembler.ts
+└── assembler.test.ts
+```
+
+### Encoding rules
+
+- Every root question is Q3–Q8 (Challenge) or Q9–Q14 (Reward); child branch
+  nodes (`Q4A`, `Q8F`, `Q13B`, …) derive their `root_id` from the node id and
+  carry a `next_question_id` branch pointer.
+- Each answer option carries a signed `ScoreModifier` (`micro`/`macro`/
+  `mystiko`); branch-only options may be zero-weighted.
+- Option ids are derived deterministically as `{question_id}_{slug(label)}` in
+  both stacks so the wire ids are stable and identical.
+- Sets are validated at import/build time: six roots per part, target
+  integrity, unique ids, no dangling branch targets, branch reachability from
+  roots, and an acyclic branch graph.  A malformed registry fails fast.
+
+### Endpoint
+
+`POST /api/v1/questionnaire/assemble-tree` (public, publicly-listed Games
+only) returns `version`, the game identity, the resolved aesthetics, and
+`part1_challenge_nodes` / `part2_reward_nodes` — each node with its options and
+modifiers.  Invalid options return `422 VALIDATION_ERROR`; unknown or
+non-public Games return `404 NOT_FOUND`.
+
+### Deliberate adaptations
+
+- Collections are immutable tuples/readonly arrays rather than the
+  blueprint's mutable `List`/`[]` — the registry is code-owned constant data.
+- Tests are co-located under `src/` (vitest) as with SBGC-172; the backend
+  suite lives in `classifications/tests/test_questionnaire_registry.py`.
+- Dual-stack parity is enforced by identical literal anchors in both suites
+  (modifier weights, node texts, root ordering) rather than a generated
+  fixture.
