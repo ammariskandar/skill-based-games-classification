@@ -105,7 +105,7 @@ describe("unavailable fallback state", () => {
     expect(doc.querySelector("[data-radar-layers]")).toBeNull();
     expect(doc.querySelector(".radar-polygon")).toBeNull();
     expect(doc.querySelector(".radar-vertex-node")).toBeNull();
-    expect(doc.querySelector(".radar-toggle")).toBeNull();
+    expect(doc.querySelector(".radar-toggle-group")).toBeNull();
   });
 });
 
@@ -140,20 +140,27 @@ describe("vertex node data contract", () => {
 });
 
 describe("profile switch contract", () => {
-  it("renders a role=switch with the active profile label underneath", () => {
+  it("renders a segmented Challenge/Reward control", () => {
     const doc = parse(buildRadarHtml({ challenge: CHALLENGE, reward: REWARD }));
-    const switchEl = doc.querySelector<HTMLButtonElement>(".radar-toggle");
-    expect(switchEl).not.toBeNull();
-    expect(switchEl!.getAttribute("role")).toBe("switch");
-    expect(switchEl!.getAttribute("aria-checked")).toBe("false");
-    expect(doc.querySelector("[data-toggle-label]")?.textContent).toBe(
-      "Challenge",
+    const group = doc.querySelector<HTMLElement>(".radar-toggle-group");
+    expect(group).not.toBeNull();
+
+    const buttons = Array.from(
+      group!.querySelectorAll<HTMLButtonElement>(".radar-profile-btn"),
     );
+    expect(buttons).toHaveLength(2);
+    expect(buttons.map((button) => button.dataset.toggleTarget)).toEqual([
+      "challenge",
+      "reward",
+    ]);
+    expect(buttons[0].getAttribute("aria-pressed")).toBe("true");
+    expect(buttons[1].getAttribute("aria-pressed")).toBe("false");
+    expect(buttons[0].classList.contains("is-active")).toBe(true);
   });
 
   it("omits the switch when only one profile is present", () => {
     const doc = parse(buildRadarHtml({ challenge: CHALLENGE, reward: null }));
-    expect(doc.querySelector(".radar-toggle")).toBeNull();
+    expect(doc.querySelector(".radar-toggle-group")).toBeNull();
   });
 
   it("omits the switch when showToggle is disabled", () => {
@@ -164,7 +171,7 @@ describe("profile switch contract", () => {
         showToggle: false,
       }),
     );
-    expect(doc.querySelector(".radar-toggle")).toBeNull();
+    expect(doc.querySelector(".radar-toggle-group")).toBeNull();
   });
 });
 

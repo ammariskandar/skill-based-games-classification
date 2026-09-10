@@ -1,0 +1,278 @@
+---
+/**
+ * Live questionnaire radar shell — SBGC-179.
+ *
+ * Renders the static SVG once (grid, spokes, both profile polygons, the raw
+ * benchmark, and the six vertex nodes).  `radar-live-bridge.ts` then mutates it
+ * in place in response to `questionnaire:*` window events, so answering a
+ * question never triggers an Astro re-render.
+ */
+import { SPOKES, polarToCartesian } from "../../lib/radar-geometry";
+import { VERTEX_COLOR } from "../../lib/radar-render";
+import { DIMENSION_IDS, DIMENSIONS } from "../../lib/skill-dimensions";
+
+interface Props {
+  class?: string;
+  size?: number;
+}
+
+const { class: className = "", size = 320 } = Astro.props;
+const center = size / 2;
+const maxRadius = center - 56; // 56px label/glow margin
+const labelRadius = maxRadius + 24;
+
+const GRID_LEVELS = [0.25, 0.5, 0.75, 1] as const;
+const SPOKE_ANGLES = [0, 60, 120, 180, 240, 300] as const;
+
+const spokes = SPOKE_ANGLES.map((angle) => ({
+  angle,
+  end: polarToCartesian(center, center, maxRadius, angle),
+}));
+
+/** Match the slug-page radar's label anchoring at each spoke angle. */
+function textAnchorFor(angleDegrees: number): "start" | "middle" | "end" {
+  const radians = (angleDegrees * Math.PI) / 180;
+  const x = Math.sin(radians);
+  if (Math.abs(x) < 1e-9) return "middle";
+  return x > 0 ? "start" : "end";
+}
+
+const axisLabels = SPOKES.map((spoke) => {
+  const point = polarToCartesian(
+    center,
+    center,
+    labelRadius,
+    spoke.angleDegrees,
+  );
+  const anchor = textAnchorFor(spoke.angleDegrees);
+  const dimension = DIMENSIONS[spoke.dimension];
+  const symbolFirst = anchor !== "end";
+  return {
+    profile: spoke.kind,
+    dimension: spoke.dimension,
+    x: point.x,
+    y: point.y,
+    anchor,
+    text: symbolFirst
+      ? `${dimension.symbol} ${dimension.label}`
+      : `${dimension.label} ${dimension.symbol}`,
+  };
+});
+
+const nodes = (["challenge", "reward"] as const).flatMap((profile) =>
+  DIMENSION_IDS.map((dimension) => ({
+    profile,
+    dimension,
+    label: `${profile === "challenge" ? "Challenge" : "Reward"} ${DIMENSIONS[dimension].label}`,
+  })),
+);
+
+// The three vertices of each polygon, in spoke order, so the barycentric fill
+// gradients and the stroked spline trace the same triangle.
+const PROFILE_KINDS = ["challenge", "reward"] as const;
+const orderedDimensions = {
+  challenge: SPOKES.filter((spoke) => spoke.kind === "challenge").map(
+    (spoke) => spoke.dimension,
+  ),
+  reward: SPOKES.filter((spoke) => spoke.kind === "reward").map(
+    (spoke) => spoke.dimension,
+  ),
+};
+---
+
+<div
+  class:list={[
+    "questionnaire-radar-container flex w-full flex-col items-center",
+    className,
+  ]}
+  data-questionnaire-radar
+  data-size={size}
+>
+  <div class="q-radar-frame relative aspect-square w-full">
+    <svg
+      class="radar-chart__svg w-full overflow-visible"
+      viewBox={`0 0 ${size} ${size}`}
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Live skill profile radar"
+    >
+      <defs>
+        <filter id="q-radar-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+          <feComponentTransfer in="blur" result="halvedBlur">
+            <feFuncA type="linear" slope="0.5"></feFuncA>
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode in="halvedBlur"></feMergeNode>
+            <feMergeNode in="SourceGraphic"></feMergeNode>
+          </feMerge>
+        </filter>
+
+        {
+          PROFILE_KINDS.map((kind) => (
+            <clipPath id={`q-radar-clip-${kind}`}>
+              <path class={`q-radar-clip--${kind}`} />
+            </clipPath>
+          ))
+        }
+
+        {
+          PROFILE_KINDS.flatMap((kind) =>
+            orderedDimensions[kind].map((dimension, index) => (
+              <linearGradient
+                id={`q-radar-grad-${kind}-${index}`}
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop
+                  offset="0"
+                  stop-color={`rgb(${VERTEX_COLOR[dimension].join(",")})`}
+                />
+                <stop
+                  offset="1"
+                  stop-color={`rgb(${VERTEX_COLOR[dimension].join(",")})`}
+                  stop-opacity="0"
+                />
+              </linearGradient>
+            )),
+          )
+        }
+      </defs>
+
+      {
+        GRID_LEVELS.map((level) => (
+          <circle
+            cx={center}
+            cy={center}
+            r={maxRadius * level}
+            class="q-radar-grid"
+            stroke-dasharray={level < 1 ? "3 3" : undefined}
+          />
+        ))
+      }
+
+      {
+        spokes.map((spoke) => (
+          <line
+            x1={center}
+            y1={center}
+            x2={spoke.end.x}
+            y2={spoke.end.y}
+            class="q-radar-spoke"
+          />
+        ))
+      }
+
+      <path class="radar-polygon--raw-benchmark" style="display: none;"></path>
+
+      {
+        PROFILE_KINDS.map((kind) => (
+          <g class={`q-radar-layer q-radar-layer--${kind}`} style="opacity: 0;">
+            <g
+              clip-path={`url(#q-radar-clip-${kind})`}
+              class="radar-polygon-fill"
+            >
+              {[0, 1, 2].map((index) => (
+                <path
+                  class={`radar-polygon-gradient q-radar-fill--${kind}`}
+                  fill={`url(#q-radar-grad-${kind}-${index})`}
+                />
+              ))}
+            </g>
+            <path
+              class={`radar-polygon--${kind} q-radar-polygon`}
+              filter="url(#q-radar-glow)"
+            />
+          </g>
+        ))
+      }
+
+      <g>
+        {
+          nodes.map((node) => (
+            <circle
+              class:list={[
+                `radar-node--${node.profile}-${node.dimension}`,
+                "q-radar-node",
+              ]}
+              data-node-profile={node.profile}
+              data-node-dimension={node.dimension}
+              data-score="0"
+              r="4.5"
+              style={`fill: var(--color-${node.dimension})`}
+            >
+              <title>{node.label}: 0</title>
+            </circle>
+          ))
+        }
+      </g>
+
+      <g class="q-radar-labels">
+        {
+          axisLabels.map((label) => (
+            <text
+              class="radar-axis-label"
+              data-profile={label.profile}
+              data-dimension={label.dimension}
+              x={label.x}
+              y={label.y}
+              text-anchor={label.anchor}
+              dominant-baseline="middle"
+              style={`fill: var(--color-${label.dimension})`}
+            >
+              {label.text}
+            </text>
+          ))
+        }
+      </g>
+    </svg>
+  </div>
+
+  <div
+    class="radar-toggle-group"
+    style="display: none;"
+    role="group"
+    aria-label="Radar profile selection"
+  >
+    <button
+      type="button"
+      class="radar-profile-btn is-active"
+      data-toggle-target="challenge"
+      aria-pressed="true"
+    >
+      Challenge Profile
+    </button>
+    <button
+      type="button"
+      class="radar-profile-btn"
+      data-toggle-target="reward"
+      aria-pressed="false"
+    >
+      Reward Profile
+    </button>
+  </div>
+</div>
+
+<script>
+  import { RadarLiveBridge } from "../../lib/questionnaire/radar-live-bridge";
+
+  let bridge: RadarLiveBridge | null = null;
+
+  function mountRadar(): void {
+    const container = document.querySelector<HTMLElement>(
+      "[data-questionnaire-radar]",
+    );
+    if (!container || container.hasAttribute("data-radar-initialized")) return;
+    container.setAttribute("data-radar-initialized", "");
+    bridge = new RadarLiveBridge(
+      container,
+      Number(container.dataset.size ?? "320"),
+    );
+  }
+
+  document.addEventListener("astro:page-load", mountRadar);
+  window.addEventListener("pagehide", () => {
+    bridge?.destroy();
+    bridge = null;
+  });
+  mountRadar();
+</script>

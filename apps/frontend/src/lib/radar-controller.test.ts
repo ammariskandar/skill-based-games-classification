@@ -145,26 +145,21 @@ describe("initRadarChart lifecycle", () => {
   it("returns a handle whose destroy detaches listeners", () => {
     const container = mountChart();
     const handle = initRadarChart(container);
-    const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
-    const toggleLabel = container.querySelector<HTMLElement>(
-      "[data-toggle-label]",
+    const rewardButton = container.querySelector<HTMLButtonElement>(
+      "[data-toggle-target='reward']",
     );
 
-    expect(toggle).not.toBeNull();
-    expect(toggleLabel).not.toBeNull();
-    expect(toggle!.getAttribute("aria-checked")).toBe("false");
-    expect(toggleLabel!.textContent).toBe("Challenge");
+    expect(rewardButton).not.toBeNull();
+    expect(rewardButton!.getAttribute("aria-pressed")).toBe("false");
 
-    toggle!.click();
-    expect(toggle!.getAttribute("aria-checked")).toBe("true");
-    expect(toggleLabel!.textContent).toBe("Reward");
+    rewardButton!.click();
+    expect(rewardButton!.getAttribute("aria-pressed")).toBe("true");
 
     handle.destroy();
 
     // Listeners are detached: a further click must not change state.
-    toggle!.click();
-    expect(toggle!.getAttribute("aria-checked")).toBe("true");
-    expect(toggleLabel!.textContent).toBe("Reward");
+    rewardButton!.click();
+    expect(rewardButton!.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("is idempotent under repeated destroy calls", () => {
@@ -188,7 +183,9 @@ describe("initRadarChart lifecycle", () => {
     const challengePath = container.querySelector<SVGPathElement>(
       ".radar-polygon-challenge",
     );
-    const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
+    const rewardButton = container.querySelector<HTMLButtonElement>(
+      "[data-toggle-target='reward']",
+    );
     const activeLabel = container.querySelector<SVGTextElement>(
       ".radar-axis-label--active",
     );
@@ -196,7 +193,7 @@ describe("initRadarChart lifecycle", () => {
     expect(challengePath!.classList.contains("radar-polygon--active")).toBe(
       false,
     );
-    expect(toggle!.getAttribute("aria-checked")).toBe("true");
+    expect(rewardButton!.getAttribute("aria-pressed")).toBe("true");
     expect(activeLabel!.dataset.profile).toBe("reward");
 
     handle.setProfile("challenge");
@@ -204,7 +201,7 @@ describe("initRadarChart lifecycle", () => {
       true,
     );
     expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(false);
-    expect(toggle!.getAttribute("aria-checked")).toBe("false");
+    expect(rewardButton!.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("getRadarHandle retrieves the live handle for any initialized chart", () => {
@@ -247,7 +244,9 @@ describe("profile layer switching", () => {
       true,
     );
 
-    container.querySelector<HTMLButtonElement>(".radar-toggle")!.click();
+    container
+      .querySelector<HTMLButtonElement>("[data-toggle-target='reward']")!
+      .click();
 
     expect(rewardPath!.classList.contains("radar-polygon--active")).toBe(true);
     expect(challengePath!.classList.contains("radar-polygon--inactive")).toBe(
@@ -284,7 +283,9 @@ describe("profile layer switching", () => {
       "challenge",
     ]);
 
-    container.querySelector<HTMLButtonElement>(".radar-toggle")!.click();
+    container
+      .querySelector<HTMLButtonElement>("[data-toggle-target='reward']")!
+      .click();
 
     const activeNodes = Array.from(
       container.querySelectorAll<SVGCircleElement>(

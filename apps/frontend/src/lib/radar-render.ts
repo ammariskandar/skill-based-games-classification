@@ -82,7 +82,7 @@ function textAnchorFor(angleDegrees: number): "start" | "middle" | "end" {
  * `--color-micro` / `--color-mystiko` / `--color-macro` theme tokens so the
  * pure string generator can interpolate fills without a DOM.
  */
-const VERTEX_COLOR: Record<DimensionId, [number, number, number]> = {
+export const VERTEX_COLOR: Record<DimensionId, [number, number, number]> = {
   micro: [0x58, 0xa6, 0xff], // --color-micro
   mystiko: [0xbc, 0x8c, 0xff], // --color-mystiko
   macro: [0xff, 0xa6, 0x57], // --color-macro
@@ -148,7 +148,7 @@ function fmt(v: number): string {
   return String(Math.round(v * 10) / 10);
 }
 
-function polygonIsDegenerate(vertices: PolygonVertex[]): boolean {
+export function polygonIsDegenerate(vertices: PolygonVertex[]): boolean {
   const xs = vertices.map((v) => v.x);
   const ys = vertices.map((v) => v.y);
   return (
@@ -158,7 +158,7 @@ function polygonIsDegenerate(vertices: PolygonVertex[]): boolean {
 }
 
 /** Gradient axis from a vertex toward its opposite edge, perpendicular to it. */
-function vertexGradientAxis(
+export function vertexGradientAxis(
   vi: PolygonVertex,
   vj: PolygonVertex,
   vk: PolygonVertex,
@@ -419,11 +419,15 @@ export function buildRadarHtml(data: RadarRenderData): string {
   const hasToggle = showToggle && challenge !== null && reward !== null;
 
   const toggleHtml = hasToggle
-    ? `<div class="radar-toggle-group"><button type="button" class="radar-toggle" role="switch" aria-checked="${
+    ? `<div class="radar-toggle-group" role="group" aria-label="Radar profile selection"><button type="button" class="radar-profile-btn${
+        initialProfile === "challenge" ? " is-active" : ""
+      }" data-toggle-target="challenge" aria-pressed="${
+        initialProfile === "challenge"
+      }">Challenge Profile</button><button type="button" class="radar-profile-btn${
+        initialProfile === "reward" ? " is-active" : ""
+      }" data-toggle-target="reward" aria-pressed="${
         initialProfile === "reward"
-      }" aria-label="Active radar profile"><span class="radar-toggle__track" aria-hidden="true"><span class="radar-toggle__thumb"></span></span></button><span class="radar-toggle__label" data-toggle-label>${
-        initialProfile === "challenge" ? "Challenge" : "Reward"
-      }</span></div>`
+      }">Reward Profile</button></div>`
     : "";
 
   return `<div class="radar-chart${classSuffix}" data-radar-chart data-size="${size}" data-initial-profile="${initialProfile}"><svg class="radar-chart__svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${escapeHtml(
