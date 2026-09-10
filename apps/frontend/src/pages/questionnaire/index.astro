@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ErrorState from "../../components/ui/ErrorState.astro";
+import {
+  GameNotFoundError,
+  getGameDetail,
+  type GameDetailResponse,
+} from "../../lib/server/api/games";
+
+const gameSlug = Astro.url.searchParams.get("game");
+
+if (!gameSlug) {
+  return Astro.redirect("/catalogue");
+}
+
+type PageState =
+  { kind: "game"; detail: GameDetailResponse } | { kind: "service-error" };
+
+let state: PageState;
+try {
+  state = {
+    kind: "game",
+    detail: await getGameDetail(gameSlug, { signal: Astro.request.signal }),
+  };
+} catch (error: unknown) {
+  if (error instanceof GameNotFoundError) {
+    Astro.response.status = 404;
+    return Astro.rewrite("/404");
+  }
+  // Timeout, network failure, Django 5xx, or a malformed response: the
+  // upstream service is unavailable — render a real 503, never a 404.
+  Astro.response.status = 503;
+  state = { kind: "service-error" };
+}
+
+const game = state.kind === "game" ? state.detail.game : null;
+---
+
+<BaseLayout
+  title={game ? `DNA Assessment: ${game.name}` : "Something went wrong"}
+  description={game
+    ? `Answer the MyGameDNA questionnaire to classify ${game.name} across Challenge and Reward.`
+    : undefined}
+  canonicalPath="/questionnaire"
+  robots={game ? "index, follow" : "noindex, nofollow"}
+>
+  <div class="mx-auto w-full max-w-4xl">
+    {
+      state.kind === "service-error" ? (
+        <ErrorState
+          headingLevel="h1"
+          title="Questionnaire unavailable"
+          message="We could not load this game right now. Please try again later."
+        />
+      ) : (
+        <>
+          <header class="mb-8 text-center">
+            <h1 class="text-3xl font-extrabold text-(--color-text)">
+              Game DNA Questionnaire
+            </h1>
+            <p class="mt-2 text-(--color-muted)">
+              Assessing{" "}
+              <span class="font-semibold text-(--color-accent)">
+                {game?.name}
+              </span>
+            </p>
+          </header>
+
+          {/* Questionnaire container — Q1/Q2 aesthetic selection and the
+              subsequent question sets mount here (SBGC-173 / SBGC-178). */}
+          <div
+            id="questionnaire-root"
+            class="rounded-xl border border-(--color-border) bg-(--color-surface) p-6"
+            data-game-slug={game?.slug}
+            data-game-name={game?.name}
+          >
+            <p class="text-sm text-(--color-muted)">
+              The questionnaire experience is being prepared.
+            </p>
+          </div>
+        </>
+      )
+    }
+  </div>
+</BaseLayout>

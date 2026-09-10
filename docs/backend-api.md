@@ -31,7 +31,8 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
 | Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71); homepage carousel (SBGC-189) |
-| Classifications   | `classifications/api.py`        | Classifications   | No operations yet |
+| Classifications   | `classifications/api.py`        | Submissions      | Community score submission (SBGC-216) |
+| Questionnaire     | `classifications/questionnaire/api.py` | Questionnaire | Aesthetic resolution (SBGC-172) |
 
 Routers own domain-specific endpoints.  Domain models and services are
 implemented (SBGC-45 through SBGC-56).  SBGC-57 added authorized Steam
@@ -40,7 +41,9 @@ import and refresh mutations on the Games router:
 `POST /api/v1/games/{game_id}/steam/refresh` — see `docs/steam-api.md`.
 SBGC-71 added the public read endpoint `GET /api/v1/games/{slug}` — see the
 Game detail section below. SBGC-189 added `GET /api/v1/games/homepage` for the
-homepage Steam carousel — see the Homepage Carousel section below.
+homepage Steam carousel — see the Homepage Carousel section below. SBGC-216
+added the community score submission endpoint, and SBGC-172 added questionnaire
+aesthetic resolution — see the Questionnaire section below.
 
 ## Request Schemas
 
@@ -458,6 +461,61 @@ Every error response follows this structure:
 | `INTERNAL_SERVER_ERROR` | 500  | Unexpected exception                      |
 
 Project code can raise `ApiException` with any custom code and status.
+
+## Questionnaire — `POST /api/v1/questionnaire/resolve-aesthetic`
+
+Resolves a publicly-listed Game's dominant and secondary aesthetics from its
+Q1/Q2 answers and returns the Part 1 (Challenge) / Part 2 (Reward) question-set
+dispatch contract (SBGC-172).  It is a **pure resolver**: it never writes
+`Game.aesthetic` or any submission record — canonical persistence and
+precedence handling belong to SBGC-175 / SBGC-176.
+
+### Request
+
+```json
+{
+  "game_slug": "hades",
+  "q1_option_id": "OPT_S1",
+  "q2_option_id": "OPT_F1"
+}
+```
+
+### Eligibility
+
+The Game must be publicly listable (`content_type == game` and
+`listing_status == published`).  Unknown, hidden, non-game, and non-existent
+slugs return `404 NOT_FOUND`.
+
+### Resolution
+
+- `SENSORY` / `FANTASY` / `NARRATIVE` / `CHALLENGE` in Q1 and Q2 form either a
+  **true aesthetic** (identical categories, or a Collaborative/None collapse)
+  or a **hybrid aesthetic** (two different categories; Q1 dominates).
+- Hybrid Part 2 splits: `q9_to_q11_set` comes from the secondary aesthetic and
+  `q12_to_q14_set` from the dominant one.
+- `OPT_COL` + `OPT_NONE` resolves to the reserved `SPECIAL_FLOW` outcome (all
+  sets `SPECIAL`).
+
+### Response
+
+```json
+{
+  "game_slug": "hades",
+  "game_name": "Hades",
+  "dominant_aesthetic": "SENSORY",
+  "secondary_aesthetic": "FANTASY",
+  "is_true_aesthetic": false,
+  "part1_challenge_set": "1A",
+  "part2_reward_config": {
+    "is_split": true,
+    "q9_to_q11_set": "2B",
+    "q12_to_q14_set": "2A"
+  }
+}
+```
+
+Unknown options, `OPT_NONE` in Q1, and replaying the Q1 option in Q2 return
+`422 VALIDATION_ERROR`.  See `docs/questionnaire-epic-sbgc-171.md`.
 
 ## Exception Handling
 

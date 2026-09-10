@@ -59,6 +59,23 @@ Editorial state, never derived from Steam or external metadata:
 No overlapping booleans (`is_active`, `is_visible`, `is_published`,
 `deleted`).
 
+## Canonical aesthetic (SBGC-172)
+
+`aesthetic` is the canonical primary aesthetic resolved from the SBGC-171
+questionnaire:
+
+- `SENSORY`
+- `FANTASY`
+- `NARRATIVE`
+- `CHALLENGE`
+
+It is `CharField(max_length=20, choices=Aesthetic.choices, null=True,
+blank=True, db_index=True)`.  `NULL` means the aesthetic has not been resolved
+for this Game yet.  The value is produced by the questionnaire flow
+(`POST /api/v1/questionnaire/resolve-aesthetic` resolves it; canonical
+assignment happens with questionnaire persistence in SBGC-175 / SBGC-176), not
+by Steam import or refresh.  See `docs/questionnaire-epic-sbgc-171.md`.
+
 ## Manual metadata
 
 Optional application-owned editorial fields available for all source types:

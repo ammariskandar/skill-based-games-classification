@@ -26,6 +26,19 @@ class ListingStatus(models.TextChoices):
     ARCHIVED = "archived", "Archived"
 
 
+class Aesthetic(models.TextChoices):
+    """Canonical primary aesthetic category — SBGC-172.
+
+    Resolved deterministically from the Q1/Q2 answers of the SBGC-171
+    questionnaire.  ``NULL`` means the aesthetic has not been resolved yet.
+    """
+
+    SENSORY = "SENSORY", "Sensory"
+    FANTASY = "FANTASY", "Fantasy"
+    NARRATIVE = "NARRATIVE", "Narrative"
+    CHALLENGE = "CHALLENGE", "Challenge"
+
+
 class GameQuerySet(models.QuerySet):
     """Custom queryset for ``Game`` — SBGC-48 / SBGC-49."""
 
@@ -120,6 +133,20 @@ class Game(models.Model):
         max_length=16,
         choices=ListingStatus,
         default=ListingStatus.DRAFT,
+    )
+
+    # -- Canonical aesthetic (SBGC-172) -----------------------------------------
+
+    aesthetic = models.CharField(
+        max_length=20,
+        choices=Aesthetic.choices,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=(
+            "Canonical primary aesthetic category resolved from the SBGC-171 "
+            "questionnaire.  NULL = not yet resolved."
+        ),
     )
 
     # -- Manual metadata --------------------------------------------------------
