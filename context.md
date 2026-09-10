@@ -2570,6 +2570,26 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-177 questionnaire database constraints & migration verification
+
+- **Models** — `QuestionnaireResult` gains a Q15 1–10 range check, `<= 100`
+  upper-bound checks on all twelve normalized/adjusted dimension columns, and
+  `idx_qresult_user_game_created`; `QuestionnaireClassification` gains the
+  named `uniq_qclass_user_game` constraint (replacing `unique_together`) and
+  `idx_qclass_status_updated`; `UserGameScoreSubmission` gains
+  `idx_usergamescoresub_source`.  Migration
+  `0011_questionnaire_db_constraints.py` (reversible).
+- **Tests** — `test_database_constraints.py` (raw-ORM inserts proving engine
+  enforcement of range/sum/uniqueness and `SET_NULL`/`CASCADE` actions) and
+  `test_migration_verification.py` (`MigrationExecutor` rollback to
+  `0009_usergamescoresubmission` and forward to latest).
+- **Docs** — `docs/database-constraints.md` (questionnaire constraint
+  inventory) and `docs/questionnaire-epic-sbgc-171.md` (SBGC-177 notes).
+- **Validation** — 13 new tests plus the full `classifications` regression
+  (609 tests, 12 skipped) pass; `ruff`, `basedpyright`, `manage.py check` and
+  `makemigrations --check` clean; lower-bound `>= 0` checks confirmed to be
+  emitted by both the SQLite and PostgreSQL backends.
+
 ## 2026-09-10 — SBGC-176 questionnaire session & submission API
 
 - **Endpoints** — `GET /api/v1/questionnaire/{slug}/session` (conflict

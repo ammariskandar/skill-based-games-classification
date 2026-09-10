@@ -348,3 +348,45 @@ success/conflict discriminated union) forward the viewer `sessionid` cookie.
 - The submit request type is the snake_case wire contract
   (`QuestionnaireSubmitRequest`), since the backend field names are the
   authoritative wire format.
+
+## 10. SBGC-177 implementation notes
+
+### Database-level hardening (migration `0011_questionnaire_db_constraints`)
+
+Application validators run only on `full_clean()` / API parsing, so raw ORM
+writes (`bulk_create`, `.update()`) could otherwise persist invalid rows.
+SBGC-177 pushes the invariants into the database:
+
+- `QuestionnaireResult` — `q15_rating` 1–10 range check; `<= 100` upper-bound
+  checks on all twelve normalized/adjusted dimension columns; the four
+  sum-to-100 checks (seeded by SBGC-175); and
+  `idx_qresult_user_game_created`.
+- `QuestionnaireClassification` — named `uniq_qclass_user_game` unique
+  constraint (replacing `unique_together`) and `idx_qclass_status_updated`.
+- `UserGameScoreSubmission` — `idx_usergamescoresub_source` on
+  `(source, game_id)`; the `questionnaire_result` FK remains `SET_NULL`.
+- Lower bounds (`>= 0`) are provided by the backend for every
+  `PositiveSmallIntegerField`, so no extra negative checks are needed.
+
+See `docs/database-constraints.md` for the full inventory.
+
+### Verification tests
+
+- `test_database_constraints.py` — inserts through the raw ORM (no
+  `full_clean()`) and asserts `IntegrityError` for q15 out-of-range,
+  `> 100` dimensions, negative scores (sum-preserving), sum != 100, and the
+  `(user, game)` uniqueness; plus `SET_NULL` and `CASCADE` foreign-key actions.
+- `test_migration_verification.py` — uses `MigrationExecutor` to roll
+  `classifications` back to `0009_usergamescoresubmission` and forward to the
+  latest revision, proving the SBGC-175/177 migrations are fully reversible
+  (with a `tearDown` safety re-migration).
+
+### Deliberate adaptations
+
+- The migration is named `0011_questionnaire_db_constraints.py` (renamed from
+  Django's auto-generated name for a stable reference in the reversibility
+  test).
+- The four sum-to-100 expressions retain the SBGC-175 form
+  (`micro = 100 - macro - mystiko`), which is equivalent to the spec's
+  `micro + macro + mystiko == 100` and avoids churn on already-applied
+  constraints.

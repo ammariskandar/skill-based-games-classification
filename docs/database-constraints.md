@@ -171,15 +171,43 @@ Verification scope included:
   Both identities persist exactly once.  Verified in
   `games/tests/test_import_concurrency.py`.
 
-## Questionnaire Readiness
+## Questionnaire Persistence (SBGC-177)
 
-Future questionnaire scores (SBGC-171, SBGC-175) belong to separate
-`QuestionnaireClassification` / `QuestionnaireResult` models.  They:
+The questionnaire models seeded by SBGC-175 are hardened at the database
+layer by SBGC-177 (migration `classifications.0011_questionnaire_db_constraints`).
 
-- Link to canonical `Game` via FK
-- Do not overwrite or replace editorial classification
-- Use their own provenance, versioning, and persistence rules
-- May reuse `validate_score_distribution()` patterns
-- Are owned by SBGC-171 and SBGC-175
+### `classifications.QuestionnaireResult`
 
-No questionnaire fields or tables exist in SBGC-47.
+| Constraint / Index | Type | Target |
+| --- | --- | --- |
+| `chk_qresult_q15_range` | CheckConstraint | `q15_rating BETWEEN 1 AND 10` |
+| `chk_qresult_norm_c_{micro,macro,mystiko}_range` | CheckConstraint | normalized Challenge dims `<= 100` |
+| `chk_qresult_norm_r_{micro,macro,mystiko}_range` | CheckConstraint | normalized Reward dims `<= 100` |
+| `chk_qresult_adj_c_{micro,macro,mystiko}_range` | CheckConstraint | adjusted Challenge dims `<= 100` |
+| `chk_qresult_adj_r_{micro,macro,mystiko}_range` | CheckConstraint | adjusted Reward dims `<= 100` |
+| `chk_qresult_norm_{challenge,reward}_sum_100` | CheckConstraint | normalized profile `Σ = 100` |
+| `chk_qresult_adj_{challenge,reward}_sum_100` | CheckConstraint | adjusted profile `Σ = 100` |
+| `idx_qresult_user_game_created` | Index | `(user_id, game_id, -created_at)` |
+
+Lower bounds (`>= 0`) are enforced by PostgreSQL/SQLite for every
+`PositiveSmallIntegerField` column (`smallint ... CHECK (column >= 0)`), so the
+upper-bound checks plus the sum invariants cover the full `[0, 100]` range.
+
+### `classifications.QuestionnaireClassification`
+
+| Constraint / Index | Type | Target |
+| --- | --- | --- |
+| `uniq_qclass_user_game` | UniqueConstraint | `(user_id, game_id)` |
+| `idx_qclass_status_updated` | Index | `(status, -updated_at)` |
+| `latest_result` FK | Foreign Key | `QuestionnaireResult`, `ON DELETE CASCADE` |
+
+### `classifications.UserGameScoreSubmission`
+
+| Constraint / Index | Type | Target |
+| --- | --- | --- |
+| `questionnaire_result` FK | Foreign Key | `QuestionnaireResult`, `ON DELETE SET_NULL` |
+| `idx_usergamescoresub_source` | Index | `(source, game_id)` |
+
+`Game.aesthetic` carries a `db_index` from SBGC-172.  Behavioural verification
+lives in `classifications/tests/test_database_constraints.py`, and migration
+forward/backward execution in `test_migration_verification.py`.
