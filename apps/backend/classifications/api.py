@@ -1,17 +1,20 @@
 """
-Classifications API router — SBGC-38 / SBGC-216.
+Classifications API router — SBGC-38 / SBGC-216 / SBGC-174.
 
-Community score-submission endpoint.  ``/games/{slug}/submit-score`` accepts a
-six-dimensional Challenge/Reward profile from an authenticated community user
-and runs it through the temporal duplicate/supersession ingestion pipeline.
+Community score-submission endpoint (``/games/{slug}/submit-score``) and the
+staff-gated delta-recalculation trigger (``/recalculate-delta``).
 """
 
 from __future__ import annotations
 
-from api.errors import ApiException
+from api.errors import STANDARD_ERROR_RESPONSES, ApiException
 from games.models import Game
 from ninja import Field, Router, Schema
 
+from classifications.services.delta_recalculation import (
+    can_trigger_delta_recalculation,
+    dispatch_delta_recalculation,
+)
 from classifications.services.submission_ingestion import (
     ingest_score_submission,
 )
@@ -94,3 +97,44 @@ def submit_game_score(request, slug: str, payload: ScoreSubmissionIn):
         submitted_at=submitted_at,
     )
     return result.status_code, response_data
+
+
+# ---------------------------------------------------------------------------
+# Delta recalculation trigger — SBGC-174
+# ---------------------------------------------------------------------------
+
+
+class DeltaTriggerOut(Schema):
+    status: str
+    message: str
+    recipient_email: str | None
+
+
+@router.post(
+    "/recalculate-delta",
+    response={202: DeltaTriggerOut, **STANDARD_ERROR_RESPONSES},
+    summary="Trigger a delta recalculation",
+    description=(
+        "Queue a global delta recalculation for all published Games with new or "
+        "mutated submissions since their last completed calculation (SBGC-174)."
+    ),
+)
+def trigger_delta_recalculation(request):
+    user = request.user
+    if not user.is_authenticated:
+        raise ApiException(401, "AUTHENTICATION_ERROR", "Authentication required.")
+
+    if not can_trigger_delta_recalculation(user):
+        raise ApiException(
+            403,
+            "AUTHORIZATION_ERROR",
+            "Only Superusers and Moderators may trigger recalculations.",
+        )
+
+    dispatch_delta_recalculation(user)
+
+    return 202, DeltaTriggerOut(
+        status="queued",
+        message="Delta recalculation worker started successfully.",
+        recipient_email=user.email or None,
+    )

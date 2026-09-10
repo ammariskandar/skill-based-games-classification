@@ -31,7 +31,7 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
 | Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71); homepage carousel (SBGC-189) |
-| Classifications   | `classifications/api.py`        | Submissions      | Community score submission (SBGC-216) |
+| Classifications   | `classifications/api.py`        | Submissions      | Community score submission (SBGC-216); delta recalculation trigger (SBGC-174) |
 | Questionnaire     | `classifications/questionnaire/api.py` | Questionnaire | Aesthetic resolution (SBGC-172) |
 
 Routers own domain-specific endpoints.  Domain models and services are
@@ -42,8 +42,9 @@ import and refresh mutations on the Games router:
 SBGC-71 added the public read endpoint `GET /api/v1/games/{slug}` — see the
 Game detail section below. SBGC-189 added `GET /api/v1/games/homepage` for the
 homepage Steam carousel — see the Homepage Carousel section below. SBGC-216
-added the community score submission endpoint, and SBGC-172 added questionnaire
-aesthetic resolution — see the Questionnaire section below.
+added the community score submission endpoint, SBGC-172 added questionnaire
+aesthetic resolution — see the Questionnaire sections below — and SBGC-174
+added the delta recalculation trigger.
 
 ## Request Schemas
 
@@ -581,6 +582,33 @@ The Game must be publicly listable (`content_type == game` and
 Unknown options return `422 VALIDATION_ERROR`; the reserved
 `SPECIAL_FLOW` outcome cannot be assembled and also returns `422`.  See
 `docs/questionnaire-epic-sbgc-171.md` for the full registry layout.
+
+## Delta Recalculation — `POST /api/v1/classifications/recalculate-delta`
+
+Queues a global delta recalculation for every published Game whose submissions
+changed since its most recent completed calculation (SBGC-174).  The CPU-heavy
+work runs on a daemon thread; the request returns immediately with `202`.
+
+### Authorization
+
+- Unauthenticated → `401 AUTHENTICATION_ERROR`.
+- Authenticated non-Superuser/non-Moderator → `403 AUTHORIZATION_ERROR`.
+- Superuser or Moderator → `202`.  The operator's email (when present) receives
+  a completion report once the worker finishes.
+
+### Response
+
+```json
+{
+  "status": "queued",
+  "message": "Delta recalculation worker started successfully.",
+  "recipient_email": "admin@example.com"
+}
+```
+
+See `docs/questionnaire-epic-sbgc-171.md` for the staleness rule
+(`latest submission updated_at > latest snapshot calculated_at`) and the email
+report format.
 
 ## Exception Handling
 

@@ -2570,6 +2570,34 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-174 versioned scoring engine, Q15 compensation & delta recalculation
+
+- **Scoring package** — `classifications/questionnaire/scoring/` (`types.py`,
+  `engine.py`, `compensation.py`): per-step-floored raw accumulation, Largest
+  Remainder ratio normalization (zero-total fallback `(33, 33, 34)`;
+  tie-break Micro ≻ Macro ≻ Mystiko), and quality-bounded Q15 proportional
+  compensation (rating 1–10 → ±90/30/10/5/1) that preserves a strict 100-point
+  total and keeps every dimension within `[0, 100]`.
+- **Delta recalculation** — `classifications/services/delta_recalculation.py`:
+  `find_stale_game_ids` (latest submission `updated_at` > latest
+  `ClassificationSnapshot.calculated_at`, or no snapshot with submissions),
+  `execute_delta_recalculation` (fresh epoch + per-game `run_game_calculation` +
+  email report), and daemon-thread `dispatch_delta_recalculation` (no Celery).
+- **Triggers** — `POST /api/v1/classifications/recalculate-delta` (202 / 401 /
+  403, Superuser/Moderator gated) and a `CalculationEpochAdmin` changelist
+  button (`change_list_template` + custom `trigger_delta_view`).
+- **Frontend mirror** — `src/lib/questionnaire/scoring/{types,engine,compensation}.ts`
+  reproduces the scoring SDK exactly for the live radar/sliders (SBGC-179).
+- **Adaptations recorded** — no `ClassificationRun` model exists (uses
+  `ClassificationSnapshot.calculated_at`); engine primitive is
+  `run_game_calculation`; moderator gate uses `resolve_editorial_role`.
+- **Docs** — `docs/questionnaire-epic-sbgc-171.md` (SBGC-174 notes) and
+  `docs/backend-api.md` (delta endpoint) updated.
+- **Tests** — 24 backend tests (`test_questionnaire_scoring.py` +
+  `test_delta_recalculation.py`) and 17 frontend tests (scoring parity).
+  Backend `ruff`/`basedpyright` clean; frontend `astro check`, ESLint, Prettier
+  and the build green; frontend suite 816 passing.
+
 ## 2026-09-10 — SBGC-173 versioned questionnaire registry & hybrid assembler
 
 - **Registry package** — `classifications/questionnaire/registry/v1/`

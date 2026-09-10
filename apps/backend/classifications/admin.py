@@ -12,7 +12,9 @@ from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import ValidationError
 from django.forms.models import BaseInlineFormSet
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
+from django.urls import path, reverse
 from django.utils import timezone
 from games.models import Game
 from security.admin_hooks import HardenedUserAdmin, ProtectedGroupAdminMixin
@@ -33,6 +35,10 @@ from classifications.models import (
     UserGameScoreSubmission,
 )
 from classifications.roles import BASE_WEIGHTS
+from classifications.services.delta_recalculation import (
+    can_trigger_delta_recalculation,
+    dispatch_delta_recalculation,
+)
 from classifications.services.submissions import (
     EditorialRoleError,
     group_set_has_role_conflict,
@@ -644,6 +650,7 @@ class CalculationEpochAdmin(admin.ModelAdmin):
     )
     list_filter = ("status",)
     readonly_fields = [field.name for field in CalculationEpoch._meta.fields]
+    change_list_template = "admin/classifications/calculationepoch_changelist.html"
 
     def has_add_permission(self, request):
         return False
@@ -653,6 +660,36 @@ class CalculationEpochAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    # -- Delta recalculation trigger (SBGC-174) -------------------------------
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "trigger-delta/",
+                self.admin_site.admin_view(self.trigger_delta_view),
+                name="calculationepoch_trigger_delta",
+            ),
+        ]
+        return custom_urls + urls
+
+    def trigger_delta_view(self, request):
+        if not can_trigger_delta_recalculation(request.user):
+            self.message_user(request, "Permission denied.", level=messages.ERROR)
+            return HttpResponseRedirect(
+                reverse("admin:classifications_calculationepoch_changelist")
+            )
+
+        dispatch_delta_recalculation(request.user)
+        self.message_user(
+            request,
+            "Delta recalculation queued in background. An email report will "
+            "be sent upon completion.",
+            level=messages.SUCCESS,
+        )
+        return HttpResponseRedirect(
+            reverse("admin:classifications_calculationepoch_changelist")
+        )
 
 
 @admin.register(BoundaryCalibration)
