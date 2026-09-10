@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+<ul class="object-tools">
+  <li>
+    <a href="{% url 'admin:classifications_calculationepoch_trigger_delta' %}" class="button">
+      Trigger delta recalculation
+    </a>
+  </li>
+</ul>
+{% endblock %}

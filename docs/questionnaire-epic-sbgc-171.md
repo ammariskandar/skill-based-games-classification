@@ -204,3 +204,53 @@ non-public Games return `404 NOT_FOUND`.
 - Dual-stack parity is enforced by identical literal anchors in both suites
   (modifier weights, node texts, root ordering) rather than a generated
   fixture.
+
+## 7. SBGC-174 implementation notes
+
+### Scoring engine (`classifications/questionnaire/scoring/`)
+
+- `types.py` — `QualityTier`, `DimensionScore` (immutable, rejects negatives),
+  `QualitySpec`, `CalculatedProfilePair`, `FullScoringResult`.
+- `engine.py` — `compute_raw_profile` (per-step zero-flooring; Challenge and
+  Reward profiles isolated by `ProfileTarget`) and `normalize_profile`
+  (Largest-Remainder to a 100-point integer profile; zero-total fallback
+  `(33, 33, 34)`; tie-break Micro ≻ Macro ≻ Mystiko).
+- `compensation.py` — `QUALITY_TIER_MAP` (rating 1–10 → ±90/30/10/5/1),
+  `resolve_quality_spec`, and `apply_proportional_compensation` (coupled
+  proportional redistribution with boundary containment and integer remainder
+  absorption, preserving a strict 100-point total).
+
+The frontend mirrors these in
+`src/lib/questionnaire/scoring/{types,engine,compensation}.ts` for zero-latency
+live radar/slider feedback.
+
+### Delta recalculation (`classifications/services/delta_recalculation.py`)
+
+- `find_stale_game_ids()` — a published Game is stale when it has **no**
+  completed calculation but has submissions, or when its latest editorial or
+  community submission `updated_at` is after its latest
+  `ClassificationSnapshot.calculated_at`.
+- `execute_delta_recalculation(admin_user)` — creates a fresh
+  `CalculationEpoch` and runs `run_game_calculation` once per stale Game, then
+  emails the triggering admin a completion report.
+- `dispatch_delta_recalculation(user)` — daemon-thread dispatch (no Celery
+  broker in this deployment), so the HTTP thread never blocks.
+
+### Trigger surfaces
+
+- `POST /api/v1/classifications/recalculate-delta` → `202 {status, message,
+  recipient_email}`; 401 unauthenticated, 403 non-Superuser/non-Moderator.
+- `CalculationEpochAdmin` gains a changelist button (custom
+  `change_list_template` + `trigger_delta_view`) that queues the same worker.
+
+### Deliberate adaptations
+
+- **No `ClassificationRun` model.**  This repository persists a completed
+  calculation as `ClassificationSnapshot.calculated_at`; the delta query uses
+  that as the "completed_at" anchor.  `execute_game_calculation(game_id=...)`
+  does not exist; the engine primitive is `run_game_calculation(game=…,
+  epoch=…, attempt_number=1, cutoff_at=…)`, matching the existing admin
+  recalculation action.
+- **Moderator gate** uses the authoritative `resolve_editorial_role`
+  (Superuser/Moderator) rather than a raw `group.name == "Moderator"` match.
+- **Email** uses Django's `send_mail` with `fail_silently=True`; no Celery.
