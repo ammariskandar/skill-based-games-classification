@@ -2570,6 +2570,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-175 questionnaire persistence, precedence engine & canonical integration
+
+- **Models** — `QuestionnaireResult` (immutable audit trail with four
+  DB-level sum-to-100 `CheckConstraint`s on normalized/adjusted profiles) and
+  `QuestionnaireClassification` (per-`(user, game)` precedence ledger).
+  `UserGameScoreSubmission` gains `source` (`MANUAL`/`QUESTIONNAIRE`) and a
+  nullable `questionnaire_result` FK.  Migration
+  `0010_usergamescoresubmission_source_questionnaireresult_and_more.py`.
+- **Precedence engine** — `services/questionnaire_precedence.py`:
+  `evaluate_manual_conflict` (age anchored on `created_at`) and
+  `ingest_questionnaire_submission` (always audit; staff → editorial;
+  community → direct promotion / ≥10-day auto-overwrite / <10-day
+  `OVERWRITE` vs `KEEP_MANUAL`).
+- **Admin** — read-only `QuestionnaireResultAdmin` and
+  `QuestionnaireClassificationAdmin`.
+- **Frontend types** — `src/lib/questionnaire/types.ts` gains `SubmissionSource`,
+  `PrecedenceStatus`, `ConflictResolution`, and the submission/conflict shapes.
+- **Adaptations recorded** — staff gate reuses `is_editorial_submitter`;
+  editorial routing uses `create_submission`/`update_submission`;
+  missing-resolution guard raises rather than silently overwrites.
+- **Docs** — `docs/questionnaire-epic-sbgc-171.md` (SBGC-175 notes).
+- **Tests** — 17 backend tests (`test_questionnaire_models.py` +
+  `test_questionnaire_precedence.py`).  Backend `ruff`/`basedpyright` clean;
+  frontend `astro check`, ESLint, Prettier and the build green; frontend suite
+  816 passing.
+
 ## 2026-09-10 — SBGC-174 versioned scoring engine, Q15 compensation & delta recalculation
 
 - **Scoring package** — `classifications/questionnaire/scoring/` (`types.py`,

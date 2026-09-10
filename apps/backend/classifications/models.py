@@ -675,7 +675,7 @@ class CalculationAttempt(models.Model):
 
 
 class UserGameScoreSubmission(models.Model):
-    """One community user's score submission for one Game (SBGC-216).
+    """One community user's score submission for one Game (SBGC-216 / SBGC-175).
 
     Unlike editorial classifications (one per Game per user), community users
     may hold multiple rows per Game over time: an in-place supersession update
@@ -683,7 +683,14 @@ class UserGameScoreSubmission(models.Model):
     days after the latest row's ``created_at`` branches into a new standalone
     row.  ``created_at`` anchors that temporal window and ``updated_at``
     records the latest in-place supersession.
+
+    ``source`` distinguishes manual modal submissions from questionnaire
+    promotions, which the SBGC-175 precedence engine archives/overwrites.
     """
+
+    class SubmissionSource(models.TextChoices):
+        MANUAL = "MANUAL", "Manual Modal Submission"
+        QUESTIONNAIRE = "QUESTIONNAIRE", "Questionnaire Generated"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -696,6 +703,22 @@ class UserGameScoreSubmission(models.Model):
         on_delete=models.CASCADE,
         related_name="community_submissions",
         help_text="Game being classified.",
+    )
+
+    source = models.CharField(
+        max_length=20,
+        choices=SubmissionSource.choices,
+        default=SubmissionSource.MANUAL,
+        db_index=True,
+        help_text="How this community submission was generated.",
+    )
+    questionnaire_result = models.ForeignKey(
+        "QuestionnaireResult",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="score_submissions",
+        help_text="Questionnaire attempt that generated this score, if applicable.",
     )
 
     challenge_micro = models.PositiveSmallIntegerField(
@@ -803,6 +826,197 @@ class UserGameScoreSubmission(models.Model):
         return self.reward_micro + self.reward_mystiko + self.reward_macro
 
 
+class QuestionnaireResult(models.Model):
+    """Immutable audit trail for one completed questionnaire attempt (SBGC-175).
+
+    Records the full aesthetic snapshot, answer tree, Q15 rating, and the raw /
+    normalized / adjusted Challenge & Reward profiles.  Normalized and adjusted
+    profiles are each constrained to sum to exactly 100 at the database layer.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="questionnaire_results",
+        help_text="User who completed the questionnaire.",
+    )
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="questionnaire_results",
+        help_text="Canonical game evaluated.",
+    )
+    version = models.CharField(
+        max_length=16,
+        default="v1.0.0",
+        help_text="Questionnaire registry version used.",
+    )
+
+    # Aesthetic taxonomy snapshot (SBGC-172)
+    dominant_aesthetic = models.CharField(max_length=32)
+    secondary_aesthetic = models.CharField(max_length=32, null=True, blank=True)
+    is_true_aesthetic = models.BooleanField(default=False)
+
+    answers = models.JSONField(
+        help_text="Full map of question ID to chosen answer option ID."
+    )
+    q15_rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text="Relevance rating from 1 to 10.",
+    )
+
+    # Raw scores (per-step floored, unbounded)
+    raw_challenge_micro = models.PositiveIntegerField()
+    raw_challenge_macro = models.PositiveIntegerField()
+    raw_challenge_mystiko = models.PositiveIntegerField()
+    raw_reward_micro = models.PositiveIntegerField()
+    raw_reward_macro = models.PositiveIntegerField()
+    raw_reward_mystiko = models.PositiveIntegerField()
+
+    # Normalized scores (sum to 100)
+    normalized_challenge_micro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    normalized_challenge_macro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    normalized_challenge_mystiko = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    normalized_reward_micro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    normalized_reward_macro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    normalized_reward_mystiko = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+
+    # Final adjusted scores (Q15 compensated, sum to 100)
+    adjusted_challenge_micro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    adjusted_challenge_macro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    adjusted_challenge_mystiko = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    adjusted_reward_micro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    adjusted_reward_macro = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+    adjusted_reward_mystiko = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(100)]
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "classifications_questionnaire_result"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    normalized_challenge_micro=(
+                        100
+                        - models.F("normalized_challenge_macro")
+                        - models.F("normalized_challenge_mystiko")
+                    )
+                ),
+                name="chk_qresult_norm_challenge_sum_100",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    normalized_reward_micro=(
+                        100
+                        - models.F("normalized_reward_macro")
+                        - models.F("normalized_reward_mystiko")
+                    )
+                ),
+                name="chk_qresult_norm_reward_sum_100",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    adjusted_challenge_micro=(
+                        100
+                        - models.F("adjusted_challenge_macro")
+                        - models.F("adjusted_challenge_mystiko")
+                    )
+                ),
+                name="chk_qresult_adj_challenge_sum_100",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    adjusted_reward_micro=(
+                        100
+                        - models.F("adjusted_reward_macro")
+                        - models.F("adjusted_reward_mystiko")
+                    )
+                ),
+                name="chk_qresult_adj_reward_sum_100",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        user_id = self.user_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return f"Questionnaire result #{self.pk} for {game_id} by {user_id}"
+
+
+class QuestionnaireClassification(models.Model):
+    """Precedence ledger for one (user, game) questionnaire state (SBGC-175)."""
+
+    class PrecedenceStatus(models.TextChoices):
+        ACTIVE_IN_CALCULATION = "ACTIVE_IN_CALCULATION", "Active in Calculation"
+        SUPERSEDED_BY_MANUAL = "SUPERSEDED_BY_MANUAL", "Superseded by Manual Submission"
+        ARCHIVED_KEPT_MANUAL = "ARCHIVED_KEPT_MANUAL", "Archived (User Chose Manual)"
+        STAFF_EDITORIAL_ROUTED = (
+            "STAFF_EDITORIAL_ROUTED",
+            "Staff Submission Routed to Editorial",
+        )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="questionnaire_classifications",
+    )
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="questionnaire_classifications",
+    )
+    latest_result = models.OneToOneField(
+        QuestionnaireResult,
+        on_delete=models.CASCADE,
+        related_name="active_classification",
+        help_text="Most recent completed questionnaire result.",
+    )
+    status = models.CharField(
+        max_length=32,
+        choices=PrecedenceStatus.choices,
+        default=PrecedenceStatus.ACTIVE_IN_CALCULATION,
+        db_index=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "classifications_questionnaire_classification"
+        unique_together = ("user", "game")
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        user_id = self.user_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
+        return (
+            f"Questionnaire classification for {game_id} by {user_id} ({self.status})"
+        )
+
+
 __all__ = [
     "BoundaryCalibration",
     "CalculationAttempt",
@@ -811,6 +1025,8 @@ __all__ = [
     "ClassificationSnapshot",
     "EditorialClassification",
     "EditorialGroupProfile",
+    "QuestionnaireClassification",
+    "QuestionnaireResult",
     "RewardProfile",
     "UserGameScoreSubmission",
 ]

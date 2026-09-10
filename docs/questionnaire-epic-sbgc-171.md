@@ -254,3 +254,43 @@ live radar/slider feedback.
 - **Moderator gate** uses the authoritative `resolve_editorial_role`
   (Superuser/Moderator) rather than a raw `group.name == "Moderator"` match.
 - **Email** uses Django's `send_mail` with `fail_silently=True`; no Celery.
+
+## 8. SBGC-175 implementation notes
+
+### Persistence models (`classifications/models.py`)
+
+- `QuestionnaireResult` — immutable audit trail (aesthetic snapshot, answer
+  tree, Q15 rating, raw/normalized/adjusted profiles) with four database
+  `CheckConstraint`s enforcing each normalized/adjusted profile sums to 100.
+- `QuestionnaireClassification` — the `(user, game)` precedence ledger with
+  `PrecedenceStatus` (`ACTIVE_IN_CALCULATION`, `SUPERSEDED_BY_MANUAL`,
+  `ARCHIVED_KEPT_MANUAL`, `STAFF_EDITORIAL_ROUTED`).
+- `UserGameScoreSubmission` gains `source` (`MANUAL`/`QUESTIONNAIRE`) and a
+  nullable `questionnaire_result` FK (`SET_NULL`).
+
+### Precedence engine (`classifications/services/questionnaire_precedence.py`)
+
+`ingest_questionnaire_submission` runs the state machine in one transaction:
+
+- Always persist `QuestionnaireResult`.
+- Staff (Superuser / Moderator / Community Leader) → route into
+  `EditorialClassification` (via `create_submission`/`update_submission`),
+  zero `UserGameScoreSubmission` rows, ledger status `STAFF_EDITORIAL_ROUTED`.
+- Community with no manual row → direct promotion.
+- Manual age >= 10 days → in-place overwrite (`created_at` preserved).
+- Manual age < 10 days → requires an explicit `OVERWRITE`/`KEEP_MANUAL`;
+  `KEEP_MANUAL` archives the result without touching the manual row.
+
+### Deliberate adaptations
+
+- **Moderator/staff gate** reuses `is_editorial_submitter`
+  (`resolve_editorial_role != COMMUNITY`), not the spec's
+  `resolve_editorial_role(...) is not None`.
+- **Editorial routing** uses the real `create_submission`/`update_submission`
+  services (`submitted_by`/`ScoreDistribution`) rather than the spec's
+  `author=`/`payload=` pseudocode (the editorial model is not flat here).
+- **Missing resolution guard** — a recent-manual submission without an
+  explicit `conflict_resolution` raises `ValueError` instead of silently
+  overwriting (SBGC-176's POST flow always supplies the resolution).
+- **Migration** is auto-named
+  `0010_usergamescoresubmission_source_questionnaireresult_and_more.py`.
