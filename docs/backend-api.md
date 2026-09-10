@@ -517,6 +517,71 @@ slugs return `404 NOT_FOUND`.
 Unknown options, `OPT_NONE` in Q1, and replaying the Q1 option in Q2 return
 `422 VALIDATION_ERROR`.  See `docs/questionnaire-epic-sbgc-171.md`.
 
+## Questionnaire — `POST /api/v1/questionnaire/assemble-tree`
+
+Resolves the same Q1/Q2 aesthetics and additionally returns the concrete
+versioned (`v1.0.0`) question graph for that session (SBGC-173).  It is a
+**pure read**: it never writes `Game.aesthetic` or any submission.
+
+### Request
+
+```json
+{
+  "game_slug": "hades",
+  "q1_option_id": "OPT_S1",
+  "q2_option_id": "OPT_F1"
+}
+```
+
+### Eligibility & routing
+
+The Game must be publicly listable (`content_type == game` and
+`listing_status == published`); otherwise `404 NOT_FOUND`.
+
+- **Part 1 (`part1_challenge_nodes`)** — always the dominant set's Q3–Q8 plus
+  child branch nodes.
+- **Part 2 (`part2_reward_nodes`)** — the dominant set's Q9–Q14 for a true
+  aesthetic, or a 50/50 split for a hybrid: Q9–Q11 from the secondary set and
+  Q12–Q14 from the dominant set.  Child branch nodes always stay with their
+  root.
+
+### Response
+
+```json
+{
+  "version": "v1.0.0",
+  "game_slug": "hades",
+  "game_name": "Hades",
+  "dominant_aesthetic": "SENSORY",
+  "secondary_aesthetic": "FANTASY",
+  "is_true_aesthetic": false,
+  "part1_challenge_nodes": [
+    {
+      "id": "Q3",
+      "root_id": "Q3",
+      "text": "How much does precise button timing affect your enjoyment?",
+      "target": "CHALLENGE",
+      "options": [
+        {
+          "id": "Q3_huge",
+          "text": "Huge",
+          "modifiers": { "micro": 20, "macro": 0, "mystiko": 0 },
+          "next_question_id": null
+        }
+      ],
+      "is_branch": false,
+      "parent_id": null,
+      "helper_text": null
+    }
+  ],
+  "part2_reward_nodes": []
+}
+```
+
+Unknown options return `422 VALIDATION_ERROR`; the reserved
+`SPECIAL_FLOW` outcome cannot be assembled and also returns `422`.  See
+`docs/questionnaire-epic-sbgc-171.md` for the full registry layout.
+
 ## Exception Handling
 
 Exception handlers are registered once per `NinjaAPI` instance via
