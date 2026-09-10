@@ -765,6 +765,10 @@ class UserGameScoreSubmission(models.Model):
                 fields=["user", "game", "-created_at"],
                 name="idx_user_game_created",
             ),
+            models.Index(
+                fields=["source", "game"],
+                name="idx_usergamescoresub_source",
+            ),
         ]
         constraints = [
             models.CheckConstraint(
@@ -918,7 +922,65 @@ class QuestionnaireResult(models.Model):
     class Meta:
         db_table = "classifications_questionnaire_result"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["user", "game", "-created_at"],
+                name="idx_qresult_user_game_created",
+            ),
+        ]
         constraints = [
+            models.CheckConstraint(
+                condition=models.Q(q15_rating__gte=1) & models.Q(q15_rating__lte=10),
+                name="chk_qresult_q15_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_challenge_micro__lte=100),
+                name="chk_qresult_norm_c_micro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_challenge_macro__lte=100),
+                name="chk_qresult_norm_c_macro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_challenge_mystiko__lte=100),
+                name="chk_qresult_norm_c_mystiko_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_reward_micro__lte=100),
+                name="chk_qresult_norm_r_micro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_reward_macro__lte=100),
+                name="chk_qresult_norm_r_macro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_reward_mystiko__lte=100),
+                name="chk_qresult_norm_r_mystiko_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_challenge_micro__lte=100),
+                name="chk_qresult_adj_c_micro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_challenge_macro__lte=100),
+                name="chk_qresult_adj_c_macro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_challenge_mystiko__lte=100),
+                name="chk_qresult_adj_c_mystiko_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_reward_micro__lte=100),
+                name="chk_qresult_adj_r_micro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_reward_macro__lte=100),
+                name="chk_qresult_adj_r_macro_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(adjusted_reward_mystiko__lte=100),
+                name="chk_qresult_adj_r_mystiko_range",
+            ),
             models.CheckConstraint(
                 condition=models.Q(
                     normalized_challenge_micro=(
@@ -1006,8 +1068,19 @@ class QuestionnaireClassification(models.Model):
 
     class Meta:
         db_table = "classifications_questionnaire_classification"
-        unique_together = ("user", "game")
         ordering = ["-updated_at"]
+        indexes = [
+            models.Index(
+                fields=["status", "-updated_at"],
+                name="idx_qclass_status_updated",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "game"],
+                name="uniq_qclass_user_game",
+            ),
+        ]
 
     def __str__(self) -> str:
         game_id = self.game_id  # pyright: ignore[reportAttributeAccessIssue] — django-stubs FK limitation
