@@ -52,3 +52,12 @@ export type {
   TopGameDto,
   UserProfileOptions,
 } from "./users";
+export {
+  QuestionnaireApiError,
+  getQuestionnaireSession,
+  submitQuestionnaire,
+} from "./questionnaire";
+export type {
+  QuestionnaireRequestOptions,
+  SubmitQuestionnaireResult,
+} from "./questionnaire";
