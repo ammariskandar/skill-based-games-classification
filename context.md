@@ -2570,6 +2570,42 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-172 questionnaire domain, game aesthetic field & combinatoric resolver
+
+- **Epic blueprint recorded** — `docs/questionnaire-epic-sbgc-171.md` captures
+  the locked architecture for the score-generation questionnaire epic
+  (`SBGC-172` … `SBGC-180`): the five-stage lifecycle, question-set registry,
+  Q15 proportional compensator, the SBGC-216 precedence bridge, delta
+  recalculation, and the ticket registry.
+- **`Game.aesthetic`** — new nullable, indexed `CharField` (`SENSORY` /
+  `FANTASY` / `NARRATIVE` / `CHALLENGE`) with migration
+  `games/0016_game_aesthetic.py`.  `NULL` means "not yet resolved".  No
+  Admin-fieldset change: the value is produced by the questionnaire flow, not
+  manual editing.  See `docs/game-model.md`.
+- **Questionnaire domain package** — `classifications/questionnaire/`:
+  `domain.py` (`AestheticCategory`, `QuestionSetId`, the 18-option Q1/Q2
+  registry, `map_option_to_category`, `available_secondary_options`, dispatch
+  dataclasses) and `aesthetic_resolver.py` (pure `resolve_aesthetic` /
+  `resolve_from_options` covering true, hybrid, Collaborative collapse, None
+  collapse, and special flow).
+- **Endpoint** — `POST /api/v1/questionnaire/resolve-aesthetic`, mounted via a
+  new Questionnaire router in `api/v1.py`.  Resolves a publicly-listed Game's
+  dominant/secondary aesthetics plus the Part 1/Part 2 question-set routing.
+  Pure resolver: it never writes `Game.aesthetic` or a submission.  See
+  `docs/backend-api.md`.
+- **Frontend** — `src/lib/questionnaire/{types,aesthetic-taxonomy}.ts` mirror
+  the backend taxonomy/resolver for zero-latency set switching, and
+  `/questionnaire?game={slug}` is served by
+  `src/pages/questionnaire/index.astro`.
+- **Adaptations recorded** — this codebase has no `Game.is_active`, so public
+  visibility uses `publicly_listable()`; a missing `game` query param redirects
+  to `/catalogue`; frontend tests are co-located under `src/` per the vitest
+  include (not `tests/unit/`).
+- **Tests** — 25 backend tests (`classifications/tests/test_aesthetic_resolver.py`)
+  and 21 frontend tests (co-located taxonomy suite).  Backend `ruff` /
+  `basedpyright` clean; frontend `astro check`, ESLint, Prettier and the
+  production build green; frontend unit suite 784 passing.
+
 ## 2026-09-07 — SBGC-200 rankings MPA restoration & removal of dual markup (R4-06)
 
 - **Single markup authority restored** — the ~550-line client controller in
