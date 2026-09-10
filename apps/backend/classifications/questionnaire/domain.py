@@ -131,7 +131,7 @@ PRIMARY_OPTIONS: tuple[AestheticOption, ...] = (
     AestheticOption("OPT_S6", "It is therapeutic", AestheticCategory.SENSORY),
     AestheticOption(
         "OPT_F1",
-        "I get to turn things I envision into a reality",
+        "I get to build a world of my own",
         AestheticCategory.FANTASY,
     ),
     AestheticOption(
@@ -146,7 +146,7 @@ PRIMARY_OPTIONS: tuple[AestheticOption, ...] = (
     ),
     AestheticOption(
         "OPT_F4",
-        "I get to improve on mistakes others have made in the past",
+        "I can change history",
         AestheticCategory.FANTASY,
     ),
     AestheticOption(
@@ -154,7 +154,7 @@ PRIMARY_OPTIONS: tuple[AestheticOption, ...] = (
     ),
     AestheticOption(
         "OPT_N2",
-        "I really enjoy the character development",
+        "I get attached to the characters",
         AestheticCategory.NARRATIVE,
     ),
     AestheticOption(
@@ -164,7 +164,7 @@ PRIMARY_OPTIONS: tuple[AestheticOption, ...] = (
     ),
     AestheticOption(
         "OPT_C2",
-        "I feel like I am much better than everyone in this game",
+        "I am much better than everyone else in this game",
         AestheticCategory.CHALLENGE,
     ),
     AestheticOption(

@@ -2570,6 +2570,87 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-171 questionnaire copy pass wired into the live registry
+
+- **Registry** — every question and answer label in all four sets
+  (`set-a`…`set-d`, mirrored byte-for-byte by `set_a.py`…`set_d.py`) was
+  rewritten in the reviewer's voice: plain spoken questions and descriptive
+  answers, with genre terms used only where a bare label would be ambiguous
+  (e.g. gacha).
+  Every score modifier, branch target, node id, and part is unchanged; four
+  nodes changed option count to match the draft exactly (Set A Q5 3→4, Set A
+  Q7 6→5, Set A Q9 2→3, Set D Q7 3→4), and TS/PY parity was diffed
+  field-by-field.
+- **Underline key phrase** — the frontend `QuestionNode` gains `keyPhrase`;
+  `validateQuestionSet` rejects a phrase that is not inside its question, and
+  `QuestionnaireRoot.astro` renders it as `.q-question-key`.  The Python
+  registry has no `keyPhrase` (display-only, like the aesthetic `emphasis`).
+  Each phrase is chosen so the underlined slice still reads on its own if the
+  rest of the question is blurred out.
+- **Q1/Q2** — answer order is shuffled (Fisher-Yates, stable per attempt).
+- **Tests** — the modifier-fidelity anchors in both stacks now address options
+  by index instead of label-derived id suffixes, so future copy edits no
+  longer break them.
+- **Tooling** — `pyproject.toml` exempts the registry data modules from `E501`
+  (the prose strings are intentionally long single literals).
+- **Docs** — `docs/backend-api.md` assemble-tree example refreshed.
+
+## 2026-09-10 — SBGC-178 follow-up: Q1 copy emphasis, hover weight & Back navigation
+
+- **Copy** — Q1/Q2 option labels gain a display-only `emphasis`
+  (`{ text, color }`) descriptor in `lib/questionnaire/types.ts`; each
+  `PRIMARY_OPTIONS` entry now bolds the requested phrase in its requested
+  colour (purple, reddish-pink, blood-red, pantone-green, etc.).  Two labels
+  were rewritten: `OPT_F4` → "I can change history" and `OPT_C2` → "I am much
+  better than everyone else in this game" (mirrored in the backend
+  `domain.py`).
+- **Interaction** — hovering an option promotes its emphasised phrase from
+  weight 700 to 900 (also on keyboard focus).
+- **Back navigation** — `goBack()` now always acts: Q1 returns to the game
+  page, Q2 returns to Q1, the first Challenge question returns to the
+  aesthetics phase, the first Reward question returns to the last Challenge
+  question, and Backspace is ignored while submitting.
+- **Tests** — 2 taxonomy tests assert every emphasis phrase appears verbatim
+  in its label and pin the revised F4/C2 copy.
+- **Q15 quality step** — the relevance prompt now reads "How relevant were the
+  questions to the game? (1–10)"; a **Reset Sliders** button sits beside the
+  tier/±delta readout and restores both DNA profiles to their computed values;
+  and a new **"I want to tweak the numbers"** switch defaults off, keeping the
+  Challenge/Reward DNA sliders disabled and greyscaled until the player opts
+  in.  The relevance slider always stays live.
+- **Aesthetic explainer** — the Review & Submit "Aesthetic" row gains an info
+  icon; hovering or focusing it reveals a short plain-language explanation of
+  the resolved combination (four true aesthetics + twelve ordered hybrids),
+  sourced from `lib/questionnaire/aesthetic-descriptions.ts`
+  (`describeAesthetic`).  Combinations with no prose (e.g. the reserved
+  `SPECIAL_FLOW`) hide the icon.  5 new unit tests cover the map.
+
+## 2026-09-10 — SBGC-178 dynamic questionnaire UI, state machine & secure BFF submission
+
+- **Frontend** — `src/components/questionnaire/QuestionnaireRoot.astro`
+  orchestrates the five-phase flow (aesthetics → challenge → reward → quality
+  → review/submit), driving `QuestionnaireStateMachine`; `ProgressBar`,
+  `QuestionCard`, `BranchContainer`, and `ConflictModal` are wired into it.
+  Step transitions fade/glide, branches render as sequential steps, and
+  keyboard hotkeys (1–9 select, Enter confirms, Backspace goes back) are
+  supported.
+- **State machine** — `src/lib/questionnaire/state-machine.ts` gains
+  `removeAnswer` for backward navigation (undoing a root also prunes its
+  branch).
+- **BFF** — `src/pages/api/questionnaire/[slug]/submit.ts` proxies the
+  authenticated submission to Django and surfaces the 409 conflict contract;
+  `src/pages/questionnaire/index.astro` enforces the SSR authentication wall
+  (302 to login for guests) before any questionnaire markup/scripts render.
+- **Security** — the client only calls the relative `/api/questionnaire/*`
+  endpoint, never the backend host; authored client code contains zero
+  `console.*`, `eval`, or unescaped innerHTML sinks.  The production
+  `drop_console` intent is satisfied by authoring no console output rather
+  than adding a Vite/esbuild override that would risk `astro check`.
+- **Tests** — `src/lib/questionnaire/state-machine.test.ts` extended to 9
+  tests (including `removeAnswer` pruning).
+- **Validation** — `astro check` (0 errors), `eslint`, `prettier --check`,
+  `vitest` (830 tests), and `npm run build:frontend` all pass.
+
 ## 2026-09-10 — SBGC-177 questionnaire database constraints & migration verification
 
 - **Models** — `QuestionnaireResult` gains a Q15 1–10 range check, `<= 100`

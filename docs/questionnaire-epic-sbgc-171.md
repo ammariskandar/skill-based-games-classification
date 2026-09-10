@@ -202,8 +202,30 @@ non-public Games return `404 NOT_FOUND`.
 - Tests are co-located under `src/` (vitest) as with SBGC-172; the backend
   suite lives in `classifications/tests/test_questionnaire_registry.py`.
 - Dual-stack parity is enforced by identical literal anchors in both suites
-  (modifier weights, node texts, root ordering) rather than a generated
-  fixture.
+  (modifier weights addressed by option index, node texts, root ordering)
+  rather than a generated fixture.
+
+### Copy pass & key phrase (SBGC-171 follow-up)
+
+- The question/answer prose in all four sets was rewritten in a plain,
+  reviewer-approved voice (descriptive answers, genre terms used only where a
+  bare label would be ambiguous, e.g. gacha).  Node ids, parts, targets, every
+  `ScoreModifier`, and every branch target are byte-for-byte identical to the
+  pre-change registry; four nodes changed option count to match the draft
+  exactly (Set A Q5 3→4, Set A Q7 6→5, Set A Q9 2→3, Set D Q7 3→4).  The
+  TypeScript and Python registries were diffed field-by-field for exact parity.
+- The frontend `QuestionNode` carries an optional `keyPhrase` — the slice of
+  the question that stands alone for a skimmer.  `validateQuestionSet` fails
+  if the phrase is not inside the question text; `QuestionnaireRoot.astro`
+  underlines it via `.q-question-key`.  The Python registry omits it (display
+  only), mirroring the aesthetic-option `emphasis` precedent.  Each phrase is
+  chosen so the underlined slice still reads on its own if the rest of the
+  question is blurred out.
+- Because option ids derive from labels, the modifier-fidelity anchors in both
+  suites now address options by **index** instead of id suffix, so future copy
+  edits no longer break them.
+- `pyproject.toml` exempts `classifications/questionnaire/registry/v1/*.py`
+  from `E501`: the prose is intentionally long single string literals.
 
 ## 7. SBGC-174 implementation notes
 
@@ -390,3 +412,46 @@ See `docs/database-constraints.md` for the full inventory.
   (`micro = 100 - macro - mystiko`), which is equivalent to the spec's
   `micro + macro + mystiko == 100` and avoids churn on already-applied
   constraints.
+
+## 11. SBGC-178 implementation notes
+
+### Dynamic progression (`src/components/questionnaire/QuestionnaireRoot.astro`)
+
+- The page route (`src/pages/questionnaire/index.astro`) already enforces the
+  SSR auth wall; it renders `QuestionnaireRoot` only once
+  `getQuestionnaireSession` returns, so guests get a 302 before any script or
+  question markup.
+- `QuestionnaireRoot` drives the DOM-free `QuestionnaireStateMachine` through
+  the five phases and renders one question at a time.  The active step is the
+  first unanswered node in the assembled sequence, so answering a branching
+  root naturally reveals its child as the next step; changing the root prunes
+  the branch (handled by `recordAnswer`).
+- `removeAnswer` was added to the state machine so Backspace/back can undo the
+  most recent answer without leaving orphaned branch answers.
+
+### BFF submission (`src/pages/api/questionnaire/[slug]/submit.ts`)
+
+- The browser posts only to `/api/questionnaire/${slug}/submit`; the Astro
+  route forwards the `sessionid` cookie to Django via the existing
+  `submitQuestionnaire` server client and returns the 200/201 body or the raw
+  409 conflict contract unchanged.
+
+### Security handrails
+
+- Auth gating, backend-host concealment, and DOM text-safety are all preserved:
+  option labels are injected with `textContent` (no `innerHTML`/`set:html`).
+- Console silence is enforced by authoring no `console.*` in client code; no
+  `drop_console` Vite override was added because the Vite 8 `esbuild.drop`
+  option is not a first-class `astro.config.mjs` surface and forcing it risks
+  `astro check`.
+
+### Deliberate adaptations
+
+- The spec's flow implies both an inline accordion and a step transition.  The
+  implementation uses a single-card, step-by-step model (one question at a
+  time) because it maps cleanly onto `getActiveSequence()`, the
+  "Question X of 14" counter, and the Enter/Backspace hotkeys; branches are
+  rendered as their own steps via `BranchContainer`.
+- Dynamic option buttons are styled with an `is:global` `<style>` block
+  (`q-option*` / `q-fade`) rather than Astro scoped styles, since
+  `document.createElement`d nodes do not receive Astro's scope attributes.

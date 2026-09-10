@@ -62,6 +62,39 @@ describe("option taxonomy", () => {
   });
 });
 
+describe("Q1 option copy emphasis", () => {
+  it("emphasises a phrase that appears verbatim in every label", () => {
+    for (const option of PRIMARY_OPTIONS) {
+      const emphasis = option.emphasis;
+      expect(emphasis, option.optionId).toBeDefined();
+      if (!emphasis) continue;
+      expect(option.label, option.optionId).toContain(emphasis.text);
+    }
+  });
+
+  it("carries the revised Q1 copy and its emphasis anchors", () => {
+    const byId = new Map(PRIMARY_OPTIONS.map((o) => [o.optionId, o]));
+    expect(byId.get("OPT_F1")?.label).toBe("I get to build a world of my own");
+    expect(byId.get("OPT_F1")?.emphasis).toEqual({
+      text: "build a world of my own",
+      color: "light-blue",
+    });
+    expect(byId.get("OPT_N2")?.label).toBe("I get attached to the characters");
+    expect(byId.get("OPT_N2")?.emphasis).toEqual({
+      text: "attached to the characters",
+      color: "lime",
+    });
+    expect(byId.get("OPT_F4")?.label).toBe("I can change history");
+    expect(byId.get("OPT_F4")?.emphasis).toEqual({
+      text: "history",
+      color: "blue",
+    });
+    expect(byId.get("OPT_C2")?.label).toBe(
+      "I am much better than everyone else in this game",
+    );
+  });
+});
+
 describe("availableSecondaryOptions", () => {
   it("filters out the Q1 selection and always includes none-of-the-above", () => {
     const options = availableSecondaryOptions("OPT_S1");

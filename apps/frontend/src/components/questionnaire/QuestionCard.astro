@@ -1,0 +1,30 @@
+---
+interface Props {
+  heading?: string;
+  helperText?: string;
+}
+
+const { heading = "", helperText } = Astro.props;
+---
+
+<section
+  class="question-card rounded-xl border border-(--color-border) bg-(--color-surface) p-6"
+  data-question-card
+>
+  <h3
+    class="mb-1 text-lg font-semibold text-(--color-text)"
+    data-question-heading
+  >
+    {heading}
+  </h3>
+  {
+    helperText && (
+      <p class="mb-4 text-sm text-(--color-muted)" data-question-helper>
+        {helperText}
+      </p>
+    )
+  }
+  <div class="space-y-2" data-question-options>
+    <slot />
+  </div>
+</section>

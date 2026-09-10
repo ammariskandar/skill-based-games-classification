@@ -172,49 +172,38 @@ class RegistryStructureTests(SimpleTestCase):
 class ScoreModifierFidelityTests(SimpleTestCase):
     """Anchors shared with the TypeScript mirror (dual-stack parity)."""
 
-    def _option(self, definition, node_id: str, option_suffix: str) -> ScoreModifier:
+    def _option(self, definition, node_id: str, index: int) -> ScoreModifier:
         node = _node_by_id(
             (*definition.part1_questions, *definition.part2_questions), node_id
         )
-        for option in node.options:
-            if option.id.endswith(option_suffix):
-                return option.modifiers
-        raise AssertionError(f"option {option_suffix} not found on {node_id}")
+        return node.options[index].modifiers
 
     def test_set_a_weights(self):
-        self.assertEqual(self._option(SET_A, "Q3", "huge"), ScoreModifier(micro=20))
+        self.assertEqual(self._option(SET_A, "Q3", 0), ScoreModifier(micro=20))
+        self.assertEqual(self._option(SET_A, "Q7", 4), ScoreModifier(mystiko=-100))
+        self.assertEqual(self._option(SET_A, "Q11A", 0), ScoreModifier(mystiko=200))
         self.assertEqual(
-            self._option(SET_A, "Q7", "no_opponents"), ScoreModifier(mystiko=-100)
-        )
-        self.assertEqual(self._option(SET_A, "Q11A", "yes"), ScoreModifier(mystiko=200))
-        self.assertEqual(
-            self._option(SET_A, "Q14", "cheaters"), ScoreModifier(micro=30, macro=60)
+            self._option(SET_A, "Q14", 0), ScoreModifier(micro=30, macro=60)
         )
 
     def test_set_b_weights(self):
-        self.assertEqual(
-            self._option(SET_B, "Q3", "frame_perfect"), ScoreModifier(micro=85)
-        )
-        self.assertEqual(
-            self._option(SET_B, "Q10", "vistas_score"), ScoreModifier(mystiko=120)
-        )
+        self.assertEqual(self._option(SET_B, "Q3", 0), ScoreModifier(micro=85))
+        self.assertEqual(self._option(SET_B, "Q10", 0), ScoreModifier(mystiko=120))
 
     def test_set_c_weights(self):
+        self.assertEqual(self._option(SET_C, "Q3", 0), ScoreModifier(micro=75))
         self.assertEqual(
-            self._option(SET_C, "Q3", "gunplay_reflexes"), ScoreModifier(micro=75)
-        )
-        self.assertEqual(
-            self._option(SET_C, "Q6B", "unoptimized_party"),
+            self._option(SET_C, "Q6B", 1),
             ScoreModifier(macro=75, mystiko=15),
         )
 
     def test_set_d_weights(self):
         self.assertEqual(
-            self._option(SET_D, "Q4B", "static_maps"),
+            self._option(SET_D, "Q4B", 0),
             ScoreModifier(micro=70, mystiko=15, macro=-40),
         )
         self.assertEqual(
-            self._option(SET_D, "Q7", "three_way_synergy"),
+            self._option(SET_D, "Q7", 1),
             ScoreModifier(micro=35, macro=35, mystiko=35),
         )
 
@@ -314,7 +303,7 @@ class HybridAssemblerTests(SimpleTestCase):
         )
         # Q9A comes from Fantasy (SET_B), Q13A/Q13B from Sensory (SET_A).
         q9a = _node_by_id(assembled.part2_reward_nodes, "Q9A")
-        self.assertEqual(q9a.text, "How do you prefer to acquire them?")
+        self.assertEqual(q9a.text, "How are they obtained?")
         self.assertIn("Q13A", [n.id for n in assembled.part2_reward_nodes])
         self.assertIn("Q13B", [n.id for n in assembled.part2_reward_nodes])
         self.assertNotIn("Q11B", [n.id for n in assembled.part2_reward_nodes])
@@ -411,7 +400,7 @@ class AssembleTreeEndpointTests(_PublishedGameMixin):
         # Fantasy (secondary) owns Q9-Q11; Sensory (dominant) owns Q12-Q14.
         self.assertEqual(_payload_root_ids(body["part2_reward_nodes"]), PART2_ROOT_IDS)
         q9a = next(n for n in body["part2_reward_nodes"] if n["id"] == "Q9A")
-        self.assertEqual(q9a["text"], "How do you prefer to acquire them?")
+        self.assertEqual(q9a["text"], "How are they obtained?")
         self.assertIn("Q13B", part2_ids)
         self.assertNotIn("Q11B", part2_ids)
 

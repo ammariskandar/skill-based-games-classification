@@ -1,0 +1,23 @@
+---
+interface Props {
+  percent?: number;
+  sectionLabel?: string;
+}
+
+const { percent = 0, sectionLabel = "Aesthetics" } = Astro.props;
+---
+
+<div class="mb-6" data-progress>
+  <div class="flex items-center justify-between text-xs text-(--color-muted)">
+    <span data-section-label>{sectionLabel}</span>
+    <span data-progress-percent>{Math.round(percent)}%</span>
+  </div>
+  <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+    <div
+      class="h-full rounded-full bg-(--color-blue) transition-[width] duration-300"
+      style={`width: ${percent}%`}
+      data-progress-fill
+    >
+    </div>
+  </div>
+</div>

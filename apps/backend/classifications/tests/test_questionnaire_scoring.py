@@ -41,13 +41,6 @@ def _node(node_id: str, label: str, target: ProfileTarget, **modifiers) -> Quest
     )
 
 
-def _option_id(node, suffix: str) -> str:
-    for option in node.options:
-        if option.id.endswith(suffix):
-            return option.id
-    raise AssertionError(f"option {suffix} not found on {node.id}")
-
-
 class AccumulatorTests(SimpleTestCase):
     def test_intermediate_negative_flooring(self):
         nodes = [
@@ -65,8 +58,8 @@ class AccumulatorTests(SimpleTestCase):
         q3 = next(n for n in SET_A.part1_questions if n.id == "Q3")
         q10 = next(n for n in SET_A.part2_questions if n.id == "Q10")
         answers = {
-            "Q3": _option_id(q3, "huge"),  # micro +20 (Challenge)
-            "Q10": _option_id(q10, "great_gameplay"),  # micro +90 (Reward)
+            "Q3": q3.options[0].id,  # "A lot" → micro +20 (Challenge)
+            "Q10": q10.options[0].id,  # "Physical feel" → micro +90 (Reward)
         }
         challenge = compute_raw_profile(answers, nodes, CHALLENGE)
         reward = compute_raw_profile(answers, nodes, REWARD)
