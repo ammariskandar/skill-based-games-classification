@@ -1,0 +1,40 @@
+---
+interface Props {
+  gameName?: string;
+  ageDays?: number | null;
+}
+
+const { gameName = "this game", ageDays = null } = Astro.props;
+const ageLabel = ageDays === null ? "" : String(ageDays);
+---
+
+<dialog
+  id="conflict-modal"
+  class="m-auto w-full max-w-md rounded-xl border border-(--color-border) bg-(--color-surface) p-6 text-(--color-text) backdrop:bg-black/50"
+  data-conflict-modal
+>
+  <div>
+    <h2 class="text-xl font-semibold">Previous Assessment Detected</h2>
+    <p class="mt-2 text-sm text-(--color-muted)" data-conflict-body>
+      You submitted a manual assessment for {gameName}
+      {ageLabel} days ago. Would you like this questionnaire to replace your previous
+      score in calculations, or keep your manual score?
+    </p>
+    <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+        data-conflict-resolution="OVERWRITE"
+      >
+        Replace Previous Score
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+        data-conflict-resolution="KEEP_MANUAL"
+      >
+        Keep My Manual Score
+      </button>
+    </div>
+  </div>
+</dialog>

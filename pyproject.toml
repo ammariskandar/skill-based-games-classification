@@ -40,6 +40,12 @@ ignore = [
     "D",      # skip docstring rules for now
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Questionnaire registry data: the question/answer prose is intentionally long
+# and must remain single string literals so it mirrors the TypeScript registry
+# byte-for-byte.
+"apps/backend/classifications/questionnaire/registry/v1/*.py" = ["E501"]
+
 [tool.ruff.format]
 # Match Black-style formatting
 quote-style = "double"

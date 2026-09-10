@@ -1,0 +1,23 @@
+---
+interface Props {
+  open?: boolean;
+}
+
+const { open = false } = Astro.props;
+---
+
+<div
+  class="grid transition-[grid-template-rows] duration-250 ease-[cubic-bezier(0.16,1,0.3,1)]"
+  class:list={[
+    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+  ]}
+  style={`grid-template-rows: ${open ? "1fr" : "0fr"};`}
+  data-branch-container
+  aria-hidden={open ? "false" : "true"}
+>
+  <div class="overflow-hidden">
+    <div class="pt-3">
+      <slot />
+    </div>
+  </div>
+</div>

@@ -72,7 +72,7 @@ class QuestionnaireSubmitIn(ApiRequestSchema):
     q1_option_id: str
     q2_option_id: str
     answers: dict[str, str] = Field(
-        description="Map of node ID to chosen option ID, e.g. {'Q3': 'OPT_Q3_HUGE'}"
+        description="Map of node ID to chosen option ID, e.g. {'Q3': 'Q3_huge_effect'}"
     )
     q15_rating: int = Field(ge=1, le=10)
     adjusted_challenge: DimensionScoreSchema

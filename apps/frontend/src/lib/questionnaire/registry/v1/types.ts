@@ -35,6 +35,8 @@ export interface QuestionNode {
   isBranch: boolean;
   parentId: string | null;
   helperText: string | null;
+  /** Phrase inside `text` that carries the question on its own (display only). */
+  keyPhrase: string | null;
 }
 
 export interface QuestionSetDefinition {
@@ -102,6 +104,7 @@ export interface QuestionParams {
   target: ProfileTarget;
   parentId?: string;
   helperText?: string;
+  keyPhrase?: string;
 }
 
 /** Build a `QuestionNode`, deriving root/branch identity from `nodeId`. */
@@ -133,6 +136,7 @@ export function question(
     isBranch,
     parentId: params.parentId ?? (isBranch ? rootId : null),
     helperText: params.helperText ?? null,
+    keyPhrase: params.keyPhrase ?? null,
   };
 }
 
@@ -185,6 +189,9 @@ function validatePart(
     }
     if (node.options.length === 0)
       errors.push(`node '${node.id}' has no options`);
+    if (node.keyPhrase !== null && !node.text.includes(node.keyPhrase)) {
+      errors.push(`node '${node.id}' keyPhrase is not inside its text`);
+    }
   }
 
   const roots = nodes.filter((node) => !node.isBranch);

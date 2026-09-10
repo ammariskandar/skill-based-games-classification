@@ -560,12 +560,12 @@ The Game must be publicly listable (`content_type == game` and
     {
       "id": "Q3",
       "root_id": "Q3",
-      "text": "How much does precise button timing affect your enjoyment?",
+      "text": "How much does precise physical input affect what happens?",
       "target": "CHALLENGE",
       "options": [
         {
-          "id": "Q3_huge",
-          "text": "Huge",
+          "id": "Q3_a_lot_missing_a_dodge_shot_combo_jump_or_timing_window_can_quickly_cause_failure_or_heavy_damage",
+          "text": "A lot: Missing a dodge, shot, combo, jump, or timing window can quickly cause failure or heavy damage.",
           "modifiers": { "micro": 20, "macro": 0, "mystiko": 0 },
           "next_question_id": null
         }
@@ -620,7 +620,7 @@ Q15 quality-delta bounds, then persists through the SBGC-175 precedence engine.
   "version": "v1.0.0",
   "q1_option_id": "OPT_S1",
   "q2_option_id": "OPT_NONE",
-  "answers": { "Q3": "Q3_huge" },
+  "answers": { "Q3": "Q3_a_lot_missing_a_dodge_shot_combo_jump_or_timing_window_can_quickly_cause_failure_or_heavy_damage" },
   "q15_rating": 7,
   "adjusted_challenge": { "micro": 40, "macro": 30, "mystiko": 30 },
   "adjusted_reward": { "micro": 35, "macro": 35, "mystiko": 30 }

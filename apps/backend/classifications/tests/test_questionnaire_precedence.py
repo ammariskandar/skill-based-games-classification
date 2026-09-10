@@ -46,7 +46,7 @@ def _payload(**overrides) -> dict:
         "dominant_aesthetic": "SENSORY",
         "secondary_aesthetic": None,
         "is_true_aesthetic": True,
-        "answers": {"Q3": "Q3_huge"},
+        "answers": {"Q3": "Q3_huge_effect"},
         "q15_rating": 7,
         "raw": {
             "challenge": {"micro": 40, "macro": 30, "mystiko": 30},

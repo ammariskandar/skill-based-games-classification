@@ -34,11 +34,40 @@ export enum QuestionSetId {
   SPECIAL = "SPECIAL",
 }
 
+/** Emphasis color tokens for Q1/Q2 option copy — SBGC-178 copy pass. */
+export type AestheticEmphasisColor =
+  | "purple"
+  | "reddish-pink"
+  | "reddish"
+  | "white"
+  | "pink"
+  | "green"
+  | "light-blue"
+  | "purplish-light-blue"
+  | "golden"
+  | "blue"
+  | "orange"
+  | "lime"
+  | "blood-red"
+  | "yellow"
+  | "teal"
+  | "light-brown"
+  | "pantone-green";
+
+/** The phrase inside an option label that is rendered bold and coloured. */
+export interface AestheticOptionEmphasis {
+  /** Exact substring of `label` to emphasise. */
+  text: string;
+  color: AestheticEmphasisColor;
+}
+
 /** One Q1/Q2 answer option and its deterministic aesthetic category. */
 export interface AestheticOption {
   optionId: string;
   label: string;
   category: AestheticCategory;
+  /** Optional display-only emphasis phrase (never used for resolution). */
+  emphasis?: AestheticOptionEmphasis;
 }
 
 /** Reward (Part 2) question-set routing for Q9–Q14. */

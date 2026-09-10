@@ -38,15 +38,6 @@ function score(micro: number, macro: number, mystiko: number): DimensionScore {
   return { micro, macro, mystiko };
 }
 
-function optionId(node: QuestionNode, suffix: string): string {
-  const option = node.options.find((candidate) =>
-    candidate.id.endsWith(suffix),
-  );
-  if (option === undefined)
-    throw new Error(`option ${suffix} not found on ${node.id}`);
-  return option.id;
-}
-
 describe("computeRawProfile", () => {
   it("floors intermediate negative balances per step", () => {
     const nodes = [
@@ -69,8 +60,8 @@ describe("computeRawProfile", () => {
       (n) => n.id === "Q10",
     ) as QuestionNode;
     const answers = {
-      Q3: optionId(q3, "huge"),
-      Q10: optionId(q10, "great_gameplay"),
+      Q3: q3.options[0].id, // "A lot" → micro +20
+      Q10: q10.options[0].id, // "Physical feel" → micro +90
     };
     expect(computeRawProfile(answers, nodes, CHALLENGE)).toEqual(
       score(20, 0, 0),

@@ -59,17 +59,15 @@ function nodeById(nodes: readonly QuestionNode[], id: string): QuestionNode {
 function optionModifier(
   definition: QuestionSetDefinition,
   nodeId: string,
-  suffix: string,
+  index: number,
 ): ScoreModifier {
   const node = nodeById(
     [...definition.part1Questions, ...definition.part2Questions],
     nodeId,
   );
-  const option = node.options.find((candidate) =>
-    candidate.id.endsWith(suffix),
-  );
+  const option = node.options[index];
   if (option === undefined)
-    throw new Error(`option ${suffix} not found on ${nodeId}`);
+    throw new Error(`option #${index} not found on ${nodeId}`);
   return option.modifiers;
 }
 
@@ -218,52 +216,52 @@ describe("registry structure", () => {
 
 describe("scoring modifier fidelity", () => {
   it("matches the backend anchors", () => {
-    expect(optionModifier(SET_A, "Q3", "huge")).toEqual({
+    expect(optionModifier(SET_A, "Q3", 0)).toEqual({
       micro: 20,
       macro: 0,
       mystiko: 0,
     });
-    expect(optionModifier(SET_A, "Q7", "no_opponents")).toEqual({
+    expect(optionModifier(SET_A, "Q7", 4)).toEqual({
       micro: 0,
       macro: 0,
       mystiko: -100,
     });
-    expect(optionModifier(SET_A, "Q11A", "yes")).toEqual({
+    expect(optionModifier(SET_A, "Q11A", 0)).toEqual({
       micro: 0,
       macro: 0,
       mystiko: 200,
     });
-    expect(optionModifier(SET_A, "Q14", "cheaters")).toEqual({
+    expect(optionModifier(SET_A, "Q14", 0)).toEqual({
       micro: 30,
       macro: 60,
       mystiko: 0,
     });
-    expect(optionModifier(SET_B, "Q3", "frame_perfect")).toEqual({
+    expect(optionModifier(SET_B, "Q3", 0)).toEqual({
       micro: 85,
       macro: 0,
       mystiko: 0,
     });
-    expect(optionModifier(SET_B, "Q10", "vistas_score")).toEqual({
+    expect(optionModifier(SET_B, "Q10", 0)).toEqual({
       micro: 0,
       macro: 0,
       mystiko: 120,
     });
-    expect(optionModifier(SET_C, "Q3", "gunplay_reflexes")).toEqual({
+    expect(optionModifier(SET_C, "Q3", 0)).toEqual({
       micro: 75,
       macro: 0,
       mystiko: 0,
     });
-    expect(optionModifier(SET_C, "Q6B", "unoptimized_party")).toEqual({
+    expect(optionModifier(SET_C, "Q6B", 1)).toEqual({
       micro: 0,
       macro: 75,
       mystiko: 15,
     });
-    expect(optionModifier(SET_D, "Q4B", "static_maps")).toEqual({
+    expect(optionModifier(SET_D, "Q4B", 0)).toEqual({
       micro: 70,
       macro: -40,
       mystiko: 15,
     });
-    expect(optionModifier(SET_D, "Q7", "three_way_synergy")).toEqual({
+    expect(optionModifier(SET_D, "Q7", 1)).toEqual({
       micro: 35,
       macro: 35,
       mystiko: 35,
@@ -356,7 +354,7 @@ describe("hybrid assembler", () => {
     const ids = assembled.part2RewardNodes.map((n) => n.id);
     // Q9A comes from Fantasy (SET_B); Q13A/Q13B from Sensory (SET_A).
     expect(nodeById(assembled.part2RewardNodes, "Q9A").text).toBe(
-      "How do you prefer to acquire them?",
+      "How are they obtained?",
     );
     expect(ids).toContain("Q13A");
     expect(ids).toContain("Q13B");

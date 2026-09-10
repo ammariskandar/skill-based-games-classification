@@ -35,7 +35,7 @@ def _result(user: User, game: Game, **overrides) -> QuestionnaireResult:
         "dominant_aesthetic": "SENSORY",
         "secondary_aesthetic": None,
         "is_true_aesthetic": True,
-        "answers": {"Q3": "Q3_huge"},
+        "answers": {"Q3": "Q3_huge_effect"},
         "q15_rating": 7,
         "raw_challenge_micro": 40,
         "raw_challenge_macro": 30,

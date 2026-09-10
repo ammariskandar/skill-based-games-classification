@@ -1,0 +1,1463 @@
+---
+import BranchContainer from "./BranchContainer.astro";
+import ConflictModal from "./ConflictModal.astro";
+import ProgressBar from "./ProgressBar.astro";
+import QuestionCard from "./QuestionCard.astro";
+import type { QuestionnairePreviousResultDto } from "../../lib/questionnaire/types";
+
+interface Props {
+  gameSlug?: string;
+  gameName?: string;
+  canonicalAesthetic?: string | null;
+  hasConflict?: boolean;
+  requiresUserChoice?: boolean;
+  manualSubmissionId?: number | null;
+  ageDays?: number | null;
+  previousResult?: QuestionnairePreviousResultDto | null;
+}
+
+const {
+  gameSlug = "",
+  gameName = "this game",
+  canonicalAesthetic = null,
+  hasConflict = false,
+  requiresUserChoice = false,
+  manualSubmissionId = null,
+  ageDays = null,
+  previousResult = null,
+} = Astro.props;
+
+const DIMENSIONS = [
+  { key: "micro", label: "Micro" },
+  { key: "macro", label: "Macro" },
+  { key: "mystiko", label: "Mystiko" },
+] as const;
+
+const previousNote = previousResult?.created_at
+  ? `You previously completed this assessment on ${new Date(previousResult.created_at).toLocaleDateString()}.`
+  : "";
+---
+
+<div
+  id="questionnaire-root"
+  data-game-slug={gameSlug}
+  data-game-name={gameName}
+  data-canonical-aesthetic={canonicalAesthetic ?? ""}
+  data-has-conflict={hasConflict ? "true" : "false"}
+  data-requires-user-choice={requiresUserChoice ? "true" : "false"}
+  data-manual-submission-id={manualSubmissionId ?? ""}
+  data-age-days={ageDays ?? ""}
+>
+  <ProgressBar />
+
+  <div class="mx-auto max-w-2xl">
+    <div data-question-view class="q-fade">
+      <p
+        class="mb-4 text-sm font-medium text-(--color-muted)"
+        data-question-counter
+      >
+      </p>
+
+      <div data-card-root>
+        <QuestionCard heading="" helperText=" " />
+      </div>
+
+      <div data-card-branch hidden>
+        <BranchContainer open>
+          <QuestionCard heading="" helperText=" " />
+        </BranchContainer>
+      </div>
+
+      <button
+        type="button"
+        class="mt-4 text-sm text-(--color-muted) underline hover:text-(--color-text)"
+        data-question-back
+      >
+        Back
+      </button>
+    </div>
+
+    <div data-quality-view hidden>
+      <h2 class="text-xl font-semibold text-(--color-text)">
+        Quality Relevance
+      </h2>
+      <p class="mt-1 text-sm text-(--color-muted)">
+        How relevant were the questions to the game? (1–10)
+      </p>
+      <input
+        type="range"
+        min="1"
+        max="10"
+        step="1"
+        value="7"
+        class="mt-4 w-full accent-(--color-blue)"
+        data-q15-rating
+      />
+      <div class="mt-2 flex items-center justify-between gap-3">
+        <p class="text-sm text-(--color-muted)">
+          <span data-quality-tier></span>
+          <span aria-hidden="true"> · </span>
+          <span data-quality-delta></span>
+        </p>
+        <button
+          type="button"
+          class="shrink-0 rounded-lg border border-(--color-border) bg-surface-2 px-3 py-1 text-xs font-medium text-(--color-text) transition hover:opacity-90"
+          data-quality-reset
+        >
+          Reset Sliders
+        </button>
+      </div>
+
+      <label class="q-tweak mt-4">
+        <input type="checkbox" data-quality-tweak />
+        <span class="q-tweak__track"><span class="q-tweak__thumb"></span></span>
+        <span class="text-sm text-(--color-text)"
+          >I want to tweak the numbers</span
+        >
+      </label>
+
+      <div class="mt-6 space-y-6" data-adjust-region>
+        {
+          (["CHALLENGE", "REWARD"] as const).map((target) => (
+            <fieldset class="rounded-xl border border-(--color-border) p-4">
+              <legend class="px-1 text-sm font-semibold text-(--color-text)">
+                {target === "CHALLENGE" ? "Challenge DNA" : "Reward DNA"}
+              </legend>
+              <div class="space-y-4">
+                {DIMENSIONS.map((dim) => (
+                  <div>
+                    <div class="flex items-center justify-between">
+                      <label
+                        for={`adjust-${target}-${dim.key}`}
+                        class="text-sm text-(--color-text)"
+                      >
+                        {dim.label}
+                      </label>
+                      <span
+                        class="text-sm font-medium text-(--color-text) tabular-nums"
+                        data-adjust-value
+                        data-adjust-target={target}
+                        data-adjust-dimension={dim.key}
+                      >
+                        0
+                      </span>
+                    </div>
+                    <input
+                      id={`adjust-${target}-${dim.key}`}
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value="0"
+                      class="mt-1 w-full accent-(--color-blue)"
+                      data-adjust-target={target}
+                      data-adjust-dimension={dim.key}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p class="mt-3 text-sm text-(--color-muted)">
+                Total:
+                <span
+                  class="ml-1 font-medium text-(--color-text)"
+                  data-profile-total
+                  data-profile-total-target={target}
+                >
+                  100
+                </span>
+                <span aria-hidden="true"> / 100</span>
+              </p>
+            </fieldset>
+          ))
+        }
+      </div>
+
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+          data-quality-continue
+        >
+          Continue to Review
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+          data-quality-back
+        >
+          Back
+        </button>
+      </div>
+    </div>
+
+    <div data-review-view hidden>
+      <h2 class="text-xl font-semibold text-(--color-text)">Review & Submit</h2>
+      {
+        previousNote && (
+          <p class="mt-2 text-sm text-(--color-muted)">{previousNote}</p>
+        )
+      }
+
+      <dl class="mt-6 space-y-3 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-(--color-muted)">Aesthetic</dt>
+          <dd
+            class="flex items-center justify-end gap-1.5 text-right font-medium text-(--color-text)"
+          >
+            <span data-summary-aesthetic></span>
+            <span class="q-info" data-aesthetic-info hidden>
+              <button
+                type="button"
+                class="q-info__trigger"
+                aria-label="What does this aesthetic combination mean?"
+                aria-describedby="aesthetic-info-tip"
+                data-aesthetic-info-trigger
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width="14"
+                  height="14"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="8"
+                    cy="8"
+                    r="6.75"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"></circle>
+                  <rect x="7.2" y="6.7" width="1.6" height="5" rx="0.8"></rect>
+                  <rect x="7.2" y="3.6" width="1.6" height="1.6" rx="0.8"
+                  ></rect>
+                </svg>
+              </button>
+              <span class="q-info__tip" role="tooltip" id="aesthetic-info-tip">
+                <span class="q-info__title" data-aesthetic-info-title></span>
+                <span class="q-info__body" data-aesthetic-info-body></span>
+              </span>
+            </span>
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-(--color-muted)">Relevance Rating</dt>
+          <dd
+            class="text-right font-medium text-(--color-text)"
+            data-summary-q15
+          >
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-(--color-muted)">Challenge</dt>
+          <dd
+            class="text-right font-medium text-(--color-text)"
+            data-summary-challenge
+          >
+          </dd>
+        </div>
+        <div class="flex justify-between gap-4">
+          <dt class="text-(--color-muted)">Reward</dt>
+          <dd
+            class="text-right font-medium text-(--color-text)"
+            data-summary-reward
+          >
+          </dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+          data-submit-btn
+        >
+          Submit Assessment
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+          data-review-back
+        >
+          Back
+        </button>
+      </div>
+    </div>
+
+    <div data-completed-view hidden>
+      <h2 class="text-xl font-semibold text-(--color-text)">
+        Assessment Submitted
+      </h2>
+      <p class="mt-2 text-sm text-(--color-muted)" data-completed-message>
+        Your assessment has been recorded.
+      </p>
+      <a
+        href={`/games/${gameSlug}`}
+        class="mt-6 inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+        data-completed-link
+      >
+        Back to game
+      </a>
+    </div>
+  </div>
+
+  <div
+    class="mx-auto mt-6 max-w-2xl rounded-lg border border-(--color-red) bg-surface-2 p-4 text-sm text-(--color-text)"
+    role="alert"
+    data-notice
+    hidden
+  >
+    Unable to save assessment. Please try again.
+  </div>
+
+  <ConflictModal gameName={gameName} ageDays={ageDays} />
+</div>
+
+<script>
+  import { QuestionnaireStateMachine } from "../../lib/questionnaire/state-machine";
+  import { describeAesthetic } from "../../lib/questionnaire/aesthetic-descriptions";
+  import {
+    PRIMARY_OPTIONS,
+    availableSecondaryOptions,
+    type AestheticOption,
+  } from "../../lib/questionnaire/aesthetic-taxonomy";
+  import { resolveQualitySpec } from "../../lib/questionnaire/scoring/compensation";
+  import type { QuestionNode } from "../../lib/questionnaire/registry/v1/types";
+  import type { DimensionScore } from "../../lib/questionnaire/scoring/types";
+  import type {
+    AestheticOptionEmphasis,
+    ConflictResolution,
+    QuestionnaireSubmitResponse,
+  } from "../../lib/questionnaire/types";
+
+  const rootElement = document.getElementById("questionnaire-root");
+  if (!rootElement) throw new Error("Questionnaire root not found");
+  const root: HTMLElement = rootElement;
+
+  const slug = root.dataset.gameSlug ?? "";
+  const requiresUserChoice = root.dataset.requiresUserChoice === "true";
+
+  const questionView = root.querySelector<HTMLElement>("[data-question-view]");
+  const qualityView = root.querySelector<HTMLElement>("[data-quality-view]");
+  const reviewView = root.querySelector<HTMLElement>("[data-review-view]");
+  const completedView = root.querySelector<HTMLElement>(
+    "[data-completed-view]",
+  );
+  const cardRoot = root.querySelector<HTMLElement>("[data-card-root]");
+  const cardBranch = root.querySelector<HTMLElement>("[data-card-branch]");
+  const counterEl = root.querySelector<HTMLElement>("[data-question-counter]");
+  const noticeEl = root.querySelector<HTMLElement>("[data-notice]");
+  const conflictModal = document.getElementById(
+    "conflict-modal",
+  ) as HTMLDialogElement | null;
+
+  const q15Input = root.querySelector<HTMLInputElement>("[data-q15-rating]");
+  const qualityTierEl = root.querySelector<HTMLElement>("[data-quality-tier]");
+  const qualityDeltaEl = root.querySelector<HTMLElement>(
+    "[data-quality-delta]",
+  );
+  const adjustInputs = root.querySelectorAll<HTMLInputElement>(
+    "[data-adjust-dimension]",
+  );
+  const adjustRegion = root.querySelector<HTMLElement>("[data-adjust-region]");
+  const qualityTweak = root.querySelector<HTMLInputElement>(
+    "[data-quality-tweak]",
+  );
+  const qualityReset = root.querySelector<HTMLButtonElement>(
+    "[data-quality-reset]",
+  );
+
+  const summaryAesthetic = root.querySelector<HTMLElement>(
+    "[data-summary-aesthetic]",
+  );
+  const aestheticInfo = root.querySelector<HTMLElement>(
+    "[data-aesthetic-info]",
+  );
+  const aestheticInfoTitle = root.querySelector<HTMLElement>(
+    "[data-aesthetic-info-title]",
+  );
+  const aestheticInfoBody = root.querySelector<HTMLElement>(
+    "[data-aesthetic-info-body]",
+  );
+  const summaryQ15 = root.querySelector<HTMLElement>("[data-summary-q15]");
+  const summaryChallenge = root.querySelector<HTMLElement>(
+    "[data-summary-challenge]",
+  );
+  const summaryReward = root.querySelector<HTMLElement>(
+    "[data-summary-reward]",
+  );
+  const submitBtn = root.querySelector<HTMLButtonElement>("[data-submit-btn]");
+  const qualityContinue = root.querySelector<HTMLButtonElement>(
+    "[data-quality-continue]",
+  );
+  const qualityBack = root.querySelector<HTMLButtonElement>(
+    "[data-quality-back]",
+  );
+  const reviewBack =
+    root.querySelector<HTMLButtonElement>("[data-review-back]");
+  const questionBack = root.querySelector<HTMLButtonElement>(
+    "[data-question-back]",
+  );
+  const completedMessage = root.querySelector<HTMLElement>(
+    "[data-completed-message]",
+  );
+
+  const sectionLabelEl = root.querySelector<HTMLElement>(
+    "[data-section-label]",
+  );
+  const progressPercentEl = root.querySelector<HTMLElement>(
+    "[data-progress-percent]",
+  );
+  const progressFillEl = root.querySelector<HTMLElement>(
+    "[data-progress-fill]",
+  );
+
+  if (
+    !questionView ||
+    !qualityView ||
+    !reviewView ||
+    !completedView ||
+    !cardRoot ||
+    !cardBranch ||
+    !counterEl ||
+    !q15Input ||
+    !qualityTierEl ||
+    !qualityDeltaEl ||
+    !summaryAesthetic ||
+    !summaryQ15 ||
+    !summaryChallenge ||
+    !summaryReward ||
+    !submitBtn ||
+    !qualityContinue ||
+    !qualityBack ||
+    !reviewBack ||
+    !questionBack ||
+    !completedMessage
+  ) {
+    throw new Error("Questionnaire root wiring failed");
+  }
+
+  const machine = new QuestionnaireStateMachine();
+
+  const DIMS: (keyof DimensionScore)[] = ["micro", "macro", "mystiko"];
+  const TIER_LABELS: Record<string, string> = {
+    LOW: "Low",
+    MODERATE: "Moderate",
+    HIGH: "High",
+    VERY_HIGH: "Very High",
+    PERFECT: "Perfect",
+  };
+
+  let aestheticStep: "Q1" | "Q2" = "Q1";
+  let q1OptionId: string | null = null;
+  let currentOptions: RenderOption[] = [];
+  let currentOptionsContainer: HTMLElement | null = null;
+  let currentSelect: ((optionId: string) => void) | null = null;
+  let pendingOptionId: string | null = null;
+  let submitting = false;
+  let questionRendered = false;
+  // Q1/Q2 present their options in a randomised but stable order per attempt.
+  let q1Display: RenderOption[] | null = null;
+  let q2Display: RenderOption[] | null = null;
+
+  interface RenderOption {
+    id: string;
+    text: string;
+    emphasis?: AestheticOptionEmphasis;
+  }
+
+  interface QuestionHeading {
+    text: string;
+    /** Phrase inside `text` that carries the question on its own. */
+    underline?: string;
+  }
+
+  function setView(
+    name: "question" | "quality" | "review" | "completed",
+  ): void {
+    questionView!.hidden = name !== "question";
+    qualityView!.hidden = name !== "quality";
+    reviewView!.hidden = name !== "review";
+    completedView!.hidden = name !== "completed";
+  }
+
+  function firstUnanswered(
+    target: "CHALLENGE" | "REWARD",
+  ): QuestionNode | null {
+    return (
+      machine
+        .getActiveSequence()
+        .find(
+          (node) => node.target === target && !machine.answerFor(node.id),
+        ) ?? null
+    );
+  }
+
+  function rootNumber(node: QuestionNode): number {
+    return Number.parseInt(node.rootId.slice(1), 10);
+  }
+
+  function answeredRootCount(target: "CHALLENGE" | "REWARD"): number {
+    return machine
+      .getActiveSequence()
+      .filter(
+        (node) =>
+          node.target === target &&
+          !node.isBranch &&
+          machine.answerFor(node.id) !== undefined,
+      ).length;
+  }
+
+  function phaseComplete(target: "CHALLENGE" | "REWARD"): boolean {
+    return machine
+      .getActiveSequence()
+      .filter((node) => node.target === target)
+      .every((node) => machine.answerFor(node.id) !== undefined);
+  }
+
+  function handlePhaseAdvance(): void {
+    if (machine.phase === "challenge" && phaseComplete("CHALLENGE")) {
+      machine.transition("reward");
+    } else if (machine.phase === "reward" && phaseComplete("REWARD")) {
+      machine.transition("quality");
+    }
+  }
+
+  function buildOptionLabel(option: RenderOption): HTMLElement {
+    const label = document.createElement("span");
+    label.className = "q-option__label";
+
+    const emphasis = option.emphasis;
+    const start = emphasis ? option.text.indexOf(emphasis.text) : -1;
+    if (!emphasis || start === -1) {
+      label.textContent = option.text;
+      return label;
+    }
+
+    const end = start + emphasis.text.length;
+    if (start > 0) label.append(option.text.slice(0, start));
+    const strong = document.createElement("strong");
+    strong.className = `q-emph q-emph--${emphasis.color}`;
+    strong.textContent = option.text.slice(start, end);
+    label.append(strong);
+    if (end < option.text.length) label.append(option.text.slice(end));
+    return label;
+  }
+
+  function renderOptions(
+    container: HTMLElement | null,
+    options: RenderOption[],
+  ): void {
+    if (!container) return;
+    currentOptionsContainer = container;
+    container.replaceChildren();
+
+    options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.optionId = option.id;
+      button.dataset.optionIndex = String(index + 1);
+      button.className = "q-option";
+      button.setAttribute("aria-pressed", "false");
+
+      const badge = document.createElement("span");
+      badge.className = "q-option__badge";
+      badge.textContent = String(index + 1);
+
+      button.append(badge, buildOptionLabel(option));
+      button.addEventListener("click", () => {
+        currentSelect?.(option.id);
+      });
+      container.appendChild(button);
+    });
+  }
+
+  function focusHeading(card: HTMLElement): void {
+    const heading = card.querySelector<HTMLElement>("[data-question-heading]");
+    if (heading) {
+      heading.tabIndex = -1;
+      heading.focus();
+    }
+  }
+
+  /** Fisher-Yates shuffle on a copy, so the source order is never mutated. */
+  function shuffledCopy<T>(items: readonly T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const swap = copy[i];
+      copy[i] = copy[j];
+      copy[j] = swap;
+    }
+    return copy;
+  }
+
+  function aestheticRenderOptions(
+    options: readonly AestheticOption[],
+  ): RenderOption[] {
+    return options.map((option) => ({
+      id: option.optionId,
+      text: option.label,
+      emphasis: option.emphasis,
+    }));
+  }
+
+  function renderHeading(el: HTMLElement, heading: QuestionHeading): void {
+    el.replaceChildren();
+    const phrase = heading.underline;
+    const start = phrase ? heading.text.indexOf(phrase) : -1;
+    if (!phrase || start === -1) {
+      el.textContent = heading.text;
+      return;
+    }
+    const end = start + phrase.length;
+    if (start > 0) el.append(heading.text.slice(0, start));
+    const key = document.createElement("u");
+    key.className = "q-question-key";
+    key.textContent = heading.text.slice(start, end);
+    el.append(key);
+    if (end < heading.text.length) el.append(heading.text.slice(end));
+  }
+
+  function renderQuestionContent(): void {
+    const phase = machine.phase;
+    let heading: QuestionHeading;
+    let helper: string;
+    let counter: string;
+    let options: RenderOption[];
+    let isBranch = false;
+
+    if (phase === "aesthetics") {
+      if (aestheticStep === "Q1") {
+        counter = "Question 1 of 14";
+        heading = { text: "Why is this game fun?", underline: "fun" };
+        helper = "Choose the primary reason that best fits.";
+        const q1Order =
+          q1Display ?? shuffledCopy(aestheticRenderOptions(PRIMARY_OPTIONS));
+        q1Display = q1Order;
+        options = q1Order;
+        currentSelect = (optionId: string) => {
+          q1OptionId = optionId;
+          aestheticStep = "Q2";
+          q2Display = null;
+          render();
+        };
+      } else {
+        if (q1OptionId === null) return;
+        counter = "Question 2 of 14";
+        heading = {
+          text: "What's the second biggest reason you play it?",
+          underline: "second biggest reason",
+        };
+        helper = "Choose the next best fit, or none of the above.";
+        const q2Order =
+          q2Display ??
+          shuffledCopy(
+            aestheticRenderOptions(availableSecondaryOptions(q1OptionId)),
+          );
+        q2Display = q2Order;
+        options = q2Order;
+        currentSelect = (optionId: string) => {
+          machine.setAestheticAnswers(q1OptionId as string, optionId);
+          render();
+        };
+      }
+    } else {
+      const target: "CHALLENGE" | "REWARD" =
+        phase === "challenge" ? "CHALLENGE" : "REWARD";
+      const node = firstUnanswered(target);
+      if (!node) return;
+
+      isBranch = node.isBranch;
+      counter = `Question ${rootNumber(node)} of 14`;
+      heading = { text: node.text, underline: node.keyPhrase ?? undefined };
+      helper = node.helperText ?? "";
+      options = node.options.map((option) => ({
+        id: option.id,
+        text: option.text,
+      }));
+      currentSelect = (optionId: string) => {
+        machine.recordAnswer(node.id, optionId);
+        handlePhaseAdvance();
+        render();
+      };
+    }
+
+    currentOptions = options;
+    pendingOptionId = null;
+    cardRoot!.hidden = isBranch;
+    cardBranch!.hidden = !isBranch;
+    const card = isBranch ? cardBranch! : cardRoot!;
+
+    const headingEl = card.querySelector<HTMLElement>(
+      "[data-question-heading]",
+    );
+    const helperEl = card.querySelector<HTMLElement>("[data-question-helper]");
+    const optionsEl = card.querySelector<HTMLElement>(
+      "[data-question-options]",
+    );
+
+    if (headingEl) renderHeading(headingEl, heading);
+    if (helperEl) {
+      helperEl.textContent = helper;
+      helperEl.hidden = !helper;
+    }
+    counterEl!.textContent = counter;
+    renderOptions(optionsEl, options);
+    focusHeading(card);
+  }
+
+  function animateQuestion(): void {
+    questionView!.classList.add("is-exiting");
+    window.setTimeout(() => {
+      renderQuestionContent();
+      questionView!.classList.remove("is-exiting");
+      questionView!.classList.add("is-entering");
+      void questionView!.offsetWidth;
+      questionView!.classList.remove("is-entering");
+    }, 150);
+  }
+
+  function renderQuestion(): void {
+    if (!questionRendered) {
+      questionRendered = true;
+      renderQuestionContent();
+    } else {
+      animateQuestion();
+    }
+  }
+
+  function adjustValueEl(
+    target: "CHALLENGE" | "REWARD",
+    dim: keyof DimensionScore,
+  ): HTMLElement | null {
+    return root.querySelector<HTMLElement>(
+      `[data-adjust-value][data-adjust-target="${target}"][data-adjust-dimension="${dim}"]`,
+    );
+  }
+
+  function updateProfileTotals(): void {
+    const challengeTotal =
+      machine.challenge.adj.micro +
+      machine.challenge.adj.macro +
+      machine.challenge.adj.mystiko;
+    const rewardTotal =
+      machine.reward.adj.micro +
+      machine.reward.adj.macro +
+      machine.reward.adj.mystiko;
+
+    const challengeEl = root.querySelector<HTMLElement>(
+      `[data-profile-total][data-profile-total-target="CHALLENGE"]`,
+    );
+    const rewardEl = root.querySelector<HTMLElement>(
+      `[data-profile-total][data-profile-total-target="REWARD"]`,
+    );
+    if (challengeEl) challengeEl.textContent = String(challengeTotal);
+    if (rewardEl) rewardEl.textContent = String(rewardTotal);
+  }
+
+  function updateAdjusterSliders(): void {
+    for (const input of adjustInputs) {
+      const target = input.dataset.adjustTarget as "CHALLENGE" | "REWARD";
+      const dimension = input.dataset.adjustDimension as keyof DimensionScore;
+      if (target !== "CHALLENGE" && target !== "REWARD") continue;
+
+      const profile =
+        target === "CHALLENGE" ? machine.challenge.adj : machine.reward.adj;
+      input.value = String(profile[dimension]);
+      const valueEl = adjustValueEl(target, dimension);
+      if (valueEl) valueEl.textContent = String(profile[dimension]);
+    }
+    updateProfileTotals();
+  }
+
+  /** Relevance slider stays live; the DNA sliders only unlock when the player
+     opts in to tweaking the numbers.  Frozen sliders are disabled and greyed. */
+  function applyTweakState(): void {
+    const editing = qualityTweak?.checked ?? false;
+    for (const input of adjustInputs) {
+      input.disabled = !editing;
+    }
+    adjustRegion?.classList.toggle("is-frozen", !editing);
+  }
+
+  function renderQuality(): void {
+    const spec = resolveQualitySpec(machine.q15Rating);
+    q15Input!.value = String(machine.q15Rating);
+    qualityTierEl!.textContent = TIER_LABELS[spec.tier] ?? spec.tier;
+    qualityDeltaEl!.textContent = `±${spec.permittedDelta} per dimension`;
+    updateAdjusterSliders();
+    applyTweakState();
+  }
+
+  function profileSummary(profile: DimensionScore): string {
+    return `Micro ${profile.micro} · Macro ${profile.macro} · Mystiko ${profile.mystiko}`;
+  }
+
+  function aestheticSummary(): string {
+    const dominant = machine.dominantAesthetic;
+    const secondary = machine.secondaryAesthetic;
+    if (!dominant) return "—";
+    if (!secondary) return dominant;
+    return `${dominant} + ${secondary}`;
+  }
+
+  function renderReview(isSubmitting: boolean): void {
+    summaryAesthetic!.textContent = aestheticSummary();
+    const description = describeAesthetic(
+      machine.dominantAesthetic,
+      machine.secondaryAesthetic,
+      machine.isTrueAesthetic,
+    );
+    if (description) {
+      aestheticInfoTitle!.textContent = description.title;
+      aestheticInfoBody!.textContent = description.body;
+    }
+    if (aestheticInfo) aestheticInfo.hidden = description === null;
+    summaryQ15!.textContent = String(machine.q15Rating);
+    summaryChallenge!.textContent = profileSummary(machine.challenge.adj);
+    summaryReward!.textContent = profileSummary(machine.reward.adj);
+    submitBtn!.disabled = isSubmitting;
+    submitBtn!.textContent = isSubmitting ? "Submitting…" : "Submit Assessment";
+  }
+
+  function computeProgress(): { percent: number; label: string } {
+    switch (machine.phase) {
+      case "aesthetics":
+        return {
+          percent: aestheticStep === "Q1" ? 0 : 7.5,
+          label: "Aesthetics",
+        };
+      case "challenge":
+        return {
+          percent: 15 + (answeredRootCount("CHALLENGE") / 6) * 35,
+          label: "Challenge Profile",
+        };
+      case "reward":
+        return {
+          percent: 50 + (answeredRootCount("REWARD") / 6) * 35,
+          label: "Reward Profile",
+        };
+      case "quality":
+        return { percent: 85, label: "Quality Relevance" };
+      case "review":
+      case "submitting":
+        return { percent: 100, label: "Review & Submit" };
+      case "completed":
+        return { percent: 100, label: "Complete" };
+    }
+  }
+
+  function updateProgress(): void {
+    const { percent, label } = computeProgress();
+    if (sectionLabelEl) sectionLabelEl.textContent = label;
+    if (progressPercentEl)
+      progressPercentEl.textContent = `${Math.round(percent)}%`;
+    if (progressFillEl) progressFillEl.style.width = `${percent}%`;
+  }
+
+  function render(): void {
+    const phase = machine.phase;
+    if (phase === "aesthetics" || phase === "challenge" || phase === "reward") {
+      setView("question");
+      renderQuestion();
+    } else if (phase === "quality") {
+      setView("quality");
+      renderQuality();
+    } else if (phase === "review" || phase === "submitting") {
+      setView("review");
+      renderReview(phase === "submitting");
+    } else {
+      setView("completed");
+    }
+    updateProgress();
+  }
+
+  function hideNotice(): void {
+    if (noticeEl) noticeEl.hidden = true;
+  }
+
+  function showNotice(): void {
+    if (noticeEl) noticeEl.hidden = false;
+  }
+
+  function lastAnsweredNode(
+    target: "CHALLENGE" | "REWARD",
+  ): QuestionNode | null {
+    let last: QuestionNode | null = null;
+    for (const node of machine.getActiveSequence()) {
+      if (node.target === target && machine.answerFor(node.id) !== undefined) {
+        last = node;
+      }
+    }
+    return last;
+  }
+
+  function goBack(): void {
+    const phase = machine.phase;
+    if (phase === "submitting" || phase === "completed") return;
+
+    if (phase === "aesthetics") {
+      if (aestheticStep === "Q2") {
+        aestheticStep = "Q1";
+        q1OptionId = null;
+        q2Display = null;
+        render();
+      } else {
+        // Nothing precedes Q1 inside the flow: return to the game page.
+        window.location.assign(`/games/${encodeURIComponent(slug)}`);
+      }
+      return;
+    }
+
+    if (phase === "quality") {
+      machine.transition("reward");
+      render();
+      return;
+    }
+
+    if (phase === "review") {
+      machine.transition("quality");
+      render();
+      return;
+    }
+
+    if (phase === "challenge") {
+      const previous = lastAnsweredNode("CHALLENGE");
+      if (previous) {
+        machine.removeAnswer(previous.id);
+      } else {
+        // First Challenge question: step back into the aesthetics phase.
+        aestheticStep = "Q2";
+        machine.transition("aesthetics");
+      }
+      render();
+      return;
+    }
+
+    const previousReward = lastAnsweredNode("REWARD");
+    if (previousReward) {
+      machine.removeAnswer(previousReward.id);
+    } else {
+      // First Reward question: return to the last Challenge question.
+      const previousChallenge = lastAnsweredNode("CHALLENGE");
+      if (previousChallenge) machine.removeAnswer(previousChallenge.id);
+      machine.transition("challenge");
+    }
+    render();
+  }
+
+  function openConflictModal(): void {
+    if (!conflictModal) return;
+    if (!conflictModal.open) conflictModal.showModal();
+    conflictModal
+      .querySelector<HTMLButtonElement>("[data-conflict-resolution]")
+      ?.focus();
+  }
+
+  function setCompleted(data: QuestionnaireSubmitResponse): void {
+    completedMessage!.textContent = data.routed_to_editorial
+      ? "Assessment submitted and routed to editorial review."
+      : "Assessment submitted successfully.";
+  }
+
+  async function doSubmit(resolution?: ConflictResolution): Promise<void> {
+    if (submitting) return;
+    submitting = true;
+    machine.transition("submitting");
+    render();
+    hideNotice();
+
+    try {
+      const response = await fetch(
+        `/api/questionnaire/${encodeURIComponent(slug)}/submit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(machine.getPayload(resolution)),
+        },
+      );
+
+      if (response.status === 409) {
+        submitting = false;
+        machine.transition("review");
+        render();
+        openConflictModal();
+        return;
+      }
+
+      if (!response.ok) {
+        submitting = false;
+        machine.transition("review");
+        render();
+        showNotice();
+        return;
+      }
+
+      const data = (await response.json()) as QuestionnaireSubmitResponse;
+      submitting = false;
+      setCompleted(data);
+      machine.transition("completed");
+      render();
+    } catch {
+      submitting = false;
+      machine.transition("review");
+      render();
+      showNotice();
+    }
+  }
+
+  // ── event wiring ──
+
+  machine.subscribe((event) => {
+    if (event.type === "challenge-update") {
+      window.dispatchEvent(
+        new CustomEvent("questionnaire:challenge-update", {
+          detail: event.challenge,
+        }),
+      );
+    } else if (event.type === "reward-update") {
+      window.dispatchEvent(
+        new CustomEvent("questionnaire:reward-update", {
+          detail: event.reward,
+        }),
+      );
+    } else if (event.type === "boundary-swap") {
+      window.dispatchEvent(new CustomEvent("questionnaire:boundary-swap"));
+    }
+  });
+
+  q15Input!.addEventListener("input", () => {
+    machine.q15Rating = Number(q15Input!.value);
+    machine.resetQ15Adjustments();
+    renderQuality();
+  });
+
+  for (const input of adjustInputs) {
+    input.addEventListener("input", () => {
+      const target = input.dataset.adjustTarget as "CHALLENGE" | "REWARD";
+      const dimension = input.dataset.adjustDimension as keyof DimensionScore;
+      if (
+        (target === "CHALLENGE" || target === "REWARD") &&
+        DIMS.includes(dimension)
+      ) {
+        machine.adjustScore(target, dimension, Number(input.value));
+        updateAdjusterSliders();
+      }
+    });
+  }
+
+  if (qualityTweak) {
+    qualityTweak.addEventListener("change", () => {
+      applyTweakState();
+    });
+  }
+
+  if (qualityReset) {
+    qualityReset.addEventListener("click", () => {
+      machine.resetQ15Adjustments();
+      renderQuality();
+    });
+  }
+
+  qualityContinue!.addEventListener("click", () => {
+    machine.transition("review");
+    render();
+  });
+
+  qualityBack!.addEventListener("click", () => {
+    machine.transition("reward");
+    render();
+  });
+
+  reviewBack!.addEventListener("click", () => {
+    machine.transition("quality");
+    render();
+  });
+
+  questionBack!.addEventListener("click", () => {
+    goBack();
+  });
+
+  submitBtn!.addEventListener("click", () => {
+    if (submitting) return;
+    if (requiresUserChoice) {
+      openConflictModal();
+      return;
+    }
+    void doSubmit();
+  });
+
+  if (conflictModal) {
+    conflictModal
+      .querySelectorAll<HTMLButtonElement>("[data-conflict-resolution]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          const resolution = button.dataset.conflictResolution;
+          if (resolution === "OVERWRITE" || resolution === "KEEP_MANUAL") {
+            void doSubmit(resolution);
+            conflictModal.close();
+          }
+        });
+      });
+
+    conflictModal.addEventListener("close", () => {
+      if (submitting) return;
+      setView("review");
+      renderReview(false);
+    });
+  }
+
+  function highlightOption(optionId: string): void {
+    pendingOptionId = optionId;
+    if (!currentOptionsContainer) return;
+    currentOptionsContainer
+      .querySelectorAll<HTMLButtonElement>("[data-option-id]")
+      .forEach((button) => {
+        const active = button.dataset.optionId === optionId;
+        button.classList.toggle("is-pending", active);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const phase = machine.phase;
+    const inQuestion =
+      phase === "aesthetics" || phase === "challenge" || phase === "reward";
+
+    if (inQuestion && event.key >= "1" && event.key <= "9") {
+      const index = Number(event.key) - 1;
+      if (index < currentOptions.length) {
+        event.preventDefault();
+        highlightOption(currentOptions[index].id);
+      }
+      return;
+    }
+
+    if (event.key === "Enter") {
+      if (inQuestion && pendingOptionId && currentSelect) {
+        event.preventDefault();
+        currentSelect(pendingOptionId);
+      }
+      return;
+    }
+
+    if (event.key === "Backspace") {
+      const target = event.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      event.preventDefault();
+      goBack();
+    }
+  });
+
+  render();
+</script>
+
+<style is:global>
+  .q-fade {
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out;
+  }
+
+  .q-fade.is-exiting {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    transition-duration: 150ms;
+    transition-timing-function: ease-in;
+  }
+
+  .q-fade.is-entering {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  .q-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color 150ms ease,
+      background 150ms ease;
+  }
+
+  .q-option:hover {
+    border-color: var(--color-blue);
+    background: var(--color-surface-2);
+  }
+
+  .q-option.is-pending {
+    border-color: var(--color-blue);
+    background: var(--color-surface-2);
+  }
+
+  .q-option__badge {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .q-option.is-pending .q-option__badge {
+    background: var(--color-blue);
+    color: var(--color-bg);
+  }
+
+  .q-option__label {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  /* The single phrase per question that carries it on its own. */
+  .q-question-key {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  /* Copy-pass emphasis: the highlighted phrase is bold by default and, while
+     its option is hovered or keyboard-focused, jumps to extrabold (900) and
+     grows a touch so the keyword pops. */
+  .q-emph {
+    font-weight: 700;
+  }
+
+  .q-option:hover .q-emph,
+  .q-option:focus-visible .q-emph {
+    font-weight: 900;
+    font-size: 1.08em;
+  }
+
+  .q-emph--purple {
+    color: var(--color-purple);
+  }
+
+  .q-emph--reddish-pink {
+    color: #ff6b9d;
+  }
+
+  .q-emph--reddish {
+    color: #ff7b72;
+  }
+
+  .q-emph--white {
+    color: #ffffff;
+  }
+
+  .q-emph--pink {
+    color: #f9a8d4;
+  }
+
+  .q-emph--green {
+    color: var(--color-green);
+  }
+
+  .q-emph--light-blue {
+    color: #79c0ff;
+  }
+
+  .q-emph--purplish-light-blue {
+    color: #a5b4fc;
+  }
+
+  .q-emph--golden {
+    color: #e3b341;
+  }
+
+  .q-emph--blue {
+    color: var(--color-blue);
+  }
+
+  .q-emph--orange {
+    color: var(--color-orange);
+  }
+
+  .q-emph--lime {
+    color: #a3e635;
+  }
+
+  .q-emph--blood-red {
+    color: #e5484d;
+  }
+
+  .q-emph--yellow {
+    color: #f2cc60;
+  }
+
+  .q-emph--teal {
+    color: #2dd4bf;
+  }
+
+  .q-emph--light-brown {
+    color: #c8a27c;
+  }
+
+  .q-emph--pantone-green {
+    color: #00b140;
+  }
+
+  /* Q15 tweak switch: hidden checkbox styled as a track + thumb. */
+  .q-tweak {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .q-tweak input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .q-tweak__track {
+    position: relative;
+    display: inline-block;
+    width: 2.75rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: var(--color-border);
+    transition: background 0.15s ease;
+  }
+
+  .q-tweak__thumb {
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    transition: transform 0.15s ease;
+  }
+
+  .q-tweak input:checked + .q-tweak__track {
+    background: var(--color-blue);
+  }
+
+  .q-tweak input:checked + .q-tweak__track .q-tweak__thumb {
+    transform: translateX(1.25rem);
+  }
+
+  .q-tweak input:focus-visible + .q-tweak__track {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  /* Frozen DNA sliders: greyscale + disabled until the tweak switch is on. */
+  [data-adjust-region].is-frozen {
+    opacity: 0.5;
+    filter: grayscale(1);
+  }
+
+  [data-adjust-region].is-frozen input[type="range"] {
+    cursor: not-allowed;
+  }
+
+  /* Aesthetic info tooltip in Review & Submit. */
+  .q-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .q-info[hidden] {
+    display: none;
+  }
+
+  .q-info__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 0;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .q-info__trigger:hover,
+  .q-info__trigger:focus-visible {
+    color: var(--color-text);
+  }
+
+  .q-info__tip {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 18rem;
+    max-width: 80vw;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface-2);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+    text-align: left;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.25rem);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease,
+      visibility 0.15s;
+    pointer-events: none;
+  }
+
+  .q-info:hover .q-info__tip,
+  .q-info:focus-within .q-info__tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .q-info__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .q-info__body {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+</style>
