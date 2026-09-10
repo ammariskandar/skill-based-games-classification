@@ -107,3 +107,70 @@ export interface PrecedenceEvaluation {
   manualCreatedAt: string | null;
   ageDays: number | null;
 }
+
+// ── API wire contracts (SBGC-176) ──
+// Field names mirror the Django Ninja JSON exactly; no client-side mapping is
+// performed by the server API boundary.
+
+/** Conflict metadata as serialized by `GET /questionnaire/{slug}/session`. */
+export interface QuestionnairePrecedenceDto {
+  has_conflict: boolean;
+  requires_user_choice: boolean;
+  manual_submission_id: number | null;
+  manual_created_at: string | null;
+  age_days: number | null;
+}
+
+/** Summary of the viewer's most recent questionnaire result. */
+export interface QuestionnairePreviousResultDto {
+  result_id: number;
+  version: string;
+  dominant_aesthetic: string;
+  secondary_aesthetic: string | null;
+  is_true_aesthetic: boolean;
+  q15_rating: number;
+  adjusted_challenge: QuestionnaireProfile;
+  adjusted_reward: QuestionnaireProfile;
+  status: PrecedenceStatus;
+  created_at: string;
+}
+
+/** `GET /api/v1/questionnaire/{slug}/session` response body. */
+export interface QuestionnaireSessionResponse {
+  game_slug: string;
+  game_name: string;
+  canonical_aesthetic: string | null;
+  precedence: QuestionnairePrecedenceDto;
+  previous_result: QuestionnairePreviousResultDto | null;
+}
+
+/** `POST /api/v1/questionnaire/{slug}/submit` request body. */
+export interface QuestionnaireSubmitRequest {
+  version: string;
+  q1_option_id: string;
+  q2_option_id: string;
+  answers: Record<string, string>;
+  q15_rating: number;
+  adjusted_challenge: QuestionnaireProfile;
+  adjusted_reward: QuestionnaireProfile;
+  conflict_resolution?: ConflictResolution | null;
+}
+
+/** `POST /api/v1/questionnaire/{slug}/submit` success body. */
+export interface QuestionnaireSubmitResponse {
+  success: boolean;
+  questionnaire_result_id: number;
+  classification_status: PrecedenceStatus;
+  is_active_in_calculation: boolean;
+  routed_to_editorial: boolean;
+  message: string;
+  challenge: QuestionnaireProfile;
+  reward: QuestionnaireProfile;
+}
+
+/** HTTP 409 body when a recent manual submission needs a user decision. */
+export interface ConflictRequiredResponse {
+  error: "conflict_resolution_required";
+  message: string;
+  precedence: QuestionnairePrecedenceDto;
+}

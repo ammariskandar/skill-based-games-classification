@@ -294,3 +294,57 @@ live radar/slider feedback.
   overwriting (SBGC-176's POST flow always supplies the resolution).
 - **Migration** is auto-named
   `0010_usergamescoresubmission_source_questionnaireresult_and_more.py`.
+
+## 9. SBGC-176 implementation notes
+
+### Endpoints
+
+- `GET /api/v1/questionnaire/{slug}/session` (authenticated) — returns the
+  publicly-listed Game identity, its canonical `aesthetic`, the manual-conflict
+  `precedence` metadata (`PrecedenceEvaluation`), and the viewer's
+  `previous_result` when one exists.
+- `POST /api/v1/questionnaire/{slug}/submit` (authenticated) — validates and
+  persists a completed traversal.
+
+### Server-side validation pipeline (`questionnaire/api.py`)
+
+1. Publicly-listed Game guard → `404 NOT_FOUND`.
+2. Aesthetic resolution + tree assembly → `422 VALIDATION_ERROR` (domain and
+   registry errors share this status).
+3. Traversal integrity — every answer must belong to the assembled tree with a
+   valid option id; client raw/normalized values are never trusted.
+4. Authoritative re-computation via `compute_raw_profile` + `normalize_profile`
+   for both profiles.
+5. Q15 quality-tier delta bounds — each adjusted dimension must be within
+   ±`permitted_delta` of the recomputed normalized value.
+6. Precedence conflict gate — `requires_user_choice` with no
+   `conflict_resolution` returns `409` with `ConflictRequiredOut` **before**
+   any record is written.
+7. Persistence through `ingest_questionnaire_submission` (SBGC-175); response
+   is `200` for `OVERWRITE`, otherwise `201`.
+
+### Schemas (`questionnaire/schemas.py`)
+
+`DimensionScoreSchema` enforces `0..100` per dimension **and** a strict
+sum-to-100 via a pydantic `model_validator`, so adjusted profiles are rejected
+at the validation layer (`422`) before the endpoint runs.
+
+### Frontend client (`src/lib/server/api/questionnaire.ts`)
+
+`getQuestionnaireSession` and `submitQuestionnaire` (returning a
+success/conflict discriminated union) forward the viewer `sessionid` cookie.
+
+### Deliberate adaptations
+
+- The 409 response declares its concrete sibling error statuses explicitly
+  (`400/401/403/404/422 → ApiErrorResponse`) instead of `STANDARD_ERROR_RESPONSES`,
+  because `codes_4xx` contains 409 and would shadow `ConflictRequiredOut`.
+- Error codes use the repository's uppercase `ErrorCode` vocabulary, not the
+  spec's lowercase strings.
+- The client forwards `sessionId` (repo BFF convention, cf.
+  `lib/server/api/users.ts`) rather than a raw cookie header, and uses raw
+  `fetch` because the shared `ApiResult` transport cannot surface the custom
+  409 body.
+- The submit request type is the snake_case wire contract
+  (`QuestionnaireSubmitRequest`), since the backend field names are the
+  authoritative wire format.

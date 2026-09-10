@@ -2570,6 +2570,29 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-176 questionnaire session & submission API
+
+- **Endpoints** — `GET /api/v1/questionnaire/{slug}/session` (conflict
+  metadata + previous result) and `POST /api/v1/questionnaire/{slug}/submit`
+  (authoritative re-computation + precedence persistence), both authenticated
+  and restricted to publicly-listed Games.
+- **Schemas** — `questionnaire/schemas.py`: `DimensionScoreSchema` enforces
+  `0..100` per dimension and a strict sum-to-100 via a pydantic validator, plus
+  the session/submit/conflict contracts.
+- **Server-side validation** — traversal integrity, authoritative raw +
+  normalized re-computation (`compute_raw_profile`/`normalize_profile`), Q15
+  quality-tier delta bounds, and a 409 conflict gate that writes no records.
+- **Frontend client** — `lib/server/api/questionnaire.ts`
+  (`getQuestionnaireSession`, `submitQuestionnaire` with a success/conflict
+  discriminant) forwarding the viewer `sessionid`; wire DTOs added to
+  `lib/questionnaire/types.ts`; exported from the server API index.
+- **Docs** — `docs/questionnaire-epic-sbgc-171.md` (SBGC-176 notes) and
+  `docs/backend-api.md` (session/submit endpoints).
+- **Tests** — 18 backend tests (`test_questionnaire_api.py`) and 5 frontend
+  tests (client contract).  Backend `ruff`/`basedpyright` clean; frontend
+  `astro check`, ESLint, Prettier and the build green; frontend suite 821
+  passing.
+
 ## 2026-09-10 — SBGC-175 questionnaire persistence, precedence engine & canonical integration
 
 - **Models** — `QuestionnaireResult` (immutable audit trail with four

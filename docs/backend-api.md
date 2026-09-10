@@ -583,6 +583,63 @@ Unknown options return `422 VALIDATION_ERROR`; the reserved
 `SPECIAL_FLOW` outcome cannot be assembled and also returns `422`.  See
 `docs/questionnaire-epic-sbgc-171.md` for the full registry layout.
 
+## Questionnaire Session & Submission
+
+Authenticated persistence endpoints (SBGC-176).  Both require a session and a
+publicly-listed Game (otherwise `401` / `404`).
+
+### `GET /api/v1/questionnaire/{slug}/session`
+
+Returns the Game identity plus manual-conflict metadata and the viewer's
+previous questionnaire result (if any):
+
+```json
+{
+  "game_slug": "hades",
+  "game_name": "Hades",
+  "canonical_aesthetic": "SENSORY",
+  "precedence": {
+    "has_conflict": true,
+    "requires_user_choice": true,
+    "manual_submission_id": 12,
+    "manual_created_at": "2026-09-07T00:00:00+00:00",
+    "age_days": 3
+  },
+  "previous_result": null
+}
+```
+
+### `POST /api/v1/questionnaire/{slug}/submit`
+
+Validates the traversal against the active `v1.0.0` registry, **recomputes**
+raw/normalized profiles server-side (client values are never trusted), enforces
+Q15 quality-delta bounds, then persists through the SBGC-175 precedence engine.
+
+```json
+{
+  "version": "v1.0.0",
+  "q1_option_id": "OPT_S1",
+  "q2_option_id": "OPT_NONE",
+  "answers": { "Q3": "Q3_huge" },
+  "q15_rating": 7,
+  "adjusted_challenge": { "micro": 40, "macro": 30, "mystiko": 30 },
+  "adjusted_reward": { "micro": 35, "macro": 35, "mystiko": 30 }
+}
+```
+
+Status codes:
+
+- `201` — created (direct promotion, ≥10-day auto-overwrite, staff editorial
+  routing, or `KEEP_MANUAL` archival).
+- `200` — `OVERWRITE` of a recent manual submission.
+- `409` — a recent manual submission exists and `conflict_resolution` is
+  missing.  The body is `{ "error": "conflict_resolution_required",
+  "message": ..., "precedence": {...} }` and **no records are written**.
+- `422` — invalid aesthetic options, unknown question node / option, an
+  adjusted profile that does not sum to 100, or an exceeded Q15 delta bound.
+
+See `docs/questionnaire-epic-sbgc-171.md` for the full pipeline.
+
 ## Delta Recalculation — `POST /api/v1/classifications/recalculate-delta`
 
 Queues a global delta recalculation for every published Game whose submissions
