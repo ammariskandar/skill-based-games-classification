@@ -2570,6 +2570,40 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-10 — SBGC-179 dynamic questionnaire spider chart
+
+- **Component** — `components/questionnaire/QuestionnaireRadar.astro` renders the
+  static SVG shell (grid, six canonical spokes, both profile polygons, raw
+  benchmark, six vertex nodes, six dimension axis labels) and the Phase-4
+  segmented toggle; `lib/questionnaire/radar-live-bridge.ts` (`RadarLiveBridge`)
+  mutates it in place from the `questionnaire:*` window events.  Geometry reuses
+  the shared `radar-geometry` spokes and label anchoring.
+- **Phase visibility** — AESTHETICS neutral; CHALLENGE challenge-only; REWARD
+  reward-only; REVIEW_Q15/SUBMITTING dual overlay with the pinned normalized
+  benchmark drawn desaturated behind the live adjusted polygon.  Axis-label
+  emphasis follows the active profile, mirroring the slug-page radar.
+- **Events** — `QuestionnaireRoot` now emits `{ profile, raw, normalized,
+  adjusted, live }` score details, a targeted `boundary-swap`, and a
+  `phase-change` event; the Q15 rating/reset handlers re-emit snapshots so
+  slider resets redraw the chart.
+- **Live preview** — while answering, the plotted polygon uses a softened,
+  progress-blended vector (`lib/questionnaire/scoring/soft-normalize.ts`) so a
+  couple of early answers do not spike the shape; Q15 plots the accurate
+  normalized/adjusted vectors.
+- **Layout** — desktop split-screen grid with a sticky radar rail; mobile stacks
+  the radar above the card.
+- **Barycentric fill** — the questionnaire polygon now carries the slug radar's
+  SBGC-210 vertex-anchored fill (three per-vertex linear gradients blended with
+  `plus-lighter`, clipped to the spline); `radar-render` exports `VERTEX_COLOR`,
+  `polygonIsDegenerate` and `vertexGradientAxis`, and the bridge drives the
+  gradient axes and fill paths live.
+- **Shared toggle** — the slug pages' Challenge/Reward switch is replaced by the
+  same segmented two-button control the questionnaire uses
+  (`.radar-toggle-group` + `.radar-profile-btn`); `radar-controller` syncs
+  `aria-pressed`/`is-active` per profile button.
+- **Tests** — 9 bridge unit tests + 6 soft-normalize unit tests; frontend suite
+  852 passing; `astro check`, ESLint, Prettier and the build green.
+
 ## 2026-09-10 — SBGC-171 questionnaire copy pass wired into the live registry
 
 - **Registry** — every question and answer label in all four sets

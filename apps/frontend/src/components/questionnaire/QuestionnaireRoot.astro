@@ -3,6 +3,7 @@ import BranchContainer from "./BranchContainer.astro";
 import ConflictModal from "./ConflictModal.astro";
 import ProgressBar from "./ProgressBar.astro";
 import QuestionCard from "./QuestionCard.astro";
+import QuestionnaireRadar from "./QuestionnaireRadar.astro";
 import type { QuestionnairePreviousResultDto } from "../../lib/questionnaire/types";
 
 interface Props {
@@ -50,253 +51,272 @@ const previousNote = previousResult?.created_at
 >
   <ProgressBar />
 
-  <div class="mx-auto max-w-2xl">
-    <div data-question-view class="q-fade">
-      <p
-        class="mb-4 text-sm font-medium text-(--color-muted)"
-        data-question-counter
-      >
-      </p>
-
-      <div data-card-root>
-        <QuestionCard heading="" helperText=" " />
+  <div
+    class="mx-auto flex w-full max-w-[96rem] flex-col gap-6 px-6 lg:grid lg:grid-cols-[minmax(420px,46%)_1fr] lg:items-start lg:gap-12"
+  >
+    <aside class="lg:sticky lg:top-8 lg:self-start">
+      <div class="mx-auto w-full max-w-[340px] lg:max-w-none">
+        <QuestionnaireRadar />
       </div>
+    </aside>
 
-      <div data-card-branch hidden>
-        <BranchContainer open>
-          <QuestionCard heading="" helperText=" " />
-        </BranchContainer>
-      </div>
-
-      <button
-        type="button"
-        class="mt-4 text-sm text-(--color-muted) underline hover:text-(--color-text)"
-        data-question-back
-      >
-        Back
-      </button>
-    </div>
-
-    <div data-quality-view hidden>
-      <h2 class="text-xl font-semibold text-(--color-text)">
-        Quality Relevance
-      </h2>
-      <p class="mt-1 text-sm text-(--color-muted)">
-        How relevant were the questions to the game? (1–10)
-      </p>
-      <input
-        type="range"
-        min="1"
-        max="10"
-        step="1"
-        value="7"
-        class="mt-4 w-full accent-(--color-blue)"
-        data-q15-rating
-      />
-      <div class="mt-2 flex items-center justify-between gap-3">
-        <p class="text-sm text-(--color-muted)">
-          <span data-quality-tier></span>
-          <span aria-hidden="true"> · </span>
-          <span data-quality-delta></span>
+    <div class="min-w-0 max-w-2xl">
+      <div data-question-view class="q-fade">
+        <p
+          class="mb-4 text-sm font-medium text-(--color-muted)"
+          data-question-counter
+        >
         </p>
+
+        <div data-card-root>
+          <QuestionCard heading="" helperText=" " />
+        </div>
+
+        <div data-card-branch hidden>
+          <BranchContainer open>
+            <QuestionCard heading="" helperText=" " />
+          </BranchContainer>
+        </div>
+
         <button
           type="button"
-          class="shrink-0 rounded-lg border border-(--color-border) bg-surface-2 px-3 py-1 text-xs font-medium text-(--color-text) transition hover:opacity-90"
-          data-quality-reset
+          class="mt-4 text-sm text-(--color-muted) underline hover:text-(--color-text)"
+          data-question-back
         >
-          Reset Sliders
+          Back
         </button>
       </div>
 
-      <label class="q-tweak mt-4">
-        <input type="checkbox" data-quality-tweak />
-        <span class="q-tweak__track"><span class="q-tweak__thumb"></span></span>
-        <span class="text-sm text-(--color-text)"
-          >I want to tweak the numbers</span
-        >
-      </label>
+      <div data-quality-view hidden>
+        <h2 class="text-xl font-semibold text-(--color-text)">
+          Quality Relevance
+        </h2>
+        <p class="mt-1 text-sm text-(--color-muted)">
+          How relevant were the questions to the game? (1–10)
+        </p>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          step="1"
+          value="7"
+          class="mt-4 w-full accent-(--color-blue)"
+          data-q15-rating
+        />
+        <div class="mt-2 flex items-center justify-between gap-3">
+          <p class="text-sm text-(--color-muted)">
+            <span data-quality-tier></span>
+            <span aria-hidden="true"> · </span>
+            <span data-quality-delta></span>
+          </p>
+          <button
+            type="button"
+            class="shrink-0 rounded-lg border border-(--color-border) bg-surface-2 px-3 py-1 text-xs font-medium text-(--color-text) transition hover:opacity-90"
+            data-quality-reset
+          >
+            Reset Sliders
+          </button>
+        </div>
 
-      <div class="mt-6 space-y-6" data-adjust-region>
-        {
-          (["CHALLENGE", "REWARD"] as const).map((target) => (
-            <fieldset class="rounded-xl border border-(--color-border) p-4">
-              <legend class="px-1 text-sm font-semibold text-(--color-text)">
-                {target === "CHALLENGE" ? "Challenge DNA" : "Reward DNA"}
-              </legend>
-              <div class="space-y-4">
-                {DIMENSIONS.map((dim) => (
-                  <div>
-                    <div class="flex items-center justify-between">
-                      <label
-                        for={`adjust-${target}-${dim.key}`}
-                        class="text-sm text-(--color-text)"
-                      >
-                        {dim.label}
-                      </label>
-                      <span
-                        class="text-sm font-medium text-(--color-text) tabular-nums"
-                        data-adjust-value
+        <label class="q-tweak mt-4">
+          <input type="checkbox" data-quality-tweak />
+          <span class="q-tweak__track"
+            ><span class="q-tweak__thumb"></span></span
+          >
+          <span class="text-sm text-(--color-text)"
+            >I want to tweak the numbers</span
+          >
+        </label>
+
+        <div class="mt-6 space-y-6" data-adjust-region>
+          {
+            (["CHALLENGE", "REWARD"] as const).map((target) => (
+              <fieldset class="rounded-xl border border-(--color-border) p-4">
+                <legend class="px-1 text-sm font-semibold text-(--color-text)">
+                  {target === "CHALLENGE" ? "Challenge DNA" : "Reward DNA"}
+                </legend>
+                <div class="space-y-4">
+                  {DIMENSIONS.map((dim) => (
+                    <div>
+                      <div class="flex items-center justify-between">
+                        <label
+                          for={`adjust-${target}-${dim.key}`}
+                          class="text-sm text-(--color-text)"
+                        >
+                          {dim.label}
+                        </label>
+                        <span
+                          class="text-sm font-medium text-(--color-text) tabular-nums"
+                          data-adjust-value
+                          data-adjust-target={target}
+                          data-adjust-dimension={dim.key}
+                        >
+                          0
+                        </span>
+                      </div>
+                      <input
+                        id={`adjust-${target}-${dim.key}`}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="0"
+                        class="mt-1 w-full accent-(--color-blue)"
                         data-adjust-target={target}
                         data-adjust-dimension={dim.key}
-                      >
-                        0
-                      </span>
+                      />
                     </div>
-                    <input
-                      id={`adjust-${target}-${dim.key}`}
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value="0"
-                      class="mt-1 w-full accent-(--color-blue)"
-                      data-adjust-target={target}
-                      data-adjust-dimension={dim.key}
-                    />
-                  </div>
-                ))}
-              </div>
-              <p class="mt-3 text-sm text-(--color-muted)">
-                Total:
-                <span
-                  class="ml-1 font-medium text-(--color-text)"
-                  data-profile-total
-                  data-profile-total-target={target}
-                >
-                  100
-                </span>
-                <span aria-hidden="true"> / 100</span>
-              </p>
-            </fieldset>
-          ))
+                  ))}
+                </div>
+                <p class="mt-3 text-sm text-(--color-muted)">
+                  Total:
+                  <span
+                    class="ml-1 font-medium text-(--color-text)"
+                    data-profile-total
+                    data-profile-total-target={target}
+                  >
+                    100
+                  </span>
+                  <span aria-hidden="true"> / 100</span>
+                </p>
+              </fieldset>
+            ))
+          }
+        </div>
+
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+            data-quality-continue
+          >
+            Continue to Review
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+            data-quality-back
+          >
+            Back
+          </button>
+        </div>
+      </div>
+
+      <div data-review-view hidden>
+        <h2 class="text-xl font-semibold text-(--color-text)">
+          Review & Submit
+        </h2>
+        {
+          previousNote && (
+            <p class="mt-2 text-sm text-(--color-muted)">{previousNote}</p>
+          )
         }
-      </div>
 
-      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
-          data-quality-continue
-        >
-          Continue to Review
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
-          data-quality-back
-        >
-          Back
-        </button>
-      </div>
-    </div>
-
-    <div data-review-view hidden>
-      <h2 class="text-xl font-semibold text-(--color-text)">Review & Submit</h2>
-      {
-        previousNote && (
-          <p class="mt-2 text-sm text-(--color-muted)">{previousNote}</p>
-        )
-      }
-
-      <dl class="mt-6 space-y-3 text-sm">
-        <div class="flex justify-between gap-4">
-          <dt class="text-(--color-muted)">Aesthetic</dt>
-          <dd
-            class="flex items-center justify-end gap-1.5 text-right font-medium text-(--color-text)"
-          >
-            <span data-summary-aesthetic></span>
-            <span class="q-info" data-aesthetic-info hidden>
-              <button
-                type="button"
-                class="q-info__trigger"
-                aria-label="What does this aesthetic combination mean?"
-                aria-describedby="aesthetic-info-tip"
-                data-aesthetic-info-trigger
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  width="14"
-                  height="14"
-                  fill="currentColor"
-                  aria-hidden="true"
+        <dl class="mt-6 space-y-3 text-sm">
+          <div class="flex justify-between gap-4">
+            <dt class="text-(--color-muted)">Aesthetic</dt>
+            <dd
+              class="flex items-center justify-end gap-1.5 text-right font-medium text-(--color-text)"
+            >
+              <span data-summary-aesthetic></span>
+              <span class="q-info" data-aesthetic-info hidden>
+                <button
+                  type="button"
+                  class="q-info__trigger"
+                  aria-label="What does this aesthetic combination mean?"
+                  aria-describedby="aesthetic-info-tip"
+                  data-aesthetic-info-trigger
                 >
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6.75"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"></circle>
-                  <rect x="7.2" y="6.7" width="1.6" height="5" rx="0.8"></rect>
-                  <rect x="7.2" y="3.6" width="1.6" height="1.6" rx="0.8"
-                  ></rect>
-                </svg>
-              </button>
-              <span class="q-info__tip" role="tooltip" id="aesthetic-info-tip">
-                <span class="q-info__title" data-aesthetic-info-title></span>
-                <span class="q-info__body" data-aesthetic-info-body></span>
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="8"
+                      cy="8"
+                      r="6.75"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"></circle>
+                    <rect x="7.2" y="6.7" width="1.6" height="5" rx="0.8"
+                    ></rect>
+                    <rect x="7.2" y="3.6" width="1.6" height="1.6" rx="0.8"
+                    ></rect>
+                  </svg>
+                </button>
+                <span
+                  class="q-info__tip"
+                  role="tooltip"
+                  id="aesthetic-info-tip"
+                >
+                  <span class="q-info__title" data-aesthetic-info-title></span>
+                  <span class="q-info__body" data-aesthetic-info-body></span>
+                </span>
               </span>
-            </span>
-          </dd>
-        </div>
-        <div class="flex justify-between gap-4">
-          <dt class="text-(--color-muted)">Relevance Rating</dt>
-          <dd
-            class="text-right font-medium text-(--color-text)"
-            data-summary-q15
-          >
-          </dd>
-        </div>
-        <div class="flex justify-between gap-4">
-          <dt class="text-(--color-muted)">Challenge</dt>
-          <dd
-            class="text-right font-medium text-(--color-text)"
-            data-summary-challenge
-          >
-          </dd>
-        </div>
-        <div class="flex justify-between gap-4">
-          <dt class="text-(--color-muted)">Reward</dt>
-          <dd
-            class="text-right font-medium text-(--color-text)"
-            data-summary-reward
-          >
-          </dd>
-        </div>
-      </dl>
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-(--color-muted)">Relevance Rating</dt>
+            <dd
+              class="text-right font-medium text-(--color-text)"
+              data-summary-q15
+            >
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-(--color-muted)">Challenge</dt>
+            <dd
+              class="text-right font-medium text-(--color-text)"
+              data-summary-challenge
+            >
+            </dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-(--color-muted)">Reward</dt>
+            <dd
+              class="text-right font-medium text-(--color-text)"
+              data-summary-reward
+            >
+            </dd>
+          </div>
+        </dl>
 
-      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
-          data-submit-btn
-        >
-          Submit Assessment
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
-          data-review-back
-        >
-          Back
-        </button>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+            data-submit-btn
+          >
+            Submit Assessment
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+            data-review-back
+          >
+            Back
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div data-completed-view hidden>
-      <h2 class="text-xl font-semibold text-(--color-text)">
-        Assessment Submitted
-      </h2>
-      <p class="mt-2 text-sm text-(--color-muted)" data-completed-message>
-        Your assessment has been recorded.
-      </p>
-      <a
-        href={`/games/${gameSlug}`}
-        class="mt-6 inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
-        data-completed-link
-      >
-        Back to game
-      </a>
+      <div data-completed-view hidden>
+        <h2 class="text-xl font-semibold text-(--color-text)">
+          Assessment Submitted
+        </h2>
+        <p class="mt-2 text-sm text-(--color-muted)" data-completed-message>
+          Your assessment has been recorded.
+        </p>
+        <a
+          href={`/games/${gameSlug}`}
+          class="mt-6 inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+          data-completed-link
+        >
+          Back to game
+        </a>
+      </div>
     </div>
   </div>
 
@@ -313,8 +333,20 @@ const previousNote = previousResult?.created_at
 </div>
 
 <script>
-  import { QuestionnaireStateMachine } from "../../lib/questionnaire/state-machine";
+  import {
+    QuestionnaireStateMachine,
+    type ProfileScores,
+    type QuestionnairePhase,
+  } from "../../lib/questionnaire/state-machine";
   import { describeAesthetic } from "../../lib/questionnaire/aesthetic-descriptions";
+  import {
+    previewConfidence,
+    softenProfile,
+  } from "../../lib/questionnaire/scoring/soft-normalize";
+  import {
+    QUESTIONNAIRE_RADAR_EVENTS,
+    type QuestionnaireRadarPhase,
+  } from "../../lib/questionnaire/radar-live-bridge";
   import {
     PRIMARY_OPTIONS,
     availableSecondaryOptions,
@@ -1011,21 +1043,63 @@ const previousNote = previousResult?.created_at
 
   // ── event wiring ──
 
+  const PHASE_LABELS: Record<QuestionnairePhase, QuestionnaireRadarPhase> = {
+    aesthetics: "AESTHETICS",
+    challenge: "CHALLENGE",
+    reward: "REWARD",
+    quality: "REVIEW_Q15",
+    review: "REVIEW_Q15",
+    submitting: "SUBMITTING",
+    completed: "COMPLETED",
+  };
+
+  // Q3–Q8 (Challenge) and Q9–Q14 (Reward) each have six root questions.
+  const ROOTS_PER_PART = 6;
+
+  function emitScoreUpdate(
+    profile: "CHALLENGE" | "REWARD",
+    scores: ProfileScores,
+  ): void {
+    const eventName =
+      profile === "CHALLENGE"
+        ? QUESTIONNAIRE_RADAR_EVENTS.challengeUpdate
+        : QUESTIONNAIRE_RADAR_EVENTS.rewardUpdate;
+    // The live radar previews a softened profile so a couple of early answers
+    // do not spike the polygon; Q15 plots the accurate vectors.
+    const confidence = previewConfidence(
+      answeredRootCount(profile),
+      ROOTS_PER_PART,
+    );
+    window.dispatchEvent(
+      new CustomEvent(eventName, {
+        detail: {
+          profile,
+          raw: scores.raw,
+          normalized: scores.norm,
+          adjusted: scores.adj,
+          live: softenProfile(scores.norm, confidence),
+        },
+      }),
+    );
+  }
+
   machine.subscribe((event) => {
     if (event.type === "challenge-update") {
-      window.dispatchEvent(
-        new CustomEvent("questionnaire:challenge-update", {
-          detail: event.challenge,
-        }),
-      );
+      emitScoreUpdate("CHALLENGE", event.challenge);
     } else if (event.type === "reward-update") {
+      emitScoreUpdate("REWARD", event.reward);
+    } else if (event.type === "boundary-swap") {
       window.dispatchEvent(
-        new CustomEvent("questionnaire:reward-update", {
-          detail: event.reward,
+        new CustomEvent(QUESTIONNAIRE_RADAR_EVENTS.boundarySwap, {
+          detail: { targetProfile: "REWARD" as const },
         }),
       );
-    } else if (event.type === "boundary-swap") {
-      window.dispatchEvent(new CustomEvent("questionnaire:boundary-swap"));
+    } else if (event.type === "phase-change") {
+      window.dispatchEvent(
+        new CustomEvent(QUESTIONNAIRE_RADAR_EVENTS.phaseChange, {
+          detail: { phase: PHASE_LABELS[event.phase] },
+        }),
+      );
     }
   });
 
@@ -1033,6 +1107,8 @@ const previousNote = previousResult?.created_at
     machine.q15Rating = Number(q15Input!.value);
     machine.resetQ15Adjustments();
     renderQuality();
+    emitScoreUpdate("CHALLENGE", machine.challenge);
+    emitScoreUpdate("REWARD", machine.reward);
   });
 
   for (const input of adjustInputs) {
@@ -1059,6 +1135,8 @@ const previousNote = previousResult?.created_at
     qualityReset.addEventListener("click", () => {
       machine.resetQ15Adjustments();
       renderQuality();
+      emitScoreUpdate("CHALLENGE", machine.challenge);
+      emitScoreUpdate("REWARD", machine.reward);
     });
   }
 

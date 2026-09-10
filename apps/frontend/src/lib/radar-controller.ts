@@ -68,9 +68,8 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
   const rewardLayer = container.querySelector<SVGGElement>(
     ".radar-polygon-reward",
   );
-  const toggle = container.querySelector<HTMLButtonElement>(".radar-toggle");
-  const toggleLabel = container.querySelector<HTMLElement>(
-    "[data-toggle-label]",
+  const toggleButtons = Array.from(
+    container.querySelectorAll<HTMLButtonElement>("[data-toggle-target]"),
   );
   const nodes = Array.from(
     container.querySelectorAll<SVGCircleElement>(".radar-vertex-node"),
@@ -91,17 +90,12 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
 
   let animationFrame = 0;
   let disposed = false;
-  let current: SkillProfileKind = initial;
 
   function setActive(profile: SkillProfileKind): void {
-    current = profile;
-
-    if (toggle) {
-      toggle.setAttribute("aria-checked", String(profile === "reward"));
-    }
-    if (toggleLabel) {
-      toggleLabel.textContent =
-        profile === "challenge" ? "Challenge" : "Reward";
+    for (const button of toggleButtons) {
+      const pressed = button.dataset.toggleTarget === profile;
+      button.setAttribute("aria-pressed", String(pressed));
+      button.classList.toggle("is-active", pressed);
     }
     for (const label of axisLabels) {
       label.classList.toggle(
@@ -250,8 +244,12 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
     hideTooltip();
   }
 
-  function onToggle(): void {
-    setActive(current === "challenge" ? "reward" : "challenge");
+  function onToggleClick(event: Event): void {
+    const target = (event.currentTarget as HTMLButtonElement).dataset
+      .toggleTarget;
+    if (target === "challenge" || target === "reward") {
+      setActive(target);
+    }
   }
 
   function onNodeShow(event: Event): void {
@@ -265,8 +263,8 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
   setActive(initial);
   animateAppear();
 
-  if (toggle) {
-    toggle.addEventListener("click", onToggle);
+  for (const button of toggleButtons) {
+    button.addEventListener("click", onToggleClick);
   }
   for (const node of nodes) {
     node.addEventListener("mouseenter", onNodeShow);
@@ -282,8 +280,8 @@ export function initRadarChart(container: HTMLElement): RadarChartHandle {
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
       }
-      if (toggle) {
-        toggle.removeEventListener("click", onToggle);
+      for (const button of toggleButtons) {
+        button.removeEventListener("click", onToggleClick);
       }
       for (const node of nodes) {
         node.removeEventListener("mouseenter", onNodeShow);

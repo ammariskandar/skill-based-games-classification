@@ -455,3 +455,79 @@ See `docs/database-constraints.md` for the full inventory.
 - Dynamic option buttons are styled with an `is:global` `<style>` block
   (`q-option*` / `q-fade`) rather than Astro scoped styles, since
   `document.createElement`d nodes do not receive Astro's scope attributes.
+
+## 12. SBGC-179 implementation notes
+
+### Component & live bridge
+
+- `src/components/questionnaire/QuestionnaireRadar.astro` renders the static SVG
+  shell once: grid rings, the six canonical spokes, both profile polygons, the
+  raw benchmark path, the six vertex nodes, and the six dimension axis labels —
+  plus the Phase-4 segmented Challenge/Reward toggle.
+- `src/lib/questionnaire/radar-live-bridge.ts` (`RadarLiveBridge`) subscribes to
+  `questionnaire:challenge-update` / `reward-update` / `boundary-swap` /
+  `phase-change` and mutates the shell in place (path `d`, vertex `cx`/`cy`,
+  opacity, toggle state, axis-label emphasis), so answering a question never
+  triggers an Astro re-render.  Geometry and label anchoring are delegated to
+  the shared `radar-geometry` helpers, so the questionnaire chart reuses the
+  exact spokes and axis labels of the game-detail and rankings radars.
+- `QuestionnaireRoot` dispatches the richer score detail
+  (`{ profile, raw, normalized, adjusted }`), a targeted `boundary-swap`, and a
+  `phase-change` event on every machine phase transition.  The Q15 rating and
+  reset handlers re-emit snapshots so slider resets redraw the chart too.
+
+### Layout
+
+- Desktop (≥1024px): asymmetric `grid-cols-[minmax(420px,46%)_1fr]`; the radar
+  rail is `sticky top-8 self-start` while question cards paginate in the fluid
+  right column.
+- Mobile/tablet: one column with the radar above the card, capped at
+  `max-w-[340px]`.
+
+### Phase visibility matrix
+
+- AESTHETICS → neutral empty grid (nothing plotted); axis labels stay visible.
+- CHALLENGE → challenge polygon only; challenge labels emphasised.
+- REWARD → reward polygon only; reward labels emphasised.
+- REVIEW_Q15 / SUBMITTING → dual overlay: the active layer at full opacity, the
+  other dimmed to `0.2`, with the pinned normalized benchmark drawn desaturated
+  behind the live adjusted polygon; the segmented toggle switches the active
+  layer and its axis-label emphasis.
+
+### Live preview normalization
+
+- The accurate ratio normalizer is exact but reads as extreme on partial data
+  (a single +20-micro answer normalizes to 100/0/0).  For the live preview only,
+  `scoring/soft-normalize.ts` blends the accurate normalized vector toward the
+  neutral centre (`33/33/34`) by progress (`answeredRoots / 6`), so the shape
+  starts near the middle and converges on the accurate profile by the end of the
+  part.  Q15 always plots the accurate normalized/adjusted vectors; the softened
+  vector is display-only and never enters state or the submission payload.
+
+### Barycentric fill & shared toggle
+
+- The questionnaire polygon reuses the slug radar's SBGC-210 vertex-anchored
+  barycentric fill: three per-vertex `<linearGradient>`s (each perpendicular to
+  its opposite edge, fading to transparent) additively blended with
+  `plus-lighter` inside a `radar-polygon-fill` group clipped to the spline.
+  `radar-render` now exports the geometry (`VERTEX_COLOR`,
+  `polygonIsDegenerate`, `vertexGradientAxis`) so the live bridge and the static
+  generator share one implementation, and the bridge re-anchors the gradient
+  axes on every answer.
+- The slug pages' Challenge/Reward switch was replaced by the questionnaire's
+  segmented two-button control so both share one style: `.radar-toggle-group`
+  now lays out horizontally as a pill and `.radar-profile-btn` styles each
+  button; `radar-controller.setActive` drives `aria-pressed`/`is-active` per
+  profile button instead of a single `role=switch`.
+
+### Deliberate adaptations
+
+- The questionnaire toggle's container keeps the `.radar-toggle-group` name
+  (so the rankings `radar-toggle-hidden` rule and the bridge's inline
+  show/hide keep working); only the inner control changed from a switch to two
+  buttons.
+- Axis labels reuse the global `.radar-axis-label` / `--active` classes; their
+  emphasis is driven by the bridge rather than the initial-profile class baked
+  into the SSR markup.
+- Tests are co-located under `src/lib/questionnaire/__tests__/` (jsdom per file),
+  matching the repository's vitest config rather than a `tests/unit/` path.
