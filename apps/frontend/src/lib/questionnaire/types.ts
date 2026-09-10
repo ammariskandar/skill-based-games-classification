@@ -56,3 +56,54 @@ export interface AestheticResolution {
   part1ChallengeSet: QuestionSetId;
   part2RewardConfig: Part2SplitConfig;
 }
+
+/** How a community submission was generated — SBGC-175. */
+export type SubmissionSource = "MANUAL" | "QUESTIONNAIRE";
+
+/** Precedence ledger state for a (user, game) questionnaire — SBGC-175. */
+export type PrecedenceStatus =
+  | "ACTIVE_IN_CALCULATION"
+  | "SUPERSEDED_BY_MANUAL"
+  | "ARCHIVED_KEPT_MANUAL"
+  | "STAFF_EDITORIAL_ROUTED";
+
+/** User's resolution for a recent-manual conflict — SBGC-175. */
+export type ConflictResolution = "OVERWRITE" | "KEEP_MANUAL";
+
+/** One three-dimensional profile (micro / macro / mystiko). */
+export interface QuestionnaireProfile {
+  micro: number;
+  macro: number;
+  mystiko: number;
+}
+
+/**
+ * The validated questionnaire scoring payload sent to the persistence engine
+ * (SBGC-175 / SBGC-176).
+ */
+export interface QuestionnaireSubmissionPayload {
+  version: string;
+  dominantAesthetic: AestheticCategory;
+  secondaryAesthetic: AestheticCategory | null;
+  isTrueAesthetic: boolean;
+  answers: Record<string, string>;
+  q15Rating: number;
+  raw: { challenge: QuestionnaireProfile; reward: QuestionnaireProfile };
+  normalized: {
+    challenge: QuestionnaireProfile;
+    reward: QuestionnaireProfile;
+  };
+  adjusted: {
+    challenge: QuestionnaireProfile;
+    reward: QuestionnaireProfile;
+  };
+}
+
+/** Conflict evaluation returned before a recent-manual submission — SBGC-175. */
+export interface PrecedenceEvaluation {
+  hasConflict: boolean;
+  requiresUserChoice: boolean;
+  manualSubmissionId: number | null;
+  manualCreatedAt: string | null;
+  ageDays: number | null;
+}

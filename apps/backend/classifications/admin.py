@@ -31,6 +31,8 @@ from classifications.models import (
     ClassificationSnapshot,
     EditorialClassification,
     EditorialGroupProfile,
+    QuestionnaireClassification,
+    QuestionnaireResult,
     RewardProfile,
     UserGameScoreSubmission,
 )
@@ -774,3 +776,50 @@ class UserGameScoreSubmissionAdmin(HardenedModelAdmin):
     @admin.display(description="Reward (Micro / Mystiko / Macro)")
     def reward_display(self, obj):
         return f"{obj.reward_micro} / {obj.reward_mystiko} / {obj.reward_macro}"
+
+
+@admin.register(QuestionnaireResult)
+class QuestionnaireResultAdmin(admin.ModelAdmin):
+    """Immutable audit ledger for completed questionnaire attempts (SBGC-175)."""
+
+    list_display = (
+        "id",
+        "user",
+        "game",
+        "dominant_aesthetic",
+        "q15_rating",
+        "created_at",
+    )
+    list_select_related = ("user", "game")
+    search_fields = ("user__username", "game__name", "game__slug")
+    list_filter = ("dominant_aesthetic", "is_true_aesthetic", "created_at")
+    readonly_fields = [field.name for field in QuestionnaireResult._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(QuestionnaireClassification)
+class QuestionnaireClassificationAdmin(admin.ModelAdmin):
+    """Immutable precedence ledger (SBGC-175)."""
+
+    list_display = ("user", "game", "status", "updated_at")
+    list_select_related = ("user", "game", "latest_result")
+    list_filter = ("status", "updated_at")
+    search_fields = ("user__username", "game__name")
+    readonly_fields = [field.name for field in QuestionnaireClassification._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
