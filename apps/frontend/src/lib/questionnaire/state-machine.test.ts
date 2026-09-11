@@ -145,3 +145,56 @@ describe("QuestionnaireStateMachine — payload", () => {
     expect(() => machine.getPayload()).toThrow();
   });
 });
+
+describe("QuestionnaireStateMachine — draft hydration (SBGC-180)", () => {
+  function withDraftMeta(
+    state: ReturnType<QuestionnaireStateMachine["toDraft"]>,
+  ) {
+    return { ...state, version: "v1.0.0", updatedAt: Date.now() };
+  }
+
+  it("is clean before any choice and dirty once Q1 is chosen", () => {
+    const machine = new QuestionnaireStateMachine();
+    expect(machine.isDirty()).toBe(false);
+    machine.setAestheticAnswers("OPT_S1", "OPT_NONE");
+    expect(machine.isDirty()).toBe(true);
+  });
+
+  it("round-trips through toDraft/hydrateFromDraft", () => {
+    const source = machineWithSensoryTree();
+    source.recordAnswer("Q3", optionId("Q3", 0));
+    source.recordAnswer("Q4", optionId("Q4", 0));
+    source.q15Rating = 9;
+
+    const restored = new QuestionnaireStateMachine();
+    expect(restored.hydrateFromDraft(withDraftMeta(source.toDraft("hk")))).toBe(
+      true,
+    );
+    expect(restored.dominantAesthetic).toBe("SENSORY");
+    expect(restored.answerFor("Q3")).toBe(optionId("Q3", 0));
+    expect(restored.answerFor("Q4")).toBe(optionId("Q4", 0));
+    expect(restored.q15Rating).toBe(9);
+    expect(restored.challenge.adj).toEqual(source.challenge.adj);
+  });
+
+  it("drops answer ids that are not in the active registry tree", () => {
+    const source = machineWithSensoryTree();
+    source.recordAnswer("Q3", optionId("Q3", 0));
+    const draft = withDraftMeta(source.toDraft("hk"));
+    draft.answers.Q99 = "does-not-exist";
+
+    const restored = new QuestionnaireStateMachine();
+    expect(restored.hydrateFromDraft(draft)).toBe(true);
+    expect(restored.answerFor("Q99")).toBeUndefined();
+    expect(restored.answerFor("Q3")).toBe(optionId("Q3", 0));
+  });
+
+  it("reset clears progress and returns to a clean aesthetics state", () => {
+    const machine = machineWithSensoryTree();
+    machine.recordAnswer("Q3", optionId("Q3", 0));
+    machine.reset();
+    expect(machine.phase).toBe("aesthetics");
+    expect(machine.isAssembled).toBe(false);
+    expect(machine.isDirty()).toBe(false);
+  });
+});

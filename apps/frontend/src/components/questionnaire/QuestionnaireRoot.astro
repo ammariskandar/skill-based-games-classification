@@ -1,9 +1,11 @@
 ---
 import BranchContainer from "./BranchContainer.astro";
 import ConflictModal from "./ConflictModal.astro";
+import NetworkNotice from "./NetworkNotice.astro";
 import ProgressBar from "./ProgressBar.astro";
 import QuestionCard from "./QuestionCard.astro";
 import QuestionnaireRadar from "./QuestionnaireRadar.astro";
+import ResumeDraftModal from "./ResumeDraftModal.astro";
 import type { QuestionnairePreviousResultDto } from "../../lib/questionnaire/types";
 
 interface Props {
@@ -329,7 +331,9 @@ const previousNote = previousResult?.created_at
     Unable to save assessment. Please try again.
   </div>
 
+  <NetworkNotice />
   <ConflictModal gameName={gameName} ageDays={ageDays} />
+  <ResumeDraftModal gameName={gameName} />
 </div>
 
 <script>
@@ -360,6 +364,13 @@ const previousNote = previousResult?.created_at
     ConflictResolution,
     QuestionnaireSubmitResponse,
   } from "../../lib/questionnaire/types";
+  import {
+    DRAFT_ANON_USER,
+    clearDraft,
+    loadDraft,
+    saveDraft,
+    type QuestionnaireDraft,
+  } from "../../lib/questionnaire/draft-storage";
 
   const rootElement = document.getElementById("questionnaire-root");
   if (!rootElement) throw new Error("Questionnaire root not found");
@@ -381,6 +392,15 @@ const previousNote = previousResult?.created_at
   const conflictModal = document.getElementById(
     "conflict-modal",
   ) as HTMLDialogElement | null;
+  const resumeModal = document.getElementById(
+    "resume-draft-modal",
+  ) as HTMLDialogElement | null;
+  const resumeConfirm =
+    resumeModal?.querySelector<HTMLButtonElement>("[data-resume-confirm]") ??
+    null;
+  const resumeDiscard =
+    resumeModal?.querySelector<HTMLButtonElement>("[data-resume-discard]") ??
+    null;
 
   const q15Input = root.querySelector<HTMLInputElement>("[data-q15-rating]");
   const qualityTierEl = root.querySelector<HTMLElement>("[data-quality-tier]");
@@ -490,6 +510,8 @@ const previousNote = previousResult?.created_at
   // Q1/Q2 present their options in a randomised but stable order per attempt.
   let q1Display: RenderOption[] | null = null;
   let q2Display: RenderOption[] | null = null;
+  // Draft awaiting the player's resume/start-over decision (SBGC-180).
+  let pendingDraft: QuestionnaireDraft | null = null;
 
   interface RenderOption {
     id: string;
@@ -994,6 +1016,11 @@ const previousNote = previousResult?.created_at
 
   async function doSubmit(resolution?: ConflictResolution): Promise<void> {
     if (submitting) return;
+    // Phase 5 is gated on verified connectivity; the draft already holds progress.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      showNotice();
+      return;
+    }
     submitting = true;
     machine.transition("submitting");
     render();
@@ -1011,6 +1038,16 @@ const previousNote = previousResult?.created_at
           body: JSON.stringify(machine.getPayload(resolution)),
         },
       );
+
+      if (response.status === 401) {
+        // Session expired mid-assessment: keep the draft and resume after login.
+        persistDraft();
+        submitting = false;
+        window.location.assign(
+          `/login?next=${encodeURIComponent(`/questionnaire?game=${slug}&resume=true`)}`,
+        );
+        return;
+      }
 
       if (response.status === 409) {
         submitting = false;
@@ -1031,6 +1068,7 @@ const previousNote = previousResult?.created_at
       const data = (await response.json()) as QuestionnaireSubmitResponse;
       submitting = false;
       setCompleted(data);
+      clearDraft(slug, DRAFT_ANON_USER);
       machine.transition("completed");
       render();
     } catch {
@@ -1083,6 +1121,14 @@ const previousNote = previousResult?.created_at
     );
   }
 
+  function persistDraft(): void {
+    if (machine.phase === "completed") {
+      clearDraft(slug, DRAFT_ANON_USER);
+      return;
+    }
+    saveDraft(slug, machine.toDraft(slug), DRAFT_ANON_USER);
+  }
+
   machine.subscribe((event) => {
     if (event.type === "challenge-update") {
       emitScoreUpdate("CHALLENGE", event.challenge);
@@ -1101,6 +1147,7 @@ const previousNote = previousResult?.created_at
         }),
       );
     }
+    persistDraft();
   });
 
   q15Input!.addEventListener("input", () => {
@@ -1235,7 +1282,63 @@ const previousNote = previousResult?.created_at
     }
   });
 
+  // ── draft resilience (SBGC-180) ──
+
+  function hydratePendingDraft(): void {
+    if (!pendingDraft) return;
+    if (machine.hydrateFromDraft(pendingDraft)) {
+      if (pendingDraft.q1OptionId) {
+        q1OptionId = pendingDraft.q1OptionId;
+        aestheticStep = "Q2";
+      }
+      q2Display = null;
+      render();
+    } else {
+      clearDraft(slug, DRAFT_ANON_USER);
+    }
+    pendingDraft = null;
+  }
+
+  resumeConfirm?.addEventListener("click", () => {
+    hydratePendingDraft();
+    resumeModal?.close();
+  });
+
+  resumeDiscard?.addEventListener("click", () => {
+    clearDraft(slug, DRAFT_ANON_USER);
+    pendingDraft = null;
+    resumeModal?.close();
+    render();
+  });
+
+  window.addEventListener("beforeunload", (event) => {
+    if (machine.phase === "completed" || !machine.isDirty()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
+  // Keep the browser Back button inside the questionnaire: each pop steps back
+  // one answer and re-arms a guard entry, until the very first question.
+  window.history.pushState({ questionnaire: true }, "");
+  window.addEventListener("popstate", () => {
+    if (machine.phase === "submitting" || machine.phase === "completed") return;
+    if (resumeModal?.open || conflictModal?.open) return;
+    if (machine.phase === "aesthetics" && aestheticStep === "Q1") return;
+    goBack();
+    window.history.pushState({ questionnaire: true }, "");
+  });
+
+  pendingDraft = loadDraft(slug, DRAFT_ANON_USER);
   render();
+  if (pendingDraft) {
+    const wantsResume =
+      new URLSearchParams(window.location.search).get("resume") === "true";
+    if (wantsResume) {
+      hydratePendingDraft();
+    } else {
+      resumeModal?.showModal();
+    }
+  }
 </script>
 
 <style is:global>
