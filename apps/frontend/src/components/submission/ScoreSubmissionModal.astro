@@ -156,7 +156,8 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
 
     const aestheticCell = dialog.querySelector(`[data-submitted="aesthetic"]`);
     if (aestheticCell) {
-      aestheticCell.textContent = aestheticLabel(submission.aesthetic) ?? "—";
+      aestheticCell.textContent =
+        aestheticLabel(submission.aesthetic) ?? "None";
     }
 
     const secondaryCell = dialog.querySelector(
