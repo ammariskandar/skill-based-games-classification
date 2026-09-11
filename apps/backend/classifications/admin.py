@@ -670,7 +670,7 @@ class CalculationEpochAdmin(admin.ModelAdmin):
             path(
                 "trigger-delta/",
                 self.admin_site.admin_view(self.trigger_delta_view),
-                name="calculationepoch_trigger_delta",
+                name="classifications_calculationepoch_trigger_delta",
             ),
         ]
         return custom_urls + urls
