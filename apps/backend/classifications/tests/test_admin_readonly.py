@@ -11,7 +11,7 @@ from __future__ import annotations
 from unittest import mock
 
 from django.contrib import admin
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -22,8 +22,6 @@ from classifications.models import (
 )
 
 READONLY_MODELS = (ClassificationSnapshot, CalculationEpoch, BoundaryCalibration)
-
-User = get_user_model()
 
 
 class DerivedAdminReadOnlyTests(SimpleTestCase):
