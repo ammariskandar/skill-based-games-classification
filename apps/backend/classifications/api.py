@@ -7,9 +7,12 @@ staff-gated delta-recalculation trigger (``/recalculate-delta``).
 
 from __future__ import annotations
 
+from typing import Literal
+
 from api.errors import STANDARD_ERROR_RESPONSES, ApiException
 from games.models import Game
 from ninja import Field, Router, Schema
+from pydantic import field_validator
 
 from classifications.services.delta_recalculation import (
     can_trigger_delta_recalculation,
@@ -31,11 +34,30 @@ class DimensionScoresIn(Schema):
 class ScoreSubmissionIn(Schema):
     challenge: DimensionScoresIn
     reward: DimensionScoresIn
+    aesthetic: Literal["SENSORY", "FANTASY", "NARRATIVE", "CHALLENGE"] | None = None
+    secondary_aesthetic: (
+        Literal["SENSORY", "FANTASY", "NARRATIVE", "CHALLENGE"] | None
+    ) = None
+
+    @field_validator("aesthetic", "secondary_aesthetic", mode="before")
+    @classmethod
+    def normalize_aesthetic(cls, value: object) -> object:
+        """Accept any casing and validate against the canonical taxonomy.
+
+        The canonical stored values are uppercase (SBGC-172); the picker and
+        legacy clients may send lower case, so normalize before the ``Literal``
+        membership check (an unknown value still fails with 422).
+        """
+        if isinstance(value, str):
+            return value.strip().upper()
+        return value
 
 
 class ScoreSubmissionOut(Schema):
     id: int
     game_slug: str
+    aesthetic: str | None = None
+    secondary_aesthetic: str | None = None
     is_duplicate: bool
     is_updated: bool
     is_created: bool
@@ -91,6 +113,8 @@ def submit_game_score(request, slug: str, payload: ScoreSubmissionIn):
     response_data = ScoreSubmissionOut(
         id=result.submission.pk,
         game_slug=game.slug,
+        aesthetic=getattr(result.submission, "aesthetic", None),
+        secondary_aesthetic=getattr(result.submission, "secondary_aesthetic", None),
         is_duplicate=result.is_duplicate,
         is_updated=result.is_updated,
         is_created=result.is_created,

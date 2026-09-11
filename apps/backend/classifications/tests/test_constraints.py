@@ -361,6 +361,7 @@ class ClassificationMigrationReversibilityTests(TransactionTestCase):
     def test_forward_reverse_forward(self):
         from django.contrib.auth.models import User
         from django.db import IntegrityError, connection, transaction
+        from django.db.migrations.loader import MigrationLoader
         from games.models import Game, SourceType
 
         from classifications.models import (
@@ -391,8 +392,13 @@ class ClassificationMigrationReversibilityTests(TransactionTestCase):
             self.assertIn("games_game", tables)
             self.assertIn("auth_user", tables)
 
-            # -- (2) Forward classifications to latest SBGC-63 state --------
-            self._migrate_app("classifications", "0004")
+            # -- (2) Forward classifications to the latest schema -----------
+            # The ORM models always reflect the newest migration state, so the
+            # target must be the app's current leaf rather than a frozen name.
+            latest = MigrationLoader(connection).graph.leaf_nodes("classifications")[0][
+                1
+            ]
+            self._migrate_app("classifications", latest)
             tables = connection.introspection.table_names()
             self.assertIn("classifications_editorialclassification", tables)
             self.assertIn("classifications_challengeprofile", tables)

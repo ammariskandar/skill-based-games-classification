@@ -1,0 +1,158 @@
+---
+// Accessible aesthetic definition tooltip — SBGC-228.
+//
+// An information icon next to the Primary Aesthetic label that reveals the four
+// canonical definitions on hover, keyboard focus, or tap/click.  The toggle
+// state lives in `mountAestheticTooltip` (jsdom-unit-tested); this component
+// owns only markup and styling.
+import { AESTHETIC_DEFINITIONS } from "../../lib/aesthetics";
+
+interface Props {
+  id?: string;
+}
+
+const { id = "aesthetic-tooltip-panel" } = Astro.props;
+---
+
+<span class="aesthetic-tooltip" data-aesthetic-tooltip>
+  <button
+    type="button"
+    class="aesthetic-tooltip__trigger"
+    data-aesthetic-tooltip-trigger
+    data-focus-skip
+    aria-expanded="false"
+    aria-controls={id}
+    aria-label="What do the aesthetics mean?"
+  >
+    ?
+  </button>
+
+  <div
+    id={id}
+    class="aesthetic-tooltip__panel"
+    role="tooltip"
+    data-aesthetic-tooltip-panel
+    hidden
+  >
+    <p class="aesthetic-tooltip__title">Primary aesthetic definitions</p>
+    <dl class="aesthetic-tooltip__list">
+      {
+        AESTHETIC_DEFINITIONS.map((item) => (
+          <div class="aesthetic-tooltip__item">
+            <dt class="aesthetic-tooltip__term">{item.label}</dt>
+            <dd class="aesthetic-tooltip__desc">
+              {item.definition}
+              <span class="aesthetic-tooltip__examples">{item.examples}</span>
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</span>
+
+<script>
+  import { mountAestheticTooltip } from "../../lib/aesthetic-tooltip";
+
+  for (const root of document.querySelectorAll<HTMLElement>(
+    "[data-aesthetic-tooltip]",
+  )) {
+    const trigger = root.querySelector<HTMLElement>(
+      "[data-aesthetic-tooltip-trigger]",
+    );
+    const panel = root.querySelector<HTMLElement>(
+      "[data-aesthetic-tooltip-panel]",
+    );
+    if (trigger && panel) mountAestheticTooltip(root, trigger, panel);
+  }
+</script>
+
+<style>
+  .aesthetic-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .aesthetic-tooltip__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
+    border: 1px solid var(--color-border-2);
+    border-radius: 50%;
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: help;
+  }
+
+  .aesthetic-tooltip__trigger:hover,
+  .aesthetic-tooltip__trigger:focus-visible {
+    color: var(--color-text);
+    border-color: var(--color-blue);
+    outline: none;
+  }
+
+  .aesthetic-tooltip__panel[hidden] {
+    display: none;
+  }
+
+  .aesthetic-tooltip__panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 50;
+    width: min(22rem, 80vw);
+    padding: 0.875rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    color: var(--color-text);
+  }
+
+  .aesthetic-tooltip__title {
+    margin: 0 0 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .aesthetic-tooltip__list {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+  }
+
+  .aesthetic-tooltip__item {
+    margin: 0;
+  }
+
+  .aesthetic-tooltip__term {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .aesthetic-tooltip__desc {
+    margin: 0.125rem 0 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .aesthetic-tooltip__examples {
+    display: block;
+    margin-top: 0.125rem;
+    font-style: italic;
+    color: var(--color-dim, var(--color-muted));
+  }
+</style>

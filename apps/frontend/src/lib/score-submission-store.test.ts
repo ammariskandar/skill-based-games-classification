@@ -32,6 +32,8 @@ const submission: StoredSubmission = {
   submittedAt: "2026-09-07T00:00:00.000Z",
   challenge: { micro: 40, mystiko: 30, macro: 30 },
   reward: { micro: 20, mystiko: 40, macro: 40 },
+  aesthetic: "SENSORY",
+  secondaryAesthetic: "FANTASY",
 };
 
 afterEach(() => {
@@ -50,6 +52,50 @@ describe("score-submission store", () => {
 
     saveSubmissionToCache(submission);
     expect(getCachedSubmission("hades")).toEqual(submission);
+  });
+
+  it("round-trips the aesthetic tags alongside the scores", () => {
+    const storage = fakeLocalStorage();
+    vi.stubGlobal("window", { localStorage: storage });
+
+    saveSubmissionToCache(submission);
+    const cached = getCachedSubmission("hades");
+    expect(cached?.aesthetic).toBe("SENSORY");
+    expect(cached?.secondaryAesthetic).toBe("FANTASY");
+  });
+
+  it("normalizes legacy cache entries with no aesthetic to null", () => {
+    const legacy = {
+      gameSlug: "hades",
+      submittedAt: "2026-09-07T00:00:00.000Z",
+      challenge: { micro: 40, mystiko: 30, macro: 30 },
+      reward: { micro: 20, mystiko: 40, macro: 40 },
+    };
+    vi.stubGlobal("window", {
+      localStorage: fakeLocalStorage({
+        mygamedna_submission_hades: JSON.stringify(legacy),
+      }),
+    });
+
+    const cached = getCachedSubmission("hades");
+    expect(cached?.aesthetic).toBeNull();
+    expect(cached?.secondaryAesthetic).toBeNull();
+  });
+
+  it("normalizes an unrecognized cached aesthetic to null", () => {
+    vi.stubGlobal("window", {
+      localStorage: fakeLocalStorage({
+        mygamedna_submission_hades: JSON.stringify({
+          ...submission,
+          aesthetic: "action",
+          secondaryAesthetic: "vibes",
+        }),
+      }),
+    });
+
+    const cached = getCachedSubmission("hades");
+    expect(cached?.aesthetic).toBeNull();
+    expect(cached?.secondaryAesthetic).toBeNull();
   });
 
   it("returns null for unparseable cache entries", () => {

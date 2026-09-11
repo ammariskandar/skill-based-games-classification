@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateProfileSum,
+  isManualSubmissionReady,
   isProfileValid,
   isSubmissionPayloadValid,
   validateDimensionValue,
@@ -69,5 +70,48 @@ describe("isSubmissionPayloadValid", () => {
         reward: { micro: 40, mystiko: 30, macro: 29 }, // totals 99
       }),
     ).toBe(false);
+  });
+});
+
+describe("isManualSubmissionReady", () => {
+  const valid = { micro: 40, mystiko: 30, macro: 30 };
+
+  it("requires a canonical aesthetic alongside valid profiles", () => {
+    expect(isManualSubmissionReady(valid, valid, "SENSORY")).toBe(true);
+    expect(isManualSubmissionReady(valid, valid, "CHALLENGE")).toBe(true);
+  });
+
+  it("rejects an unselected or non-canonical aesthetic", () => {
+    expect(isManualSubmissionReady(valid, valid, "")).toBe(false);
+    expect(isManualSubmissionReady(valid, valid, "action")).toBe(false);
+    expect(isManualSubmissionReady(valid, valid, null)).toBe(false);
+    expect(isManualSubmissionReady(valid, valid, undefined)).toBe(false);
+  });
+
+  it("still requires both profiles to total 100", () => {
+    expect(
+      isManualSubmissionReady(
+        valid,
+        { micro: 40, mystiko: 30, macro: 29 },
+        "SENSORY",
+      ),
+    ).toBe(false);
+  });
+
+  it("accepts an empty secondary and a distinct canonical secondary", () => {
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "")).toBe(true);
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", null)).toBe(true);
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "FANTASY")).toBe(
+      true,
+    );
+  });
+
+  it("rejects a repeated or non-canonical secondary", () => {
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "SENSORY")).toBe(
+      false,
+    );
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "vibes")).toBe(
+      false,
+    );
   });
 });

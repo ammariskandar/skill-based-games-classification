@@ -2570,6 +2570,41 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-11 — SBGC-228 aesthetic dropdown in manual submission & Admin
+
+- **Taxonomy** — `AESTHETIC_CHOICES` in `classifications/models.py` derives the
+  four canonical values from `questionnaire.domain.AestheticCategory`
+  (`SENSORY`/`FANTASY`/`NARRATIVE`/`CHALLENGE`).  `EditorialClassification` and
+  `UserGameScoreSubmission` gain optional, indexed `aesthetic` and
+  `secondary_aesthetic` (`null=True, blank=True`); migration
+  `classifications/0012`.
+- **Ingestion & API** — `ingest_score_submission` reads and normalizes the
+  optional primary/secondary aesthetics from the payload (case-insensitive,
+  canonical uppercase stored) and threads them through both the community and
+  staff/editorial paths; `create_submission`/`update_submission` accept both, and
+  updates set each only when provided.  `POST .../submit-score` accepts
+  `aesthetic` and `secondary_aesthetic` (422 on a non-canonical value) and
+  mirrors them in the response.  Score math and the sum-to-100 invariants are
+  untouched.
+- **Admin** — `EditorialClassificationAdmin` exposes both aesthetics in the
+  form, changelist, and filters with help text summarising the four options;
+  `UserGameScoreSubmissionAdmin` shows both read-only.
+- **Frontend** — required `Primary Aesthetic` and optional `Secondary Aesthetic`
+  selects with an accessible definition tooltip (`AestheticTooltip.astro` +
+  `lib/aesthetic-tooltip.ts`) sit above the Challenge/Reward panels in
+  `ManualScoreForm.astro`; the secondary cannot repeat the primary.  Display
+  labels are shortened to `Sensory`/`Fantasy`/`Narrative`/`Challenge`.
+  Submission stays disabled until the scores total 100 and a primary is chosen;
+  both tags are cached in `localStorage` and rendered in the already-submitted
+  view.
+- **Deviation** — the spec's example values were lowercase (`sensory`); the
+  repository's canonical taxonomy (domain enum, `Game.aesthetic`, questionnaire
+  TS) is uppercase, so canonical uppercase values are used end-to-end.  The API
+  still accepts any casing and normalizes.
+- **Tests** — 23 backend tests (`test_aesthetic_submission.py`); frontend suite
+  899 passing; browser suite 34 passing; ruff, basedpyright, `astro check`,
+  ESLint, Prettier and build green.
+
 ## 2026-09-11 — SBGC-227 similar-Games engine & aesthetic consensus
 
 - **Similarity math** — `games/services/similarity.py` scores a directed pair as

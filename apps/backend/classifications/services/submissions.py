@@ -181,6 +181,8 @@ def create_submission(
     challenge: ScoreDistribution,
     reward: ScoreDistribution,
     notes: str = "",
+    aesthetic: str | None = None,
+    secondary_aesthetic: str | None = None,
 ) -> EditorialClassification:
     """Create a complete editorial submission atomically."""
     _validate_participants(game, submitted_by, updated_by)
@@ -204,6 +206,8 @@ def create_submission(
             submitted_base_weight=BASE_WEIGHTS[role],
             updated_by=updated_by,
             notes=notes,
+            aesthetic=aesthetic,
+            secondary_aesthetic=secondary_aesthetic,
         )
         submission.full_clean()
         _persist_submission(submission, challenge, reward)
@@ -218,6 +222,8 @@ def update_submission(
     challenge: ScoreDistribution | None = None,
     reward: ScoreDistribution | None = None,
     notes: str | None = None,
+    aesthetic: str | None = None,
+    secondary_aesthetic: str | None = None,
 ) -> EditorialClassification:
     """Edit editorial input fields without changing submission identity."""
     if not isinstance(submission, EditorialClassification):
@@ -235,12 +241,24 @@ def update_submission(
     with transaction.atomic():
         if notes is not None:
             submission.notes = notes
+        if aesthetic is not None:
+            submission.aesthetic = aesthetic
+        if secondary_aesthetic is not None:
+            submission.secondary_aesthetic = secondary_aesthetic
         if updated_by is not None:
             submission.updated_by = updated_by
         submission.full_clean()
         # ``updated_at`` must be bumped so the effective submission state
         # participates in daily-epoch cutoff semantics (SBGC-65, Part E.2).
-        submission.save(update_fields=["notes", "updated_by", "updated_at"])
+        submission.save(
+            update_fields=[
+                "notes",
+                "aesthetic",
+                "secondary_aesthetic",
+                "updated_by",
+                "updated_at",
+            ]
+        )
 
         if challenge is not None:
             _set_profile(submission, ChallengeProfile, "challenge_profile", challenge)

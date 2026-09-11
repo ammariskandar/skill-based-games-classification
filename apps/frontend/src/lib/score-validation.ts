@@ -6,6 +6,8 @@
  * an integer in [0, 100] and each profile must total exactly 100.
  */
 
+import { isAestheticValue, isSecondaryAestheticValid } from "./aesthetics";
+
 export interface ProfileScores {
   micro: number;
   mystiko: number;
@@ -38,4 +40,23 @@ export function isProfileValid(scores: ProfileScores): boolean {
 
 export function isSubmissionPayloadValid(payload: SubmissionPayload): boolean {
   return isProfileValid(payload.challenge) && isProfileValid(payload.reward);
+}
+
+/**
+ * Manual-submission readiness: both profiles valid AND a canonical primary
+ * aesthetic selected (SBGC-228).  The secondary aesthetic is optional but, when
+ * set, must be canonical and differ from the primary.
+ */
+export function isManualSubmissionReady(
+  challenge: ProfileScores,
+  reward: ProfileScores,
+  aesthetic: unknown,
+  secondaryAesthetic: unknown = null,
+): boolean {
+  return (
+    isProfileValid(challenge) &&
+    isProfileValid(reward) &&
+    isAestheticValue(aesthetic) &&
+    isSecondaryAestheticValid(aesthetic, secondaryAesthetic)
+  );
 }
