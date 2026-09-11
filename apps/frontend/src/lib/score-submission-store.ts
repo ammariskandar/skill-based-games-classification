@@ -17,6 +17,7 @@ export interface ScoreSubmissionPayload {
   challenge: ProfileScores;
   reward: ProfileScores;
   aesthetic: AestheticValue;
+  secondaryAesthetic: AestheticValue | null;
 }
 
 export interface StoredSubmission {
@@ -26,6 +27,8 @@ export interface StoredSubmission {
   reward: ProfileScores;
   /** Canonical aesthetic, or `null` for legacy/pre-aesthetic cache entries. */
   aesthetic: AestheticValue | null;
+  /** Optional secondary aesthetic; `null` when none was chosen. */
+  secondaryAesthetic: AestheticValue | null;
 }
 
 const STORAGE_PREFIX = "mygamedna_submission_";
@@ -36,10 +39,13 @@ export function getCachedSubmission(gameSlug: string): StoredSubmission | null {
     const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${gameSlug}`);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredSubmission;
-    // Tolerate entries cached before the aesthetic field existed.
+    // Tolerate entries cached before the aesthetic fields existed.
     return {
       ...parsed,
       aesthetic: isAestheticValue(parsed.aesthetic) ? parsed.aesthetic : null,
+      secondaryAesthetic: isAestheticValue(parsed.secondaryAesthetic)
+        ? parsed.secondaryAesthetic
+        : null,
     };
   } catch {
     return null;

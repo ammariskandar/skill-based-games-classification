@@ -21,6 +21,13 @@ async function selectAesthetic(page: Page, value = "SENSORY"): Promise<void> {
   await page.selectOption("[data-aesthetic-select]", value);
 }
 
+async function selectSecondaryAesthetic(
+  page: Page,
+  value = "FANTASY",
+): Promise<void> {
+  await page.selectOption("[data-secondary-aesthetic-select]", value);
+}
+
 async function fillValidScores(page: Page): Promise<void> {
   await page
     .locator('input[data-profile="challenge"][data-dimension="micro"]')
@@ -29,6 +36,7 @@ async function fillValidScores(page: Page): Promise<void> {
     .locator('input[data-profile="reward"][data-dimension="micro"]')
     .fill("100");
   await selectAesthetic(page);
+  await selectSecondaryAesthetic(page);
 }
 
 test("glow button opens the dialog and traps focus", async ({ page }) => {
@@ -137,6 +145,23 @@ test("submit stays disabled until both panels total 100 and an aesthetic is chos
   await expect(submit).toBeEnabled();
 });
 
+test("secondary aesthetic cannot repeat the primary", async ({ page }) => {
+  await openManualForm(page);
+
+  const secondary = page.locator("[data-secondary-aesthetic-select]");
+  await expect(secondary).toHaveValue("");
+
+  await selectAesthetic(page, "SENSORY");
+  await expect(secondary.locator('option[value="SENSORY"]')).toBeDisabled();
+
+  await selectSecondaryAesthetic(page, "FANTASY");
+  await expect(secondary).toHaveValue("FANTASY");
+
+  // Repointing the primary at the current secondary clears it.
+  await selectAesthetic(page, "FANTASY");
+  await expect(secondary).toHaveValue("");
+});
+
 test("aesthetic tooltip toggles aria-expanded on activation", async ({
   page,
 }) => {
@@ -150,7 +175,7 @@ test("aesthetic tooltip toggles aria-expanded on activation", async ({
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await expect(panel).toBeVisible();
-  await expect(panel).toContainText("Sensory Pleasure");
+  await expect(panel).toContainText("Sensory");
 
   await page.keyboard.press("Escape");
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -178,9 +203,13 @@ test("submitting valid scores caches and shows the submitted view", async ({
   expect(parsed.challenge.micro).toBe(100);
   expect(parsed.reward.micro).toBe(100);
   expect(parsed.aesthetic).toBe("SENSORY");
+  expect(parsed.secondaryAesthetic).toBe("FANTASY");
   await expect(submitted.locator('[data-submitted="aesthetic"]')).toHaveText(
-    "Sensory Pleasure",
+    "Sensory",
   );
+  await expect(
+    submitted.locator('[data-submitted="secondary-aesthetic"]'),
+  ).toHaveText("Fantasy");
 });
 
 test("re-opening the modal shows cached scores without resetting", async ({

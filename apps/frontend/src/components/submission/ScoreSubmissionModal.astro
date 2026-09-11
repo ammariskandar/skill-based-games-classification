@@ -144,6 +144,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     challenge: ProfileScores;
     reward: ProfileScores;
     aesthetic: AestheticValue | null;
+    secondaryAesthetic: AestheticValue | null;
     submittedAt: string;
   }): void {
     setSubmittedValue("challenge.micro", submission.challenge.micro);
@@ -156,6 +157,14 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     const aestheticCell = dialog.querySelector(`[data-submitted="aesthetic"]`);
     if (aestheticCell) {
       aestheticCell.textContent = aestheticLabel(submission.aesthetic) ?? "—";
+    }
+
+    const secondaryCell = dialog.querySelector(
+      `[data-submitted="secondary-aesthetic"]`,
+    );
+    if (secondaryCell) {
+      secondaryCell.textContent =
+        aestheticLabel(submission.secondaryAesthetic) ?? "None";
     }
 
     const timestamp = dialog.querySelector("[data-submitted-timestamp]");
@@ -202,7 +211,12 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
 
   dialog.addEventListener("score-submit", (event) => {
     const detail = (event as CustomEvent).detail as
-      | { challenge: ProfileScores; reward: ProfileScores; aesthetic: unknown }
+      | {
+          challenge: ProfileScores;
+          reward: ProfileScores;
+          aesthetic: unknown;
+          secondaryAesthetic: unknown;
+        }
       | undefined;
     if (
       !detail ||
@@ -214,6 +228,11 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     }
 
     const aesthetic = detail.aesthetic;
+    const secondaryAesthetic =
+      isAestheticValue(detail.secondaryAesthetic) &&
+      detail.secondaryAesthetic !== aesthetic
+        ? detail.secondaryAesthetic
+        : null;
     const submittedAt = new Date().toISOString();
 
     saveSubmissionToCache({
@@ -222,12 +241,14 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
       challenge: detail.challenge,
       reward: detail.reward,
       aesthetic,
+      secondaryAesthetic,
     });
 
     renderSubmitted({
       challenge: detail.challenge,
       reward: detail.reward,
       aesthetic,
+      secondaryAesthetic,
       submittedAt,
     });
   });

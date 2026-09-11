@@ -157,6 +157,18 @@ class EditorialClassification(models.Model):
         ),
     )
 
+    secondary_aesthetic = models.CharField(
+        max_length=20,
+        choices=AESTHETIC_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=(
+            "Optional secondary aesthetic driver identified by editorial "
+            "review; NULL when there is no meaningful second aesthetic."
+        ),
+    )
+
     notes = models.TextField(blank=True)
 
     updated_by = models.ForeignKey(
@@ -785,6 +797,18 @@ class UserGameScoreSubmission(models.Model):
         help_text=(
             "Primary aesthetic selected by the community submitter. "
             + AESTHETIC_HELP_TEXT
+        ),
+    )
+
+    secondary_aesthetic = models.CharField(
+        max_length=20,
+        choices=AESTHETIC_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=(
+            "Optional secondary aesthetic selected by the community "
+            "submitter; NULL when none was chosen."
         ),
     )
 

@@ -16,27 +16,55 @@ const PROFILES = [
 
 <form class="manual-score-form" data-manual-score-form>
   <div class="manual-score-form__aesthetic">
-    <div class="aesthetic-field__label-row">
-      <label class="aesthetic-field__label" for="submission-aesthetic">
-        Primary Aesthetic
-      </label>
-      <AestheticTooltip id="aesthetic-tooltip-panel" />
-    </div>
-    <select
-      id="submission-aesthetic"
-      name="aesthetic"
-      class="aesthetic-field__select"
-      data-aesthetic-select
-      required
-    >
-      <option value="" disabled selected>Select the primary aesthetic...</option
+    <div class="aesthetic-field">
+      <div class="aesthetic-field__label-row">
+        <label class="aesthetic-field__label" for="submission-aesthetic">
+          Primary Aesthetic
+        </label>
+        <AestheticTooltip id="aesthetic-tooltip-panel" />
+      </div>
+      <select
+        id="submission-aesthetic"
+        name="aesthetic"
+        class="aesthetic-field__select"
+        data-aesthetic-select
+        required
       >
-      {
-        AESTHETIC_DEFINITIONS.map((item) => (
-          <option value={item.value}>{item.label}</option>
-        ))
-      }
-    </select>
+        <option value="" disabled selected
+          >Select the primary aesthetic...</option
+        >
+        {
+          AESTHETIC_DEFINITIONS.map((item) => (
+            <option value={item.value}>{item.label}</option>
+          ))
+        }
+      </select>
+    </div>
+
+    <div class="aesthetic-field">
+      <div class="aesthetic-field__label-row">
+        <label
+          class="aesthetic-field__label"
+          for="submission-secondary-aesthetic"
+        >
+          Secondary Aesthetic
+        </label>
+        <span class="aesthetic-field__optional">Optional</span>
+      </div>
+      <select
+        id="submission-secondary-aesthetic"
+        name="secondary_aesthetic"
+        class="aesthetic-field__select"
+        data-secondary-aesthetic-select
+      >
+        <option value="">No secondary</option>
+        {
+          AESTHETIC_DEFINITIONS.map((item) => (
+            <option value={item.value}>{item.label}</option>
+          ))
+        }
+      </select>
+    </div>
   </div>
 
   <div class="manual-score-form__grid">
@@ -148,14 +176,20 @@ const PROFILES = [
     "[data-aesthetic-select]",
   );
 
+  const secondarySelect = form.querySelector<HTMLSelectElement>(
+    "[data-secondary-aesthetic-select]",
+  );
+
   const state: Record<ProfileKey, Record<DimensionKey, number>> = {
     challenge: { micro: 0, mystiko: 0, macro: 0 },
     reward: { micro: 0, mystiko: 0, macro: 0 },
   };
 
   // Aesthetic is required on the manual form but stored as the canonical
-  // uppercase value; the empty string means "not yet selected".
+  // uppercase value; the empty string means "not yet selected".  The secondary
+  // aesthetic is optional and may not repeat the primary.
   let aesthetic: AestheticValue | "" = "";
+  let secondaryAesthetic: AestheticValue | "" = "";
 
   function inputFor(profile: ProfileKey, dim: DimensionKey): HTMLInputElement {
     const el = form!.querySelector<HTMLInputElement>(
@@ -194,7 +228,22 @@ const PROFILES = [
       state.challenge,
       state.reward,
       aesthetic,
+      secondaryAesthetic,
     );
+  }
+
+  // The secondary picker cannot repeat the primary, mirroring the questionnaire
+  // (Q2 excludes the Q1 option).  Selecting the primary clears a stale match.
+  function syncSecondaryOptions(): void {
+    if (!secondarySelect) return;
+    for (const option of Array.from(secondarySelect.options)) {
+      if (!option.value) continue;
+      option.disabled = option.value === aesthetic;
+    }
+    if (secondaryAesthetic !== "" && secondaryAesthetic === aesthetic) {
+      secondaryAesthetic = "";
+      secondarySelect.value = "";
+    }
   }
 
   function render(): void {
@@ -225,7 +274,10 @@ const PROFILES = [
       }
     }
     aesthetic = "";
+    secondaryAesthetic = "";
     if (aestheticSelect) aestheticSelect.value = "";
+    if (secondarySelect) secondarySelect.value = "";
+    syncSecondaryOptions();
     render();
   }
 
@@ -233,6 +285,16 @@ const PROFILES = [
     aestheticSelect.addEventListener("change", () => {
       aesthetic = isAestheticValue(aestheticSelect.value)
         ? aestheticSelect.value
+        : "";
+      syncSecondaryOptions();
+      renderSubmit();
+    });
+  }
+
+  if (secondarySelect) {
+    secondarySelect.addEventListener("change", () => {
+      secondaryAesthetic = isAestheticValue(secondarySelect.value)
+        ? secondarySelect.value
         : "";
       renderSubmit();
     });
@@ -261,7 +323,14 @@ const PROFILES = [
   });
 
   submitBtn.addEventListener("click", () => {
-    if (!isManualSubmissionReady(state.challenge, state.reward, aesthetic)) {
+    if (
+      !isManualSubmissionReady(
+        state.challenge,
+        state.reward,
+        aesthetic,
+        secondaryAesthetic,
+      )
+    ) {
       return;
     }
     // Submission is local and synchronous (no network in SBGC-215), so the
@@ -274,6 +343,8 @@ const PROFILES = [
           challenge: { ...state.challenge },
           reward: { ...state.reward },
           aesthetic,
+          secondaryAesthetic:
+            secondaryAesthetic === "" ? null : secondaryAesthetic,
         },
       }),
     );
@@ -291,6 +362,14 @@ const PROFILES = [
     margin-bottom: 1.5rem;
   }
 
+  .aesthetic-field {
+    margin-bottom: 1rem;
+  }
+
+  .aesthetic-field:last-child {
+    margin-bottom: 0;
+  }
+
   .aesthetic-field__label-row {
     display: flex;
     align-items: center;
@@ -302,6 +381,14 @@ const PROFILES = [
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-text);
+  }
+
+  .aesthetic-field__optional {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 
   .aesthetic-field__select {

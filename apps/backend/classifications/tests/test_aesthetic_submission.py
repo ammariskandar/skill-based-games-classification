@@ -54,6 +54,7 @@ def _payload(
     challenge=(40, 30, 30),
     reward=(35, 35, 30),
     aesthetic: str | None = None,
+    secondary_aesthetic: str | None = None,
 ) -> dict:
     payload: dict = {
         "challenge": {
@@ -69,6 +70,8 @@ def _payload(
     }
     if aesthetic is not None:
         payload["aesthetic"] = aesthetic
+    if secondary_aesthetic is not None:
+        payload["secondary_aesthetic"] = secondary_aesthetic
     return payload
 
 
@@ -157,6 +160,51 @@ class CommunityAestheticIngestionTests(TestCase):
         )
         self.assertEqual(self._latest().aesthetic, AestheticCategory.NARRATIVE.value)
 
+    def test_first_submission_persists_secondary_aesthetic(self):
+        ingest_score_submission(
+            user=self.user,
+            game=self.game,
+            payload=_payload(aesthetic="SENSORY", secondary_aesthetic="fantasy"),
+        )
+        self.assertEqual(
+            self._latest().secondary_aesthetic, AestheticCategory.FANTASY.value
+        )
+
+    def test_secondary_aesthetic_defaults_to_null(self):
+        ingest_score_submission(
+            user=self.user,
+            game=self.game,
+            payload=_payload(aesthetic="SENSORY"),
+        )
+        self.assertIsNone(self._latest().secondary_aesthetic)
+
+    def test_unknown_secondary_aesthetic_is_dropped(self):
+        ingest_score_submission(
+            user=self.user,
+            game=self.game,
+            payload=_payload(aesthetic="SENSORY", secondary_aesthetic="vibes"),
+        )
+        self.assertIsNone(self._latest().secondary_aesthetic)
+
+    def test_revision_updates_secondary_aesthetic_in_place(self):
+        ingest_score_submission(
+            user=self.user,
+            game=self.game,
+            payload=_payload(aesthetic="SENSORY", secondary_aesthetic="FANTASY"),
+        )
+        ingest_score_submission(
+            user=self.user,
+            game=self.game,
+            payload=_payload(
+                challenge=(50, 25, 25),
+                aesthetic="SENSORY",
+                secondary_aesthetic="narrative",
+            ),
+        )
+        self.assertEqual(
+            self._latest().secondary_aesthetic, AestheticCategory.NARRATIVE.value
+        )
+
 
 class EditorialAestheticIngestionTests(TestCase):
     def setUp(self):
@@ -168,28 +216,38 @@ class EditorialAestheticIngestionTests(TestCase):
         ingest_score_submission(
             user=self.moderator,
             game=self.game,
-            payload=_payload(aesthetic="fantasy"),
+            payload=_payload(aesthetic="fantasy", secondary_aesthetic="narrative"),
         )
         submission = EditorialClassification.objects.get(
             game=self.game, submitted_by=self.moderator
         )
         self.assertEqual(submission.aesthetic, AestheticCategory.FANTASY.value)
+        self.assertEqual(
+            submission.secondary_aesthetic, AestheticCategory.NARRATIVE.value
+        )
 
     def test_staff_update_supersedes_aesthetic(self):
         ingest_score_submission(
             user=self.moderator,
             game=self.game,
-            payload=_payload(aesthetic="FANTASY"),
+            payload=_payload(aesthetic="FANTASY", secondary_aesthetic="SENSORY"),
         )
         ingest_score_submission(
             user=self.moderator,
             game=self.game,
-            payload=_payload(challenge=(50, 25, 25), aesthetic="challenge"),
+            payload=_payload(
+                challenge=(50, 25, 25),
+                aesthetic="challenge",
+                secondary_aesthetic="narrative",
+            ),
         )
         submission = EditorialClassification.objects.get(
             game=self.game, submitted_by=self.moderator
         )
         self.assertEqual(submission.aesthetic, AestheticCategory.CHALLENGE.value)
+        self.assertEqual(
+            submission.secondary_aesthetic, AestheticCategory.NARRATIVE.value
+        )
 
 
 class EditorialSubmissionServiceTests(TestCase):
@@ -205,9 +263,11 @@ class EditorialSubmissionServiceTests(TestCase):
             challenge=ScoreDistribution(40, 30, 30),
             reward=ScoreDistribution(35, 35, 30),
             aesthetic="SENSORY",
+            secondary_aesthetic="FANTASY",
         )
         submission.refresh_from_db()
         self.assertEqual(submission.aesthetic, "SENSORY")
+        self.assertEqual(submission.secondary_aesthetic, "FANTASY")
 
     def test_update_submission_sets_aesthetic_only_when_provided(self):
         submission = create_submission(
@@ -217,6 +277,7 @@ class EditorialSubmissionServiceTests(TestCase):
             challenge=ScoreDistribution(40, 30, 30),
             reward=ScoreDistribution(35, 35, 30),
             aesthetic="SENSORY",
+            secondary_aesthetic="FANTASY",
         )
         update_submission(
             submission,
@@ -226,14 +287,17 @@ class EditorialSubmissionServiceTests(TestCase):
         )
         submission.refresh_from_db()
         self.assertEqual(submission.aesthetic, "SENSORY")
+        self.assertEqual(submission.secondary_aesthetic, "FANTASY")
 
         update_submission(
             submission,
             updated_by=self.admin,
             aesthetic="CHALLENGE",
+            secondary_aesthetic="NARRATIVE",
         )
         submission.refresh_from_db()
         self.assertEqual(submission.aesthetic, "CHALLENGE")
+        self.assertEqual(submission.secondary_aesthetic, "NARRATIVE")
 
 
 class SubmitScoreAestheticEndpointTests(TestCase):
@@ -254,13 +318,15 @@ class SubmitScoreAestheticEndpointTests(TestCase):
 
     def test_lowercase_aesthetic_is_accepted_and_normalized(self):
         user = self._login_community()
-        response = self._post(_payload(aesthetic="sensory"))
+        response = self._post(
+            _payload(aesthetic="sensory", secondary_aesthetic="fantasy")
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["aesthetic"], "SENSORY")
-        self.assertEqual(
-            UserGameScoreSubmission.objects.get(user=user, game=self.game).aesthetic,
-            "SENSORY",
-        )
+        self.assertEqual(response.json()["secondary_aesthetic"], "FANTASY")
+        row = UserGameScoreSubmission.objects.get(user=user, game=self.game)
+        self.assertEqual(row.aesthetic, "SENSORY")
+        self.assertEqual(row.secondary_aesthetic, "FANTASY")
 
     def test_uppercase_canonical_aesthetic_is_accepted(self):
         self._login_community()
@@ -273,33 +339,55 @@ class SubmitScoreAestheticEndpointTests(TestCase):
         response = self._post(_payload(aesthetic="action"))
         self.assertEqual(response.status_code, 422)
 
+    def test_invalid_secondary_aesthetic_is_rejected_with_422(self):
+        self._login_community()
+        response = self._post(
+            _payload(aesthetic="SENSORY", secondary_aesthetic="vibes")
+        )
+        self.assertEqual(response.status_code, 422)
+
     def test_omitted_aesthetic_still_succeeds(self):
         self._login_community()
         response = self._post(_payload())
         self.assertEqual(response.status_code, 201)
         self.assertIsNone(response.json()["aesthetic"])
+        self.assertIsNone(response.json()["secondary_aesthetic"])
 
     def test_staff_submission_returns_and_persists_aesthetic(self):
         self.client.force_login(_moderator("endpoint-mod"))
-        response = self._post(_payload(aesthetic="narrative"))
+        response = self._post(
+            _payload(aesthetic="narrative", secondary_aesthetic="sensory")
+        )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()["aesthetic"], "NARRATIVE")
+        self.assertEqual(response.json()["secondary_aesthetic"], "SENSORY")
 
 
 class AestheticAdminTests(TestCase):
     def test_editorial_admin_exposes_aesthetic(self):
         model_admin = admin.site._registry[EditorialClassification]
         self.assertIn("aesthetic", model_admin.list_display)
+        self.assertIn("secondary_aesthetic", model_admin.list_display)
         self.assertIn("aesthetic", model_admin.list_filter)
+        self.assertIn("secondary_aesthetic", model_admin.list_filter)
         self.assertIn("aesthetic", EditorialClassificationAdminForm.Meta.fields)
+        self.assertIn(
+            "secondary_aesthetic", EditorialClassificationAdminForm.Meta.fields
+        )
 
     def test_community_admin_lists_and_reads_only_aesthetic(self):
         model_admin = admin.site._registry[UserGameScoreSubmission]
         self.assertIn("aesthetic", model_admin.list_display)
+        self.assertIn("secondary_aesthetic", model_admin.list_display)
         self.assertIn(
             "aesthetic", {f.name for f in UserGameScoreSubmission._meta.fields}
         )
+        self.assertIn(
+            "secondary_aesthetic",
+            {f.name for f in UserGameScoreSubmission._meta.fields},
+        )
         self.assertIn("aesthetic", model_admin.readonly_fields)
+        self.assertIn("secondary_aesthetic", model_admin.readonly_fields)
 
     def test_editorial_admin_help_text_summarises_the_taxonomy(self):
         request = RequestFactory().get("/")

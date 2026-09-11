@@ -97,4 +97,21 @@ describe("isManualSubmissionReady", () => {
       ),
     ).toBe(false);
   });
+
+  it("accepts an empty secondary and a distinct canonical secondary", () => {
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "")).toBe(true);
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", null)).toBe(true);
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "FANTASY")).toBe(
+      true,
+    );
+  });
+
+  it("rejects a repeated or non-canonical secondary", () => {
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "SENSORY")).toBe(
+      false,
+    );
+    expect(isManualSubmissionReady(valid, valid, "SENSORY", "vibes")).toBe(
+      false,
+    );
+  });
 });

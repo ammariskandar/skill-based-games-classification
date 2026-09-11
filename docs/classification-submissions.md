@@ -15,14 +15,17 @@ Game
 - One user may submit many different Games.
 - A Game may have many submissions from different users.
 - `ChallengeProfile` / `RewardProfile` are one-to-one with each submission.
-- Each submission carries an optional canonical `aesthetic` (SBGC-228):
-  `SENSORY` / `FANTASY` / `NARRATIVE` / `CHALLENGE`, or `NULL` for
-  pre-aesthetic records.  Aesthetic is descriptive metadata and never
-  participates in Challenge/Reward score math or sum-to-100 validation.
+- Each submission carries optional canonical `aesthetic` and
+  `secondary_aesthetic` fields (SBGC-228): `SENSORY` / `FANTASY` /
+  `NARRATIVE` / `CHALLENGE`, or `NULL` for pre-aesthetic records.  The secondary
+  is `NULL` when there is no meaningful second aesthetic.  Both are descriptive
+  metadata and never participate in Challenge/Reward score math or sum-to-100
+  validation.
 
-The same optional aesthetic is captured on community submissions
-(`UserGameScoreSubmission`) supplied through the manual score form; the value is
-normalized to the canonical uppercase taxonomy before persistence.
+The same optional aesthetic pair is captured on community submissions
+(`UserGameScoreSubmission`) supplied through the manual score form; values are
+normalized to the canonical uppercase taxonomy before persistence, and the
+secondary may not repeat the primary.
 
 The existing `EditorialClassification` model now represents a **submission**.
 The future computed result is **Final Classification** (SBGC-65), which is
@@ -87,8 +90,9 @@ as a backward-compatible wrapper (submitted_by defaults to updated_by).
 ## Admin
 
 - `EditorialClassificationAdmin` presents submissions with Game, Submitted
-  by, role, aesthetic, Challenge/Reward summaries, Updated by, and Updated at.
-  `Aesthetic` is operator-editable and filterable (SBGC-228).
+  by, role, aesthetic, secondary aesthetic, Challenge/Reward summaries, Updated
+  by, and Updated at.  Both aesthetics are operator-editable and filterable
+  (SBGC-228).
 - Game / submitted_by are readonly on edit.
 - For ordinary (non-superuser) operators, `submitted_by` is derived from
   `request.user` and not selectable; only superusers may create on behalf of

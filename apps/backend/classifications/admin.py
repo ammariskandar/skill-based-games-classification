@@ -168,6 +168,7 @@ class EditorialClassificationAdminForm(forms.ModelForm):
             "submitted_role",
             "submitted_base_weight",
             "aesthetic",
+            "secondary_aesthetic",
             "notes",
             "updated_by",
         ]
@@ -239,6 +240,7 @@ class EditorialClassificationAdmin(HardenedModelAdmin):
         "submitted_by",
         "submitted_role",
         "aesthetic",
+        "secondary_aesthetic",
         "challenge_dominant",
         "challenge_total",
         "reward_dominant",
@@ -249,6 +251,7 @@ class EditorialClassificationAdmin(HardenedModelAdmin):
     list_filter = (
         "submitted_role",
         "aesthetic",
+        "secondary_aesthetic",
         "game__source_type",
         "game__content_type",
     )
@@ -733,6 +736,7 @@ class UserGameScoreSubmissionAdmin(HardenedModelAdmin):
         "user_username",
         "game_name",
         "aesthetic",
+        "secondary_aesthetic",
         "challenge_display",
         "reward_display",
         "created_at",

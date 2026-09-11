@@ -9,10 +9,18 @@
     You have already submitted a classification score for this game:
   </p>
 
-  <p class="submitted-scores__aesthetic">
-    Primary Aesthetic:
-    <span class="submitted-scores__tag" data-submitted="aesthetic">–</span>
-  </p>
+  <div class="submitted-scores__aesthetics">
+    <p class="submitted-scores__aesthetic">
+      Primary Aesthetic:
+      <span class="submitted-scores__tag" data-submitted="aesthetic">–</span>
+    </p>
+    <p class="submitted-scores__aesthetic">
+      Secondary Aesthetic:
+      <span class="submitted-scores__tag" data-submitted="secondary-aesthetic">
+        –
+      </span>
+    </p>
+  </div>
 
   <div class="submitted-scores__grid">
     <div class="submitted-scores__profile">
@@ -62,11 +70,18 @@
     color: var(--color-text);
   }
 
+  .submitted-scores__aesthetics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.75rem;
+  }
+
   .submitted-scores__aesthetic {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin: 0.75rem 0 0;
+    margin: 0;
     font-size: 0.875rem;
     color: var(--color-muted);
   }

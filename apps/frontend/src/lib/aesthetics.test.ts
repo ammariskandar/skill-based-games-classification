@@ -12,6 +12,7 @@ import {
   AESTHETIC_VALUES,
   aestheticLabel,
   isAestheticValue,
+  isSecondaryAestheticValid,
 } from "./aesthetics";
 
 describe("AESTHETIC_VALUES", () => {
@@ -56,12 +57,29 @@ describe("isAestheticValue", () => {
 });
 
 describe("aestheticLabel", () => {
-  it("maps a canonical value to its display label", () => {
-    expect(aestheticLabel("SENSORY")).toBe("Sensory Pleasure");
-    expect(aestheticLabel("CHALLENGE")).toBe("Challenge Pleasure");
+  it("maps a canonical value to its short display label", () => {
+    expect(aestheticLabel("SENSORY")).toBe("Sensory");
+    expect(aestheticLabel("CHALLENGE")).toBe("Challenge");
   });
 
   it("returns null when unresolved", () => {
     expect(aestheticLabel(null)).toBeNull();
+  });
+});
+
+describe("isSecondaryAestheticValid", () => {
+  it("allows an empty secondary", () => {
+    expect(isSecondaryAestheticValid("SENSORY", "")).toBe(true);
+    expect(isSecondaryAestheticValid("SENSORY", null)).toBe(true);
+    expect(isSecondaryAestheticValid("SENSORY", undefined)).toBe(true);
+  });
+
+  it("allows a distinct canonical secondary", () => {
+    expect(isSecondaryAestheticValid("SENSORY", "FANTASY")).toBe(true);
+  });
+
+  it("rejects a non-canonical or repeated secondary", () => {
+    expect(isSecondaryAestheticValid("SENSORY", "vibes")).toBe(false);
+    expect(isSecondaryAestheticValid("SENSORY", "SENSORY")).toBe(false);
   });
 });

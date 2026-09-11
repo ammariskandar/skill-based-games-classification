@@ -27,28 +27,28 @@ export interface AestheticDefinition {
 export const AESTHETIC_DEFINITIONS: readonly AestheticDefinition[] = [
   {
     value: "SENSORY",
-    label: "Sensory Pleasure",
+    label: "Sensory",
     definition:
       "Immersion driven by audiovisual beauty, music, adrenaline-pumping action thrills, visceral horror, or relaxing therapeutic sensations.",
     examples: "Music, visual art, kinetics, terror, relaxation.",
   },
   {
     value: "FANTASY",
-    label: "Fantasy Pleasure",
+    label: "Fantasy",
     definition:
       "Escapism through world exploration, role-playing, living an impossible life, building creations, or commanding empires.",
     examples: "RPGs, simulations, sandbox builders, exploration.",
   },
   {
     value: "NARRATIVE",
-    label: "Narrative Pleasure",
+    label: "Narrative",
     definition:
       "Deep player engagement driven by storytelling, character development, emotional arcs, drama, and world lore.",
     examples: "Story-rich adventures, visual novels, interactive fiction.",
   },
   {
     value: "CHALLENGE",
-    label: "Challenge Pleasure",
+    label: "Challenge",
     definition:
       "Fun derived strictly from overcoming difficulty, mechanical mastery, executing complex strategies, or setting competitive records.",
     examples: "High-skill action, competitive multiplayer, puzzle/tactics.",
@@ -61,6 +61,21 @@ export function isAestheticValue(value: unknown): value is AestheticValue {
     typeof value === "string" &&
     (AESTHETIC_VALUES as readonly string[]).includes(value)
   );
+}
+
+/**
+ * The optional secondary aesthetic is valid when empty, or a canonical value
+ * that differs from the chosen primary (mirroring the questionnaire, where the
+ * secondary cannot repeat the primary).
+ */
+export function isSecondaryAestheticValid(
+  primary: unknown,
+  secondary: unknown,
+): boolean {
+  if (secondary === null || secondary === undefined || secondary === "") {
+    return true;
+  }
+  return isAestheticValue(secondary) && secondary !== primary;
 }
 
 /** Display label for a canonical value, or `null` when unresolved. */

@@ -35,8 +35,11 @@ class ScoreSubmissionIn(Schema):
     challenge: DimensionScoresIn
     reward: DimensionScoresIn
     aesthetic: Literal["SENSORY", "FANTASY", "NARRATIVE", "CHALLENGE"] | None = None
+    secondary_aesthetic: (
+        Literal["SENSORY", "FANTASY", "NARRATIVE", "CHALLENGE"] | None
+    ) = None
 
-    @field_validator("aesthetic", mode="before")
+    @field_validator("aesthetic", "secondary_aesthetic", mode="before")
     @classmethod
     def normalize_aesthetic(cls, value: object) -> object:
         """Accept any casing and validate against the canonical taxonomy.
@@ -54,6 +57,7 @@ class ScoreSubmissionOut(Schema):
     id: int
     game_slug: str
     aesthetic: str | None = None
+    secondary_aesthetic: str | None = None
     is_duplicate: bool
     is_updated: bool
     is_created: bool
@@ -110,6 +114,7 @@ def submit_game_score(request, slug: str, payload: ScoreSubmissionIn):
         id=result.submission.pk,
         game_slug=game.slug,
         aesthetic=getattr(result.submission, "aesthetic", None),
+        secondary_aesthetic=getattr(result.submission, "secondary_aesthetic", None),
         is_duplicate=result.is_duplicate,
         is_updated=result.is_updated,
         is_created=result.is_created,
