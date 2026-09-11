@@ -17,7 +17,9 @@ import {
 import {
   getGameDetail,
   getGameRankings,
+  getSimilarGames,
   type RankingResponse,
+  type SimilarGameItem,
 } from "../lib/server/api";
 import { presentClassification } from "../lib/classification-presentation";
 import type { SkillProfileVector } from "../lib/skill-dimensions";
@@ -39,6 +41,7 @@ type PageState =
       selectedGame: { slug: string; name: string } | null;
       selectedChallenge: SkillProfileVector | null;
       selectedReward: SkillProfileVector | null;
+      selectedSimilarGames: SimilarGameItem[];
     }
   | { kind: "service-error" };
 
@@ -80,6 +83,7 @@ try {
 
   let selectedChallenge: SkillProfileVector | null = null;
   let selectedReward: SkillProfileVector | null = null;
+  let selectedSimilarGames: SimilarGameItem[] = [];
   if (selectedGame) {
     try {
       const detail = await getGameDetail(selectedGame.slug, {
@@ -96,6 +100,15 @@ try {
     } catch {
       // Leave unavailable (null) — the radar renders its honest empty state.
     }
+
+    // Similar Games are non-critical: a failure renders the honest empty state.
+    try {
+      selectedSimilarGames = await getSimilarGames(selectedGame.slug, 4, {
+        signal: Astro.request.signal,
+      });
+    } catch {
+      selectedSimilarGames = [];
+    }
   }
 
   pageState = {
@@ -104,6 +117,7 @@ try {
     selectedGame,
     selectedChallenge,
     selectedReward,
+    selectedSimilarGames,
   };
 } catch {
   // Timeout, network, Django 5xx, or a malformed response all mean the service
@@ -118,6 +132,8 @@ const selectedChallenge =
   pageState.kind === "ready" ? pageState.selectedChallenge : null;
 const selectedReward =
   pageState.kind === "ready" ? pageState.selectedReward : null;
+const selectedSimilarGames =
+  pageState.kind === "ready" ? pageState.selectedSimilarGames : [];
 const games = ranking?.results ?? [];
 const count = ranking?.count ?? 0;
 const totalPages = ranking?.total_pages ?? 0;
@@ -190,6 +206,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
             challenge={selectedChallenge}
             reward={selectedReward}
             profile={state.profile}
+            similarGames={selectedSimilarGames}
           />
         </section>
       </div>

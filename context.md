@@ -2570,6 +2570,38 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-11 — SBGC-227 similar-Games engine & aesthetic consensus
+
+- **Similarity math** — `games/services/similarity.py` scores a directed pair as
+  Challenge (≤50) + Reward (≤40) + Aesthetic (≤10) similarity, blended with the
+  asymmetric 30/70 confidence weighting and floor-quantized to 10% steps
+  (minimum 10%).  Final similarity applies the factor as an integer percent so
+  binary `0.7` never skews the result.
+- **Aesthetic consensus** — `classifications/services/aesthetic_consensus.py`
+  aggregates questionnaire `(primary, secondary)` votes: the modal pair wins
+  with a +1% agreement bonus per full 10 surplus votes, while top-vote ties pick
+  a random leader and deduct 0/1/5/10 points by disagreement severity (floored
+  at 0).  The engine syncs the resolved primary back to `Game.aesthetic`.
+- **Persistence & engine** — new `GameSimilarity` model and
+  `Game.similarity_calculated_at`; `run_similarity_engine(delta=...)`
+  bulk-upserts directed rows for every ordered pair among publicly-listable
+  Games with a published READY snapshot, or only pairs touching a changed Game
+  in delta mode.  `manage.py compute_similarities [--delta | --full]` drives it.
+- **API** — `GET /api/v1/games/{slug}/similar` returns ranked
+  `{slug, name, capsule_url, similarity_score}` rows (`limit` 1–24, default 6),
+  read-only and eligibility-filtered.
+- **Frontend** — `SimilarGameCard.astro` reveals a colour-tiered score badge
+  (≥60 emerald, 30–59 amber, <30 rose) on hover; the slug page replaces the
+  `SimilarGamesScaffold` skeleton with real cards and the rankings detail pane
+  renders them in its Suggested Games slot, both fetched server-side (empty
+  state on failure).
+- **Docs** — `docs/backend-api.md` documents the new endpoint; the OpenAPI
+  fixture and contract-parity tests are extended.
+- **Tests** — 9 new backend engine/API tests (20 in the similarity module, 33
+  with consensus), 7 new frontend client/parity tests; frontend suite 876
+  passing; `astro check`, ESLint, Prettier, `ruff`, basedpyright and the build
+  green.
+
 ## 2026-09-11 — SBGC-180 questionnaire draft persistence & session resilience
 
 - **Draft storage** — `lib/questionnaire/draft-storage.ts` persists an

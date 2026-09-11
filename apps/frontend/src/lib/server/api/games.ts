@@ -28,6 +28,8 @@ import type {
   RankingItemDto,
   RankingQuery,
   RankingResponseDto,
+  SimilarGameItemDto,
+  SimilarGamesResponseDto,
   SkillDimensionsDto,
 } from "../../../types/api";
 
@@ -46,6 +48,8 @@ export type GameSearchIndexItem = GameSearchIndexItemDto;
 export type GameSearchIndexResponse = GameSearchIndexResponseDto;
 export type RankingItem = RankingItemDto;
 export type RankingResponse = RankingResponseDto;
+export type SimilarGameItem = SimilarGameItemDto;
+export type SimilarGamesResponse = SimilarGamesResponseDto;
 
 export type { GameCatalogueQuery, RankingQuery };
 
@@ -209,6 +213,31 @@ export async function getGameRankings(
   });
   if (result.ok) {
     if ("data" in result) return result.data;
+    throw new BackendApiError("Unexpected empty response from the API.");
+  }
+  throw new BackendApiError(result.error.message, result);
+}
+
+/**
+ * Fetch the precomputed similar-Game recommendations for one Game (SBGC-227).
+ *
+ * Django owns the similarity engine and ordering; the frontend only renders the
+ * rows it is given.  `limit` is bounded server-side (default 6, max 24).
+ */
+export async function getSimilarGames(
+  slug: string,
+  limit?: number,
+  options?: AdapterOptions,
+): Promise<SimilarGameItem[]> {
+  const params: Record<string, string> = {};
+  if (limit !== undefined) params.limit = String(limit);
+
+  const result = await getJSON<SimilarGamesResponse>(
+    `/api/v1/games/${encodeURIComponent(slug)}/similar`,
+    { params, signal: options?.signal },
+  );
+  if (result.ok) {
+    if ("data" in result) return result.data.results;
     throw new BackendApiError("Unexpected empty response from the API.");
   }
   throw new BackendApiError(result.error.message, result);

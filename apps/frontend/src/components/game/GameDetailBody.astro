@@ -1,7 +1,7 @@
 ---
 import GameImage from "./GameImage.astro";
 import GameInformation from "./GameInformation.astro";
-import SimilarGamesScaffold from "./SimilarGamesScaffold.astro";
+import SimilarGames from "./SimilarGames.astro";
 import ClassificationDisplay from "../classification/ClassificationDisplay.astro";
 import SubmitScoreButton from "../submission/SubmitScoreButton.astro";
 import ScoreSubmissionModal from "../submission/ScoreSubmissionModal.astro";
@@ -9,14 +9,16 @@ import { presentClassification } from "../../lib/classification-presentation";
 import type {
   GameDetailGame,
   GameFinalClassification,
+  SimilarGameItem,
 } from "../../lib/server/api/games";
 
 interface Props {
   game: GameDetailGame;
   classification: GameFinalClassification | null;
+  similarGames?: SimilarGameItem[];
 }
 
-const { game, classification } = Astro.props;
+const { game, classification, similarGames = [] } = Astro.props;
 
 const presentation = presentClassification(classification, game.slug);
 const challengeVector =
@@ -64,6 +66,6 @@ const rewardVector = presentation.kind === "ready" ? presentation.reward : null;
   <ScoreSubmissionModal gameSlug={game.slug} gameName={game.name} />
 
   <div class="mt-10">
-    <SimilarGamesScaffold />
+    <SimilarGames games={similarGames} />
   </div>
 </article>

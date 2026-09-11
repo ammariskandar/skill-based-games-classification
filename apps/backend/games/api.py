@@ -35,6 +35,7 @@ from games.errors import ErrorCode
 from games.models import Game, SourceType
 from games.schemas.catalogue import GameCatalogueQuerySchema
 from games.schemas.common import ValidGameSlug
+from games.schemas.similar import SimilarGamesQuerySchema
 from games.services.catalogue import (
     CatalogueClassification,
     CatalogueGame,
@@ -47,6 +48,7 @@ from games.services.imports.steam import (
     SteamGameRefreshResult,
     SteamRefreshError,
 )
+from games.services.similarity import SimilarGame, get_similar_games
 from games.services.steam.adapters import SteamAdapterError
 from games.services.steam.errors import SteamError, SteamRateLimitedError
 
@@ -57,6 +59,7 @@ router = Router(tags=["Games"])
 # Module-level singleton so Ninja's Query default is not a function call in an
 # argument default (ruff B008); Ninja types Query as Annotated for checkers.
 _catalogue_query = Query(...)  # pyright: ignore[reportCallIssue]
+_similar_query = Query(...)  # pyright: ignore[reportCallIssue]
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +163,22 @@ class GameDetailResponse(Schema):
 
     game: PublicGameDetail
     classification: PublicFinalClassification | None = None
+
+
+class SimilarGameItem(Schema):
+    """One similar-Game recommendation row (SBGC-227)."""
+
+    slug: str
+    name: str
+    capsule_url: str | None = None
+    similarity_score: int
+
+
+class SimilarGamesResponse(Schema):
+    """Ranked similar-Game recommendations for one Game (SBGC-227)."""
+
+    count: int
+    results: list[SimilarGameItem]
 
 
 class HomepageCarouselCard(Schema):
@@ -481,6 +500,15 @@ def _catalogue_item(game: CatalogueGame) -> GameCatalogueItem:
     )
 
 
+def _similar_game_item(game: SimilarGame) -> SimilarGameItem:
+    return SimilarGameItem(
+        slug=game.slug,
+        name=game.name,
+        capsule_url=game.capsule_url or None,
+        similarity_score=game.score,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -710,4 +738,42 @@ def game_detail(request, slug: ValidGameSlug):
     return GameDetailResponse(
         game=_public_game_detail(game),
         classification=_public_final_classification(published),
+    )
+
+
+@router.get(
+    "/{slug}/similar",
+    response={
+        200: SimilarGamesResponse,
+        **STANDARD_ERROR_RESPONSES,
+        422: ApiErrorResponse,
+    },
+    operation_id="game_similar",
+    summary="List similar games",
+    description=(
+        "Return the precomputed similar-Game recommendations for one "
+        "publicly-listed base Game, highest similarity first.  Reads persisted "
+        "state only — never recalculates similarity."
+    ),
+    url_name="game-similar",
+)
+def game_similar(
+    request,
+    slug: ValidGameSlug,
+    query: SimilarGamesQuerySchema = _similar_query,
+):
+    limited = enforce_ip_rate_limit(
+        request, "read", limit=120, window_seconds=60, message="Too many requests."
+    )
+    if limited is not None:
+        return limited
+
+    game = Game.objects.publicly_listable().filter(slug=slug).first()
+    if game is None:
+        raise ApiException(404, ErrorCode.GAME_NOT_FOUND.value, "Game not found.")
+
+    similar = get_similar_games(game, limit=query.limit)
+    return SimilarGamesResponse(
+        count=len(similar),
+        results=[_similar_game_item(item) for item in similar],
     )

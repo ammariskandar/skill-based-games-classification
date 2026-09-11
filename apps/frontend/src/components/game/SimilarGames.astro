@@ -1,0 +1,33 @@
+---
+// Similar Games section — SBGC-227.
+//
+// Server-rendered list of precomputed similar-Game recommendations.  Games are
+// supplied by the page (fetched from the SBGC-227 API); the component owns only
+// presentation, including the honest empty state.
+import SimilarGameCard from "./SimilarGameCard.astro";
+import type { SimilarGameItem } from "../../lib/server/api/games";
+
+interface Props {
+  games: SimilarGameItem[];
+}
+
+const { games } = Astro.props;
+---
+
+<section class="similar-games" aria-labelledby="similar-games-heading">
+  <h2 id="similar-games-heading" class="text-xl font-semibold text-text">
+    Similar Games
+  </h2>
+
+  {
+    games.length === 0 ? (
+      <p class="mt-4 text-sm text-muted">No similar games are available yet.</p>
+    ) : (
+      <div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {games.map((game, index) => (
+          <SimilarGameCard game={game} eager={index < 4} />
+        ))}
+      </div>
+    )
+  }
+</section>

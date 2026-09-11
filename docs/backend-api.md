@@ -30,7 +30,7 @@ Browser  →  Astro SSR  →  frontend transport  →  /api/v1/  →  Django Nin
 | Router            | Module                          | Tag              | Status            |
 | ----------------- | ------------------------------- | ---------------- | ----------------- |
 | System            | `api/system.py`                 | System           | `GET /` active    |
-| Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71); homepage carousel (SBGC-189) |
+| Games             | `games/api.py`                  | Games            | Steam import + refresh (SBGC-57); public game detail (SBGC-71); homepage carousel (SBGC-189); similar Games (SBGC-227) |
 | Classifications   | `classifications/api.py`        | Submissions      | Community score submission (SBGC-216); delta recalculation trigger (SBGC-174) |
 | Questionnaire     | `classifications/questionnaire/api.py` | Questionnaire | Aesthetic resolution (SBGC-172) |
 
@@ -44,7 +44,8 @@ Game detail section below. SBGC-189 added `GET /api/v1/games/homepage` for the
 homepage Steam carousel — see the Homepage Carousel section below. SBGC-216
 added the community score submission endpoint, SBGC-172 added questionnaire
 aesthetic resolution — see the Questionnaire sections below — and SBGC-174
-added the delta recalculation trigger.
+added the delta recalculation trigger. SBGC-227 added
+`GET /api/v1/games/{slug}/similar` — see the Similar Games section below.
 
 ## Request Schemas
 
@@ -345,6 +346,47 @@ persisted READY Challenge/Reward + confidence; a public Game without
 classification returned `classification: null` (no fake zeros); and
 hidden/non-game/unknown slugs returned `404 GAME_NOT_FOUND` with no
 hidden-record disclosure.
+
+## Similar Games — `GET /api/v1/games/{slug}/similar`
+
+Returns the precomputed similar-Game recommendations for one publicly-listed
+base Game (SBGC-227). It is **read-only**: it reads persisted `GameSimilarity`
+rows only and never recalculates similarity.
+
+### Eligibility & ordering
+
+The slug must resolve under the canonical `publicly_listable()` policy;
+otherwise `404 GAME_NOT_FOUND`. Results are ordered by descending similarity
+score (ties broken by target name, then id). A target Game is still filtered
+for current public eligibility, so a Game unpublished since the last engine run
+cannot leak into the list.
+
+### Query parameters
+
+- `limit` — 1–24 (default `6`); values outside the range are rejected `422`.
+
+### Response
+
+```json
+{
+  "count": 4,
+  "results": [
+    {
+      "slug": "dead-cells",
+      "name": "Dead Cells",
+      "capsule_url": "https://assets.mygamedna.com/capsules/dead-cells.webp",
+      "similarity_score": 78
+    }
+  ]
+}
+```
+
+- `capsule_url` — effective Capsule (`manual_capsule_url` overrides the Steam
+  Library Capsule — SBGC-190), or `null` when absent;
+- `similarity_score` — the persisted integer percentage (0–100).
+
+Scores are produced by the `compute_similarities [--delta | --full]` management
+command (see `docs/backend-architecture.md`).
 
 ## Game Search Index — `GET /api/v1/games/search-index`
 
