@@ -89,6 +89,8 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     isUserAuthenticated,
     saveSubmissionToCache,
   } from "../../lib/score-submission-store";
+  import { aestheticLabel, isAestheticValue } from "../../lib/aesthetics";
+  import type { AestheticValue } from "../../lib/aesthetics";
   import { isProfileValid } from "../../lib/score-validation";
   import type { ProfileScores } from "../../lib/score-validation";
 
@@ -141,6 +143,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   function renderSubmitted(submission: {
     challenge: ProfileScores;
     reward: ProfileScores;
+    aesthetic: AestheticValue | null;
     submittedAt: string;
   }): void {
     setSubmittedValue("challenge.micro", submission.challenge.micro);
@@ -149,6 +152,11 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     setSubmittedValue("reward.micro", submission.reward.micro);
     setSubmittedValue("reward.mystiko", submission.reward.mystiko);
     setSubmittedValue("reward.macro", submission.reward.macro);
+
+    const aestheticCell = dialog.querySelector(`[data-submitted="aesthetic"]`);
+    if (aestheticCell) {
+      aestheticCell.textContent = aestheticLabel(submission.aesthetic) ?? "—";
+    }
 
     const timestamp = dialog.querySelector("[data-submitted-timestamp]");
     if (timestamp) {
@@ -159,8 +167,10 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   }
 
   function focusFirst(container: HTMLElement | null): void {
+    // Skip affordances (e.g. the aesthetic tooltip trigger) that would open an
+    // overlay on focus and obscure the form on modal entry.
     const target = container?.querySelector<HTMLElement>(
-      "button, a[href], input, select, textarea",
+      "button:not([data-focus-skip]), a[href], input, select, textarea",
     );
     target?.focus();
   }
@@ -192,26 +202,33 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
 
   dialog.addEventListener("score-submit", (event) => {
     const detail = (event as CustomEvent).detail as
-      { challenge: ProfileScores; reward: ProfileScores } | undefined;
+      | { challenge: ProfileScores; reward: ProfileScores; aesthetic: unknown }
+      | undefined;
     if (
       !detail ||
       !isProfileValid(detail.challenge) ||
-      !isProfileValid(detail.reward)
+      !isProfileValid(detail.reward) ||
+      !isAestheticValue(detail.aesthetic)
     ) {
       return;
     }
 
+    const aesthetic = detail.aesthetic;
+    const submittedAt = new Date().toISOString();
+
     saveSubmissionToCache({
       gameSlug,
-      submittedAt: new Date().toISOString(),
+      submittedAt,
       challenge: detail.challenge,
       reward: detail.reward,
+      aesthetic,
     });
 
     renderSubmitted({
       challenge: detail.challenge,
       reward: detail.reward,
-      submittedAt: new Date().toISOString(),
+      aesthetic,
+      submittedAt,
     });
   });
 

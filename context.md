@@ -2570,6 +2570,36 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-11 — SBGC-228 aesthetic dropdown in manual submission & Admin
+
+- **Taxonomy** — `AESTHETIC_CHOICES` in `classifications/models.py` derives the
+  four canonical values from `questionnaire.domain.AestheticCategory`
+  (`SENSORY`/`FANTASY`/`NARRATIVE`/`CHALLENGE`).  `EditorialClassification` and
+  `UserGameScoreSubmission` gain an optional, indexed `aesthetic`
+  (`null=True, blank=True`); migration `classifications/0012`.
+- **Ingestion & API** — `ingest_score_submission` reads and normalizes the
+  optional `aesthetic` from the payload (case-insensitive, canonical uppercase
+  stored) and threads it through both the community and staff/editorial paths;
+  `create_submission`/`update_submission` accept it, and updates set it only
+  when provided.  `POST .../submit-score` accepts `aesthetic` (422 on a
+  non-canonical value) and mirrors it in the response.  Score math and the
+  sum-to-100 invariants are untouched.
+- **Admin** — `EditorialClassificationAdmin` exposes `aesthetic` in the form,
+  changelist, and filters with help text summarising the four options;
+  `UserGameScoreSubmissionAdmin` shows it read-only.
+- **Frontend** — a required `Primary Aesthetic` select with an accessible
+  definition tooltip (`AestheticTooltip.astro` + `lib/aesthetic-tooltip.ts`) sits
+  above the Challenge/Reward panels in `ManualScoreForm.astro`; submission stays
+  disabled until an aesthetic is chosen.  The choice is cached in
+  `localStorage` and rendered as a tag in the already-submitted view.
+- **Deviation** — the spec's example values were lowercase (`sensory`); the
+  repository's canonical taxonomy (domain enum, `Game.aesthetic`, questionnaire
+  TS) is uppercase, so canonical uppercase values are used end-to-end.  The API
+  still accepts any casing and normalizes.
+- **Tests** — 18 backend tests (`test_aesthetic_submission.py`); frontend suite
+  894 passing (+18: taxonomy, tooltip, store, readiness); browser suite 33
+  passing; ruff, basedpyright, `astro check`, ESLint, Prettier and build green.
+
 ## 2026-09-11 — SBGC-227 similar-Games engine & aesthetic consensus
 
 - **Similarity math** — `games/services/similarity.py` scores a directed pair as

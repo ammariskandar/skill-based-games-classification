@@ -37,6 +37,7 @@ from classifications.models import (
     EditorialClassification,
     UserGameScoreSubmission,
 )
+from classifications.questionnaire.domain import AestheticCategory
 from classifications.roles import EditorialRole
 from classifications.services.submissions import (
     EditorialRoleError,
@@ -52,6 +53,17 @@ CACHE_TTL_SECONDS = 600  # 10-minute sliding window
 
 TWO_MINUTES = timedelta(minutes=2)
 FIFTEEN_DAYS = timedelta(days=15)
+
+#: Canonical stored aesthetic values (SBGC-172), used for normalization.
+TRUE_AESTHETIC_VALUES: frozenset[str] = frozenset(
+    member.value
+    for member in (
+        AestheticCategory.SENSORY,
+        AestheticCategory.FANTASY,
+        AestheticCategory.NARRATIVE,
+        AestheticCategory.CHALLENGE,
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -92,6 +104,21 @@ def extract_score_dict(payload: dict[str, Any]) -> dict[str, int]:
     }
 
 
+def extract_aesthetic(payload: dict[str, Any]) -> str | None:
+    """Normalize the optional aesthetic into a canonical stored value.
+
+    Accepts any casing (the frontend picker and legacy clients may send lower
+    case) and returns the canonical uppercase value, or ``None`` when absent or
+    outside the four-aesthetic taxonomy.  Aesthetic is captured alongside the
+    scores and never participates in score math or sum-to-100 validation.
+    """
+    value = payload.get("aesthetic")
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().upper()
+    return normalized if normalized in TRUE_AESTHETIC_VALUES else None
+
+
 def scores_match_record(
     scores: dict[str, int],
     record: UserGameScoreSubmission | EditorialClassification | None,
@@ -111,20 +138,27 @@ def ingest_score_submission(
     user,
     game: Game,
     payload: dict[str, Any],
+    aesthetic: str | None = None,
 ) -> IngestionResult:
-    """Ingest *payload* for one (user, game), returning the temporal outcome."""
+    """Ingest *payload* for one (user, game), returning the temporal outcome.
+
+    ``aesthetic`` defaults to the payload's ``aesthetic`` key (normalized); pass
+    it explicitly to override, e.g. from a caller that has already validated it.
+    """
     if user is None or user.pk is None:
         raise TypeError("user must be a saved user.")
     if not isinstance(game, Game) or game.pk is None:
         raise TypeError("game must be a saved Game instance.")
 
     new_scores = extract_score_dict(payload)
+    if aesthetic is None:
+        aesthetic = extract_aesthetic(payload)
 
     # 1. Staff / editorial routing gate.
     if is_editorial_submitter(user):
-        return _route_to_editorial_submission(user, game, new_scores)
+        return _route_to_editorial_submission(user, game, new_scores, aesthetic)
 
-    return _ingest_community_submission(user, game, new_scores)
+    return _ingest_community_submission(user, game, new_scores, aesthetic)
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +166,9 @@ def ingest_score_submission(
 # ---------------------------------------------------------------------------
 
 
-def _ingest_community_submission(user, game: Game, scores: dict[str, int]):
+def _ingest_community_submission(
+    user, game: Game, scores: dict[str, int], aesthetic: str | None = None
+):
     cache_key = CACHE_ATTEMPT_KEY.format(user_id=user.pk, game_id=game.pk)
     now = timezone.now()
 
@@ -160,6 +196,8 @@ def _ingest_community_submission(user, game: Game, scores: dict[str, int]):
                     )
                 # Rapid revision → overwrite the latest row in place.
                 _apply_scores(latest, scores)
+                if aesthetic is not None:
+                    latest.aesthetic = aesthetic
                 latest.save()
                 return IngestionResult(
                     submission=latest,
@@ -172,7 +210,7 @@ def _ingest_community_submission(user, game: Game, scores: dict[str, int]):
         # 2. First submission ever for this (user, game).
         if latest is None:
             record = UserGameScoreSubmission.objects.create(
-                user=user, game=game, **scores
+                user=user, game=game, aesthetic=aesthetic, **scores
             )
             _mark_attempt(cache_key, now, scores)
             return IngestionResult(
@@ -186,6 +224,8 @@ def _ingest_community_submission(user, game: Game, scores: dict[str, int]):
         # 3. Temporal evaluation anchored to the latest row's created_at.
         if now - latest.created_at < FIFTEEN_DAYS:
             _apply_scores(latest, scores)
+            if aesthetic is not None:
+                latest.aesthetic = aesthetic
             latest.save()
             _mark_attempt(cache_key, now, scores)
             return IngestionResult(
@@ -197,7 +237,9 @@ def _ingest_community_submission(user, game: Game, scores: dict[str, int]):
             )
 
         # 4. >= 15 days → branch into a new standalone row.
-        record = UserGameScoreSubmission.objects.create(user=user, game=game, **scores)
+        record = UserGameScoreSubmission.objects.create(
+            user=user, game=game, aesthetic=aesthetic, **scores
+        )
         _mark_attempt(cache_key, now, scores)
         return IngestionResult(
             submission=record,
@@ -221,7 +263,9 @@ def _mark_attempt(cache_key: str, timestamp, scores: dict[str, int]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _route_to_editorial_submission(user, game: Game, scores: dict[str, int]):
+def _route_to_editorial_submission(
+    user, game: Game, scores: dict[str, int], aesthetic: str | None = None
+):
     challenge = ScoreDistribution(
         micro=scores["challenge_micro"],
         mystiko=scores["challenge_mystiko"],
@@ -245,6 +289,7 @@ def _route_to_editorial_submission(user, game: Game, scores: dict[str, int]):
                 updated_by=user,
                 challenge=challenge,
                 reward=reward,
+                aesthetic=aesthetic,
             )
             return IngestionResult(
                 submission=submission,
@@ -261,6 +306,7 @@ def _route_to_editorial_submission(user, game: Game, scores: dict[str, int]):
                 updated_by=user,
                 challenge=challenge,
                 reward=reward,
+                aesthetic=aesthetic,
             )
         except EditorialSubmissionError:
             # Lost a concurrent create race → supersede the winner in place.
@@ -269,6 +315,7 @@ def _route_to_editorial_submission(user, game: Game, scores: dict[str, int]):
                 updated_by=user,
                 challenge=challenge,
                 reward=reward,
+                aesthetic=aesthetic,
             )
             return IngestionResult(
                 submission=submission,
@@ -291,7 +338,9 @@ __all__ = [
     "CACHE_ATTEMPT_KEY",
     "FIFTEEN_DAYS",
     "IngestionResult",
+    "TRUE_AESTHETIC_VALUES",
     "TWO_MINUTES",
+    "extract_aesthetic",
     "extract_score_dict",
     "ingest_score_submission",
     "is_editorial_submitter",

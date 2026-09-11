@@ -1,4 +1,7 @@
 ---
+import AestheticTooltip from "../ui/AestheticTooltip.astro";
+import { AESTHETIC_DEFINITIONS } from "../../lib/aesthetics";
+
 const DIMENSIONS = [
   { key: "micro", label: "Micro" },
   { key: "mystiko", label: "Mystiko" },
@@ -12,6 +15,30 @@ const PROFILES = [
 ---
 
 <form class="manual-score-form" data-manual-score-form>
+  <div class="manual-score-form__aesthetic">
+    <div class="aesthetic-field__label-row">
+      <label class="aesthetic-field__label" for="submission-aesthetic">
+        Primary Aesthetic
+      </label>
+      <AestheticTooltip id="aesthetic-tooltip-panel" />
+    </div>
+    <select
+      id="submission-aesthetic"
+      name="aesthetic"
+      class="aesthetic-field__select"
+      data-aesthetic-select
+      required
+    >
+      <option value="" disabled selected>Select the primary aesthetic...</option
+      >
+      {
+        AESTHETIC_DEFINITIONS.map((item) => (
+          <option value={item.value}>{item.label}</option>
+        ))
+      }
+    </select>
+  </div>
+
   <div class="manual-score-form__grid">
     {
       PROFILES.map((profile) => (
@@ -95,9 +122,10 @@ const PROFILES = [
 </form>
 
 <script>
+  import { isAestheticValue, type AestheticValue } from "../../lib/aesthetics";
   import {
     calculateProfileSum,
-    isProfileValid,
+    isManualSubmissionReady,
   } from "../../lib/score-validation";
 
   const DIMS = ["micro", "mystiko", "macro"] as const;
@@ -116,10 +144,18 @@ const PROFILES = [
   );
   if (!submitBtn) throw new Error("Manual score submit button not found");
 
+  const aestheticSelect = form.querySelector<HTMLSelectElement>(
+    "[data-aesthetic-select]",
+  );
+
   const state: Record<ProfileKey, Record<DimensionKey, number>> = {
     challenge: { micro: 0, mystiko: 0, macro: 0 },
     reward: { micro: 0, mystiko: 0, macro: 0 },
   };
+
+  // Aesthetic is required on the manual form but stored as the canonical
+  // uppercase value; the empty string means "not yet selected".
+  let aesthetic: AestheticValue | "" = "";
 
   function inputFor(profile: ProfileKey, dim: DimensionKey): HTMLInputElement {
     const el = form!.querySelector<HTMLInputElement>(
@@ -154,8 +190,10 @@ const PROFILES = [
   }
 
   function renderSubmit(): void {
-    submitBtn!.disabled = !(
-      isProfileValid(state.challenge) && isProfileValid(state.reward)
+    submitBtn!.disabled = !isManualSubmissionReady(
+      state.challenge,
+      state.reward,
+      aesthetic,
     );
   }
 
@@ -186,7 +224,18 @@ const PROFILES = [
         inputFor(profile, dim).value = "0";
       }
     }
+    aesthetic = "";
+    if (aestheticSelect) aestheticSelect.value = "";
     render();
+  }
+
+  if (aestheticSelect) {
+    aestheticSelect.addEventListener("change", () => {
+      aesthetic = isAestheticValue(aestheticSelect.value)
+        ? aestheticSelect.value
+        : "";
+      renderSubmit();
+    });
   }
 
   form.addEventListener("click", (event) => {
@@ -212,7 +261,7 @@ const PROFILES = [
   });
 
   submitBtn.addEventListener("click", () => {
-    if (!isProfileValid(state.challenge) || !isProfileValid(state.reward)) {
+    if (!isManualSubmissionReady(state.challenge, state.reward, aesthetic)) {
       return;
     }
     // Submission is local and synchronous (no network in SBGC-215), so the
@@ -224,6 +273,7 @@ const PROFILES = [
         detail: {
           challenge: { ...state.challenge },
           reward: { ...state.reward },
+          aesthetic,
         },
       }),
     );
@@ -237,6 +287,39 @@ const PROFILES = [
 </script>
 
 <style>
+  .manual-score-form__aesthetic {
+    margin-bottom: 1.5rem;
+  }
+
+  .aesthetic-field__label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .aesthetic-field__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .aesthetic-field__select {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 0.9375rem;
+  }
+
+  .aesthetic-field__select:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 1px;
+  }
+
   .manual-score-form__grid {
     display: grid;
     grid-template-columns: 1fr;

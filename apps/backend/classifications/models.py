@@ -16,8 +16,25 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from classifications.questionnaire.domain import AestheticCategory
 from classifications.roles import BASE_WEIGHTS, EditorialRole
 from classifications.validation import validate_score_distribution
+
+# Canonical four-aesthetic vocabulary (SBGC-172 / SBGC-227).  The questionnaire
+# domain enum is the single source of truth for the stored values; the labels
+# are the product names used by the manual-submission picker and Django Admin.
+AESTHETIC_CHOICES: list[tuple[str, str]] = [
+    (AestheticCategory.SENSORY.value, "Sensory Pleasure"),
+    (AestheticCategory.FANTASY.value, "Fantasy Pleasure"),
+    (AestheticCategory.NARRATIVE.value, "Narrative Pleasure"),
+    (AestheticCategory.CHALLENGE.value, "Challenge Pleasure"),
+]
+
+AESTHETIC_HELP_TEXT = (
+    "The four options: SENSORY = audiovisual, action, and visceral thrills; "
+    "FANTASY = escapism, exploration, and building; NARRATIVE = story, "
+    "characters, and lore; CHALLENGE = difficulty, mastery, and competition."
+)
 
 
 def _reject_boolean_scores(instance, profile_label: str) -> None:
@@ -126,6 +143,18 @@ class EditorialClassification(models.Model):
         max_digits=3,
         decimal_places=2,
         default=BASE_WEIGHTS[EditorialRole.COMMUNITY],
+    )
+
+    aesthetic = models.CharField(
+        max_length=20,
+        choices=AESTHETIC_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=(
+            "Primary aesthetic driver identified by editorial review. "
+            + AESTHETIC_HELP_TEXT
+        ),
     )
 
     notes = models.TextField(blank=True)
@@ -745,6 +774,18 @@ class UserGameScoreSubmission(models.Model):
     reward_macro = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="Reward Macro score — long-form satisfaction.",
+    )
+
+    aesthetic = models.CharField(
+        max_length=20,
+        choices=AESTHETIC_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=(
+            "Primary aesthetic selected by the community submitter. "
+            + AESTHETIC_HELP_TEXT
+        ),
     )
 
     created_at = models.DateTimeField(
