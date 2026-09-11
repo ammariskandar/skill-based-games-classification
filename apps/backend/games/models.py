@@ -8,6 +8,7 @@ Never makes network requests, never imports Steam services.
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -256,6 +257,17 @@ class Game(models.Model):
         ),
     )
 
+    # -- Derived similarity (SBGC-227) ------------------------------------------
+
+    similarity_calculated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=(
+            "Timestamp of the most recent similarity score generation for this game."
+        ),
+    )
+
     # -- Timestamps -------------------------------------------------------------
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -393,6 +405,50 @@ class Game(models.Model):
         return self.manual_capsule_url
 
 
+class GameSimilarity(models.Model):
+    """One directed similarity score from a source Game to a target Game.
+
+    Rows are a derived cache owned by the SBGC-227 similarity engine.  They are
+    never editorial inputs: the engine recomputes and bulk-upserts them, and the
+    public API only reads them.  Directed because the asymmetric confidence
+    weighting means ``A -> B`` and ``B -> A`` usually differ.
+    """
+
+    source_game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="similar_destinations",
+        db_index=True,
+    )
+    target_game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="similar_sources",
+        db_index=True,
+    )
+    score = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="Final similarity percentage (0-100).",
+    )
+    calculated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "games_game_similarity"
+        unique_together = ("source_game", "target_game")
+        ordering = ["-score"]
+        indexes = [
+            models.Index(
+                fields=["source_game", "-score"],
+                name="idx_gamesim_src_score",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        source_id = self.source_game_id  # pyright: ignore[reportAttributeAccessIssue]
+        target_id = self.target_game_id  # pyright: ignore[reportAttributeAccessIssue]
+        return f"Similarity {source_id} -> {target_id}: {self.score}%"
+
+
 class SteamRefreshRun(models.Model):
     """One daily scheduled Steam-refresh run — the sole retained current audit."""
 
@@ -469,6 +525,7 @@ __all__ = [
     "ContentType",
     "CONTENT_TYPE_CHOICES",
     "Game",
+    "GameSimilarity",
     "ListingStatus",
     "SourceType",
     "SteamRefreshGameAttempt",

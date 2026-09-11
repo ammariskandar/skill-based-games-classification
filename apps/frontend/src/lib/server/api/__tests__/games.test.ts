@@ -236,4 +236,78 @@ describe("adapter signal forwarding", () => {
     const { getGameSearchIndex } = await importGames();
     await assertSignalAborts((signal) => getGameSearchIndex({ signal }));
   });
+
+  it("forwards the caller signal through getSimilarGames", async () => {
+    const { getSimilarGames } = await importGames();
+    await assertSignalAborts((signal) =>
+      getSimilarGames("hades", 4, { signal }),
+    );
+  });
+});
+
+describe("getSimilarGames", () => {
+  beforeEach(() => {
+    setEnv("https://backend.test");
+  });
+
+  it("returns the parsed results and calls the expected path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        count: 2,
+        results: [
+          {
+            slug: "dead-cells",
+            name: "Dead Cells",
+            capsule_url: "https://example.com/c.webp",
+            similarity_score: 78,
+          },
+          {
+            slug: "hades",
+            name: "Hades",
+            capsule_url: null,
+            similarity_score: 42,
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getSimilarGames } = await importGames();
+    const games = await getSimilarGames("hollow-knight");
+
+    expect(games).toHaveLength(2);
+    expect(games[0].slug).toBe("dead-cells");
+    expect(games[1].capsule_url).toBeNull();
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain(
+      "https://backend.test/api/v1/games/hollow-knight/similar",
+    );
+  });
+
+  it("forwards an explicit limit as a query parameter", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ count: 0, results: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { getSimilarGames } = await importGames();
+    await getSimilarGames("hollow-knight", 4);
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("limit=4");
+  });
+
+  it("throws BackendApiError on a Django 404", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ error: { code: "GAME_NOT_FOUND" } }, 404),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { BackendApiError, getSimilarGames } = await importGames();
+    await expect(getSimilarGames("nope")).rejects.toBeInstanceOf(
+      BackendApiError,
+    );
+  });
 });

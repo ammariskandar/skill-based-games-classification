@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
  *   - Game Information button follows the hero artwork in document order.
  *   - Skill Classification and Confidence share one grid parent.
  *   - The "Submit Classification" button is inert with its integration hooks.
- *   - The Similar Games scaffold renders a heading + exactly 4 skeleton cards.
+ *   - The Similar Games section renders ranked cards with a score per card.
  */
 
 test("game information button follows the hero artwork", async ({ page }) => {
@@ -80,14 +80,15 @@ test("submit score button is wired to the modal", async ({ page }) => {
   await expect(page.locator("#score-submission-modal")).toBeAttached();
 });
 
-test("similar games scaffold renders heading and four skeleton cards", async ({
-  page,
-}) => {
+test("similar games renders ranked cards with scores", async ({ page }) => {
   await page.goto("/dev/slug-page");
 
   await expect(
     page.getByRole("heading", { name: "Similar Games" }),
   ).toBeVisible();
 
-  await expect(page.locator("[data-similar-games-card]")).toHaveCount(4);
+  const cards = page.locator("[data-similar-games-card]");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toHaveAttribute("data-similarity-score", "82");
+  await expect(page.getByRole("link", { name: "Fixture Ally" })).toBeVisible();
 });

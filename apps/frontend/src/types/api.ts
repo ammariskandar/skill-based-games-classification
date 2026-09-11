@@ -78,6 +78,22 @@ export interface GameDetailResponseDto {
   classification: PublishedClassificationDto | null;
 }
 
+/* ── Similar Games DTOs (SBGC-227) ─────────────────────────────────────── */
+
+/** One ranked similar-Game recommendation row. */
+export interface SimilarGameItemDto {
+  slug: string;
+  name: string;
+  capsule_url: string | null;
+  similarity_score: number;
+}
+
+/** Ranked similar-Game envelope for one source Game. */
+export interface SimilarGamesResponseDto {
+  count: number;
+  results: SimilarGameItemDto[];
+}
+
 /* ── Homepage carousel DTOs ────────────────────────────────────────────── */
 
 export interface HomepageCarouselCardDto {

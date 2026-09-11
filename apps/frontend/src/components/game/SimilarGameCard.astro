@@ -1,0 +1,86 @@
+---
+// Similar-Game recommendation card — SBGC-227.
+//
+// Presentational only: the score is precomputed by Django and rendered verbatim.
+// Hovering (or keyboard-focusing) the capsule dims the cover and reveals the
+// similarity percentage, colour-tiered by threshold (>= 60 emerald, 30-59 amber,
+// < 30 rose).
+import type { SimilarGameItem } from "../../lib/server/api/games";
+
+interface Props {
+  game: SimilarGameItem;
+  eager?: boolean;
+}
+
+const { game, eager = false } = Astro.props;
+
+const score = game.similarity_score;
+const tierClass =
+  score >= 60
+    ? "text-emerald-400 bg-emerald-950/80 border-emerald-500/40 shadow-emerald-900/30"
+    : score >= 30
+      ? "text-amber-400 bg-amber-950/80 border-amber-500/40 shadow-amber-900/30"
+      : "text-rose-400 bg-rose-950/80 border-rose-500/40 shadow-rose-900/30";
+
+const href = `/games/${game.slug}`;
+const loading = eager ? "eager" : "lazy";
+---
+
+<a
+  href={href}
+  class="similar-game-card group block min-w-0"
+  data-similar-games-card
+  data-similarity-score={score}
+>
+  <div
+    class="relative aspect-[460/215] overflow-hidden rounded-md border border-border-2 bg-surface-2"
+  >
+    {
+      game.capsule_url ? (
+        <img
+          src={game.capsule_url}
+          alt=""
+          aria-hidden="true"
+          loading={loading}
+          class="h-full w-full object-cover transition-all duration-200 group-hover:brightness-50 group-focus-visible:brightness-50 motion-reduce:transition-none"
+        />
+      ) : (
+        <div
+          class="absolute inset-0 grid place-items-center p-2 text-center text-xs text-muted"
+          aria-hidden="true"
+        >
+          {game.name}
+        </div>
+      )
+    }
+
+    <div
+      class="absolute inset-0 bg-black/60 opacity-0 backdrop-blur-[1px] transition-all duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="absolute inset-0 grid place-items-center" aria-hidden="true">
+      <span
+        class:list={[
+          "rounded-md border px-3 py-1 font-mono text-2xl font-black tracking-tight shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 motion-reduce:transition-none",
+          tierClass,
+        ]}
+      >
+        {score}%
+      </span>
+    </div>
+  </div>
+
+  <span class="mt-2 block line-clamp-2 text-sm font-semibold text-text">
+    {game.name}
+  </span>
+</a>
+
+<style>
+  .similar-game-card:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+</style>

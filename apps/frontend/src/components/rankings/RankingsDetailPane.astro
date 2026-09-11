@@ -1,5 +1,6 @@
 ---
 import RadarChart from "../score/RadarChart.astro";
+import SimilarGameCard from "../game/SimilarGameCard.astro";
 import { gameHref } from "../../lib/catalogue-presentation";
 import {
   dominantForProfile,
@@ -7,15 +8,23 @@ import {
 } from "../../lib/classification-presentation";
 import type { SkillProfileVector } from "../../lib/skill-dimensions";
 import type { RankingProfile } from "../../lib/rankings-state";
+import type { SimilarGameItem } from "../../lib/server/api/games";
 
 interface Props {
   selectedGame: { slug: string; name: string } | null;
   challenge: SkillProfileVector | null;
   reward: SkillProfileVector | null;
   profile: RankingProfile;
+  similarGames?: SimilarGameItem[];
 }
 
-const { selectedGame, challenge, reward, profile } = Astro.props;
+const {
+  selectedGame,
+  challenge,
+  reward,
+  profile,
+  similarGames = [],
+} = Astro.props;
 const hasRadar = challenge !== null || reward !== null;
 // presentClassification yields both vectors together or neither (SBGC-73).
 const classified = challenge !== null && reward !== null;
@@ -79,8 +88,24 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
         </div>
       </div>
 
-      <div class="rankings-detail__grow" aria-hidden="true">
-        <span class="rankings-detail__region-label">Suggested Games</span>
+      <div
+        class:list={[
+          "rankings-detail__grow",
+          similarGames.length === 0 && "rankings-detail__grow--empty",
+        ]}
+      >
+        <h3 class="rankings-detail__grow-heading">Suggested Games</h3>
+        {similarGames.length === 0 ? (
+          <span class="rankings-detail__region-label">
+            No similar games yet
+          </span>
+        ) : (
+          <div class="rankings-detail__similar">
+            {similarGames.map((game) => (
+              <SimilarGameCard game={game} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -300,18 +325,38 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     margin: 0.75rem 0;
   }
 
-  /* Truthful empty shell for the future similar-games work — no fake recs.
-     Kept low with a modest gap from the radar + dominant card above. */
+  /* Similar Games: real recommendation cards when the engine has rows, or a
+     truthful dashed empty shell otherwise (no fake recs). */
   .rankings-detail__grow {
     display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    gap: 0.75rem;
+    margin-top: clamp(1rem, 1.25vw, 1.5rem);
+  }
+
+  .rankings-detail__grow--empty {
     align-items: center;
     justify-content: center;
-    flex: 0 0 auto;
     min-height: 8rem;
-    margin-top: clamp(1rem, 1.25vw, 1.5rem);
     border: 1px dashed var(--color-border-2);
     border-radius: var(--radius-md);
     background: var(--color-surface);
+  }
+
+  .rankings-detail__grow-heading {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .rankings-detail__similar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 
   .rankings-detail__region-label {

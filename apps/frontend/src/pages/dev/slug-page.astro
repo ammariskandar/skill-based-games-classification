@@ -4,6 +4,7 @@ import GameDetailBody from "../../components/game/GameDetailBody.astro";
 import type {
   GameDetailGame,
   GameFinalClassification,
+  SimilarGameItem,
 } from "../../lib/server/api/games";
 
 // Dev-only test fixture (SBGC-220). Renders the real GameDetailBody component
@@ -44,6 +45,21 @@ const classification: GameFinalClassification = {
   calculated_at: "2026-01-01T00:00:00Z",
   is_stale: false,
 };
+
+const similarGames: SimilarGameItem[] = [
+  {
+    slug: "fixture-ally",
+    name: "Fixture Ally",
+    capsule_url: image,
+    similarity_score: 82,
+  },
+  {
+    slug: "fixture-rival",
+    name: "Fixture Rival",
+    capsule_url: null,
+    similarity_score: 45,
+  },
+];
 ---
 
 <!doctype html>
@@ -55,7 +71,11 @@ const classification: GameFinalClassification = {
   </head>
   <body>
     <main class="shell-gutter py-8">
-      <GameDetailBody game={game} classification={classification} />
+      <GameDetailBody
+        game={game}
+        classification={classification}
+        similarGames={similarGames}
+      />
     </main>
   </body>
 </html>

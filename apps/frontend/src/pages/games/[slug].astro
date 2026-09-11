@@ -5,7 +5,9 @@ import ErrorState from "../../components/ui/ErrorState.astro";
 import {
   GameNotFoundError,
   getGameDetail,
+  getSimilarGames,
   type GameDetailResponse,
+  type SimilarGameItem,
 } from "../../lib/server/api/games";
 import {
   buildCanonicalUrl,
@@ -45,6 +47,20 @@ try {
 const game = state.kind === "game" ? state.detail.game : null;
 const classification =
   state.kind === "game" ? state.detail.classification : null;
+
+// Similar Games are a non-critical enhancement: a backend failure renders the
+// honest empty state rather than failing the whole game page.
+let similarGames: SimilarGameItem[] = [];
+if (game) {
+  try {
+    similarGames = await getSimilarGames(game.slug, undefined, {
+      signal: Astro.request.signal,
+    });
+  } catch {
+    similarGames = [];
+  }
+}
+
 const title = game ? game.name : "Something went wrong";
 
 const siteOrigin = resolveSiteOrigin(import.meta.env.PUBLIC_SITE_URL);
@@ -105,7 +121,11 @@ const robots = game ? undefined : "noindex, nofollow";
         </div>
       </ErrorState>
     ) : (
-      <GameDetailBody game={game} classification={classification} />
+      <GameDetailBody
+        game={game}
+        classification={classification}
+        similarGames={similarGames}
+      />
     )
   }
 </BaseLayout>

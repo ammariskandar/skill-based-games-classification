@@ -8,6 +8,7 @@ export {
   getGameRankings,
   getGameSearchIndex,
   getHomepageCarousel,
+  getSimilarGames,
 } from "./games";
 export type {
   CatalogueDominant,
@@ -33,6 +34,8 @@ export type {
   RankingProfile,
   RankingQuery,
   RankingResponse,
+  SimilarGameItem,
+  SimilarGamesResponse,
 } from "./games";
 export type {
   ApiError,

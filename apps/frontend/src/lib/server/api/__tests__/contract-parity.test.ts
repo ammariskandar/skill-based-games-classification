@@ -30,6 +30,9 @@ interface PropertySchema {
 interface ParameterSchema {
   type?: string;
   enum?: string[];
+  default?: number;
+  minimum?: number;
+  maximum?: number;
   anyOf?: Array<{ type?: string; enum?: string[] }>;
 }
 
@@ -131,6 +134,9 @@ describe("OpenAPI endpoint registration (SBGC-93)", () => {
     expect(successSchemaRef("/api/v1/games/search-index")).toBe(
       "#/components/schemas/SearchIndexResponse",
     );
+    expect(successSchemaRef("/api/v1/games/{slug}/similar")).toBe(
+      "#/components/schemas/SimilarGamesResponse",
+    );
   });
 
   it("documents the standard error envelope for the public endpoints", () => {
@@ -139,6 +145,7 @@ describe("OpenAPI endpoint registration (SBGC-93)", () => {
       "/api/v1/games/",
       "/api/v1/rankings/",
       "/api/v1/games/search-index",
+      "/api/v1/games/{slug}/similar",
     ]) {
       const responses = paths[path]?.get?.responses ?? {};
       const notFound = responses["404"] as
@@ -363,6 +370,33 @@ describe("Search index contract parity", () => {
   it("matches the SearchIndexResponse envelope", () => {
     expectPropertySet("SearchIndexResponse", ["games"]);
     expectRequired("SearchIndexResponse", ["games"]);
+  });
+});
+
+/* ── similar games contract ── */
+
+describe("Similar games contract parity", () => {
+  it("matches SimilarGameItem fields and nullability", () => {
+    expectPropertySet("SimilarGameItem", [
+      "slug",
+      "name",
+      "capsule_url",
+      "similarity_score",
+    ]);
+    expectRequired("SimilarGameItem", ["slug", "name", "similarity_score"]);
+    expectNullable("SimilarGameItem", ["capsule_url"]);
+  });
+
+  it("matches the SimilarGamesResponse envelope", () => {
+    expectPropertySet("SimilarGamesResponse", ["count", "results"]);
+    expectRequired("SimilarGamesResponse", ["count", "results"]);
+  });
+
+  it("bounds the limit query parameter", () => {
+    const limit = queryParamSchema("/api/v1/games/{slug}/similar", "limit");
+    expect(limit?.default).toBe(6);
+    expect(limit?.minimum).toBe(1);
+    expect(limit?.maximum).toBe(24);
   });
 });
 
