@@ -529,5 +529,46 @@ See `docs/database-constraints.md` for the full inventory.
 - Axis labels reuse the global `.radar-axis-label` / `--active` classes; their
   emphasis is driven by the bridge rather than the initial-profile class baked
   into the SSR markup.
-- Tests are co-located under `src/lib/questionnaire/__tests__/` (jsdom per file),
-  matching the repository's vitest config rather than a `tests/unit/` path.
+- Tests are co-located under `src/lib/questionnaire/__tests__/` (jsdom per
+  file), matching the repository's vitest config rather than a `tests/unit/`
+  path.
+
+## 13. SBGC-180 implementation notes
+
+### Draft persistence
+
+- `lib/questionnaire/draft-storage.ts` owns the key schema
+  (`mygamedna_q_draft_{slug}_{userHash}`), the 7-day sliding TTL, and all
+  validation.  `saveDraft` refuses blank snapshots and the `completed` phase;
+  `loadDraft` purges and returns `null` on expiry, registry-version drift, slug
+  mismatch, malformed JSON, or an invalid score shape.
+
+### State machine hydration
+
+- `QuestionnaireStateMachine` gains `isDirty()`, `toDraft(slug)`,
+  `hydrateFromDraft(draft)`, and `reset()`.  Hydration rebuilds the assembled
+  tree from the persisted Q1/Q2 options, prunes answers that are no longer on
+  the active traversal, restores the adjusted score vectors, and re-emits
+  `phase-change` / `challenge-update` / `reward-update` so the radar and views
+  resync.  Unknown answer ids are dropped rather than rejecting the whole draft.
+
+### Root wiring
+
+- `QuestionnaireRoot` persists on every machine event, guards `beforeunload`
+  while dirty, intercepts browser Back (`popstate`) into `goBack()`, gates
+  submission on `navigator.onLine`, and on a submit-time 401 saves the draft and
+  redirects to `/login?next=…&resume=true`.  On mount it loads a draft and either
+  auto-hydrates (`resume=true`) or prompts via `ResumeDraftModal`.
+- `NetworkNotice` shows an offline banner driven by `online`/`offline` events.
+
+### Deliberate adaptations
+
+- The spec's `MachineState` shape (`navigationStack`, `currentNodeId`,
+  `rawScores`, …) does not exist in this codebase; the draft stores the real
+  machine fields (Q1/Q2 options, answers, Q15 rating, adjusted Challenge/Reward,
+  phase) and the traversal is always rebuilt from the registry, so a stored
+  navigation stack is unnecessary.
+- The draft key uses the `anon` user hash: `getQuestionnaireSession` exposes no
+  user identifier, so a per-user hash is not available client-side.  The key is
+  still slug-scoped, and "Start over" clears a foreign draft on a shared browser.
+- The default Q15 rating is the real `7`, not the spec's `10`.

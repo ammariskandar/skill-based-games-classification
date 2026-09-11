@@ -13,6 +13,10 @@ import type { AssembledQuestionnaire, QuestionNode } from "./registry/v1/types";
 import { applyProportionalCompensation } from "./scoring/compensation";
 import { computeRawProfile, normalizeProfile } from "./scoring/engine";
 import type { DimensionScore } from "./scoring/types";
+import type {
+  QuestionnaireDraft,
+  QuestionnaireDraftState,
+} from "./draft-storage";
 import type { ConflictResolution, QuestionnaireSubmitRequest } from "./types";
 
 export type QuestionnairePhase =
@@ -41,6 +45,18 @@ type Listener = (event: StateMachineEvent) => void;
 const ZERO: DimensionScore = { micro: 0, macro: 0, mystiko: 0 };
 const DEFAULT_NORM: DimensionScore = { micro: 33, macro: 33, mystiko: 34 };
 
+/** Default relevance rating shown before the Q15 step is touched. */
+const DEFAULT_Q15_RATING = 7;
+
+/** Phases a hydrated draft is allowed to resume into. */
+const RESUMABLE_PHASES: readonly QuestionnairePhase[] = [
+  "aesthetics",
+  "challenge",
+  "reward",
+  "quality",
+  "review",
+];
+
 function emptyScores(): ProfileScores {
   return {
     raw: { ...ZERO },
@@ -51,7 +67,7 @@ function emptyScores(): ProfileScores {
 
 export class QuestionnaireStateMachine {
   public phase: QuestionnairePhase = "aesthetics";
-  public q15Rating = 7;
+  public q15Rating = DEFAULT_Q15_RATING;
 
   public challenge: ProfileScores = emptyScores();
   public reward: ProfileScores = emptyScores();
@@ -152,6 +168,90 @@ export class QuestionnaireStateMachine {
   resetQ15Adjustments(): void {
     this.challenge.adj = { ...this.challenge.norm };
     this.reward.adj = { ...this.reward.norm };
+  }
+
+  /** True once the player has made any choice worth persisting. */
+  isDirty(): boolean {
+    return (
+      this.q1OptionId !== null ||
+      Object.keys(this.answers).length > 0 ||
+      this.q15Rating !== DEFAULT_Q15_RATING
+    );
+  }
+
+  /** Serializable snapshot for draft storage. */
+  toDraft(gameSlug: string): QuestionnaireDraftState {
+    return {
+      gameSlug,
+      phase: this.phase,
+      q1OptionId: this.q1OptionId,
+      q2OptionId: this.q2OptionId,
+      answers: { ...this.answers },
+      q15Rating: this.q15Rating,
+      adjustedChallenge: { ...this.challenge.adj },
+      adjustedReward: { ...this.reward.adj },
+    };
+  }
+
+  /**
+   * Restore a persisted draft, re-validating every answer against the active
+   * registry tree.  Returns `false` (and resets) when the draft cannot be
+   * applied; unknown answer ids are dropped rather than rejecting the draft.
+   */
+  hydrateFromDraft(draft: QuestionnaireDraft): boolean {
+    try {
+      this.q1OptionId = draft.q1OptionId;
+      this.q2OptionId = draft.q2OptionId;
+      this.answers = { ...draft.answers };
+      this.q15Rating = draft.q15Rating;
+
+      this.tree = null;
+      if (draft.q1OptionId && draft.q2OptionId) {
+        this.tree = assembleQuestionnaire(
+          resolveFromOptions(draft.q1OptionId, draft.q2OptionId),
+        );
+      }
+
+      this.rebuildSequence();
+      this.pruneInactiveAnswers();
+      this.recalculateScores();
+
+      this.challenge.adj = { ...draft.adjustedChallenge };
+      this.reward.adj = { ...draft.adjustedReward };
+
+      const hasTree = this.tree !== null;
+      let phase: QuestionnairePhase = draft.phase;
+      if (phase === "submitting" || phase === "completed") phase = "review";
+      if (!hasTree) phase = "aesthetics";
+      this.phase = RESUMABLE_PHASES.includes(phase) ? phase : "review";
+      this.lastEmittedPart = null;
+
+      this.emit({ type: "phase-change", phase: this.phase });
+      this.emit({ type: "challenge-update", challenge: this.challenge });
+      this.emit({ type: "reward-update", reward: this.reward });
+      return true;
+    } catch {
+      this.reset();
+      return false;
+    }
+  }
+
+  /** Return to a pristine aesthetics state and broadcast the cleared scores. */
+  reset(): void {
+    this.phase = "aesthetics";
+    this.q1OptionId = null;
+    this.q2OptionId = null;
+    this.tree = null;
+    this.answers = {};
+    this.flatSequence = [];
+    this.lastEmittedPart = null;
+    this.q15Rating = DEFAULT_Q15_RATING;
+    this.challenge = emptyScores();
+    this.reward = emptyScores();
+
+    this.emit({ type: "phase-change", phase: this.phase });
+    this.emit({ type: "challenge-update", challenge: this.challenge });
+    this.emit({ type: "reward-update", reward: this.reward });
   }
 
   getPayload(

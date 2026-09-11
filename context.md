@@ -2570,6 +2570,32 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-11 — SBGC-180 questionnaire draft persistence & session resilience
+
+- **Draft storage** — `lib/questionnaire/draft-storage.ts` persists an
+  in-progress assessment to `localStorage` under
+  `mygamedna_q_draft_{slug}_{userHash}` with a 7-day sliding TTL.  Reads validate
+  registry version, slug, phase, score vectors, and answer shape; every failure
+  mode (expiry, drift, malformed JSON, quota/private-mode) purges the draft and
+  fails closed.
+- **State machine** — `QuestionnaireStateMachine` gains `isDirty()`,
+  `toDraft(slug)`, `hydrateFromDraft(draft)` (re-validates answer ids against the
+  assembled registry tree, dropping unknown ids), and `reset()`.  Hydration
+  re-emits phase/score events so the views and radar resync.
+- **Resilience UI** — `ResumeDraftModal.astro` (native dialog) offers resume vs
+  start-over on mount; `NetworkNotice.astro` shows an offline banner.  The root
+  persists on every machine event, guards `beforeunload` while dirty, routes
+  browser Back (`popstate`) into the in-flow `goBack()`, gates submission on
+  `navigator.onLine`, and on a submit-time 401 keeps the draft and redirects to
+  login with `resume=true` (auto-hydrating on return).  Drafts are purged only
+  after a confirmed 200/201.
+- **Admin fix** — the `CalculationEpoch` delta-recalculation admin URL was named
+  without the `classifications_calculationepoch_` prefix, so the changelist
+  raised `NoReverseMatch`; renamed it and added regression tests.
+- **Tests** — 13 draft-storage unit tests + 4 state-machine hydration/reset
+  tests; frontend suite 869 passing; `astro check`, ESLint, Prettier and the
+  build green.
+
 ## 2026-09-10 — SBGC-179 dynamic questionnaire spider chart
 
 - **Component** — `components/questionnaire/QuestionnaireRadar.astro` renders the
