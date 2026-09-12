@@ -96,6 +96,13 @@ close/cancel removed), and keeps Save disabled until a real
 first/last-name/bio delta is entered.  A successful save resolves the report
 server-side and the page reloads into the normal state.
 
+A forced username change cycles the session key (the password rotates), so the
+remediation BFF relays Django's replacement `sessionid` `Set-Cookie` and the
+user stays logged in under the new username.  `login.astro` validates the
+session against `/api/v1/auth/status` before bouncing an authenticated visitor
+home, so a stale or revoked cookie can no longer trap the visitor in a redirect
+that hides the login form.
+
 ## Scheduled purge
 
 `python manage.py process_scheduled_account_deletions` is intended to run every

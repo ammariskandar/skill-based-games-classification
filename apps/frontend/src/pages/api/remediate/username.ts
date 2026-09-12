@@ -55,6 +55,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       },
       { sessionId },
     );
+
+    // Django cycles the session key when the password rotates and returns the
+    // replacement `sessionid`.  Relay it, or the browser keeps the now-dead
+    // cookie and the freshly-remediated user is silently logged out.
+    const rotated = result.setCookie?.match(/sessionid=([^;]+)/);
+    if (rotated) {
+      cookies.set("sessionid", rotated[1], {
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: import.meta.env.PROD,
+      });
+    }
+
     return json(result.data ?? {}, result.statusCode);
   } catch {
     return json(

@@ -15,7 +15,10 @@ export const prerender = false;
 
 const sessionId = Astro.cookies.get("sessionid")?.value;
 if (!sessionId) {
-  return Astro.redirect(loginUrl(), 302);
+  return Astro.redirect(
+    `/login?redirect=${encodeURIComponent("/remediate/username")}`,
+    302,
+  );
 }
 
 type PageState =
@@ -31,7 +34,10 @@ try {
       email: result.data.email,
     };
   } else if (result.statusCode === 401) {
-    return Astro.redirect(loginUrl(), 302);
+    return Astro.redirect(
+      `/login?redirect=${encodeURIComponent("/remediate/username")}`,
+      302,
+    );
   } else if (result.statusCode === 403) {
     // Not actually locked out — nothing to remediate.
     return Astro.redirect("/", 302);
@@ -42,10 +48,6 @@ try {
 } catch {
   Astro.response.status = 503;
   state = { kind: "service-error" };
-}
-
-function loginUrl(): string {
-  return `/login?redirect=${encodeURIComponent("/remediate/username")}`;
 }
 ---
 

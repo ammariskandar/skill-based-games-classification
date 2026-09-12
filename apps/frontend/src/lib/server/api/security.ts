@@ -50,6 +50,12 @@ export interface LockoutStatus {
   username: string | null;
 }
 
+/** The session-authentication state (SBGC-217). */
+export interface AuthStatus {
+  authenticated: boolean;
+  username: string | null;
+}
+
 export interface SecurityRequestOptions {
   /** Viewer `sessionid` cookie value, forwarded so Django can authenticate. */
   sessionId?: string;
@@ -58,8 +64,8 @@ export interface SecurityRequestOptions {
 
 /** The upstream outcome: the exact status plus its parsed body. */
 export type UpstreamResult<T> =
-  | { ok: true; statusCode: number; data: T }
-  | { ok: false; statusCode: number; data: unknown };
+  | { ok: true; statusCode: number; data: T; setCookie: string | null }
+  | { ok: false; statusCode: number; data: unknown; setCookie: string | null };
 
 function buildHeaders(options: SecurityRequestOptions, json: boolean): Headers {
   const headers = new Headers({ Accept: "application/json" });
@@ -91,10 +97,16 @@ async function call<T>(
   });
 
   const data = await readBody(response);
+  const setCookie = response.headers.get("set-cookie");
   if (response.ok) {
-    return { ok: true, statusCode: response.status, data: data as T };
+    return {
+      ok: true,
+      statusCode: response.status,
+      data: data as T,
+      setCookie,
+    };
   }
-  return { ok: false, statusCode: response.status, data };
+  return { ok: false, statusCode: response.status, data, setCookie };
 }
 
 /** File or merge a user report against another account. */
@@ -124,6 +136,26 @@ export async function getModerationLockout(
   } catch {
     // Fail open: a backend outage must never lock every session out of the
     // site.  The page renders normally and enforcement resumes on recovery.
+    return null;
+  }
+}
+
+/**
+ * Validate a session cookie against Django.  Returns `null` on any failure,
+ * which callers treat as "not authenticated" (e.g. to clear a stale cookie).
+ */
+export async function getAuthStatus(
+  options: SecurityRequestOptions = {},
+): Promise<AuthStatus | null> {
+  try {
+    const result = await call<AuthStatus>(
+      "/api/v1/auth/status",
+      { method: "GET" },
+      options,
+    );
+    if (!result.ok) return null;
+    return result.data;
+  } catch {
     return null;
   }
 }

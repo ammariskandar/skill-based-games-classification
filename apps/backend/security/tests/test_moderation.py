@@ -515,6 +515,9 @@ class RemediationApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["username"], "api-clean-name")
+        # The password rotation cycles the session key, so Django must emit a
+        # replacement sessionid cookie for the BFF to relay (SBGC-223).
+        self.assertIn("sessionid", response.cookies)
         # The password rotation re-hashes the active session instead of logging
         # the user out of the request that performed it.
         status_response = self.client.get("/api/v1/auth/status")

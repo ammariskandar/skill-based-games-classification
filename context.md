@@ -2610,10 +2610,15 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   `lockout` mode that auto-opens, suppresses Escape and removes close/cancel,
   gates Save on a real name/bio delta, and dismisses the warning banner once the
   report resolves.
+- **Session continuity** — the remediation BFF relays Django's rotated
+  `sessionid` (`Set-Cookie`) so a forced username/password change keeps the user
+  logged in; `login.astro` validates the cookie against `/api/v1/auth/status`
+  instead of redirecting on bare cookie presence, so a stale session no longer
+  soft-locks the login form.
 - **Purge** — `process_scheduled_account_deletions` (runnable every five
   minutes) emails reporters a thank-you notice and hard-deletes due accounts.
-- **Tests** — 58 backend tests (`security/tests/test_moderation.py`), 10 Vitest
-  routing tests, and 9 Playwright specs
+- **Tests** — 59 backend tests (`security/tests/test_moderation.py`), Vitest
+  routing + moderation-boundary tests, and 9 Playwright specs
   (`tests/browser/report-user.spec.ts`); ruff, basedpyright, `astro check`,
   ESLint, Prettier, the frontend build, and the full browser suite green.
   Created `docs/user-reporting-moderation.md`; updated `docs/backend-api.md` and

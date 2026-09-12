@@ -1,13 +1,23 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAuthStatus } from "../lib/server/api/security";
 
-// SSR only: an already-authenticated visitor is bounced home.  A bare
-// `sessionid` presence is the guard — the authoritative check is the BFF
-// `/api/auth/status` call that the navbar island performs client-side.
+// SSR only: an already-authenticated visitor is bounced home.  The session is
+// validated against Django rather than trusting bare cookie presence — a stale,
+// expired, or rotated `sessionid` must not trap the visitor in a redirect loop
+// that makes the login form unreachable.
 export const prerender = false;
 
-if (Astro.cookies.has("sessionid")) {
-  return Astro.redirect("/");
+const sessionId = Astro.cookies.get("sessionid")?.value;
+if (sessionId) {
+  const status = await getAuthStatus({ sessionId });
+  if (status?.authenticated) {
+    return Astro.redirect("/");
+  }
+  // Not authenticated (invalid/expired/rotated session, or the backend is
+  // unreachable): fall through and render the form.  The cookie is left intact
+  // so a transient outage does not log an otherwise-valid session out; a
+  // successful login overwrites it.
 }
 ---
 
