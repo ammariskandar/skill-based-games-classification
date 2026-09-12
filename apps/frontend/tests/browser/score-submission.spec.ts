@@ -6,10 +6,12 @@ import { expect, test, type Page } from "@playwright/test";
  * Exercises the real `GameDetailBody` on the `/dev/slug-page` fixture (no Django
  * backend). The BFF endpoints are mocked at the HTTP boundary:
  *
- *   GET  /api/questionnaire/{slug}/session            → precedence pre-check
+ *   GET  /api/auth/status                              → auth gate (SBGC-217)
+ *   GET  /api/questionnaire/{slug}/session             → submission pre-check
  *   POST /api/classifications/games/{slug}/submit-score → SBGC-216 outcome
  */
 
+const AUTH_URL = "**/api/auth/status";
 const SESSION_URL = "**/api/questionnaire/*/session";
 const SUBMIT_URL = "**/api/classifications/games/*/submit-score";
 
@@ -43,6 +45,17 @@ const WITH_PREVIOUS = {
   },
 };
 
+const WITH_MANUAL = {
+  ...NO_PREVIOUS,
+  precedence: {
+    has_conflict: true,
+    requires_user_choice: false,
+    manual_submission_id: 12,
+    manual_created_at: "2026-09-11T00:00:00Z",
+    age_days: 0,
+  },
+};
+
 function submitBody(
   overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
@@ -59,10 +72,27 @@ function submitBody(
   };
 }
 
-async function mockSession(page: Page, body: unknown): Promise<void> {
-  await page.route(SESSION_URL, (route) =>
+async function mockAuth(page: Page, authenticated = true): Promise<void> {
+  await page.route(AUTH_URL, (route) =>
     route.fulfill({
       status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        authenticated,
+        username: authenticated ? "tester" : null,
+      }),
+    }),
+  );
+}
+
+async function mockSession(
+  page: Page,
+  body: unknown,
+  status = 200,
+): Promise<void> {
+  await page.route(SESSION_URL, (route) =>
+    route.fulfill({
+      status,
       contentType: "application/json",
       body: JSON.stringify(body),
     }),
@@ -83,14 +113,19 @@ async function mockSubmit(
   );
 }
 
-async function openModal(page: Page, session: unknown = NO_PREVIOUS) {
+async function openModal(
+  page: Page,
+  options: { session?: unknown; authenticated?: boolean } = {},
+): Promise<void> {
+  const { session = NO_PREVIOUS, authenticated = true } = options;
+  await mockAuth(page, authenticated);
   await mockSession(page, session);
   await page.goto("/dev/slug-page");
   await page.click("#submit-classification-btn");
 }
 
-async function openManualForm(page: Page, session: unknown = NO_PREVIOUS) {
-  await openModal(page, session);
+async function openManualForm(page: Page): Promise<void> {
+  await openModal(page);
   await page.click("[data-submission-skip]");
 }
 
@@ -117,6 +152,7 @@ async function fillValidScores(page: Page): Promise<void> {
 }
 
 test("glow button opens the dialog and traps focus", async ({ page }) => {
+  await mockAuth(page);
   await mockSession(page, NO_PREVIOUS);
   await page.goto("/dev/slug-page");
   await page.locator("#submit-classification-btn").waitFor();
@@ -141,9 +177,7 @@ test("glow button opens the dialog and traps focus", async ({ page }) => {
 });
 
 test("unauthenticated users see the login prompt", async ({ page }) => {
-  // No session mock: the BFF returns 401 because no session cookie is present.
-  await page.goto("/dev/slug-page");
-  await page.click("#submit-classification-btn");
+  await openModal(page, { authenticated: false });
 
   const unauth = page.locator('[data-submission-state="unauthenticated"]');
   await expect(unauth).toBeVisible();
@@ -168,6 +202,64 @@ test("authenticated users see the choice prompt and can skip to manual", async (
   await page.click("[data-submission-skip]");
   await expect(page.locator('[data-submission-state="manual"]')).toBeVisible();
   await expect(page.locator("[data-manual-score-form]")).toBeVisible();
+});
+
+test("a failed session fetch renders an honest error state", async ({
+  page,
+}) => {
+  await mockAuth(page);
+  await mockSession(page, { error: "boom" }, 500);
+  await page.goto("/dev/slug-page");
+  await page.click("#submit-classification-btn");
+
+  const error = page.locator('[data-submission-state="session-error"]');
+  await expect(error).toBeVisible();
+  await expect(error).toContainText("couldn't load your submission status");
+  await expect(error.locator("[data-session-retry]")).toBeVisible();
+});
+
+test("returning users see the server-reported already-submitted state", async ({
+  page,
+}) => {
+  await openModal(page, { session: WITH_MANUAL });
+
+  const submitted = page.locator('[data-submission-state="submitted"]');
+  await expect(submitted).toBeVisible();
+  await expect(submitted).toContainText(
+    "You already submitted a classification score",
+  );
+  await expect(submitted.locator("[data-submitted-age]")).toHaveText("today");
+
+  await page.click("[data-submitted-continue]");
+  await expect(page.locator('[data-submission-state="manual"]')).toBeVisible();
+});
+
+test("existing questionnaire shows the overwrite interstitial", async ({
+  page,
+}) => {
+  await openModal(page, { session: WITH_PREVIOUS });
+
+  const overwrite = page.locator('[data-submission-state="overwrite"]');
+  await expect(overwrite).toBeVisible();
+  await expect(overwrite).toContainText("Existing Assessment Found");
+  await expect(
+    overwrite.locator('[data-overwrite="challenge.micro"]'),
+  ).toHaveText("55");
+  await expect(overwrite.locator('[data-overwrite="reward.macro"]')).toHaveText(
+    "40",
+  );
+
+  await page.click("[data-overwrite-proceed]");
+  await expect(page.locator('[data-submission-state="manual"]')).toBeVisible();
+  await expect(page.locator("[data-manual-score-form]")).toBeVisible();
+});
+
+test("cancelling the overwrite interstitial keeps the previous record", async ({
+  page,
+}) => {
+  await openModal(page, { session: WITH_PREVIOUS });
+  await page.click("[data-overwrite-cancel]");
+  await expect(page.locator("#score-submission-modal")).not.toBeVisible();
 });
 
 test("enlarged modal and UI element dimensions", async ({ page }) => {
@@ -197,34 +289,6 @@ test("native number spinners are suppressed", async ({ page }) => {
     .locator('input[data-profile="challenge"][data-dimension="micro"]')
     .evaluate((el) => getComputedStyle(el).appearance);
   expect(appearance).toBe("textfield");
-});
-
-test("existing questionnaire shows the overwrite interstitial", async ({
-  page,
-}) => {
-  await openModal(page, WITH_PREVIOUS);
-
-  const overwrite = page.locator('[data-submission-state="overwrite"]');
-  await expect(overwrite).toBeVisible();
-  await expect(overwrite).toContainText("Existing Assessment Found");
-  await expect(
-    overwrite.locator('[data-overwrite="challenge.micro"]'),
-  ).toHaveText("55");
-  await expect(overwrite.locator('[data-overwrite="reward.macro"]')).toHaveText(
-    "40",
-  );
-
-  await page.click("[data-overwrite-proceed]");
-  await expect(page.locator('[data-submission-state="manual"]')).toBeVisible();
-  await expect(page.locator("[data-manual-score-form]")).toBeVisible();
-});
-
-test("cancelling the overwrite interstitial keeps the previous record", async ({
-  page,
-}) => {
-  await openModal(page, WITH_PREVIOUS);
-  await page.click("[data-overwrite-cancel]");
-  await expect(page.locator("#score-submission-modal")).not.toBeVisible();
 });
 
 test("stepper buttons adjust dimension values", async ({ page }) => {
@@ -313,14 +377,6 @@ test("a first-time submission (201) shows the success result", async ({
   await expect(
     result.locator('[data-result-score="challenge.micro"]'),
   ).toHaveText("100");
-
-  const cached = await page.evaluate(() =>
-    localStorage.getItem("mygamedna_submission_fixture-game"),
-  );
-  expect(cached).not.toBeNull();
-  const parsed = JSON.parse(cached!);
-  expect(parsed.aesthetic).toBe("SENSORY");
-  expect(parsed.secondaryAesthetic).toBe("FANTASY");
 });
 
 test("a <15-day resubmission (200 updated) shows the updated result", async ({
@@ -386,7 +442,7 @@ test("a server error shows the error notice and retains entered values", async (
   ).toHaveValue("100");
 });
 
-test("re-opening the modal shows cached scores without resetting", async ({
+test("re-opening after a submission reflects the server state", async ({
   page,
 }) => {
   await openManualForm(page);
@@ -394,35 +450,14 @@ test("re-opening the modal shows cached scores without resetting", async ({
   await fillValidScores(page);
   await page.click("[data-submit-scores]");
   await expect(page.locator('[data-submission-state="result"]')).toBeVisible();
-
   await page.click("[data-submission-close]");
-  await expect(page.locator("#score-submission-modal")).not.toBeVisible();
 
+  // The server now reports an existing manual submission.
+  await page.unroute(SESSION_URL);
+  await mockSession(page, WITH_MANUAL);
   await page.click("#submit-classification-btn");
+
   await expect(
     page.locator('[data-submission-state="submitted"]'),
   ).toBeVisible();
-  await expect(page.locator('[data-submitted="challenge.micro"]')).toHaveText(
-    "100",
-  );
-});
-
-test("clearing the cache restores the unsubmitted flow", async ({ page }) => {
-  await openManualForm(page);
-  await mockSubmit(page, submitBody(), 201);
-  await fillValidScores(page);
-  await page.click("[data-submit-scores]");
-  await expect(page.locator('[data-submission-state="result"]')).toBeVisible();
-  await page.click("[data-submission-close]");
-
-  await page.evaluate(() =>
-    localStorage.removeItem("mygamedna_submission_fixture-game"),
-  );
-
-  await page.click("#submit-classification-btn");
-  await expect(page.locator('[data-submission-state="choice"]')).toBeVisible();
-  await page.click("[data-submission-skip]");
-  await expect(
-    page.locator('input[data-profile="challenge"][data-dimension="micro"]'),
-  ).toHaveValue("0");
 });

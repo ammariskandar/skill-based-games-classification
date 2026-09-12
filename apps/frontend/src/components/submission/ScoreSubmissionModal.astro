@@ -2,7 +2,6 @@
 import ManualScoreForm from "./ManualScoreForm.astro";
 import OverwriteConfirmationView from "./OverwriteConfirmationView.astro";
 import SubmissionResultView from "./SubmissionResultView.astro";
-import SubmittedScoresView from "./SubmittedScoresView.astro";
 
 interface Props {
   gameSlug: string;
@@ -51,6 +50,36 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
         <a href={loginHref} class="submission-state__link"> Log in </a>
       </div>
 
+      <div
+        class="submission-state"
+        data-submission-state="session-error"
+        hidden
+      >
+        <p class="submission-state__message" data-session-error-message>
+          We couldn't load your submission status.
+        </p>
+        <button type="button" class="submission-state__link" data-session-retry>
+          Retry
+        </button>
+      </div>
+
+      <div class="submission-state" data-submission-state="submitted" hidden>
+        <p class="submission-state__message">
+          You already submitted a classification score for this game
+          <span data-submitted-age></span>.
+        </p>
+        <p class="submission-state__hint">
+          Submitting a new score updates your existing submission in place.
+        </p>
+        <button
+          type="button"
+          class="submission-state__link"
+          data-submitted-continue
+        >
+          Submit a new score
+        </button>
+      </div>
+
       <div class="submission-state" data-submission-state="overwrite" hidden>
         <OverwriteConfirmationView />
       </div>
@@ -86,10 +115,6 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
         <ManualScoreForm />
       </div>
 
-      <div class="submission-state" data-submission-state="submitted" hidden>
-        <SubmittedScoresView />
-      </div>
-
       <div class="submission-state" data-submission-state="result" hidden>
         <SubmissionResultView />
       </div>
@@ -98,10 +123,6 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
 </dialog>
 
 <script>
-  import {
-    getCachedSubmission,
-    saveSubmissionToCache,
-  } from "../../lib/score-submission-store";
   import { aestheticLabel, isAestheticValue } from "../../lib/aesthetics";
   import type { AestheticValue } from "../../lib/aesthetics";
   import { isProfileValid } from "../../lib/score-validation";
@@ -125,10 +146,11 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   type StateName =
     | "loading"
     | "unauthenticated"
+    | "session-error"
+    | "submitted"
     | "overwrite"
     | "choice"
     | "manual"
-    | "submitted"
     | "result";
 
   const stateViews: Record<StateName, HTMLElement | null> = {
@@ -136,10 +158,13 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     unauthenticated: dialog.querySelector(
       '[data-submission-state="unauthenticated"]',
     ),
+    "session-error": dialog.querySelector(
+      '[data-submission-state="session-error"]',
+    ),
+    submitted: dialog.querySelector('[data-submission-state="submitted"]'),
     overwrite: dialog.querySelector('[data-submission-state="overwrite"]'),
     choice: dialog.querySelector('[data-submission-state="choice"]'),
     manual: dialog.querySelector('[data-submission-state="manual"]'),
-    submitted: dialog.querySelector('[data-submission-state="submitted"]'),
     result: dialog.querySelector('[data-submission-state="result"]'),
   };
 
@@ -162,77 +187,105 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     }
   }
 
-  // ── Existing (cached) submission ────────────────────────────────────────
-
-  function setSubmittedValue(key: string, value: number): void {
-    const cell = dialog.querySelector(`[data-submitted="${key}"]`);
-    if (cell) cell.textContent = String(value);
-  }
-
-  function renderSubmitted(submission: {
-    challenge: ProfileScores;
-    reward: ProfileScores;
-    aesthetic: AestheticValue | null;
-    secondaryAesthetic: AestheticValue | null;
-    submittedAt: string;
-  }): void {
-    setSubmittedValue("challenge.micro", submission.challenge.micro);
-    setSubmittedValue("challenge.mystiko", submission.challenge.mystiko);
-    setSubmittedValue("challenge.macro", submission.challenge.macro);
-    setSubmittedValue("reward.micro", submission.reward.micro);
-    setSubmittedValue("reward.mystiko", submission.reward.mystiko);
-    setSubmittedValue("reward.macro", submission.reward.macro);
-
-    const aestheticCell = dialog.querySelector(`[data-submitted="aesthetic"]`);
-    if (aestheticCell) {
-      aestheticCell.textContent =
-        aestheticLabel(submission.aesthetic) ?? "None";
-    }
-
-    const secondaryCell = dialog.querySelector(
-      `[data-submitted="secondary-aesthetic"]`,
+  function focusFirst(container: HTMLElement | null): void {
+    // Skip affordances (e.g. the aesthetic tooltip trigger) that would open an
+    // overlay on focus and obscure the form on modal entry.
+    const target = container?.querySelector<HTMLElement>(
+      "button:not([data-focus-skip]), a[href], input, select, textarea",
     );
-    if (secondaryCell) {
-      secondaryCell.textContent =
-        aestheticLabel(submission.secondaryAesthetic) ?? "None";
-    }
-
-    const timestamp = dialog.querySelector("[data-submitted-timestamp]");
-    if (timestamp) {
-      timestamp.textContent = new Date(submission.submittedAt).toLocaleString();
-    }
-
-    showState("submitted");
+    target?.focus();
   }
 
-  // ── Precedence pre-check ────────────────────────────────────────────────
+  // ── Server-authoritative pre-check ──────────────────────────────────────
+
+  async function fetchAuthStatus(): Promise<boolean> {
+    try {
+      const response = await fetch("/api/auth/status", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return false;
+      const body = (await response.json()) as { authenticated?: boolean };
+      return body.authenticated === true;
+    } catch {
+      return false;
+    }
+  }
 
   type SessionOutcome =
     | { kind: "unauthenticated" }
+    | { kind: "error"; message: string }
+    | { kind: "already-submitted"; ageDays: number | null }
     | { kind: "overwrite"; previous: QuestionnairePreviousResultDto }
     | { kind: "ready" };
 
   async function loadSession(): Promise<SessionOutcome> {
+    let response: Response;
     try {
-      const response = await fetch(
+      response = await fetch(
         `/api/questionnaire/${encodeURIComponent(gameSlug)}/session`,
         { headers: { Accept: "application/json" } },
       );
-      if (response.status === 401) return { kind: "unauthenticated" };
-      if (!response.ok) return { kind: "ready" };
+    } catch {
+      return {
+        kind: "error",
+        message: "We couldn't reach the server. Please try again.",
+      };
+    }
+
+    if (response.status === 401) return { kind: "unauthenticated" };
+    if (!response.ok) {
+      return {
+        kind: "error",
+        message: `We couldn't load your submission status (error ${response.status}). Please try again.`,
+      };
+    }
+
+    try {
       const session = (await response.json()) as {
+        precedence?: {
+          manual_submission_id: number | null;
+          age_days: number | null;
+        } | null;
         previous_result: QuestionnairePreviousResultDto | null;
       };
+
+      if (session.precedence?.manual_submission_id != null) {
+        return {
+          kind: "already-submitted",
+          ageDays: session.precedence.age_days ?? null,
+        };
+      }
+
       const previous = session.previous_result;
       if (previous && previous.status === "ACTIVE_IN_CALCULATION") {
         return { kind: "overwrite", previous };
       }
       return { kind: "ready" };
     } catch {
-      // Best-effort: fall through to the choice view; a real submission will
-      // surface any auth/transport failure as an error result.
-      return { kind: "ready" };
+      return {
+        kind: "error",
+        message: "We couldn't read your submission status. Please try again.",
+      };
     }
+  }
+
+  function ageLabel(ageDays: number | null): string {
+    if (ageDays === null) return "recently";
+    if (ageDays <= 0) return "today";
+    if (ageDays === 1) return "yesterday";
+    return `${ageDays} days ago`;
+  }
+
+  function renderSubmittedNotice(ageDays: number | null): void {
+    const el = dialog.querySelector<HTMLElement>("[data-submitted-age]");
+    if (el) el.textContent = ageLabel(ageDays);
+  }
+
+  function renderSessionError(message: string): void {
+    const el = dialog.querySelector<HTMLElement>(
+      "[data-session-error-message]",
+    );
+    if (el) el.textContent = message;
   }
 
   function renderOverwrite(previous: QuestionnairePreviousResultDto): void {
@@ -248,6 +301,33 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
       const el = dialog.querySelector(`[data-overwrite="${key}"]`);
       if (el) el.textContent = String(value);
     }
+  }
+
+  async function runPrecheck(): Promise<void> {
+    showState("loading");
+
+    if (!(await fetchAuthStatus())) {
+      showState("unauthenticated");
+      focusFirst(stateViews.unauthenticated);
+      return;
+    }
+
+    const outcome = await loadSession();
+    if (outcome.kind === "unauthenticated") {
+      showState("unauthenticated");
+    } else if (outcome.kind === "error") {
+      renderSessionError(outcome.message);
+      showState("session-error");
+    } else if (outcome.kind === "already-submitted") {
+      renderSubmittedNotice(outcome.ageDays);
+      showState("submitted");
+    } else if (outcome.kind === "overwrite") {
+      renderOverwrite(outcome.previous);
+      showState("overwrite");
+    } else {
+      showState("choice");
+    }
+    focusFirst(stateViews[activeState]);
   }
 
   // ── Submission result ───────────────────────────────────────────────────
@@ -361,39 +441,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     return `Submission failed (${status}).`;
   }
 
-  // ── Focus & lifecycle ───────────────────────────────────────────────────
-
-  function focusFirst(container: HTMLElement | null): void {
-    // Skip affordances (e.g. the aesthetic tooltip trigger) that would open an
-    // overlay on focus and obscure the form on modal entry.
-    const target = container?.querySelector<HTMLElement>(
-      "button:not([data-focus-skip]), a[href], input, select, textarea",
-    );
-    target?.focus();
-  }
-
-  async function openModal(): Promise<void> {
-    if (!dialog.open) dialog.showModal();
-
-    const cached = getCachedSubmission(gameSlug);
-    if (cached) {
-      renderSubmitted(cached);
-      focusFirst(stateViews.submitted);
-      return;
-    }
-
-    showState("loading");
-    const outcome = await loadSession();
-    if (outcome.kind === "unauthenticated") {
-      showState("unauthenticated");
-    } else if (outcome.kind === "overwrite") {
-      renderOverwrite(outcome.previous);
-      showState("overwrite");
-    } else {
-      showState("choice");
-    }
-    focusFirst(stateViews[activeState]);
-  }
+  // ── Lifecycle & actions ─────────────────────────────────────────────────
 
   function resetForm(): void {
     manualForm?.dispatchEvent(
@@ -407,6 +455,11 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     focusFirst(stateViews.manual);
   }
 
+  async function openModal(): Promise<void> {
+    if (!dialog.open) dialog.showModal();
+    await runPrecheck();
+  }
+
   trigger.addEventListener("click", () => {
     void openModal();
   });
@@ -414,6 +467,16 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   skipBtn?.addEventListener("click", enterManualForm);
 
   closeBtn?.addEventListener("click", () => dialog.close());
+
+  dialog
+    .querySelector("[data-session-retry]")
+    ?.addEventListener("click", () => {
+      void runPrecheck();
+    });
+
+  dialog
+    .querySelector("[data-submitted-continue]")
+    ?.addEventListener("click", enterManualForm);
 
   dialog
     .querySelector("[data-overwrite-proceed]")
@@ -517,18 +580,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
       const wire = body as {
         is_duplicate?: boolean;
         is_updated?: boolean;
-        is_created?: boolean;
       };
-      const submittedAt = new Date().toISOString();
-      saveSubmissionToCache({
-        gameSlug,
-        submittedAt,
-        challenge: detail.challenge,
-        reward: detail.reward,
-        aesthetic,
-        secondaryAesthetic,
-      });
-
       if (wire.is_duplicate) {
         showResult("duplicate", submission);
       } else if (wire.is_updated) {
@@ -637,6 +689,12 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     color: var(--color-text);
   }
 
+  .submission-state__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
   .submission-state__link {
     display: inline-flex;
     margin-top: 1rem;
@@ -645,7 +703,9 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     border-radius: var(--radius-md);
     background: var(--color-surface-2);
     color: var(--color-text);
+    font: inherit;
     text-decoration: none;
+    cursor: pointer;
   }
 
   .submission-state__link:hover {

@@ -316,6 +316,13 @@ live radar/slider feedback.
   overwriting (SBGC-176's POST flow always supplies the resolution).
 - **Migration** is auto-named
   `0010_usergamescoresubmission_source_questionnaireresult_and_more.py`.
+- **Manual supersession (SBGC-225)** — the precedence state machine here is
+  questionnaire→manual only.  A manual score that replaces a
+  `QUESTIONNAIRE`-source community row now flips that row to `MANUAL` (clearing
+  its `questionnaire_result` FK) and transitions an `ACTIVE_IN_CALCULATION`
+  ledger entry to `SUPERSEDED_BY_MANUAL`; the ≥15-day branch path supersedes the
+  ledger too.  This closes the one-directional gap where a manual overwrite left
+  the questionnaire ledger active.
 
 ## 9. SBGC-176 implementation notes
 

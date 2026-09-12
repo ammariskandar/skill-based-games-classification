@@ -168,15 +168,19 @@ a truthful error state, never an empty ranking.
 
 ### Manual score submission (SBGC-225)
 
-The Game-detail submission modal talks to Django only through two same-origin
-BFF routes; the browser never contacts Django directly:
+The Game-detail submission modal talks to Django only through same-origin BFF
+routes; the browser never contacts Django directly:
 
+- `GET /api/auth/status` (SBGC-217) is the authoritative authentication check
+  for the modal (`{ authenticated, username }`); the modal never infers auth
+  from a client-readable cookie.
 - `GET /api/questionnaire/[slug]/session` (`src/pages/api/questionnaire/[slug]/session.ts`)
-  proxies `getQuestionnaireSession()` so the modal can pre-check whether the
-  viewer already has an active questionnaire assessment (the overwrite
-  interstitial).  A missing `sessionid` cookie short-circuits to `401`; upstream
-  `QuestionnaireApiError` statuses are relayed, and a transport failure returns
-  `502`.
+  proxies `getQuestionnaireSession()` strictly for the previous-result/precedence
+  pre-check (the overwrite interstitial and the server-reported
+  "already submitted" state).  A missing `sessionid` cookie short-circuits to
+  `401`; a non-2xx response is rendered by the modal as an honest error state
+  with a Retry action rather than silently defaulting to the choice view, and a
+  transport failure returns `502`.
 - `POST /api/classifications/games/[slug]/submit-score`
   (`src/pages/api/classifications/games/[slug]/submit-score.ts`) proxies
   `submitManualScore()` in `lib/server/api/score-submission.ts`.  The upstream
@@ -184,8 +188,10 @@ BFF routes; the browser never contacts Django directly:
   duplicate / `4xx` / `5xx`) so the modal can branch on the SBGC-216 temporal
   outcome and render the matching success / updated / duplicate / error view.
 
-Both are `prerender = false`, forward the viewer `sessionid` server-side, and
+All are `prerender = false`, forward the viewer `sessionid` server-side, and
 return `{ error: { code, message } }` on a missing cookie or transport failure.
+The modal keeps no client-side submission cache: returning-user state is read
+from the server session fetch.
 
 ### Game-detail state matrix (SBGC-74)
 

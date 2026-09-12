@@ -35,6 +35,7 @@ from games.models import Game
 
 from classifications.models import (
     EditorialClassification,
+    QuestionnaireClassification,
     UserGameScoreSubmission,
 )
 from classifications.questionnaire.domain import AestheticCategory
@@ -144,6 +145,42 @@ def _apply_scores(record, scores: dict[str, int]) -> None:
         setattr(record, field, value)
 
 
+def _retire_questionnaire_source(record: UserGameScoreSubmission) -> bool:
+    """Flip a questionnaire-origin community row to a manual row.
+
+    Returns ``True`` when the row was questionnaire-origin.  The
+    ``questionnaire_result`` provenance FK is cleared so ``source`` and the FK
+    stay consistent; the immutable ``QuestionnaireResult`` and the ledger's
+    ``latest_result`` still preserve the audit trail.
+    """
+    if record.source != UserGameScoreSubmission.SubmissionSource.QUESTIONNAIRE:
+        return False
+    record.source = UserGameScoreSubmission.SubmissionSource.MANUAL
+    record.questionnaire_result = None
+    return True
+
+
+def _supersede_questionnaire_ledger(user, game: Game) -> None:
+    """Mark the viewer's active questionnaire as superseded by a manual score.
+
+    Only an ``ACTIVE_IN_CALCULATION`` ledger row is transitioned; archived or
+    already-superseded states are left untouched.
+    """
+    QuestionnaireClassification.objects.filter(
+        user=user,
+        game=game,
+        status=QuestionnaireClassification.PrecedenceStatus.ACTIVE_IN_CALCULATION,
+    ).update(status=QuestionnaireClassification.PrecedenceStatus.SUPERSEDED_BY_MANUAL)
+
+
+def _absorb_questionnaire_row(
+    user, game: Game, record: UserGameScoreSubmission
+) -> None:
+    """Retire a replaced questionnaire row and its active ledger entry."""
+    if _retire_questionnaire_source(record):
+        _supersede_questionnaire_ledger(user, game)
+
+
 def ingest_score_submission(
     *,
     user,
@@ -223,6 +260,7 @@ def _ingest_community_submission(
                     latest.aesthetic = aesthetic
                 if secondary_aesthetic is not None:
                     latest.secondary_aesthetic = secondary_aesthetic
+                _absorb_questionnaire_row(user, game, latest)
                 latest.save()
                 return IngestionResult(
                     submission=latest,
@@ -257,6 +295,7 @@ def _ingest_community_submission(
                 latest.aesthetic = aesthetic
             if secondary_aesthetic is not None:
                 latest.secondary_aesthetic = secondary_aesthetic
+            _absorb_questionnaire_row(user, game, latest)
             latest.save()
             _mark_attempt(cache_key, now, scores)
             return IngestionResult(
@@ -275,6 +314,10 @@ def _ingest_community_submission(
             secondary_aesthetic=secondary_aesthetic,
             **scores,
         )
+        # The branched-from row is retained as history, but an active
+        # questionnaire ledger entry is superseded by the new manual score.
+        if latest.source == UserGameScoreSubmission.SubmissionSource.QUESTIONNAIRE:
+            _supersede_questionnaire_ledger(user, game)
         _mark_attempt(cache_key, now, scores)
         return IngestionResult(
             submission=record,

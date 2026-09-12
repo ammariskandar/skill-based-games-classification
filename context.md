@@ -2577,26 +2577,41 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   (2.75rem), panel padding, gaps, and CTA height scale up while typography is
   unchanged.  Native `type="number"` spinners are suppressed globally for
   `.score-stepper-input`.
-- **Live submission** — the modal now posts through the SBGC-216 ingestion
-  pipeline via two same-origin BFF routes (`POST .../submit-score`, plus
-  `GET /api/questionnaire/{slug}/session` for the pre-check) and the server
-  client `lib/server/api/score-submission.ts`; the browser never calls Django
-  directly and the viewer `sessionid` is forwarded server-side.
+- **Live submission** — the modal posts through the SBGC-216 ingestion pipeline
+  via two same-origin BFF routes (`POST .../submit-score` and
+  `GET /api/questionnaire/{slug}/session`) and the server client
+  `lib/server/api/score-submission.ts`; the browser never calls Django directly
+  and the viewer `sessionid` is forwarded server-side.
+- **Auth vs. precedence** — authentication uses the canonical
+  `GET /api/auth/status` (SBGC-217); the session BFF is used strictly for the
+  previous-result/precedence pre-check.  A non-2xx session response renders an
+  honest `session-error` state with a Retry action rather than silently falling
+  through to the choice view.
 - **Outcomes** — 201 (first time / ≥ 15-day branch) shows
   "Classification Submitted Successfully!"; 200 `is_updated` shows
   "Score UPDATED!"; 200 `is_duplicate` shows "Score Confirmed (Duplicate
   Ignored)"; 4xx/5xx/network show an error notice with a "Back to Editing"
   action that retains the entered scores.
-- **Precedence interstitial** — when the viewer already has an ACTIVE
-  questionnaire for the Game, `OverwriteConfirmationView` previews the previous
+- **Precedence interstitial** — when the viewer's questionnaire ledger is
+  `ACTIVE_IN_CALCULATION`, `OverwriteConfirmationView` previews the previous
   adjusted Challenge/Reward scores and requires an explicit "Proceed with Manual
-  Overwrite" (or "Cancel & Keep Previous").
-- **Components** — `OverwriteConfirmationView.astro` and
-  `SubmissionResultView.astro`; the cached-submission "already submitted" view is
-  retained for returning users.
-- **Tests** — 4 server-client unit tests; browser suite 41 passing (enlargement
-  dimensions, spinner suppression, overwrite interstitial, and the four temporal
-  outcomes); `astro check`, ESLint, Prettier and the build green.
+  Overwrite" (or "Cancel & Keep Previous").  Server-side, a manual score that
+  replaces a `QUESTIONNAIRE`-source community row now flips that row to
+  `MANUAL` (clearing its questionnaire FK) and transitions the ledger to
+  `SUPERSEDED_BY_MANUAL`; the 15-day branch path supersedes the ledger too.
+- **Server-authoritative state** — the modal no longer reads or writes the
+  un-scoped `localStorage` cache (removed with `score-submission-store.ts`),
+  eliminating cross-user leakage and the auth/precedence short-circuit.  The
+  "already submitted" state for returning users is derived from the server
+  session fetch (`precedence.manual_submission_id` + age), and immediate
+  post-submission feedback uses `SubmissionResultView`.
+- **Components** — `OverwriteConfirmationView.astro`,
+  `SubmissionResultView.astro`; `SubmittedScoresView.astro` is removed.
+- **Tests** — 4 server-client unit tests + 3 backend supersession tests; browser
+  suite 42 passing (enlargement dimensions, spinner suppression, auth, session
+  error, overwrite interstitial, already-submitted, and the four temporal
+  outcomes); backend suite 2349 OK.  `astro check`, ESLint, Prettier, ruff,
+  basedpyright and the build green.
 
 ## 2026-09-11 — SBGC-228 aesthetic dropdown in manual submission & Admin
 
