@@ -13,6 +13,7 @@ import json
 from datetime import timedelta
 
 from django.contrib.admin.sites import AdminSite
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.management import call_command
@@ -28,8 +29,11 @@ from security.models import (
 )
 from security.services.reporting import (
     ReportValidationError,
+    active_lockout_status,
     complete_username_remediation,
+    dismiss_report,
     sanitize_plain_text,
+    schedule_permanent_ban,
     submit_user_report,
 )
 
@@ -714,6 +718,121 @@ class ModerationAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ReportStatus.PENDING_REVIEW)
+
+
+# ---------------------------------------------------------------------------
+# Ban repeal
+# ---------------------------------------------------------------------------
+
+
+class BanRepealTests(TestCase):
+    def setUp(self):
+        self.actor = User.objects.create_superuser(
+            username="ban-actor",
+            email="actor@example.com",
+            password="actor-pass-123",
+        )
+        self.reporter = _user("ban-reporter")
+        self.offender = _user("ban-offender")
+        self.report = UserReport.objects.create(
+            offending_user=self.offender,
+            reporting_user=self.reporter,
+            reason_username=True,
+        )
+
+    def test_dismissing_a_scheduled_ban_restores_the_account(self):
+        schedule_permanent_ban(
+            self.report, actor=self.actor, ban_reason="Repeated abuse"
+        )
+        self.offender.refresh_from_db()
+        self.assertFalse(self.offender.is_active)
+        self.assertEqual(ScheduledAccountDeletion.objects.count(), 1)
+        self.assertEqual(active_lockout_status(self.offender), "scheduled_for_deletion")
+
+        self.report.refresh_from_db()
+        dismiss_report(self.report, actor=self.actor)
+
+        self.report.refresh_from_db()
+        self.offender.refresh_from_db()
+        self.assertEqual(self.report.status, ReportStatus.DISMISSED)
+        self.assertTrue(self.offender.is_active)
+        self.assertEqual(ScheduledAccountDeletion.objects.count(), 0)
+        self.assertIsNone(active_lockout_status(self.offender))
+        # The reactivated account can authenticate again.
+        self.assertIsNotNone(
+            authenticate(username=self.offender.username, password="pw-strong-123")
+        )
+
+    def test_admin_dismiss_action_also_repeals_the_ban(self):
+        schedule_permanent_ban(
+            self.report, actor=self.actor, ban_reason="Repeated abuse"
+        )
+        self.client.force_login(self.actor)
+        response = self.client.post(
+            f"/test-admin/security/userreport/{self.report.pk}/take-action/",
+            {"intervention": "dismiss"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.offender.refresh_from_db()
+        self.assertTrue(self.offender.is_active)
+        self.assertEqual(ScheduledAccountDeletion.objects.count(), 0)
+
+    def test_dismissing_a_pending_lockout_lifts_it_without_repeal_noise(self):
+        self.report.status = ReportStatus.PENDING_BIO_CHANGE
+        self.report.save(update_fields=["status"])
+
+        dismiss_report(self.report, actor=self.actor)
+
+        self.report.refresh_from_db()
+        self.offender.refresh_from_db()
+        self.assertEqual(self.report.status, ReportStatus.DISMISSED)
+        self.assertTrue(self.offender.is_active)
+        self.assertIsNone(active_lockout_status(self.offender))
+        self.assertNotIn("Repeated abuse", self.report.action_reason)
+
+    def test_dismissing_an_already_dismissed_report_repairs_an_orphaned_ban(self):
+        # Reproduces the state left by a dismiss performed before the repeal
+        # logic existed: report dismissed, account locked, purge still queued.
+        self.report.status = ReportStatus.DISMISSED
+        self.report.save(update_fields=["status"])
+        self.offender.is_active = False
+        self.offender.save(update_fields=["is_active"])
+        ScheduledAccountDeletion.objects.create(
+            user=self.offender,
+            user_email_snapshot=self.offender.email,
+            offending_username_snapshot=self.offender.username,
+            ban_reason="Repeated abuse",
+            scheduled_for=timezone.now() + timedelta(hours=3),
+        )
+
+        dismiss_report(self.report, actor=self.actor)
+
+        self.offender.refresh_from_db()
+        self.assertTrue(self.offender.is_active)
+        self.assertEqual(ScheduledAccountDeletion.objects.count(), 0)
+
+    def test_dismiss_does_not_lift_a_ban_owned_by_another_report(self):
+        UserReport.objects.create(
+            offending_user=self.offender,
+            reporting_user=_user("ban-other-reporter"),
+            reason_username=True,
+            status=ReportStatus.SCHEDULED_FOR_DELETION,
+        )
+        ScheduledAccountDeletion.objects.create(
+            user=self.offender,
+            user_email_snapshot=self.offender.email,
+            offending_username_snapshot=self.offender.username,
+            ban_reason="Repeated abuse",
+            scheduled_for=timezone.now() + timedelta(hours=3),
+        )
+        self.offender.is_active = False
+        self.offender.save(update_fields=["is_active"])
+
+        dismiss_report(self.report, actor=self.actor)
+
+        self.offender.refresh_from_db()
+        self.assertFalse(self.offender.is_active)
+        self.assertEqual(ScheduledAccountDeletion.objects.count(), 1)
 
 
 # ---------------------------------------------------------------------------

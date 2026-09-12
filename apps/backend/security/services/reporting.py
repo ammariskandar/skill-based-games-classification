@@ -218,13 +218,48 @@ def _log_action(
 
 
 def dismiss_report(report: UserReport, *, actor) -> UserReport:
-    """Dismiss a report without penalising the offender."""
-    return _log_action(
-        report,
-        actor=actor,
-        new_status=ReportStatus.DISMISSED,
-        reason=report.action_reason or "Dismissed by moderator.",
+    """Dismiss a report without penalising the offender.
+
+    Dismissal is a full repeal.  Any pending permanent ban for the offender that
+    is not still owned by another scheduled report is cancelled and the account
+    reactivated, so the user can log in again.  This also repairs a report whose
+    ban was scheduled and then dismissed before the side effects were rolled
+    back.
+    """
+    with transaction.atomic():
+        _repeal_pending_ban(report)
+        return _log_action(
+            report,
+            actor=actor,
+            new_status=ReportStatus.DISMISSED,
+            reason="Dismissed by moderator.",
+        )
+
+
+def _repeal_pending_ban(report: UserReport) -> None:
+    """Cancel the offender's pending permaban unless another report owns it."""
+    user = report.offending_user
+    still_owned = (
+        UserReport.objects.filter(
+            offending_user=user,
+            status=ReportStatus.SCHEDULED_FOR_DELETION,
+        )
+        .exclude(pk=report.pk)
+        .exists()
     )
+    if still_owned:
+        return
+
+    has_pending = ScheduledAccountDeletion.objects.filter(
+        user=user, executed=False
+    ).exists()
+    if not has_pending and user.is_active:
+        return
+
+    ScheduledAccountDeletion.objects.filter(user=user, executed=False).delete()
+    if not user.is_active:
+        user.is_active = True
+        user.save(update_fields=["is_active"])
 
 
 def enforce_username_change(report: UserReport, *, actor, reason: str) -> UserReport:

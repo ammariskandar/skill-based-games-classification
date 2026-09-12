@@ -70,6 +70,12 @@ reason.  The permaban path additionally revokes every live session, sets
 `is_active=False`, creates the `ScheduledAccountDeletion` row, and emails the
 offender immediately.
 
+Dismissing a report is always a full repeal: when the report had already
+escalated to `scheduled_for_deletion`, `dismiss_report` also cancels the pending
+`ScheduledAccountDeletion` row and reactivates the account (`is_active=True`), so
+the offender can log in again instead of being left permanently locked out
+behind a `dismissed` report.
+
 The Admin desk (`security/admin.py`, reachable by superusers, moderators, and
 community leaders) shows the offending-user link to the public profile, reason
 badges, repeat-offender and brigading indicators, a dismiss bulk action, and the

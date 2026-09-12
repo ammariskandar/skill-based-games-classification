@@ -2596,7 +2596,10 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   take-action page with four interventions.  The permaban form accepts only the
   exact phrase `permaban`; on success it revokes sessions, locks the account,
   schedules the T + 3-hour purge, and emails the offender.
-  `ScheduledAccountDeletionAdmin` is a read-only audit.
+  `ScheduledAccountDeletionAdmin` is a read-only audit.  Dismissing a report is
+  a full repeal: dismissing a `scheduled_for_deletion` report cancels the
+  pending purge and reactivates the account instead of leaving the offender
+  locked out.
 - **Lockouts & remediation** — `ModerationEnforcementMiddleware` records
   `request.moderation_lockout` and returns `403 MODERATION_LOCKOUT` for
   `/api/*` outside the allow-list (staff bypass); the auth router is allow-listed
@@ -2617,7 +2620,7 @@ Findings are advisory until accepted by the owner. Remediation requires separate
   soft-locks the login form.
 - **Purge** — `process_scheduled_account_deletions` (runnable every five
   minutes) emails reporters a thank-you notice and hard-deletes due accounts.
-- **Tests** — 59 backend tests (`security/tests/test_moderation.py`), Vitest
+- **Tests** — 64 backend tests (`security/tests/test_moderation.py`), Vitest
   routing + moderation-boundary tests, and 9 Playwright specs
   (`tests/browser/report-user.spec.ts`); ruff, basedpyright, `astro check`,
   ESLint, Prettier, the frontend build, and the full browser suite green.
