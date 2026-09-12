@@ -1,0 +1,181 @@
+---
+// Questionnaire precedence interstitial — SBGC-225.
+//
+// Rendered by the submission modal when the viewer already has an active
+// questionnaire assessment for this Game.  The modal populates the read-only
+// previous-score cells and wires the two actions via `data-*` hooks; this
+// component owns no client script.
+---
+
+<div class="overwrite-confirm" data-overwrite-confirm>
+  <h3 class="overwrite-confirm__title">Existing Assessment Found</h3>
+  <p class="overwrite-confirm__message">
+    You previously submitted a questionnaire assessment for this game. Would you
+    like to overwrite your previous submission with a new manual rating?
+  </p>
+
+  <div class="overwrite-confirm__scores">
+    <div class="overwrite-confirm__profile">
+      <h4 class="overwrite-confirm__profile-title">Previous Challenge</h4>
+      <dl class="overwrite-confirm__list">
+        <div class="overwrite-confirm__row">
+          <dt>Micro</dt>
+          <dd data-overwrite="challenge.micro">–</dd>
+        </div>
+        <div class="overwrite-confirm__row">
+          <dt>Mystiko</dt>
+          <dd data-overwrite="challenge.mystiko">–</dd>
+        </div>
+        <div class="overwrite-confirm__row">
+          <dt>Macro</dt>
+          <dd data-overwrite="challenge.macro">–</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="overwrite-confirm__profile">
+      <h4 class="overwrite-confirm__profile-title">Previous Reward</h4>
+      <dl class="overwrite-confirm__list">
+        <div class="overwrite-confirm__row">
+          <dt>Micro</dt>
+          <dd data-overwrite="reward.micro">–</dd>
+        </div>
+        <div class="overwrite-confirm__row">
+          <dt>Mystiko</dt>
+          <dd data-overwrite="reward.mystiko">–</dd>
+        </div>
+        <div class="overwrite-confirm__row">
+          <dt>Macro</dt>
+          <dd data-overwrite="reward.macro">–</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="overwrite-confirm__actions">
+    <button
+      type="button"
+      class="overwrite-confirm__button overwrite-confirm__button--secondary"
+      data-overwrite-cancel
+    >
+      Cancel &amp; Keep Previous
+    </button>
+    <button
+      type="button"
+      class="overwrite-confirm__button overwrite-confirm__button--primary"
+      data-overwrite-proceed
+    >
+      Proceed with Manual Overwrite
+    </button>
+  </div>
+</div>
+
+<style>
+  .overwrite-confirm__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .overwrite-confirm__message {
+    margin: 0.625rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+  }
+
+  .overwrite-confirm__scores {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  @media (min-width: 40rem) {
+    .overwrite-confirm__scores {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .overwrite-confirm__profile {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .overwrite-confirm__profile-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .overwrite-confirm__list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .overwrite-confirm__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .overwrite-confirm__row dt {
+    color: var(--color-muted);
+  }
+
+  .overwrite-confirm__row dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .overwrite-confirm__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .overwrite-confirm__actions {
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+
+  .overwrite-confirm__button {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .overwrite-confirm__button--secondary {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .overwrite-confirm__button--secondary:hover {
+    background: var(--color-surface-3);
+  }
+
+  .overwrite-confirm__button--primary {
+    border-color: transparent;
+    background: var(--color-blue);
+    color: var(--color-bg);
+  }
+
+  .overwrite-confirm__button--primary:hover {
+    filter: brightness(1.08);
+  }
+</style>

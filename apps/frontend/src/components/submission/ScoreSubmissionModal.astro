@@ -1,6 +1,7 @@
 ---
 import ManualScoreForm from "./ManualScoreForm.astro";
-import SubmittedScoresView from "./SubmittedScoresView.astro";
+import OverwriteConfirmationView from "./OverwriteConfirmationView.astro";
+import SubmissionResultView from "./SubmissionResultView.astro";
 
 interface Props {
   gameSlug: string;
@@ -36,6 +37,10 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     </header>
 
     <div class="submission-modal__body">
+      <div class="submission-state" data-submission-state="loading" hidden>
+        <p class="submission-state__message">Checking your submissions…</p>
+      </div>
+
       <div
         class="submission-state"
         data-submission-state="unauthenticated"
@@ -43,6 +48,40 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
       >
         <p class="submission-state__message">Please log in to submit a score</p>
         <a href={loginHref} class="submission-state__link"> Log in </a>
+      </div>
+
+      <div
+        class="submission-state"
+        data-submission-state="session-error"
+        hidden
+      >
+        <p class="submission-state__message" data-session-error-message>
+          We couldn't load your submission status.
+        </p>
+        <button type="button" class="submission-state__link" data-session-retry>
+          Retry
+        </button>
+      </div>
+
+      <div class="submission-state" data-submission-state="submitted" hidden>
+        <p class="submission-state__message">
+          You already submitted a classification score for this game
+          <span data-submitted-age></span>.
+        </p>
+        <p class="submission-state__hint">
+          Submitting a new score updates your existing submission in place.
+        </p>
+        <button
+          type="button"
+          class="submission-state__link"
+          data-submitted-continue
+        >
+          Submit a new score
+        </button>
+      </div>
+
+      <div class="submission-state" data-submission-state="overwrite" hidden>
+        <OverwriteConfirmationView />
       </div>
 
       <div class="submission-state" data-submission-state="choice" hidden>
@@ -76,23 +115,19 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
         <ManualScoreForm />
       </div>
 
-      <div class="submission-state" data-submission-state="submitted" hidden>
-        <SubmittedScoresView />
+      <div class="submission-state" data-submission-state="result" hidden>
+        <SubmissionResultView />
       </div>
     </div>
   </div>
 </dialog>
 
 <script>
-  import {
-    getCachedSubmission,
-    isUserAuthenticated,
-    saveSubmissionToCache,
-  } from "../../lib/score-submission-store";
   import { aestheticLabel, isAestheticValue } from "../../lib/aesthetics";
   import type { AestheticValue } from "../../lib/aesthetics";
   import { isProfileValid } from "../../lib/score-validation";
   import type { ProfileScores } from "../../lib/score-validation";
+  import type { QuestionnairePreviousResultDto } from "../../lib/questionnaire/types";
 
   const dialogElement = document.getElementById(
     "score-submission-modal",
@@ -108,15 +143,29 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
 
   const gameSlug = trigger.dataset.gameSlug ?? "";
 
-  type StateName = "unauthenticated" | "choice" | "manual" | "submitted";
+  type StateName =
+    | "loading"
+    | "unauthenticated"
+    | "session-error"
+    | "submitted"
+    | "overwrite"
+    | "choice"
+    | "manual"
+    | "result";
 
   const stateViews: Record<StateName, HTMLElement | null> = {
+    loading: dialog.querySelector('[data-submission-state="loading"]'),
     unauthenticated: dialog.querySelector(
       '[data-submission-state="unauthenticated"]',
     ),
+    "session-error": dialog.querySelector(
+      '[data-submission-state="session-error"]',
+    ),
+    submitted: dialog.querySelector('[data-submission-state="submitted"]'),
+    overwrite: dialog.querySelector('[data-submission-state="overwrite"]'),
     choice: dialog.querySelector('[data-submission-state="choice"]'),
     manual: dialog.querySelector('[data-submission-state="manual"]'),
-    submitted: dialog.querySelector('[data-submission-state="submitted"]'),
+    result: dialog.querySelector('[data-submission-state="result"]'),
   };
 
   const skipBtn = dialog.querySelector<HTMLButtonElement>(
@@ -125,55 +174,17 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   const closeBtn = dialog.querySelector<HTMLButtonElement>(
     "[data-submission-close]",
   );
+  const manualForm = dialog.querySelector<HTMLFormElement>(
+    "[data-manual-score-form]",
+  );
 
-  let activeState: StateName = "choice";
+  let activeState: StateName = "loading";
 
   function showState(name: StateName): void {
     activeState = name;
     for (const [key, el] of Object.entries(stateViews)) {
       if (el) el.hidden = key !== name;
     }
-  }
-
-  function setSubmittedValue(key: string, value: number): void {
-    const cell = dialog.querySelector(`[data-submitted="${key}"]`);
-    if (cell) cell.textContent = String(value);
-  }
-
-  function renderSubmitted(submission: {
-    challenge: ProfileScores;
-    reward: ProfileScores;
-    aesthetic: AestheticValue | null;
-    secondaryAesthetic: AestheticValue | null;
-    submittedAt: string;
-  }): void {
-    setSubmittedValue("challenge.micro", submission.challenge.micro);
-    setSubmittedValue("challenge.mystiko", submission.challenge.mystiko);
-    setSubmittedValue("challenge.macro", submission.challenge.macro);
-    setSubmittedValue("reward.micro", submission.reward.micro);
-    setSubmittedValue("reward.mystiko", submission.reward.mystiko);
-    setSubmittedValue("reward.macro", submission.reward.macro);
-
-    const aestheticCell = dialog.querySelector(`[data-submitted="aesthetic"]`);
-    if (aestheticCell) {
-      aestheticCell.textContent =
-        aestheticLabel(submission.aesthetic) ?? "None";
-    }
-
-    const secondaryCell = dialog.querySelector(
-      `[data-submitted="secondary-aesthetic"]`,
-    );
-    if (secondaryCell) {
-      secondaryCell.textContent =
-        aestheticLabel(submission.secondaryAesthetic) ?? "None";
-    }
-
-    const timestamp = dialog.querySelector("[data-submitted-timestamp]");
-    if (timestamp) {
-      timestamp.textContent = new Date(submission.submittedAt).toLocaleString();
-    }
-
-    showState("submitted");
   }
 
   function focusFirst(container: HTMLElement | null): void {
@@ -185,32 +196,310 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     target?.focus();
   }
 
-  function openModal(): void {
-    const cached = getCachedSubmission(gameSlug);
-    if (cached) {
-      renderSubmitted(cached);
-    } else if (!isUserAuthenticated()) {
+  // ── Server-authoritative pre-check ──────────────────────────────────────
+
+  async function fetchAuthStatus(): Promise<boolean> {
+    try {
+      const response = await fetch("/api/auth/status", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return false;
+      const body = (await response.json()) as { authenticated?: boolean };
+      return body.authenticated === true;
+    } catch {
+      return false;
+    }
+  }
+
+  type SessionOutcome =
+    | { kind: "unauthenticated" }
+    | { kind: "error"; message: string }
+    | { kind: "already-submitted"; ageDays: number | null }
+    | { kind: "overwrite"; previous: QuestionnairePreviousResultDto }
+    | { kind: "ready" };
+
+  async function loadSession(): Promise<SessionOutcome> {
+    let response: Response;
+    try {
+      response = await fetch(
+        `/api/questionnaire/${encodeURIComponent(gameSlug)}/session`,
+        { headers: { Accept: "application/json" } },
+      );
+    } catch {
+      return {
+        kind: "error",
+        message: "We couldn't reach the server. Please try again.",
+      };
+    }
+
+    if (response.status === 401) return { kind: "unauthenticated" };
+    if (!response.ok) {
+      return {
+        kind: "error",
+        message: `We couldn't load your submission status (error ${response.status}). Please try again.`,
+      };
+    }
+
+    try {
+      const session = (await response.json()) as {
+        precedence?: {
+          manual_submission_id: number | null;
+          age_days: number | null;
+        } | null;
+        previous_result: QuestionnairePreviousResultDto | null;
+      };
+
+      if (session.precedence?.manual_submission_id != null) {
+        return {
+          kind: "already-submitted",
+          ageDays: session.precedence.age_days ?? null,
+        };
+      }
+
+      const previous = session.previous_result;
+      if (previous && previous.status === "ACTIVE_IN_CALCULATION") {
+        return { kind: "overwrite", previous };
+      }
+      return { kind: "ready" };
+    } catch {
+      return {
+        kind: "error",
+        message: "We couldn't read your submission status. Please try again.",
+      };
+    }
+  }
+
+  function ageLabel(ageDays: number | null): string {
+    if (ageDays === null) return "recently";
+    if (ageDays <= 0) return "today";
+    if (ageDays === 1) return "yesterday";
+    return `${ageDays} days ago`;
+  }
+
+  function renderSubmittedNotice(ageDays: number | null): void {
+    const el = dialog.querySelector<HTMLElement>("[data-submitted-age]");
+    if (el) el.textContent = ageLabel(ageDays);
+  }
+
+  function renderSessionError(message: string): void {
+    const el = dialog.querySelector<HTMLElement>(
+      "[data-session-error-message]",
+    );
+    if (el) el.textContent = message;
+  }
+
+  function renderOverwrite(previous: QuestionnairePreviousResultDto): void {
+    const cells: Record<string, number> = {
+      "challenge.micro": previous.adjusted_challenge.micro,
+      "challenge.mystiko": previous.adjusted_challenge.mystiko,
+      "challenge.macro": previous.adjusted_challenge.macro,
+      "reward.micro": previous.adjusted_reward.micro,
+      "reward.mystiko": previous.adjusted_reward.mystiko,
+      "reward.macro": previous.adjusted_reward.macro,
+    };
+    for (const [key, value] of Object.entries(cells)) {
+      const el = dialog.querySelector(`[data-overwrite="${key}"]`);
+      if (el) el.textContent = String(value);
+    }
+  }
+
+  async function runPrecheck(): Promise<void> {
+    showState("loading");
+
+    if (!(await fetchAuthStatus())) {
       showState("unauthenticated");
+      focusFirst(stateViews.unauthenticated);
+      return;
+    }
+
+    const outcome = await loadSession();
+    if (outcome.kind === "unauthenticated") {
+      showState("unauthenticated");
+    } else if (outcome.kind === "error") {
+      renderSessionError(outcome.message);
+      showState("session-error");
+    } else if (outcome.kind === "already-submitted") {
+      renderSubmittedNotice(outcome.ageDays);
+      showState("submitted");
+    } else if (outcome.kind === "overwrite") {
+      renderOverwrite(outcome.previous);
+      showState("overwrite");
     } else {
       showState("choice");
     }
-
-    if (!dialog.open) dialog.showModal();
     focusFirst(stateViews[activeState]);
   }
 
-  trigger.addEventListener("click", openModal);
+  // ── Submission result ───────────────────────────────────────────────────
 
-  skipBtn?.addEventListener("click", () => {
-    const form = dialog.querySelector("[data-manual-score-form]");
-    form?.dispatchEvent(new CustomEvent("score-form-reset", { bubbles: true }));
+  type ResultVariant = "success" | "updated" | "duplicate" | "error";
+
+  const RESULT_CONTENT: Record<
+    Exclude<ResultVariant, "error">,
+    { icon: string; title: string; message: string }
+  > = {
+    success: {
+      icon: "✓",
+      title: "Classification Submitted Successfully!",
+      message: "Your manual rating has been recorded.",
+    },
+    updated: {
+      icon: "↻",
+      title: "Score UPDATED!",
+      message: "Your existing assessment was updated in place.",
+    },
+    duplicate: {
+      icon: "✓",
+      title: "Score Confirmed (Duplicate Ignored)",
+      message:
+        "This matched your recent submission, so no duplicate was created.",
+    },
+  };
+
+  function setResultScore(key: string, value: number): void {
+    const cell = dialog.querySelector(`[data-result-score="${key}"]`);
+    if (cell) cell.textContent = String(value);
+  }
+
+  function showResult(
+    variant: ResultVariant,
+    detail: {
+      challenge: ProfileScores;
+      reward: ProfileScores;
+      aesthetic: AestheticValue | null;
+      secondaryAesthetic: AestheticValue | null;
+    },
+    errorMessage = "",
+  ): void {
+    const root = dialog.querySelector<HTMLElement>("[data-submission-result]");
+    if (!root) return;
+    root.setAttribute("data-variant", variant);
+
+    const isError = variant === "error";
+    const icon = root.querySelector<HTMLElement>("[data-result-icon]");
+    const title = root.querySelector<HTMLElement>("[data-result-title]");
+    const message = root.querySelector<HTMLElement>("[data-result-message]");
+    const scores = root.querySelector<HTMLElement>("[data-result-scores]");
+    const aesthetics = root.querySelector<HTMLElement>(
+      ".submission-result__aesthetics",
+    );
+    const errorEl = root.querySelector<HTMLElement>("[data-result-error]");
+    const backBtn = root.querySelector<HTMLElement>("[data-result-back]");
+
+    if (scores) scores.hidden = isError;
+    if (aesthetics) aesthetics.hidden = isError;
+    if (backBtn) backBtn.hidden = !isError;
+    if (errorEl) {
+      errorEl.hidden = !isError;
+      errorEl.textContent = isError ? errorMessage : "";
+    }
+
+    if (isError) {
+      if (icon) icon.textContent = "!";
+      if (title) title.textContent = "Submission Failed";
+      if (message) message.textContent = "Your scores were not saved.";
+    } else {
+      const content = RESULT_CONTENT[variant];
+      if (icon) icon.textContent = content.icon;
+      if (title) title.textContent = content.title;
+      if (message) message.textContent = content.message;
+
+      setResultScore("challenge.micro", detail.challenge.micro);
+      setResultScore("challenge.mystiko", detail.challenge.mystiko);
+      setResultScore("challenge.macro", detail.challenge.macro);
+      setResultScore("reward.micro", detail.reward.micro);
+      setResultScore("reward.mystiko", detail.reward.mystiko);
+      setResultScore("reward.macro", detail.reward.macro);
+
+      const aestheticTag = root.querySelector<HTMLElement>(
+        "[data-result-aesthetic]",
+      );
+      if (aestheticTag) {
+        aestheticTag.textContent = aestheticLabel(detail.aesthetic) ?? "None";
+      }
+      const secondaryTag = root.querySelector<HTMLElement>(
+        "[data-result-secondary-aesthetic]",
+      );
+      if (secondaryTag) {
+        secondaryTag.textContent =
+          aestheticLabel(detail.secondaryAesthetic) ?? "None";
+      }
+    }
+
+    showState("result");
+  }
+
+  function extractErrorMessage(body: unknown, status: number): string {
+    if (body && typeof body === "object") {
+      const error = (body as { error?: unknown }).error;
+      if (typeof error === "string") return error;
+      if (error && typeof error === "object") {
+        const message = (error as { message?: unknown }).message;
+        if (typeof message === "string") return message;
+      }
+    }
+    return `Submission failed (${status}).`;
+  }
+
+  // ── Lifecycle & actions ─────────────────────────────────────────────────
+
+  function resetForm(): void {
+    manualForm?.dispatchEvent(
+      new CustomEvent("score-form-reset", { bubbles: true }),
+    );
+  }
+
+  function enterManualForm(): void {
+    resetForm();
+    showState("manual");
+    focusFirst(stateViews.manual);
+  }
+
+  async function openModal(): Promise<void> {
+    if (!dialog.open) dialog.showModal();
+    await runPrecheck();
+  }
+
+  trigger.addEventListener("click", () => {
+    void openModal();
+  });
+
+  skipBtn?.addEventListener("click", enterManualForm);
+
+  closeBtn?.addEventListener("click", () => dialog.close());
+
+  dialog
+    .querySelector("[data-session-retry]")
+    ?.addEventListener("click", () => {
+      void runPrecheck();
+    });
+
+  dialog
+    .querySelector("[data-submitted-continue]")
+    ?.addEventListener("click", enterManualForm);
+
+  dialog
+    .querySelector("[data-overwrite-proceed]")
+    ?.addEventListener("click", enterManualForm);
+
+  dialog
+    .querySelector("[data-overwrite-cancel]")
+    ?.addEventListener("click", () => dialog.close());
+
+  dialog
+    .querySelector("[data-result-close]")
+    ?.addEventListener("click", () => dialog.close());
+
+  dialog.querySelector("[data-result-back]")?.addEventListener("click", () => {
     showState("manual");
     focusFirst(stateViews.manual);
   });
 
-  closeBtn?.addEventListener("click", () => dialog.close());
-
   dialog.addEventListener("score-submit", (event) => {
+    void handleSubmit(event);
+  });
+
+  async function handleSubmit(event: Event): Promise<void> {
     const detail = (event as CustomEvent).detail as
       | {
           challenge: ProfileScores;
@@ -234,25 +523,79 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
       detail.secondaryAesthetic !== aesthetic
         ? detail.secondaryAesthetic
         : null;
-    const submittedAt = new Date().toISOString();
 
-    saveSubmissionToCache({
-      gameSlug,
-      submittedAt,
+    const submission = {
       challenge: detail.challenge,
       reward: detail.reward,
       aesthetic,
       secondaryAesthetic,
-    });
+    };
 
-    renderSubmitted({
-      challenge: detail.challenge,
-      reward: detail.reward,
-      aesthetic,
-      secondaryAesthetic,
-      submittedAt,
-    });
-  });
+    let response: Response;
+    try {
+      response = await fetch(
+        `/api/classifications/games/${encodeURIComponent(gameSlug)}/submit-score`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            challenge: {
+              micro: detail.challenge.micro,
+              mystiko: detail.challenge.mystiko,
+              macro: detail.challenge.macro,
+            },
+            reward: {
+              micro: detail.reward.micro,
+              mystiko: detail.reward.mystiko,
+              macro: detail.reward.macro,
+            },
+            aesthetic,
+            secondary_aesthetic: secondaryAesthetic,
+          }),
+        },
+      );
+    } catch {
+      manualForm?.dispatchEvent(
+        new CustomEvent("score-form-settled", { bubbles: true }),
+      );
+      showResult(
+        "error",
+        submission,
+        "Network error — please check your connection and try again.",
+      );
+      return;
+    }
+
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+
+    if (response.ok && body && typeof body === "object") {
+      const wire = body as {
+        is_duplicate?: boolean;
+        is_updated?: boolean;
+      };
+      if (wire.is_duplicate) {
+        showResult("duplicate", submission);
+      } else if (wire.is_updated) {
+        showResult("updated", submission);
+      } else {
+        showResult("success", submission);
+      }
+      return;
+    }
+
+    manualForm?.dispatchEvent(
+      new CustomEvent("score-form-settled", { bubbles: true }),
+    );
+    showResult("error", submission, extractErrorMessage(body, response.status));
+  }
 
   // Escape / close returns focus to the trigger (showModal fires `close` on
   // Escape natively).
@@ -266,12 +609,13 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     /* Native modal <dialog>s are centred by `margin: auto` on a fit-content
        box, but Tailwind preflight zeroes margins on every element. Restore
        auto margins (and pin fixed/inset explicitly) so the dialog centres
-       over the backdrop instead of hugging the top-left. */
+       over the backdrop instead of hugging the top-left.  SBGC-225: the
+       container is ~50% larger than the SBGC-215 baseline (44rem → 64rem). */
     position: fixed;
     inset: 0;
     margin: auto;
-    width: min(92vw, 44rem);
-    max-height: 85dvh;
+    width: min(94vw, 64rem);
+    max-height: 88dvh;
     padding: 0;
     border: 1px solid var(--color-border-2);
     border-radius: var(--radius-md);
@@ -286,7 +630,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   .submission-modal__panel {
     display: flex;
     flex-direction: column;
-    max-height: 85dvh;
+    max-height: 88dvh;
   }
 
   .submission-modal__header {
@@ -294,7 +638,7 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.25rem 1.25rem 0.75rem;
+    padding: 1.75rem 2rem 1rem;
     border-bottom: 1px solid var(--color-border);
   }
 
@@ -336,13 +680,19 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
   }
 
   .submission-modal__body {
-    padding: 1.25rem;
+    padding: 2rem;
     overflow-y: auto;
   }
 
   .submission-state__message {
     margin: 0;
     color: var(--color-text);
+  }
+
+  .submission-state__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-muted);
   }
 
   .submission-state__link {
@@ -353,7 +703,9 @@ const questionnaireHref = `/questionnaire?game=${encodeURIComponent(gameSlug)}`;
     border-radius: var(--radius-md);
     background: var(--color-surface-2);
     color: var(--color-text);
+    font: inherit;
     text-decoration: none;
+    cursor: pointer;
   }
 
   .submission-state__link:hover {
