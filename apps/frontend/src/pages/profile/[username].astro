@@ -7,11 +7,13 @@ import ProfileBioCard from "../../components/profile/ProfileBioCard.astro";
 import ProfileTopGames from "../../components/profile/ProfileTopGames.astro";
 import ProfileGameDNA from "../../components/profile/ProfileGameDNA.astro";
 import EditProfileModal from "../../components/profile/EditProfileModal.astro";
+import ReportUserModal from "../../components/profile/ReportUserModal.astro";
 import {
   getUserProfile,
   UserNotFoundError,
   type PublicUserProfileDto,
 } from "../../lib/server/api";
+import { LOCKOUT_PENDING_BIO } from "../../lib/server/moderation-routing";
 
 const username = Astro.params.username;
 
@@ -47,6 +49,7 @@ try {
 
 const profile = state.kind === "profile" ? state.profile : null;
 const title = profile ? `${profile.username}'s Profile` : "Profile";
+const bioLockout = profile?.moderation_lockout === LOCKOUT_PENDING_BIO;
 ---
 
 <BaseLayout title={title} canonicalPath={`/profile/${username}`}>
@@ -77,6 +80,7 @@ const title = profile ? `${profile.username}'s Profile` : "Profile";
           firstName={profile.first_name}
           lastName={profile.last_name}
           isOwner={profile.is_viewer_owner}
+          canReport={!profile.is_viewer_owner}
         />
 
         <div class="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8">
@@ -141,7 +145,26 @@ const title = profile ? `${profile.username}'s Profile` : "Profile";
         borderType={profile.border_type}
         borderPresetId={profile.border_preset_id}
         borderColor={profile.border_color}
+        lockout={bioLockout}
       />
+    )
+  }
+
+  {
+    profile && bioLockout && (
+      <div
+        id="profile-lockout-banner"
+        role="alert"
+        class="fixed inset-x-0 top-0 z-50 border-b border-amber-500/40 bg-amber-950/90 px-4 py-3 text-center text-sm text-amber-100"
+      >
+        Please update your profile. We detected inappropriate content.
+      </div>
+    )
+  }
+
+  {
+    profile && !profile.is_viewer_owner && (
+      <ReportUserModal offendingUsername={profile.username} />
     )
   }
 </BaseLayout>

@@ -1,0 +1,44 @@
+/* Security moderation desk — SBGC-223. */
+
+@keyframes moderation-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.moderation-card {
+  max-width: 60rem;
+  margin: 1rem 0;
+  padding: 1.25rem;
+  border: 1px solid var(--hairline-color, #ccc);
+  border-radius: 6px;
+}
+
+.moderation-card h2 {
+  margin-top: 0;
+}
+
+.moderation-field {
+  margin-bottom: 1rem;
+}
+
+.moderation-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.moderation-field textarea,
+.moderation-field input[type="text"] {
+  width: 100%;
+  max-width: 40rem;
+}
+
+.moderation-hint {
+  color: var(--body-quiet-color, #666);
+  font-size: 0.8125rem;
+}

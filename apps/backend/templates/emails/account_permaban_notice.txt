@@ -1,0 +1,20 @@
+Hello {{ username }},
+
+A moderator has reviewed reports filed against your MyGameDNA account and
+determined that it has violated our community guidelines.
+
+Reported categories:
+{% for reason in reasons %}  - {{ reason }}
+{% endfor %}
+Moderator rationale:
+{{ ban_reason }}
+
+As a result, your account has been permanently banned. All active sessions have
+been revoked and your account is no longer accessible. Your personal data will
+be permanently erased three (3) hours after this notice; this action cannot be
+undone.
+
+If you believe this decision was made in error, reply to this email before the
+deletion window closes.
+
+— The {{ site_name }} moderation team

@@ -1,0 +1,393 @@
+---
+/**
+ * Report-user modal — SBGC-223.
+ *
+ * Four-category report dialog with an optional strict plain-text "Other" field.
+ * Opened from the profile header's `#report-user-btn`; unauthenticated viewers
+ * get an inline toast that routes them to login instead of the dialog.
+ */
+interface Props {
+  offendingUsername: string;
+}
+
+const { offendingUsername } = Astro.props;
+const loginHref = `/login?redirect=${encodeURIComponent(`/profile/${offendingUsername}`)}`;
+---
+
+<div
+  id="report-user-toast"
+  data-report-toast
+  hidden
+  role="alert"
+  aria-live="polite"
+  class="fixed bottom-5 right-5 z-50 max-w-sm items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 shadow-xl"
+>
+  <span class="text-sm text-text">Please log in to report a user.</span>
+  <a href={loginHref} class="text-sm font-medium text-blue hover:underline">
+    Log in →
+  </a>
+  <button
+    type="button"
+    data-report-toast-close
+    aria-label="Close notification"
+    class="p-1 text-muted transition-colors hover:text-text"
+  >
+    ✕
+  </button>
+</div>
+
+<dialog
+  id="report-user-modal"
+  data-offending-username={offendingUsername}
+  aria-labelledby="report-user-title"
+  class="fixed inset-0 m-auto w-[min(92vw,34rem)] max-h-[85dvh] overflow-y-auto rounded-xl border border-border bg-surface p-0 text-text backdrop:bg-black/60"
+>
+  <div class="flex flex-col gap-5 p-6">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="report-user-title" class="text-xl font-semibold text-text">
+          Report User
+        </h2>
+        <p class="mt-1 text-sm text-muted">{offendingUsername}</p>
+      </div>
+      <button
+        type="button"
+        data-report-close
+        aria-label="Close modal"
+        class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"
+      >
+        ✕
+      </button>
+    </header>
+
+    <form data-report-form class="flex flex-col gap-4" novalidate>
+      <fieldset data-report-reasons class="flex flex-col gap-2">
+        <legend
+          class="mb-1 text-sm font-semibold uppercase tracking-wider text-muted"
+        >
+          Reason(s)
+        </legend>
+
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 p-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            data-report-reason="reason_username"
+            class="mt-0.5"
+          />
+          <span>Offensive / Inappropriate Username</span>
+        </label>
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 p-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            data-report-reason="reason_name"
+            class="mt-0.5"
+          />
+          <span>Offensive / Inappropriate First / Last Name</span>
+        </label>
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 p-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            data-report-reason="reason_bio"
+            class="mt-0.5"
+          />
+          <span>Offensive / Inappropriate Bio</span>
+        </label>
+        <label
+          class="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 p-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            data-report-reason="reason_other"
+            class="mt-0.5"
+          />
+          <span>Other</span>
+        </label>
+      </fieldset>
+
+      <div>
+        <label for="report-user-other" class="mb-1 block text-sm text-muted">
+          Other details
+        </label>
+        <textarea
+          id="report-user-other"
+          data-report-other
+          name="other_description"
+          rows="4"
+          maxlength="250"
+          disabled
+          placeholder="Select 'Other' above to specify details..."
+          class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text opacity-50 disabled:cursor-not-allowed"
+        ></textarea>
+        <p class="mt-1 text-xs text-muted">
+          <span data-report-char-count>0</span> / 250
+        </p>
+      </div>
+
+      <p
+        data-report-error
+        hidden
+        role="alert"
+        class="rounded-lg border border-red/30 bg-red/10 p-2 text-sm text-red"
+      >
+      </p>
+
+      <footer class="flex justify-end gap-3">
+        <button
+          type="button"
+          data-report-cancel
+          class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text hover:bg-surface-3"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          data-report-submit
+          disabled
+          class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Submit report
+        </button>
+      </footer>
+    </form>
+
+    <div data-report-success hidden class="flex flex-col gap-4">
+      <p
+        class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 p-3 text-sm text-emerald-200"
+      >
+        Thank you. Your report has been submitted for review.
+      </p>
+      <div class="flex justify-end">
+        <button
+          type="button"
+          data-report-done
+          class="rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dialogElement = document.getElementById(
+    "report-user-modal",
+  ) as HTMLDialogElement | null;
+  if (!dialogElement) throw new Error("Report-user modal is missing.");
+  const dialog: HTMLDialogElement = dialogElement;
+
+  const trigger = document.getElementById(
+    "report-user-btn",
+  ) as HTMLButtonElement | null;
+
+  const form = dialog.querySelector<HTMLFormElement>("[data-report-form]");
+  const successBox = dialog.querySelector<HTMLElement>("[data-report-success]");
+  const otherTextarea = dialog.querySelector<HTMLTextAreaElement>(
+    "[data-report-other]",
+  );
+  const charCount = dialog.querySelector<HTMLElement>(
+    "[data-report-char-count]",
+  );
+  const errorEl = dialog.querySelector<HTMLElement>("[data-report-error]");
+  const submitButton = dialog.querySelector<HTMLButtonElement>(
+    "[data-report-submit]",
+  );
+  const checkboxes = Array.from(
+    dialog.querySelectorAll<HTMLInputElement>("[data-report-reason]"),
+  );
+
+  const toast = document.getElementById("report-user-toast");
+  const toastClose = document.querySelector<HTMLButtonElement>(
+    "[data-report-toast-close]",
+  );
+
+  function reasonState(): Record<string, boolean> {
+    const state: Record<string, boolean> = {};
+    for (const box of checkboxes) {
+      state[box.dataset.reportReason ?? ""] = box.checked;
+    }
+    return state;
+  }
+
+  function anyReasonSelected(): boolean {
+    return checkboxes.some((box) => box.checked);
+  }
+
+  function updateSubmitState(): void {
+    if (submitButton) submitButton.disabled = !anyReasonSelected();
+  }
+
+  function updateCharCount(): void {
+    if (!otherTextarea || !charCount) return;
+    charCount.textContent = String(otherTextarea.value.length);
+  }
+
+  function syncOtherField(): void {
+    const otherBox = dialog.querySelector<HTMLInputElement>(
+      '[data-report-reason="reason_other"]',
+    );
+    if (!otherTextarea) return;
+    const enabled = otherBox?.checked === true;
+    otherTextarea.disabled = !enabled;
+    otherTextarea.classList.toggle("opacity-50", !enabled);
+    if (!enabled) {
+      otherTextarea.value = "";
+    }
+    updateCharCount();
+  }
+
+  function showError(message: string): void {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+
+  function hideError(): void {
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+  }
+
+  function resetForm(): void {
+    form?.reset();
+    for (const box of checkboxes) box.checked = false;
+    if (otherTextarea) otherTextarea.value = "";
+    syncOtherField();
+    updateSubmitState();
+    hideError();
+    if (form) form.hidden = false;
+    if (successBox) successBox.hidden = true;
+  }
+
+  function showSuccess(): void {
+    if (form) form.hidden = true;
+    if (successBox) successBox.hidden = false;
+  }
+
+  for (const box of checkboxes) {
+    box.addEventListener("change", () => {
+      if (box.dataset.reportReason === "reason_other") syncOtherField();
+      updateSubmitState();
+    });
+  }
+
+  // Angle brackets are hard-rejected: strip them as the user types so the
+  // payload never carries markup characters.
+  otherTextarea?.addEventListener("input", () => {
+    const cleaned = otherTextarea.value.replace(/[<>]/g, "");
+    if (cleaned !== otherTextarea.value) otherTextarea.value = cleaned;
+    updateCharCount();
+  });
+
+  function closeDialog(): void {
+    dialog.close();
+  }
+
+  dialog
+    .querySelector<HTMLButtonElement>("[data-report-close]")
+    ?.addEventListener("click", closeDialog);
+  dialog
+    .querySelector<HTMLButtonElement>("[data-report-cancel]")
+    ?.addEventListener("click", closeDialog);
+  dialog
+    .querySelector<HTMLButtonElement>("[data-report-done]")
+    ?.addEventListener("click", closeDialog);
+
+  dialog.addEventListener("close", resetForm);
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const reasons = reasonState();
+    if (!anyReasonSelected()) return;
+
+    const otherDescription = otherTextarea?.value ?? "";
+    if (reasons.reason_other && !otherDescription.trim()) {
+      showError("Please describe the issue for 'Other'.");
+      return;
+    }
+    if (otherDescription.includes("<") || otherDescription.includes(">")) {
+      showError("Angle brackets are not allowed.");
+      return;
+    }
+
+    if (submitButton) submitButton.disabled = true;
+    try {
+      const response = await fetch("/api/reports/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offending_username: dialog.dataset.offendingUsername ?? "",
+          reason_username: reasons.reason_username === true,
+          reason_name: reasons.reason_name === true,
+          reason_bio: reasons.reason_bio === true,
+          reason_other: reasons.reason_other === true,
+          other_description: otherDescription,
+        }),
+      });
+
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: { message?: string };
+      } | null;
+
+      if (response.ok && data?.success) {
+        showSuccess();
+        return;
+      }
+
+      const message =
+        response.status === 401
+          ? "Please log in to report a user."
+          : (data?.error?.message ?? "We couldn't submit your report.");
+      showError(message);
+    } catch {
+      showError("We couldn't reach the server. Please try again.");
+    } finally {
+      updateSubmitState();
+    }
+  });
+
+  function showToast(): void {
+    if (!toast) return;
+    toast.hidden = false;
+    toast.classList.add("flex");
+  }
+
+  toastClose?.addEventListener("click", () => {
+    if (toast) {
+      toast.hidden = true;
+      toast.classList.remove("flex");
+    }
+  });
+
+  trigger?.addEventListener("click", async () => {
+    let authenticated = false;
+    try {
+      const response = await fetch("/api/auth/status", {
+        headers: { Accept: "application/json" },
+      });
+      if (response.ok) {
+        const body = (await response.json()) as { authenticated?: boolean };
+        authenticated = body.authenticated === true;
+      }
+    } catch {
+      authenticated = false;
+    }
+
+    if (!authenticated) {
+      showToast();
+      return;
+    }
+
+    resetForm();
+    dialog.showModal();
+  });
+</script>

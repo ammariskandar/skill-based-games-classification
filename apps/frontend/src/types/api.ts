@@ -253,4 +253,6 @@ export interface PublicUserProfileDto {
   top_games: TopGameDto[];
   dna_scores: ProfileScoresDto | null;
   is_viewer_owner: boolean;
+  /** Owner-only moderation lockout status (SBGC-223). */
+  moderation_lockout: string | null;
 }

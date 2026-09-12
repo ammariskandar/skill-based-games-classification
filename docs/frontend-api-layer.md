@@ -23,6 +23,7 @@ apps/frontend/src/lib/server/api/
 ├── errors.ts    # Normalized error factory
 ├── types.ts     # ApiResult<T>, ApiError, request options
 ├── games.ts     # getGameDetail / getHomepageCarousel / getGameCatalogue + DTO types + error classes
+├── security.ts  # submitUserReport / getModerationLockout / username remediation (SBGC-223)
 └── index.ts     # Public re-exports
 ```
 
@@ -192,6 +193,32 @@ All are `prerender = false`, forward the viewer `sessionid` server-side, and
 return `{ error: { code, message } }` on a missing cookie or transport failure.
 The modal keeps no client-side submission cache: returning-user state is read
 from the server session fetch.
+
+### User reporting & forced remediation (SBGC-223)
+
+The profile page talks to Django only through same-origin BFF routes; the
+browser never contacts Django directly:
+
+- `POST /api/reports/user` (`src/pages/api/reports/user.ts`) proxies
+  `submitUserReport()` in `lib/server/api/security.ts`.  It validates the payload
+  (≥ 1 reason, ≤ 250-char plain text, no angle brackets), relays the report
+  server-to-server, and reduces the upstream body to a leak-free
+  `{ success, message }` envelope — no internal report/user IDs cross back to the
+  client.  A missing `sessionid` → `401`; a transport failure → `503`.
+- `POST /api/remediate/username` (`src/pages/api/remediate/username.ts`) proxies
+  `submitUsernameRemediation()` for the locked-out `/remediate/username` page and
+  relays the upstream `200`/`401`/`403`/`422` envelope verbatim.
+- `getRemediationContext()` and `getModerationLockout()` are server-only helpers
+  used by the remediate page and the SSR middleware respectively; the lockout
+  probe fails **open** (returns `null`) so a backend outage never locks every
+  session out of the site.
+
+The SSR middleware (`src/middleware.ts`) consults `GET /api/v1/security/lockout`
+for authenticated page navigations and delegates the routing decision to the
+pure `moderationRedirect()` helper (`lib/server/moderation-routing.ts`): a
+`pending_username_change` lockout is funnelled to `/remediate/username` (auth
+surfaces stay reachable), and a `pending_bio_change` lockout to the viewer's own
+profile where the unclosable Edit Profile modal runs.
 
 ### Game-detail state matrix (SBGC-74)
 

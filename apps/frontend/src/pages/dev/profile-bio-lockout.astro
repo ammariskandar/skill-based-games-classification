@@ -1,0 +1,61 @@
+---
+import "../../styles/global.css";
+import ProfileAvatar from "../../components/profile/ProfileAvatar.astro";
+import ProfileBioCard from "../../components/profile/ProfileBioCard.astro";
+import ProfileHeader from "../../components/profile/ProfileHeader.astro";
+import EditProfileModal from "../../components/profile/EditProfileModal.astro";
+
+// Dev-only test fixture (SBGC-223). Renders the forced name/bio remediation
+// surface: the persistent warning banner plus the auto-opening, unclosable
+// Edit Profile modal. Not linked from production.
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bio-lockout fixture</title>
+  </head>
+  <body>
+    <div
+      id="profile-lockout-banner"
+      role="alert"
+      class="fixed inset-x-0 top-0 z-50 border-b border-amber-500/40 bg-amber-950/90 px-4 py-3 text-center text-sm text-amber-100"
+    >
+      Please update your profile. We detected inappropriate content.
+    </div>
+
+    <main class="shell-gutter mx-auto max-w-7xl py-8">
+      <ProfileHeader
+        username="locked-user"
+        firstName="Locked"
+        lastName="User"
+        isOwner={true}
+      />
+
+      <div
+        class="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <ProfileAvatar avatarKey="male_1" borderType="NONE" />
+        </div>
+        <ProfileBioCard bio="Existing bio" bioMode="PLAIN" />
+      </div>
+    </main>
+
+    <EditProfileModal
+      username="locked-user"
+      firstName="Locked"
+      lastName="User"
+      bio="Existing bio"
+      bioMode="PLAIN"
+      avatarKey="male_1"
+      borderType="NONE"
+      borderPresetId={null}
+      borderColor=""
+      lockout={true}
+    />
+  </body>
+</html>

@@ -10,8 +10,9 @@ from __future__ import annotations
 import re
 
 from django.conf import settings
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 
+from security.models import ReportStatus
 from security.models_cache import (
     APPROVED,
     PENDING,
@@ -109,3 +110,79 @@ class AdminSecurityMiddleware:
         if count:
             response.content = injected.encode(charset)
         return response
+
+
+class ModerationEnforcementMiddleware:
+    """Enforce moderation lockouts for authenticated, non-staff users (SBGC-223).
+
+    Always records the governing lockout status on ``request.moderation_lockout``
+    so read views can surface it.  API requests outside the remediation
+    allow-list are refused with a structured ``403``; page routes are left to the
+    Astro frontend, which redirects based on the status it reads from the API.
+    Staff and superusers bypass enforcement entirely.
+    """
+
+    def __init__(self, get_response) -> None:
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.moderation_lockout = None
+
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated or user.is_staff:
+            return self.get_response(request)
+
+        # Imported lazily so the middleware module does not pull the service
+        # graph (and its model imports) into app-loading.
+        from security.services.reporting import active_lockout_status
+
+        status = active_lockout_status(user)
+        request.moderation_lockout = status
+        if status is None:
+            return self.get_response(request)
+
+        if self._is_allowed(request.path, status):
+            return self.get_response(request)
+
+        if request.path.startswith("/api/"):
+            return self._forbidden(status)
+
+        # Non-API (page) routes are handled by the Astro frontend; Django serves
+        # no public pages for these users.
+        return self.get_response(request)
+
+    @staticmethod
+    def _is_allowed(path: str, status: str) -> bool:
+        # Auth + the remediation handshake are always reachable so the user can
+        # identify themselves, log out, or complete the forced change.  The
+        # Django auth router is mounted under the versioned prefix; the
+        # unversioned ``/api/auth/`` path is the Astro BFF, which never reaches
+        # Django and so must not be relied on here.
+        if (
+            path.startswith("/api/v1/auth/")
+            or path.startswith("/api/v1/security/remediate/")
+            or path == "/api/v1/security/lockout"
+        ):
+            return True
+        # Bio/name lockout permits the profile read + self-update boundary.
+        if status == ReportStatus.PENDING_BIO_CHANGE and path.startswith(
+            "/api/v1/users/"
+        ):
+            return True
+        return False
+
+    @staticmethod
+    def _forbidden(status: str) -> JsonResponse:
+        return JsonResponse(
+            {
+                "error": {
+                    "code": "MODERATION_LOCKOUT",
+                    "message": (
+                        "Your account is locked pending moderation remediation."
+                    ),
+                    "details": [],
+                },
+                "lockout": status,
+            },
+            status=403,
+        )

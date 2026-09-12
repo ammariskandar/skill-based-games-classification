@@ -81,6 +81,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # SBGC-106 — adaptive admin perimeter (VPN waiting room + read-only).
     "security.middleware.AdminSecurityMiddleware",
+    # SBGC-223 — user-report lockouts (forced username / name-bio remediation).
+    "security.middleware.ModerationEnforcementMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -265,6 +267,10 @@ STEAM_REFRESH_FALLBACK_EMAILS = env_str(
 
 # Sender address for operational alert emails.
 DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@localhost")
+
+# SBGC-223 — public frontend origin, used for Admin hyperlinks to public
+# profiles (e.g. the moderation desk's offending-user link).
+PUBLIC_SITE_URL = env_str(env, "PUBLIC_SITE_URL", default="http://localhost:4321")
 
 # SBGC-218 — reCAPTCHA v3 secret (never hardcoded; read from environment).
 # Empty means the score check is bypassed (local development without a key).

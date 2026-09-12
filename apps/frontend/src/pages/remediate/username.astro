@@ -1,0 +1,240 @@
+---
+/**
+ * Forced-username remediation — SBGC-223.
+ *
+ * A locked variant of the sign-up form shown to accounts whose username was
+ * reported and actioned.  The backend perimeter blocks every other surface
+ * until the username + password rotation completes; this page is the only
+ * escape hatch (alongside log-out).
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ErrorState from "../../components/ui/ErrorState.astro";
+import { getRemediationContext } from "../../lib/server/api/security";
+
+export const prerender = false;
+
+const sessionId = Astro.cookies.get("sessionid")?.value;
+if (!sessionId) {
+  return Astro.redirect(
+    `/login?redirect=${encodeURIComponent("/remediate/username")}`,
+    302,
+  );
+}
+
+type PageState =
+  { kind: "form"; username: string; email: string } | { kind: "service-error" };
+
+let state: PageState;
+try {
+  const result = await getRemediationContext({ sessionId });
+  if (result.ok) {
+    state = {
+      kind: "form",
+      username: result.data.username,
+      email: result.data.email,
+    };
+  } else if (result.statusCode === 401) {
+    return Astro.redirect(
+      `/login?redirect=${encodeURIComponent("/remediate/username")}`,
+      302,
+    );
+  } else if (result.statusCode === 403) {
+    // Not actually locked out — nothing to remediate.
+    return Astro.redirect("/", 302);
+  } else {
+    Astro.response.status = 503;
+    state = { kind: "service-error" };
+  }
+} catch {
+  Astro.response.status = 503;
+  state = { kind: "service-error" };
+}
+---
+
+<BaseLayout title="Update your username" robots="noindex, nofollow">
+  {
+    state.kind === "service-error" ? (
+      <div class="mx-auto max-w-lg">
+        <ErrorState
+          title="We couldn't load your account right now."
+          message="Please try again in a moment."
+          code="SERVICE_UNAVAILABLE"
+          headingLevel="h1"
+        >
+          <a
+            href="/remediate/username"
+            class="text-sm font-medium text-blue hover:underline"
+          >
+            Try again →
+          </a>
+        </ErrorState>
+      </div>
+    ) : (
+      <div class="mx-auto max-w-lg">
+        <div
+          role="alert"
+          class="mb-6 rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-sm text-amber-200"
+        >
+          Your account has been detected to have an unacceptable username.
+          Please update your username. Be warned that repeated offence will lead
+          to a Permanent Ban.
+        </div>
+
+        <h1 class="text-2xl font-black tracking-tight text-text">
+          Update your username
+        </h1>
+
+        <form id="remediate-form" class="mt-6 flex flex-col gap-4" novalidate>
+          <label class="block">
+            <span class="mb-1 block text-sm text-muted">Username</span>
+            <input
+              id="remediate-username"
+              name="new_username"
+              type="text"
+              required
+              minlength="4"
+              maxlength="20"
+              pattern="[a-zA-Z0-9_\-]{4,20}"
+              autocomplete="username"
+              value={state.username}
+              class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+            />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm text-muted">Email</span>
+            <input
+              id="remediate-email"
+              type="email"
+              value={state.email}
+              disabled
+              readonly
+              class="w-full cursor-not-allowed rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted opacity-70"
+            />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm text-muted">
+              New password (required)
+            </span>
+            <input
+              id="remediate-password"
+              name="new_password"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+            />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm text-muted">Confirm password</span>
+            <input
+              id="remediate-confirm"
+              name="confirm_password"
+              type="password"
+              required
+              minlength="8"
+              autocomplete="new-password"
+              class="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-text"
+            />
+          </label>
+
+          <p
+            id="remediate-error"
+            class="hidden rounded-lg border border-red/30 bg-red/10 p-2 text-sm text-red"
+            role="alert"
+          />
+
+          <button
+            id="remediate-submit"
+            type="submit"
+            class="rounded-lg bg-blue px-4 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Update Username
+          </button>
+        </form>
+      </div>
+    )
+  }
+</BaseLayout>
+
+<script>
+  const form = document.getElementById(
+    "remediate-form",
+  ) as HTMLFormElement | null;
+  const usernameInput = document.getElementById(
+    "remediate-username",
+  ) as HTMLInputElement | null;
+  const passwordInput = document.getElementById(
+    "remediate-password",
+  ) as HTMLInputElement | null;
+  const confirmInput = document.getElementById(
+    "remediate-confirm",
+  ) as HTMLInputElement | null;
+  const errorEl = document.getElementById(
+    "remediate-error",
+  ) as HTMLParagraphElement | null;
+  const submitButton = document.getElementById(
+    "remediate-submit",
+  ) as HTMLButtonElement | null;
+
+  function showError(message: string): void {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.classList.remove("hidden");
+  }
+
+  function hideError(): void {
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.classList.add("hidden");
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const username = usernameInput?.value.trim() ?? "";
+    const password = passwordInput?.value ?? "";
+    const confirm = confirmInput?.value ?? "";
+
+    if (password !== confirm) {
+      showError("Passwords do not match.");
+      return;
+    }
+
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      const response = await fetch("/api/remediate/username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          new_username: username,
+          new_password: password,
+          confirm_password: confirm,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        username?: string;
+        error?: { message?: string };
+      };
+
+      if (!response.ok) {
+        showError(data.error?.message ?? "We couldn't update your username.");
+        if (submitButton) submitButton.disabled = false;
+        return;
+      }
+
+      document.cookie =
+        "flash_toast=username_updated; Path=/; Max-Age=60; SameSite=Lax";
+      window.location.href = `/profile/${encodeURIComponent(data.username ?? username)}`;
+    } catch {
+      showError("We couldn't reach the server. Please try again.");
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+</script>
