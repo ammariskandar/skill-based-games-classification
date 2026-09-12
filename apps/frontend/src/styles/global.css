@@ -371,14 +371,17 @@ strong {
   transition: opacity 0.2s ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .q-radar-polygon,
-  .q-radar-layer,
-  .q-radar-node,
-  .radar-polygon,
-  .radar-vertex-node,
-  .radar-axis-label,
-  .radar-tooltip {
-    transition: none;
-  }
+/* Suppress native number-input spin buttons — SBGC-225.
+   The score steppers render their own + / − controls, so the browser's inner/
+   outer spinners are redundant.  Chrome/Safari/Edge use the WebKit pseudo
+   elements; Firefox uses the textfield appearance. */
+input.score-stepper-input::-webkit-outer-spin-button,
+input.score-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input.score-stepper-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

@@ -60,6 +60,12 @@ export {
   getQuestionnaireSession,
   submitQuestionnaire,
 } from "./questionnaire";
+export { submitManualScore } from "./score-submission";
+export type {
+  ManualScoreSubmissionRequest,
+  ManualScoreSubmissionResponse,
+  ManualScoreSubmissionResult,
+} from "./score-submission";
 export type {
   QuestionnaireRequestOptions,
   SubmitQuestionnaireResult,

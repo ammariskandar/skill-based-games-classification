@@ -166,6 +166,27 @@ viewport-derived and accepted by the proxy but is never part of shareable URL
 state.  A service failure returns `503` `SERVICE_UNAVAILABLE`; the route renders
 a truthful error state, never an empty ranking.
 
+### Manual score submission (SBGC-225)
+
+The Game-detail submission modal talks to Django only through two same-origin
+BFF routes; the browser never contacts Django directly:
+
+- `GET /api/questionnaire/[slug]/session` (`src/pages/api/questionnaire/[slug]/session.ts`)
+  proxies `getQuestionnaireSession()` so the modal can pre-check whether the
+  viewer already has an active questionnaire assessment (the overwrite
+  interstitial).  A missing `sessionid` cookie short-circuits to `401`; upstream
+  `QuestionnaireApiError` statuses are relayed, and a transport failure returns
+  `502`.
+- `POST /api/classifications/games/[slug]/submit-score`
+  (`src/pages/api/classifications/games/[slug]/submit-score.ts`) proxies
+  `submitManualScore()` in `lib/server/api/score-submission.ts`.  The upstream
+  status and body are relayed verbatim (`201` created / `200` updated or
+  duplicate / `4xx` / `5xx`) so the modal can branch on the SBGC-216 temporal
+  outcome and render the matching success / updated / duplicate / error view.
+
+Both are `prerender = false`, forward the viewer `sessionid` server-side, and
+return `{ error: { code, message } }` on a missing cookie or transport failure.
+
 ### Game-detail state matrix (SBGC-74)
 
 | Upstream outcome | `getGameDetail` result | Page result |

@@ -1,0 +1,273 @@
+---
+// Manual submission outcome screen — SBGC-225.
+//
+// A structured feedback view for the four SBGC-216 outcomes (created / updated /
+// duplicate / error).  The modal drives it through `data-*` hooks: it sets the
+// `data-variant` attribute, the title/message text, and toggles the score
+// breakdown vs. the error notice.  No client script lives here.
+---
+
+<div
+  class="submission-result"
+  data-submission-result
+  data-variant="success"
+  role="status"
+  aria-live="polite"
+>
+  <span class="submission-result__badge" data-result-icon aria-hidden="true">
+    ✓
+  </span>
+
+  <p class="submission-result__title" data-result-title>
+    Classification Submitted Successfully!
+  </p>
+  <p class="submission-result__message" data-result-message></p>
+
+  <div class="submission-result__scores" data-result-scores>
+    <div class="submission-result__profile">
+      <h4 class="submission-result__profile-title">Challenge</h4>
+      <dl class="submission-result__list">
+        <div class="submission-result__row">
+          <dt>Micro</dt>
+          <dd data-result-score="challenge.micro">–</dd>
+        </div>
+        <div class="submission-result__row">
+          <dt>Mystiko</dt>
+          <dd data-result-score="challenge.mystiko">–</dd>
+        </div>
+        <div class="submission-result__row">
+          <dt>Macro</dt>
+          <dd data-result-score="challenge.macro">–</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="submission-result__profile">
+      <h4 class="submission-result__profile-title">Reward</h4>
+      <dl class="submission-result__list">
+        <div class="submission-result__row">
+          <dt>Micro</dt>
+          <dd data-result-score="reward.micro">–</dd>
+        </div>
+        <div class="submission-result__row">
+          <dt>Mystiko</dt>
+          <dd data-result-score="reward.mystiko">–</dd>
+        </div>
+        <div class="submission-result__row">
+          <dt>Macro</dt>
+          <dd data-result-score="reward.macro">–</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <p class="submission-result__aesthetics">
+    <span class="submission-result__tag" data-result-aesthetic>None</span>
+    <span class="submission-result__tag" data-result-secondary-aesthetic
+      >None</span
+    >
+  </p>
+
+  <p class="submission-result__error" data-result-error hidden></p>
+
+  <div class="submission-result__actions">
+    <button
+      type="button"
+      class="submission-result__button submission-result__button--secondary"
+      data-result-back
+      hidden
+    >
+      Back to Editing
+    </button>
+    <button
+      type="button"
+      class="submission-result__button submission-result__button--primary"
+      data-result-close
+    >
+      Close
+    </button>
+  </div>
+</div>
+
+<style>
+  .submission-result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .submission-result__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .submission-result__title {
+    margin: 1rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .submission-result__message {
+    margin: 0.5rem 0 0;
+    max-width: 34rem;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+  }
+
+  .submission-result__scores {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 1.5rem;
+    text-align: left;
+  }
+
+  @media (min-width: 40rem) {
+    .submission-result__scores {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .submission-result__profile {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .submission-result__profile-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .submission-result__list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0;
+  }
+
+  .submission-result__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .submission-result__row dt {
+    color: var(--color-muted);
+  }
+
+  .submission-result__row dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+
+  .submission-result__aesthetics {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+  }
+
+  .submission-result__tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1875rem 0.625rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: 9999px;
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .submission-result__error {
+    margin: 1.25rem 0 0;
+    padding: 0.75rem 1rem;
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--color-red) 40%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-red) 12%, transparent);
+    color: var(--color-red);
+    font-size: 0.875rem;
+    text-align: left;
+  }
+
+  .submission-result__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .submission-result__button {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--color-border-2);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .submission-result__button--primary {
+    border-color: transparent;
+    background: var(--color-blue);
+    color: var(--color-bg);
+  }
+
+  .submission-result__button--primary:hover {
+    filter: brightness(1.08);
+  }
+
+  .submission-result__button--secondary {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .submission-result__button--secondary:hover {
+    background: var(--color-surface-3);
+  }
+
+  /* Variant accents. */
+  [data-variant="success"] .submission-result__badge {
+    color: var(--color-green);
+    border-color: color-mix(in srgb, var(--color-green) 45%, transparent);
+    background: color-mix(in srgb, var(--color-green) 12%, transparent);
+  }
+
+  [data-variant="updated"] .submission-result__badge {
+    color: var(--color-blue);
+    border-color: color-mix(in srgb, var(--color-blue) 45%, transparent);
+    background: color-mix(in srgb, var(--color-blue) 12%, transparent);
+  }
+
+  [data-variant="duplicate"] .submission-result__badge {
+    color: var(--color-amber);
+    border-color: color-mix(in srgb, var(--color-amber) 45%, transparent);
+    background: color-mix(in srgb, var(--color-amber) 12%, transparent);
+  }
+
+  [data-variant="error"] .submission-result__badge {
+    color: var(--color-red);
+    border-color: color-mix(in srgb, var(--color-red) 45%, transparent);
+    background: color-mix(in srgb, var(--color-red) 12%, transparent);
+  }
+</style>

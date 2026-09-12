@@ -2570,6 +2570,34 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-11 — SBGC-225 enlarged submission modal & live manual submission flow
+
+- **Geometry** — the submission modal grows from ~44rem to `min(94vw, 64rem)`
+  with 2rem body padding; the manual form's steppers (2.5rem / 40px), inputs
+  (2.75rem), panel padding, gaps, and CTA height scale up while typography is
+  unchanged.  Native `type="number"` spinners are suppressed globally for
+  `.score-stepper-input`.
+- **Live submission** — the modal now posts through the SBGC-216 ingestion
+  pipeline via two same-origin BFF routes (`POST .../submit-score`, plus
+  `GET /api/questionnaire/{slug}/session` for the pre-check) and the server
+  client `lib/server/api/score-submission.ts`; the browser never calls Django
+  directly and the viewer `sessionid` is forwarded server-side.
+- **Outcomes** — 201 (first time / ≥ 15-day branch) shows
+  "Classification Submitted Successfully!"; 200 `is_updated` shows
+  "Score UPDATED!"; 200 `is_duplicate` shows "Score Confirmed (Duplicate
+  Ignored)"; 4xx/5xx/network show an error notice with a "Back to Editing"
+  action that retains the entered scores.
+- **Precedence interstitial** — when the viewer already has an ACTIVE
+  questionnaire for the Game, `OverwriteConfirmationView` previews the previous
+  adjusted Challenge/Reward scores and requires an explicit "Proceed with Manual
+  Overwrite" (or "Cancel & Keep Previous").
+- **Components** — `OverwriteConfirmationView.astro` and
+  `SubmissionResultView.astro`; the cached-submission "already submitted" view is
+  retained for returning users.
+- **Tests** — 4 server-client unit tests; browser suite 41 passing (enlargement
+  dimensions, spinner suppression, overwrite interstitial, and the four temporal
+  outcomes); `astro check`, ESLint, Prettier and the build green.
+
 ## 2026-09-11 — SBGC-228 aesthetic dropdown in manual submission & Admin
 
 - **Taxonomy** — `AESTHETIC_CHOICES` in `classifications/models.py` derives the
