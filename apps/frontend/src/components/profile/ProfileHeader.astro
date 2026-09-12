@@ -4,6 +4,7 @@ interface Props {
   firstName?: string;
   lastName?: string;
   isOwner?: boolean;
+  canReport?: boolean;
 }
 
 const {
@@ -11,6 +12,7 @@ const {
   firstName = "",
   lastName = "",
   isOwner = false,
+  canReport = false,
 } = Astro.props;
 const fullName = [firstName, lastName].filter(Boolean).join(" ");
 ---
@@ -30,6 +32,19 @@ const fullName = [firstName, lastName].filter(Boolean).join(" ");
           class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-surface-3"
         >
           Edit Profile
+        </button>
+      )
+    }
+    {
+      !isOwner && canReport && (
+        <button
+          id="report-user-btn"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="report-user-modal"
+          class="rounded-lg border border-rose-500/40 bg-transparent px-4 py-2 text-sm font-medium text-rose-400 transition-colors hover:bg-rose-500/10"
+        >
+          Report User
         </button>
       )
     }

@@ -1,0 +1,124 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:security_userreport_changelist' %}">User reports</a>
+  &rsaquo; Take action on report #{{ report.pk }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="moderation-card">
+  <h2>Report #{{ report.pk }}</h2>
+
+  <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem; width: 12rem;">Offending user</th>
+        <td style="padding: 0.5rem;">
+          <a href="{{ public_profile_url }}" target="_blank" rel="noopener">
+            <strong>{{ report.offending_user.username }}</strong>
+          </a>
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem;">Reporting user</th>
+        <td style="padding: 0.5rem;">{{ report.reporting_user.username }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem;">Reason(s)</th>
+        <td style="padding: 0.5rem;">
+          {% for reason in reasons %}<span style="display:inline-block;padding:0 .4rem;margin:0 .15rem .15rem 0;border:1px solid #8b949e55;border-radius:9999px;font-size:.6875rem;background:#8b949e22;">{{ reason }}</span>{% empty %}—{% endfor %}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem;">Other details</th>
+        <td style="padding: 0.5rem;">{{ report.other_description|default:"—" }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem;">Repeat offender</th>
+        <td style="padding: 0.5rem;">
+          {% if report.repeat_offender_at_submission %}<strong style="color:#f85149">YES</strong>{% else %}<span style="color:#8b949e">NO</span>{% endif %}
+        </td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--hairline-color);">
+        <th style="padding: 0.5rem;">Possible brigading</th>
+        <td style="padding: 0.5rem;">
+          {% if report.possible_brigading %}<strong style="color:#d2991d">⚠ BRIGADING SUSPECTED</strong>{% else %}<span style="color:#8b949e">NO</span>{% endif %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr style="margin: 1.5rem 0;" />
+
+  <h2>Intervention A — Permanently Ban &amp; Delete Account</h2>
+  <p class="moderation-hint">
+    Revokes all sessions, locks the account, emails the offender, and schedules a
+    hard purge three hours from now. Type <code>permaban</code> exactly to confirm.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="intervention" value="permaban" />
+    <div class="moderation-field">
+      <label for="permaban-reason">Ban reason (max 250 characters)</label>
+      <textarea id="permaban-reason" name="ban_reason" rows="3" maxlength="250" required></textarea>
+    </div>
+    <div class="moderation-field">
+      <label for="permaban-confirm">Type "permaban" to confirm</label>
+      <input type="text" id="permaban-confirm" name="confirm_phrase" autocomplete="off" required />
+    </div>
+    <button type="submit" class="button" style="background:#ba2121;color:#fff;">
+      Permanently ban and delete account
+    </button>
+  </form>
+
+  <hr style="margin: 1.5rem 0;" />
+
+  <h2>Intervention B — Enforce Lockout &amp; Forced Username Change</h2>
+  <p class="moderation-hint">
+    The offender is intercepted on their next request and must pick a new
+    username and password before regaining access.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="intervention" value="username" />
+    <div class="moderation-field">
+      <label for="username-reason">Action reason (max 250 characters)</label>
+      <textarea id="username-reason" name="action_reason" rows="3" maxlength="250" required></textarea>
+    </div>
+    <button type="submit" class="button">Enforce username change</button>
+  </form>
+
+  <hr style="margin: 1.5rem 0;" />
+
+  <h2>Intervention C — Enforce Lockout &amp; Forced Name / Bio Change</h2>
+  <p class="moderation-hint">
+    The offender is intercepted on their next request and must edit their first
+    name, last name, or bio before regaining access.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="intervention" value="bio" />
+    <div class="moderation-field">
+      <label for="bio-reason">Action reason (max 250 characters)</label>
+      <textarea id="bio-reason" name="action_reason" rows="3" maxlength="250" required></textarea>
+    </div>
+    <button type="submit" class="button">Enforce name / bio change</button>
+  </form>
+
+  <hr style="margin: 1.5rem 0;" />
+
+  <h2>Dismiss this report</h2>
+  <p class="moderation-hint">
+    No penalty is applied. The offender's history now counts toward the repeat
+    offender flag on future reports.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="intervention" value="dismiss" />
+    <button type="submit" class="button">Dismiss report</button>
+  </form>
+</div>
+{% endblock %}

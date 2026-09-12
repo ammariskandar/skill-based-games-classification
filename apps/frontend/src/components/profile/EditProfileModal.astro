@@ -9,6 +9,8 @@ interface Props {
   borderType: string;
   borderPresetId: number | null;
   borderColor: string;
+  /** True when a moderation lockout forces an unclosable name/bio edit. */
+  lockout?: boolean;
 }
 
 const {
@@ -21,6 +23,7 @@ const {
   borderType,
   borderPresetId,
   borderColor,
+  lockout = false,
 } = Astro.props;
 
 const AVATAR_KEYS = [
@@ -50,6 +53,7 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
 <dialog
   id="edit-profile-modal"
   data-initial-mode={bioMode}
+  data-lockout={lockout ? "true" : "false"}
   class="fixed inset-0 m-auto w-[min(92vw,42rem)] max-h-[85dvh] overflow-y-auto rounded-xl border border-border bg-surface p-0 text-text backdrop:bg-black/60"
 >
   <div class="flex flex-col gap-5 p-6">
@@ -58,14 +62,18 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
         <h2 class="text-xl font-semibold text-text">Edit Profile</h2>
         <p class="mt-1 text-sm text-muted">{username}</p>
       </div>
-      <button
-        id="edit-profile-close"
-        type="button"
-        aria-label="Close modal"
-        class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"
-      >
-        ✕
-      </button>
+      {
+        !lockout && (
+          <button
+            id="edit-profile-close"
+            type="button"
+            aria-label="Close modal"
+            class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"
+          >
+            ✕
+          </button>
+        )
+      }
     </header>
 
     <!-- Live composited preview -->
@@ -320,13 +328,17 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
     </p>
 
     <footer class="flex justify-end gap-3">
-      <button
-        id="edit-profile-cancel"
-        type="button"
-        class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text hover:bg-surface-3"
-      >
-        Cancel
-      </button>
+      {
+        !lockout && (
+          <button
+            id="edit-profile-cancel"
+            type="button"
+            class="rounded-lg border border-border bg-surface-2 px-4 py-2 text-sm font-medium text-text hover:bg-surface-3"
+          >
+            Cancel
+          </button>
+        )
+      }
       <button
         id="edit-profile-save"
         type="button"
@@ -342,14 +354,15 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
   import { parseAndValidateBbCode } from "../../lib/bbcode";
   import { segmentBio } from "../../lib/bio-presentation";
 
-  const dialog = document.getElementById(
+  const dialogElement = document.getElementById(
     "edit-profile-modal",
   ) as HTMLDialogElement | null;
   const trigger = document.getElementById(
     "edit-profile-btn",
   ) as HTMLButtonElement | null;
-  if (!dialog || !trigger)
+  if (!dialogElement || !trigger)
     throw new Error("Edit profile modal or trigger is missing.");
+  const dialog: HTMLDialogElement = dialogElement;
 
   const bioModeInitial: "PLAIN" | "BBCODE" =
     dialog.dataset.initialMode === "BBCODE" ? "BBCODE" : "PLAIN";
@@ -405,6 +418,56 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
   const colorHexInput = document.getElementById(
     "pf-border-color-hex",
   ) as HTMLInputElement;
+
+  // Moderation lockout (SBGC-223): the modal opens automatically, cannot be
+  // dismissed, and the save button stays disabled until the user actually
+  // changes their first name, last name, or bio.
+  let locked = dialog.dataset.lockout === "true";
+  const initialFirst = firstNameInput.value;
+  const initialLast = lastNameInput.value;
+  const initialPlain = plainTextarea.value;
+  const initialBbcode = bbcodeTextarea.value;
+
+  function isDirty(): boolean {
+    return (
+      firstNameInput.value !== initialFirst ||
+      lastNameInput.value !== initialLast ||
+      plainTextarea.value !== initialPlain ||
+      bbcodeTextarea.value !== initialBbcode
+    );
+  }
+
+  function syncSaveState(): void {
+    if (!saveButton) return;
+    saveButton.disabled = locked && !isDirty();
+    saveButton.classList.toggle("cursor-not-allowed", locked && !isDirty());
+    saveButton.classList.toggle("opacity-50", locked && !isDirty());
+  }
+
+  function openModal(): void {
+    hideError();
+    selectBioTab(bioModeInitial);
+    updateCounters();
+    syncBorderControls();
+    syncPreview();
+    dialog.showModal();
+    syncSaveState();
+    firstNameInput.focus();
+  }
+
+  // Escape must not dismiss a forced-remediation modal.
+  dialog.addEventListener("cancel", (event) => {
+    if (locked) event.preventDefault();
+  });
+
+  for (const field of [
+    firstNameInput,
+    lastNameInput,
+    plainTextarea,
+    bbcodeTextarea,
+  ]) {
+    field.addEventListener("input", syncSaveState);
+  }
 
   function checkedRadio(name: string): HTMLInputElement | null {
     return document.querySelector<HTMLInputElement>(
@@ -625,13 +688,7 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
   }
 
   trigger.addEventListener("click", () => {
-    hideError();
-    selectBioTab(bioModeInitial);
-    updateCounters();
-    syncBorderControls();
-    syncPreview();
-    dialog.showModal();
-    firstNameInput.focus();
+    openModal();
   });
 
   const closeModal = (): void => {
@@ -758,9 +815,22 @@ const BORDER_PRESETS = [1, 2, 3, 4, 5];
             ? (data.border_color ?? "")
             : payload.border_color,
       });
+      if (locked) {
+        // The backend resolved the lockout on this save; release the modal,
+        // drop the alert banner, and restore normal navigation.
+        locked = false;
+        dialog.dataset.lockout = "false";
+        document.getElementById("profile-lockout-banner")?.remove();
+        syncSaveState();
+      }
       closeModal();
     } catch {
       showError("Network error — please try again.");
     }
   });
+
+  syncSaveState();
+  if (locked) {
+    openModal();
+  }
 </script>

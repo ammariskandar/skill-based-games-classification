@@ -1,0 +1,63 @@
+---
+import "../../styles/global.css";
+import ProfileAvatar from "../../components/profile/ProfileAvatar.astro";
+import ProfileBioCard from "../../components/profile/ProfileBioCard.astro";
+import ProfileHeader from "../../components/profile/ProfileHeader.astro";
+import EditProfileModal from "../../components/profile/EditProfileModal.astro";
+import ReportUserModal from "../../components/profile/ReportUserModal.astro";
+
+// Dev-only test fixture (SBGC-223). Renders the real report button + modal for
+// the Playwright suite without the Django backend. `?viewer=owner` swaps to the
+// owner view (Edit Profile, no Report button). Not linked from production.
+export const prerender = false;
+
+const viewer = Astro.url.searchParams.get("viewer") ?? "other";
+const isOwner = viewer === "owner";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Report-user fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter mx-auto max-w-7xl py-8">
+      <ProfileHeader
+        username="fixture-offender"
+        firstName="Fixture"
+        lastName="Offender"
+        isOwner={isOwner}
+        canReport={!isOwner}
+      />
+
+      <div
+        class="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <ProfileAvatar avatarKey="male_1" borderType="NONE" />
+        </div>
+        <ProfileBioCard bio="" bioMode="PLAIN" />
+      </div>
+    </main>
+
+    {
+      isOwner && (
+        <EditProfileModal
+          username="fixture-offender"
+          firstName="Fixture"
+          lastName="Offender"
+          bio=""
+          bioMode="PLAIN"
+          avatarKey="male_1"
+          borderType="NONE"
+          borderPresetId={null}
+          borderColor=""
+        />
+      )
+    }
+
+    {!isOwner && <ReportUserModal offendingUsername="fixture-offender" />}
+  </body>
+</html>

@@ -46,6 +46,10 @@ added the community score submission endpoint, SBGC-172 added questionnaire
 aesthetic resolution — see the Questionnaire sections below — and SBGC-174
 added the delta recalculation trigger. SBGC-227 added
 `GET /api/v1/games/{slug}/similar` — see the Similar Games section below.
+SBGC-223 added the user-reporting router (`POST /api/v1/security/reports/user`,
+`GET /api/v1/security/lockout`, and the forced-username remediation handshake
+under `GET|POST /api/v1/security/remediate/username`) — see the User Reporting
+& Moderation section below.
 
 ## Request Schemas
 
@@ -708,6 +712,45 @@ work runs on a daemon thread; the request returns immediately with `202`.
 See `docs/questionnaire-epic-sbgc-171.md` for the staleness rule
 (`latest submission updated_at > latest snapshot calculated_at`) and the email
 report format.
+
+## User Reporting & Moderation — `/api/v1/security/` (SBGC-223)
+
+The Security router owns user reporting, the viewer lockout probe, and the
+forced-username remediation handshake.  All endpoints are session-authenticated;
+the browser never calls them directly (the Astro BFF relays the viewer
+`sessionid`).
+
+### `POST /api/v1/security/reports/user`
+
+Files or merges a report against another account.  A `(reporter, offender)` pair
+holds at most one open report: repeat filings merge their reason flags in place
+(`200`, not a second row).  Returns the leak-free envelope
+`{ "success": true, "message": "Report submitted successfully." }`.
+
+- Body: `offending_username`, booleans `reason_username` / `reason_name` /
+  `reason_bio` / `reason_other`, and `other_description` (≤ 250 chars, plain text,
+  angle brackets rejected).
+- `401` unauthenticated, `404` unknown target, `422` no reason selected /
+  self-report / staff target / invalid free text.
+- Ingestion snapshots `repeat_offender_at_submission` and applies the
+  anti-brigading burst detector (≥ 100 reports against one account in a rolling
+  15-minute window).
+
+### `GET /api/v1/security/lockout`
+
+Returns the caller's active lockout so the Astro perimeter can route them:
+`{ "status": "pending_username_change" | "pending_bio_change" |
+"scheduled_for_deletion" | null, "username": "..." }`.  Reachable while locked.
+
+### `GET | POST /api/v1/security/remediate/username`
+
+The forced-username flow.  `GET` returns the current `{ username, email }`
+context (or `403` when not locked); `POST` applies the username + password
+rotation, re-hashes the active session, and resolves the governing report.
+`422` on a taken/unchanged username, reused password, or failed strength check.
+
+Details of the moderation desk, heuristics, lockout middleware, and the
+three-hour purge command live in `docs/user-reporting-moderation.md`.
 
 ## Exception Handling
 

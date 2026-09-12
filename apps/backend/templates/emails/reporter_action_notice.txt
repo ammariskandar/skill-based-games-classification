@@ -1,0 +1,9 @@
+Hello,
+
+Thank you for your report and for helping keep {{ site_name }} a safe and
+inclusive place. Following moderation review, appropriate enforcement action was
+taken and the reported account has been permanently removed.
+
+We appreciate you taking the time to flag this.
+
+— The {{ site_name }} moderation team

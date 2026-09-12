@@ -64,6 +64,8 @@
     } else if (toastType === "password_reset_success") {
       message =
         "Password reset successfully. Please log in with your new password.";
+    } else if (toastType === "username_updated") {
+      message = "Your username has been updated.";
     }
 
     if (!message) return;

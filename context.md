@@ -2570,6 +2570,55 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-12 — SBGC-223 user reporting, moderation security portal & remediation
+
+- **Domain** — `security/models.py` gains `ReportReason` / `ReportStatus`
+  (`pending_review`, `pending_username_change`, `pending_bio_change`,
+  `scheduled_for_deletion`, `resolved`, `dismissed`), the persisted `UserReport`
+  (four reason flags, ≤ 250-char plain-text `other_description`,
+  `possible_brigading`, `repeat_offender_at_submission`, action audit columns,
+  two indexes) and `ScheduledAccountDeletion`; migration `security/0003`.
+- **Ingestion** — `security/services/reporting.py` coalesces a
+  `(reporter, offender)` pair to a single open report (repeat filings merge
+  reason flags), hard-rejects angle brackets and control codes, snapshots the
+  repeat-offender flag from prior dismissed/resolved cases, and flags a
+  ≥ 100-report/15-minute burst as `possible_brigading` across every open report.
+- **API & BFF** — `POST /api/v1/security/reports/user` returns the leak-free
+  `{ success, message }` envelope; `GET /api/v1/security/lockout` reports the
+  caller's lockout for the perimeter; `GET|POST
+  /api/v1/security/remediate/username` is the forced-username handshake.  The
+  browser only reaches them through `POST /api/reports/user` and
+  `POST /api/remediate/username` BFF routes backed by
+  `lib/server/api/security.ts`.
+- **Admin desk** — `UserReportAdmin` (superuser/moderator/community-leader
+  gated) renders the offending-user public-profile link, reason badges,
+  repeat-offender and pulsing brigading indicators, a dismiss bulk action, and a
+  take-action page with four interventions.  The permaban form accepts only the
+  exact phrase `permaban`; on success it revokes sessions, locks the account,
+  schedules the T + 3-hour purge, and emails the offender.
+  `ScheduledAccountDeletionAdmin` is a read-only audit.
+- **Lockouts & remediation** — `ModerationEnforcementMiddleware` records
+  `request.moderation_lockout` and returns `403 MODERATION_LOCKOUT` for
+  `/api/*` outside the allow-list (staff bypass); the auth router is allow-listed
+  at its real `/api/v1/auth/` prefix.  The Astro perimeter
+  (`src/middleware.ts` + pure `moderationRedirect()`) funnels username lockouts
+  to `/remediate/username` and bio lockouts to the viewer's own profile.
+- **Frontend** — `ReportUserModal.astro` (checkbox group, Other-only textarea
+  with counter and angle-bracket stripping, reason-gated submit, inline login
+  toast for anonymous viewers) on the profile page for non-owners;
+  `/remediate/username` is a locked sign-up variant; `EditProfileModal` gains a
+  `lockout` mode that auto-opens, suppresses Escape and removes close/cancel,
+  gates Save on a real name/bio delta, and dismisses the warning banner once the
+  report resolves.
+- **Purge** — `process_scheduled_account_deletions` (runnable every five
+  minutes) emails reporters a thank-you notice and hard-deletes due accounts.
+- **Tests** — 58 backend tests (`security/tests/test_moderation.py`), 10 Vitest
+  routing tests, and 9 Playwright specs
+  (`tests/browser/report-user.spec.ts`); ruff, basedpyright, `astro check`,
+  ESLint, Prettier, the frontend build, and the full browser suite green.
+  Created `docs/user-reporting-moderation.md`; updated `docs/backend-api.md` and
+  `docs/frontend-api-layer.md`.
+
 ## 2026-09-11 — SBGC-225 enlarged submission modal & live manual submission flow
 
 - **Geometry** — the submission modal grows from ~44rem to `min(94vw, 64rem)`
