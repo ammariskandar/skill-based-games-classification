@@ -10,7 +10,10 @@
 
 services:
   - type: web
-    name: mygamedna-backend
+    # Must match the live Render service name — Render derives the default
+    # <service-name>.onrender.com host from this field, and the blueprint would
+    # otherwise provision a second service under a different hostname.
+    name: skill-based-games-classification
     runtime: python
     region: oregon
     plan: free
@@ -23,6 +26,10 @@ services:
       - key: DJANGO_SECRET_KEY
         sync: false
       - key: DATABASE_URL
+        sync: false
+      # SBGC-185 — direct (non-pooled) Neon endpoint for the pre-deploy migration
+      # and createcachetable.  scripts/backend-migrate.sh refuses a -pooler host.
+      - key: MIGRATION_DATABASE_URL
         sync: false
       - key: DJANGO_ALLOWED_HOSTS
         sync: false
@@ -39,6 +46,20 @@ services:
         sync: false
       # SBGC-106 — reCAPTCHA v3 site key; renders the admin-login challenge.
       - key: RECAPTCHA_SITE_KEY
+        sync: false
+      # SBGC-186 — dual-superuser quota handles.  production.py fails fast when
+      # any of the three is empty or they are not mutually distinct.
+      - key: DJANGO_OWNER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_1
+        sync: false
+      - key: DJANGO_SUPERUSER_2
+        sync: false
+      # SBGC-223 — public frontend origin for Admin profile hyperlinks.
+      - key: PUBLIC_SITE_URL
+        sync: false
+      # Sender address for operational alert emails.
+      - key: DEFAULT_FROM_EMAIL
         sync: false
       # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
       - key: DB_SSL_REQUIRE

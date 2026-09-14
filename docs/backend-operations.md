@@ -126,6 +126,43 @@ Secret environment variables (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STEAM_WEB_AP
 
 No Render database resource is defined. No real credentials are stored.
 
+The service `name` must match the live Render service — Render derives the
+`<service-name>.onrender.com` host from it.
+
+### Verified Production Environment Contract (SBGC-17)
+
+The Render web service must supply every variable below. `config.settings.production`
+fails fast (`ImproperlyConfigured`) at boot when any is missing or malformed — the
+restrictions are enforced by `config/security.py` and `config/admin.py`, not merely
+documented.
+
+| Variable | Constraint enforced at load |
+|---|---|
+| `DJANGO_SECRET_KEY` | >= 50 chars, >= 5 distinct chars, no insecure prefix, not the dev placeholder |
+| `ADMIN_URL_PATH` | one path segment, `[A-Za-z0-9][A-Za-z0-9_-]*`, not `admin`, not the reserved `api` |
+| `DJANGO_ALLOWED_HOSTS` | comma-separated; no leading/trailing dot, wildcard, port, scheme, path, or `@` |
+| `CSRF_TRUSTED_ORIGINS` | comma-separated `https://` origins; no path, query, fragment, or credentials |
+| `DATABASE_URL` | must resolve to `django.db.backends.postgresql`; SQLite rejected |
+| `RECAPTCHA_SECRET_KEY` | non-blank |
+| `RECAPTCHA_SITE_KEY` | non-blank |
+| `STEAM_WEB_API_KEY` | non-blank |
+| `DJANGO_OWNER_USERNAME`, `DJANGO_SUPERUSER_1`, `DJANGO_SUPERUSER_2` | all non-blank and mutually distinct |
+| `DJANGO_DEBUG` | must not be truthy |
+
+`MIGRATION_DATABASE_URL` is read by `scripts/backend-migrate.sh` during the release
+phase only. It must be the **direct** (non-pooled) Neon host: the script aborts when
+the effective URL contains `-pooler.`. `DATABASE_URL` should use the pooled host
+(`CONN_MAX_AGE=0` in production, so pooled connections never hold state).
+
+`scripts/verify-production-env.py` loads `config.settings.production` under this exact
+contract and runs `manage.py check --deploy` without opening a database or network
+connection. `--probe` additionally proves 25 validator accept/reject paths:
+
+```bash
+apps/backend/.venv/bin/python scripts/verify-production-env.py
+apps/backend/.venv/bin/python scripts/verify-production-env.py --probe
+```
+
 ## Scheduled Steam Refresh (SBGC-183)
 
 The daily scheduled Steam metadata refresh is a **separate Render Cron job**, not
@@ -157,9 +194,16 @@ Configuration:
 |----------|----------|---------|-------|
 | `DJANGO_SECRET_KEY` | Production | — | 50+ chars, 5+ unique, no insecure prefix |
 | `DATABASE_URL` | Production | — | PostgreSQL only in production; SQLite OK in dev |
+| `MIGRATION_DATABASE_URL` | Release phase | — | Direct (non-pooled) Neon host; `backend-migrate.sh` rejects `-pooler.` |
 | `DJANGO_ALLOWED_HOSTS` | Production | — | Comma-separated hosts/IPv4 |
 | `CSRF_TRUSTED_ORIGINS` | Production | — | `https://host[:port]`, structured parsing |
 | `ADMIN_URL_PATH` | Production | `admin` (dev) | Non-default required in production |
+| `RECAPTCHA_SECRET_KEY` | Production | — | reCAPTCHA v3 secret (SBGC-104) |
+| `RECAPTCHA_SITE_KEY` | Production | — | reCAPTCHA v3 site key (SBGC-106) |
+| `DJANGO_OWNER_USERNAME` | Production | — | Owner handle; distinct from the two superusers (SBGC-186) |
+| `DJANGO_SUPERUSER_1` / `DJANGO_SUPERUSER_2` | Production | — | Dual-superuser quota handles, mutually distinct (SBGC-186) |
+| `DB_SSL_REQUIRE` | — | `true` (prod) | TLS toggle for PostgreSQL (SBGC-104) |
+| `PUBLIC_SITE_URL` | — | *(empty)* | Public frontend origin for Admin profile links (SBGC-223) |
 | `DJANGO_LOG_LEVEL` | — | `INFO` | DEBUG/INFO/WARNING/ERROR/CRITICAL |
 | `DJANGO_SECURE_HSTS_SECONDS` | — | `0` | Staged: 0 → 3600 → 31536000 |
 | `STEAM_WEB_API_KEY` | — | *(empty)* | Optional |
