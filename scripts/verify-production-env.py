@@ -33,11 +33,11 @@ os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.production"
 
 # ── Values the operator must substitute (placeholders) ──────────────────────
 BACKEND_HOST = "skill-based-games-classification.onrender.com"  # verified Render URL
-FRONTEND_ORIGIN = (
-    "https://skill-based-games-classification-fr.vercel.app"  # verified Vercel domain
-)
+FRONTEND_ORIGIN = "https://gamedna.my"  # public site (Vercel custom domain)
+SCOPED_DB_USER = "app_django"  # least-privilege runtime role
+# Provisioned by scripts/db-provision-app-role.sql; DML only, no DDL.
 NEON_POOLED = (
-    "postgresql://neondb_owner:CENSORED@"
+    f"postgresql://{SCOPED_DB_USER}:CENSORED@"
     "ep-damp-dust-azgkwrol-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb"
     "?sslmode=require&channel_binding=require"
 )
@@ -60,7 +60,10 @@ ENV = {
     "DJANGO_SECRET_KEY": SECRET_PLACEHOLDER,
     "ADMIN_URL_PATH": "mygamedna-admin",
     "DJANGO_ALLOWED_HOSTS": BACKEND_HOST,
-    "CSRF_TRUSTED_ORIGINS": f"https://{BACKEND_HOST},{FRONTEND_ORIGIN}",
+    "CSRF_TRUSTED_ORIGINS": (
+        f"https://{BACKEND_HOST},{FRONTEND_ORIGIN},"
+        "https://www.gamedna.my,https://skill-based-games-classification-fr.vercel.app"
+    ),
     "DATABASE_URL": NEON_POOLED,
     "RECAPTCHA_SECRET_KEY": "placeholder-recaptcha-secret",
     "RECAPTCHA_SITE_KEY": "6LdU_bktAAAAANW2tjirQlPRvKmHjuryTSkgLpN0",
@@ -75,7 +78,7 @@ ENV = {
     "DJANGO_LOG_LEVEL": "INFO",
     "DJANGO_SECURE_HSTS_SECONDS": "31536000",
     "PUBLIC_SITE_URL": FRONTEND_ORIGIN,
-    "DEFAULT_FROM_EMAIL": "noreply@mygamedna.com",
+    "DEFAULT_FROM_EMAIL": "noreply@gamedna.my",
     "WEB_CONCURRENCY": "2",
 }
 
@@ -98,6 +101,7 @@ def main() -> int:
     print(f"ALLOWED_HOSTS         : {settings.ALLOWED_HOSTS}")
     print(f"CSRF_TRUSTED_ORIGINS  : {settings.CSRF_TRUSTED_ORIGINS}")
     print(f"DB ENGINE             : {settings.DATABASES['default']['ENGINE']}")
+    print(f"DB USER               : {settings.DATABASES['default']['USER']}")
     print(f"DB HOST               : {settings.DATABASES['default']['HOST']}")
     print(f"DB CONN_MAX_AGE       : {settings.DATABASES['default']['CONN_MAX_AGE']}")
     print(f"DB OPTIONS            : {settings.DATABASES['default']['OPTIONS']}")
@@ -178,10 +182,8 @@ def probe_expected_failures() -> int:
         lambda: parse_trusted_origins("http://example.com", require_https=True),
     )
     expect_accept(
-        "CSRF 'https://skill-based-games-classification-fr.vercel.app'",
-        lambda: parse_trusted_origins(
-            "https://skill-based-games-classification-fr.vercel.app", require_https=True
-        ),
+        "CSRF 'https://gamedna.my'",
+        lambda: parse_trusted_origins("https://gamedna.my", require_https=True),
     )
 
     # Secret key

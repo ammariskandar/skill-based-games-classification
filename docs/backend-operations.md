@@ -154,6 +154,21 @@ phase only. It must be the **direct** (non-pooled) Neon host: the script aborts 
 the effective URL contains `-pooler.`. `DATABASE_URL` should use the pooled host
 (`CONN_MAX_AGE=0` in production, so pooled connections never hold state).
 
+The two URLs also use different roles. `DATABASE_URL` authenticates as the scoped
+DML-only `app_django` role provisioned by `scripts/db-provision-app-role.sql`;
+`MIGRATION_DATABASE_URL` authenticates as the Neon project owner because only the
+owner holds DDL privileges. The app role has no `SUPERUSER`, `CREATEDB`, `CREATEROLE`,
+or `REPLICATION` attribute.
+
+Concrete production origins (the backend is served on the Render host; the public
+site is the Vercel custom domain):
+
+- `DJANGO_ALLOWED_HOSTS` — `skill-based-games-classification.onrender.com`
+- `CSRF_TRUSTED_ORIGINS` — `https://skill-based-games-classification.onrender.com`,
+  `https://gamedna.my`, `https://www.gamedna.my`,
+  `https://skill-based-games-classification-fr.vercel.app`
+- `PUBLIC_SITE_URL` — `https://gamedna.my` (used for Admin profile hyperlinks)
+
 `scripts/verify-production-env.py` loads `config.settings.production` under this exact
 contract and runs `manage.py check --deploy` without opening a database or network
 connection. `--probe` additionally proves 25 validator accept/reject paths:
