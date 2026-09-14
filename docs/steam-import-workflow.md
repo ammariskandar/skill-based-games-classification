@@ -188,3 +188,40 @@ Nothing is written when preparation fails.
 
 The authorized HTTP import endpoint (`POST /api/v1/games/steam/import`)
 wraps `SteamGameImportService.import_app` — see `docs/steam-api.md`.
+
+## Bulk catalogue import (SBGC-126)
+
+`python manage.py import_initial_steam_games` sequences the same
+`SteamGameImportService` over the 175 `STEAM` entries in the SBGC-125 manifest
+(`games/fixtures/initial_catalogue_200.json`).  It re-implements no fetching or
+parsing — it only drives the service and then applies the two manifest-owned
+fields the import service deliberately does not set:
+
+- `aesthetic` ← the manifest's `primary_aesthetic`
+- `listing_status` ← `PUBLISHED`
+
+`PUBLISHED` is applied by the command, not the import path: new Games always
+start as `draft` because a single-app import must never publish on its own.
+Non-game content (`content_type != GAME`) is imported but left unpublished, and
+reported separately.
+
+Identity is `(source_type=steam, external_id=app_id)`, so re-runs update the
+existing row rather than tripping the unique constraints — the command is
+idempotent.
+
+| Flag | Behaviour |
+|---|---|
+| `--dry-run` | Reports planned create/update per entry. No writes, no network — the Steam service is never constructed. |
+| `--limit N` | Processes at most N Steam entries. |
+| `--delay F` | Sleeps F seconds between Steam calls (default `0.5`) to respect Valve rate limits. |
+| `--manifest PATH` | Overrides the manifest location. |
+
+```bash
+python manage.py import_initial_steam_games --dry-run
+python manage.py import_initial_steam_games --limit 5
+python manage.py import_initial_steam_games
+```
+
+The end-of-run summary reports Created, Updated, Skipped, and Failed counts,
+plus how many rows were published and any per-App errors (one bad App ID never
+aborts the batch).  See `docs/catalogue-composition.md` for the manifest itself.

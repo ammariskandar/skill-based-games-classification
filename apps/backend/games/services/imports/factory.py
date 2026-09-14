@@ -1,22 +1,24 @@
 """
-Steam refresh-service composition root — SBGC-183.
+Steam service composition roots — SBGC-183 / SBGC-126.
 
-Single place that wires the Steam transport, import foundation, and
-persistence service into a ``SteamGameRefreshService``.  Both the Game Admin
-refresh action and the scheduled refresh command use this factory, so there is
-one canonical composition and no duplicated wiring.
+Single places that wire the Steam transport, import foundation, and persistence
+service.  The Game Admin refresh action and the scheduled refresh command share
+``build_steam_refresh_service``; the initial catalogue import command uses
+``build_steam_import_service``.  One canonical composition each, no duplicated
+wiring.
 """
 
 from __future__ import annotations
 
 from games.services.imports.steam import (
+    SteamGameImportService,
     SteamGamePersistenceService,
     SteamGameRefreshService,
 )
 
 
-def build_steam_refresh_service() -> SteamGameRefreshService:
-    """Compose the canonical Steam refresh service from configured settings."""
+def _build_foundation():
+    """Compose the network-side import foundation from configured settings."""
     from config.steam import steam_client_config_from_settings
 
     from games.services.steam.adapters.app_details import SteamAppDetailsAdapter
@@ -24,8 +26,17 @@ def build_steam_refresh_service() -> SteamGameRefreshService:
     from games.services.steam.import_foundation import SteamImportFoundation
 
     client = SteamClient(steam_client_config_from_settings())
-    foundation = SteamImportFoundation(SteamAppDetailsAdapter(client))
-    return SteamGameRefreshService(foundation, SteamGamePersistenceService())
+    return SteamImportFoundation(SteamAppDetailsAdapter(client))
 
 
-__all__ = ["build_steam_refresh_service"]
+def build_steam_refresh_service() -> SteamGameRefreshService:
+    """Compose the canonical Steam refresh service from configured settings."""
+    return SteamGameRefreshService(_build_foundation(), SteamGamePersistenceService())
+
+
+def build_steam_import_service() -> SteamGameImportService:
+    """Compose the canonical Steam import service from configured settings."""
+    return SteamGameImportService(_build_foundation(), SteamGamePersistenceService())
+
+
+__all__ = ["build_steam_import_service", "build_steam_refresh_service"]
