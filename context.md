@@ -2570,6 +2570,60 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-12 — SBGC-226 mobile polish follow-up
+
+- **Rankings back affordance** — when a Game is selected on the stacked mobile
+  layout, `RankingsDetailPane` shows a "Back to rankings" link above the Game
+  title (below the sort control) that unselects via `rankingsHref({ ...state,
+  game: null })`; hidden at `lg` and above where the list and detail sit side by
+  side.
+- **Methodology mobile fit** — the summary card's `&nbsp;`-joined phrases no
+  longer force horizontal page scroll (`overflow-wrap: break-word`), and display
+  equations scale to `0.6em` under 40rem with a contained `overflow-x` fallback
+  so no equation widens the viewport.
+- **About accordion titles** — reduced to `text-base` on mobile (desktop
+  `sm:text-2xl` unchanged).
+- **Radar toggle** — labels shortened from "Challenge Profile"/"Reward Profile"
+  to "Challenge"/"Reward" in `radar-render.ts` and `QuestionnaireRadar.astro`.
+- **Taller mobile hero** — `GameImage.astro`'s mobile frame grows from `3 / 2` to
+  `15 / 11` (10% taller); the Capsule and radar slot scale their percentage
+  height so their absolute pixels are unchanged (covers the homepage Hades
+  showcase and Game-detail pages).
+- **Capsule crop on the Game page** — the Capsule foreground now uses
+  `object-fit: cover` (was `contain`), matching the homepage carousel and
+  catalogue cover so a custom Capsule that is not exactly 2:3 fills its frame
+  instead of letter-boxing.
+- **Tests** — new `tests/browser/mobile-polish.spec.ts` (7 specs: rankings back
+  link + desktop hidden, methodology overflow/equation fit, About title sizing,
+  mobile hero ratio, radar labels, Capsule `object-fit`); frontend Vitest 910
+  green, full browser suite 62 green; `astro check`, ESLint, Prettier and the
+  production build green.  Updated `docs/frontend-architecture.md`.
+
+## 2026-09-12 — SBGC-226 sticky mobile navbar & z-index elevation
+
+- **Sticky header** — `Header.astro` becomes `sticky top-0 z-navbar w-full` at
+  every breakpoint with a semi-transparent blurred surface
+  (`bg-surface/90 backdrop-blur-md`) and bottom border.  `position: sticky`
+  keeps the element in normal flow, so no body padding or layout shift is
+  introduced.
+- **Stacking hierarchy** — `global.css` defines named utilities
+  (`z-base` 0, `z-elevated` 10, `z-sticky-inset` 20, `z-navbar` 40, `z-drawer`
+  45, `z-hud` 50) replacing ad-hoc values; native `<dialog>` modals stay in the
+  top layer above every layer.  Toasts, the network notice, the profile lockout
+  banner and the report toast move to `z-hud`; the questionnaire radar rail is
+  `lg:z-sticky-inset lg:top-20` so it clears the now-sticky header.
+- **Mobile drawer** — the disclosure panel moves to `z-drawer` and locks
+  background scrolling while open (released on close, link activation, outside
+  click, or crossing into the desktop layout).
+- **Safe area** — `header.site-navbar` carries `env(safe-area-inset-top)`
+  padding for iOS notches / Dynamic Island.
+- **Tests** — new `tests/browser/navbar.spec.ts` at a 375×667 viewport asserts
+  sticky persistence across an 800px scroll, computed `z-index` (navbar 40 above
+  sticky inset 20), drawer scroll-locking/outside-click release, and top-layer
+  modal stacking; full browser suite 55 passing.  `astro check`, ESLint,
+  Prettier, Vitest (910) and the production build are green.  Updated
+  `docs/frontend-styling.md` with the stacking-order table.
+
 ## 2026-09-12 — SBGC-223 user reporting, moderation security portal & remediation
 
 - **Domain** — `security/models.py` gains `ReportReason` / `ReportStatus`

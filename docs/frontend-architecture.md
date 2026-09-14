@@ -132,6 +132,14 @@ and `hidden` in production until SBGC-12 renders the combined radar chart;
 `GameImage.astro` is already structured so adding that content requires no
 layout restructuring.
 
+The Capsule foreground crops to fill its 2:3 frame (`object-fit: cover`), the
+same zoom-and-crop the homepage carousel and catalogue cards apply, so a custom
+Capsule whose ratio is not exactly 2:3 does not letter-box with gaps.  On mobile
+(`max-width: 640px`) the Hero frame is `15 / 11` — 10% taller than the earlier
+`3 / 2` mobile banner — while the Capsule and the square radar slot scale their
+percentage height with the frame so they keep the same absolute pixels; only the
+blurred/cover banner stretches.
+
 Steam's canonical `header.jpg`/`image_url` semantics (SBGC-75 SEO/OG/Twitter
 and `VideoGame.image`) are unchanged; the Library assets are additive fields
 (`library_hero_url`, `library_capsule_url`) resolved by Django and exposed via

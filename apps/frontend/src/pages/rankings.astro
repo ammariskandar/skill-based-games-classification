@@ -207,6 +207,7 @@ const robots = rankingsNeedsNoindex(state) ? "noindex, follow" : undefined;
             reward={selectedReward}
             profile={state.profile}
             similarGames={selectedSimilarGames}
+            backHref={rankingsHref({ ...state, game: null })}
           />
         </section>
       </div>

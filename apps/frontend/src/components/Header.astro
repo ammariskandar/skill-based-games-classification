@@ -10,7 +10,7 @@ const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
 ---
 
 <header
-  class="relative border-b border-border bg-surface/80 backdrop-blur-sm"
+  class="site-navbar sticky top-0 z-navbar w-full border-b border-border bg-surface/90 backdrop-blur-md"
   data-header
 >
   <div class="shell-gutter">
@@ -80,7 +80,7 @@ const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
           </summary>
           <div
             id="nav-panel"
-            class="absolute left-0 right-0 top-full z-40 border-t border-border bg-surface/95 backdrop-blur-sm"
+            class="absolute left-0 right-0 top-full z-drawer border-t border-border bg-surface/95 backdrop-blur-sm"
           >
             <div class="shell-gutter py-3">
               <Navigation class="flex-col items-start gap-1" />
@@ -206,12 +206,21 @@ const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
 
     const MQL = window.matchMedia("(min-width: 64rem)");
 
+    // Lock background scrolling while the drawer is open (iOS WebKit rubber-
+    // banding), and release it on close, link activation, or layout change.
+    const syncBodyScrollLock = () => {
+      document.body.style.overflow = details.hasAttribute("open")
+        ? "hidden"
+        : "";
+    };
+
     // Sync aria-expanded after every native toggle (click, Enter, Space, no-JS)
     details.addEventListener("toggle", () => {
       summary.setAttribute(
         "aria-expanded",
         details.hasAttribute("open") ? "true" : "false",
       );
+      syncBodyScrollLock();
     });
 
     // Escape closes and returns focus (not native in all browsers)
@@ -232,6 +241,14 @@ const isAboutActive = pathname === "/about" || pathname.startsWith("/about/");
     // Reset stale open state when crossing into desktop layout
     MQL.addEventListener("change", (e) => {
       if (e.matches) details.removeAttribute("open");
+    });
+
+    // Clicking outside the drawer dismisses it.
+    document.addEventListener("click", (event) => {
+      if (!details.hasAttribute("open")) return;
+      const target = event.target;
+      if (target instanceof Node && details.contains(target)) return;
+      details.removeAttribute("open");
     });
   })();
 </script>

@@ -1,0 +1,34 @@
+---
+import "../../styles/global.css";
+import RankingsDetailPane from "../../components/rankings/RankingsDetailPane.astro";
+
+// Dev-only test fixture (SBGC-226 follow-up). Renders the real rankings detail
+// pane with a selected Game so the Playwright suite can assert the mobile
+// "Back to rankings" affordance without the Django backend. Not linked from any
+// production page.
+export const prerender = true;
+
+const challenge = { micro: 60, mystiko: 20, macro: 20 };
+const reward = { micro: 30, mystiko: 40, macro: 30 };
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rankings detail fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter py-8">
+      <RankingsDetailPane
+        selectedGame={{ slug: "fixture-game", name: "Fixture Game" }}
+        challenge={challenge}
+        reward={reward}
+        profile="unified"
+        similarGames={[]}
+        backHref="/rankings?profile=challenge"
+      />
+    </main>
+  </body>
+</html>

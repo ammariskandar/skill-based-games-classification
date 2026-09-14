@@ -1,0 +1,43 @@
+---
+import "../../styles/global.css";
+import GameImage from "../../components/game/GameImage.astro";
+
+// Dev-only test fixture (SBGC-226 follow-up). Renders the real GameImage Hero +
+// Capsule composition with a deliberately non-2:3 "custom Capsule" so the
+// Playwright suite can assert the foreground crops to fill rather than
+// letter-boxing. Not linked from any production page.
+export const prerender = true;
+
+const squareCapsule = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="700"></svg>',
+)}`;
+const hero = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="620"></svg>',
+)}`;
+
+const challenge = { micro: 60, mystiko: 20, macro: 20 };
+const reward = { micro: 30, mystiko: 40, macro: 30 };
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game image capsule fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter mx-auto max-w-md py-8">
+      <GameImage
+        src={squareCapsule}
+        name="Square Capsule Game"
+        slug="square-capsule"
+        source="manual"
+        libraryHeroUrl={hero}
+        libraryCapsuleUrl={squareCapsule}
+        challenge={challenge}
+        reward={reward}
+      />
+    </main>
+  </body>
+</html>
