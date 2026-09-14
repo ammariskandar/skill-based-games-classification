@@ -376,12 +376,22 @@ if (Astro.cookies.has("sessionid")) {
     }, 1000);
   }
 
+  /** Distinguishes a reCAPTCHA failure from a backend/network failure. */
+  class RecaptchaError extends Error {
+    constructor(original: unknown) {
+      super(
+        original instanceof Error ? original.message : "reCAPTCHA unavailable",
+      );
+      this.name = "RecaptchaError";
+    }
+  }
+
   function executeRecaptcha(action: string): Promise<string> {
     // No configured key → dev fallback token (the DEBUG backend bypasses it).
     if (!SITE_KEY) {
       return Promise.resolve("test-recaptcha-token");
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       if (!grecaptcha) {
         reject(new Error("reCAPTCHA not loaded"));
         return;
@@ -389,6 +399,10 @@ if (Astro.cookies.has("sessionid")) {
       grecaptcha.ready(() => {
         grecaptcha.execute(SITE_KEY, { action }).then(resolve).catch(reject);
       });
+    }).catch((error: unknown) => {
+      // Tag the failure so callers report a security-check problem honestly
+      // instead of blaming the backend.
+      throw new RecaptchaError(error);
     });
   }
 
@@ -690,8 +704,13 @@ if (Astro.cookies.has("sessionid")) {
         // the value is still valid, otherwise stays disabled).
         if (!emailVerified) renderVerifyButton();
       }, 15_000);
-    } catch {
-      showError("Service temporarily unavailable. Please try again later.");
+    } catch (error) {
+      console.error("[signup] email verification request failed:", error);
+      showError(
+        error instanceof RecaptchaError
+          ? "We could not run the security check. Please refresh the page and try again."
+          : "Service temporarily unavailable. Please try again later.",
+      );
     }
   });
 
@@ -735,8 +754,13 @@ if (Astro.cookies.has("sessionid")) {
       }
 
       showError(data.error?.message || "Could not create your account.");
-    } catch {
-      showError("Service temporarily unavailable. Please try again later.");
+    } catch (error) {
+      console.error("[signup] account creation request failed:", error);
+      showError(
+        error instanceof RecaptchaError
+          ? "We could not run the security check. Please refresh the page and try again."
+          : "Service temporarily unavailable. Please try again later.",
+      );
     }
   });
 </script>
