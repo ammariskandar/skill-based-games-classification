@@ -15,12 +15,14 @@ import re
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from authentication.emails import email_is_registered, normalize_email
 from authentication.tokens import (
     confirm_email_challenge,
     create_email_challenge,
+    send_password_changed_notification,
+    send_password_reset_email,
 )
 
 VERIFY_URL = "/api/v1/auth/verify-email-request"
@@ -123,6 +125,84 @@ class EmailIsRegisteredDottedStoredTests(TestCase):
 
     def test_other_gmail_address_not_detected(self):
         self.assertFalse(email_is_registered("someone.else@gmail.com"))
+
+
+class EmailedLinkHostTests(TestCase):
+    """Emailed links must use the public site origin, never a localhost default.
+
+    Regression for SBGC-239: the senders hardcoded ``http://localhost:4321`` and
+    no caller passed ``base_url``, so production verification and password-reset
+    emails delivered dead links.
+    """
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my")
+    def test_verification_link_uses_public_site_url(self):
+        with patch("authentication.tokens.send_mail") as mail:
+            create_email_challenge("fresh@example.com")
+
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://gamedna.my/verify-email?token=", message)
+        self.assertNotIn("localhost", message)
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my")
+    def test_reset_link_uses_public_site_url(self):
+        user = User.objects.create_user(
+            username="rs", email="rs@example.com", password="p"
+        )
+
+        with patch("authentication.tokens.send_mail") as mail:
+            send_password_reset_email(user, "tok123")
+
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://gamedna.my/reset-password?token=tok123", message)
+        self.assertNotIn("localhost", message)
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my")
+    def test_password_changed_link_uses_public_site_url(self):
+        user = User.objects.create_user(
+            username="pc", email="pc@example.com", password="p"
+        )
+
+        with patch("authentication.tokens.send_mail") as mail:
+            send_password_changed_notification(user)
+
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://gamedna.my/reset", message)
+        self.assertNotIn("localhost", message)
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my/")
+    def test_trailing_slash_is_normalised(self):
+        with patch("authentication.tokens.send_mail") as mail:
+            create_email_challenge("fresh@example.com")
+
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://gamedna.my/verify-email?token=", message)
+        self.assertNotIn("gamedna.my//verify-email", message)
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my")
+    def test_explicit_base_url_overrides_the_setting(self):
+        with patch("authentication.tokens.send_mail") as mail:
+            create_email_challenge(
+                "fresh@example.com", base_url="https://staging.example.com"
+            )
+
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://staging.example.com/verify-email?token=", message)
+
+    @override_settings(PUBLIC_SITE_URL="https://gamedna.my")
+    def test_endpoint_emails_a_public_link(self):
+        """End-to-end: the endpoint's email links to the public origin."""
+        with patch("authentication.tokens.send_mail") as mail:
+            response = _post(
+                self.client,
+                VERIFY_URL,
+                {"email": "fresh@example.com", "recaptcha_token": RECAPTCHA_TOKEN},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        message = str(mail.call_args.kwargs["message"])
+        self.assertIn("https://gamedna.my/verify-email?token=", message)
+        self.assertNotIn("localhost", message)
 
 
 class GmailDuplicateEndpointTests(TestCase):

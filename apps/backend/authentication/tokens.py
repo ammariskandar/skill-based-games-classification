@@ -103,6 +103,18 @@ def delete_challenge(challenge_id: str) -> None:
     cache.delete(_challenge_key(challenge_id))
 
 
+def _resolve_base_url(base_url: str | None) -> str:
+    """Return the public site origin for emailed links.
+
+    Callers rarely have a request-bound origin to hand: these emails are sent
+    from service code and cache jobs, not from a browser request.  Falling back
+    to ``settings.PUBLIC_SITE_URL`` (rather than a hardcoded localhost default)
+    is what keeps verification and password-reset links reachable in production.
+    """
+    resolved = base_url or settings.PUBLIC_SITE_URL
+    return resolved.rstrip("/")
+
+
 def _send_verification_email(email: str, verification_url: str) -> None:
     send_mail(
         subject="Verify your email for MyGameDNA",
@@ -130,7 +142,7 @@ def send_existing_account_email(email: str) -> None:
     )
 
 
-def create_email_challenge(email: str, base_url: str = "http://localhost:4321") -> str:
+def create_email_challenge(email: str, base_url: str | None = None) -> str:
     """Create a PENDING cache challenge and email the signed verification link."""
     normalized_email = email.strip().lower()
     challenge_id = str(uuid.uuid4())
@@ -140,7 +152,7 @@ def create_email_challenge(email: str, base_url: str = "http://localhost:4321") 
         timeout=CHALLENGE_TIMEOUT,
     )
     token = signer.sign(f"{challenge_id}:{normalized_email}")
-    verification_url = f"{base_url}/verify-email?token={token}"
+    verification_url = f"{_resolve_base_url(base_url)}/verify-email?token={token}"
     _send_verification_email(normalized_email, verification_url)
     return challenge_id
 
@@ -260,10 +272,10 @@ def send_username_recovery_email(user: User) -> None:
 
 
 def send_password_reset_email(
-    user: User, token: str, base_url: str = "http://localhost:4321"
+    user: User, token: str, base_url: str | None = None
 ) -> None:
     """Email the signed one-chance reset link (expires in 15 minutes)."""
-    reset_url = f"{base_url}/reset-password?token={token}"
+    reset_url = f"{_resolve_base_url(base_url)}/reset-password?token={token}"
     send_mail(
         subject="Reset your MyGameDNA password",
         message=(
@@ -279,11 +291,9 @@ def send_password_reset_email(
     )
 
 
-def send_password_changed_notification(
-    user: User, base_url: str = "http://localhost:4321"
-) -> None:
+def send_password_changed_notification(user: User, base_url: str | None = None) -> None:
     """Alert the account owner after a password change (post-reset)."""
-    reset_url = f"{base_url}/reset"
+    reset_url = f"{_resolve_base_url(base_url)}/reset"
     send_mail(
         subject="Security Alert: Your MyGameDNA password has been changed",
         message=(
