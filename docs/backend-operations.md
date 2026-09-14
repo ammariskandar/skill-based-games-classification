@@ -225,6 +225,85 @@ Configuration:
 - Standard `EMAIL_*` settings drive `send_mail()`; no SMTP credentials are
   hardcoded.
 
+## Scheduled Operations & Maintenance
+
+Nightly background work runs as a **GitHub Actions workflow**
+(`.github/workflows/nightly-batch.yml`) rather than on Render: the free compute
+tier does not offer cron services, and the workflow executes against the cloud
+Neon database.
+
+- **Schedule:** `0 2 * * *` — 02:00 UTC daily.
+- **Concurrency:** `group: nightly-batch`, `cancel-in-progress: false` — a run
+  never overlaps or cancels another.
+- **Runner:** `ubuntu-latest`, Python 3.12, pip cache keyed on
+  `apps/backend/requirements.txt`.
+- **Caveats:** GitHub disables scheduled workflows after 60 days without
+  repository activity (any push, or a manual `Run workflow`, re-enables them),
+  and scheduled runs can start late when the runner queue is busy.
+
+### Tasks
+
+| Order | Command | Purpose |
+|-------|---------|---------|
+| 1 | `manage.py run_daily_classification` | Publishes the day's scoring epoch, including the `ClassificationSnapshot` rows that rankings, catalogue scores, and radar charts read. |
+| 2 | `manage.py compute_similarities --delta` | Recomputes similar-Game pairs touching Games changed since the last run. |
+| 3 | `manage.py process_daily_logins_and_superuser_rotation` | Flushes the daily login ledger and enforces the dual-superuser quota/inactivity rotation (SBGC-186). |
+| 4 | `manage.py clearsessions` | Prunes expired session rows. |
+
+A failing task fails the run (GitHub notifies on it) but does not suppress the
+tasks after it. The rotation pass is a security control and the delta similarity
+pass is idempotent, so neither should be skipped because an unrelated epoch
+failed; the steps are gated on `!cancelled()` rather than run strictly in
+sequence. Every task runs under `config.settings.production`, so the pipeline
+exercises the real production settings contract instead of a batch-only
+configuration.
+
+### Required repository secrets
+
+Production settings validate at import time and refuse to boot when a value is
+missing, so all of the following must exist as GitHub repository secrets
+(`Settings → Secrets and variables → Actions`). They mirror the Render web
+service environment, with one deliberate difference: the batch runner's
+`DATABASE_URL` must be the Neon **direct** host, not the `-pooler` host, because
+these jobs hold long transactions that PgBouncer transaction pooling is not for.
+
+| Secret | Purpose |
+|--------|---------|
+| `DATABASE_URL` | Neon direct (non-pooler) PostgreSQL URL |
+| `DJANGO_SECRET_KEY` | Django secret key (50+ chars) |
+| `ADMIN_URL_PATH` | Obfuscated admin path; must stay out of the repository |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts |
+| `CSRF_TRUSTED_ORIGINS` | Comma-separated `https://` origins |
+| `RECAPTCHA_SECRET_KEY` | reCAPTCHA v3 secret (SBGC-104) |
+| `RECAPTCHA_SITE_KEY` | reCAPTCHA v3 site key (SBGC-106) |
+| `STEAM_WEB_API_KEY` | Steam Web API key (SBGC-104) |
+| `DJANGO_OWNER_USERNAME` | Owner handle (SBGC-186) |
+| `DJANGO_SUPERUSER_1`, `DJANGO_SUPERUSER_2` | Dual-superuser quota handles, distinct from each other and from the owner (SBGC-186) |
+| `RESEND_API_KEY` | Primary mail relay; also satisfies the production mail-credential invariant |
+| `ZEPTOMAIL_SEND_TOKEN` | Optional ZeptoMail HTTPS mail failover |
+| `PUBLIC_SITE_URL` | Public frontend origin used in emailed links |
+
+GitHub-hosted runners do not block outbound SMTP, so the Resend relay runs on its
+configured port (`2587` by default) with no Render-specific accommodation.
+
+The workflow runs `manage.py check` before its first task, so a missing or
+malformed value fails in seconds with the offending variable named in the error
+instead of midway through an epoch.
+
+### Manual runs
+
+`Actions → Nightly Batch → Run workflow` dispatches the pipeline on demand. Each
+task has a boolean input (`scoring_epoch`, `similarities`, `logins_rotation`,
+`clear_sessions`); unticking one skips only that task. The inputs default to true
+and apply only to manually dispatched runs — a scheduled run always executes all
+four.
+
+### Related
+
+`run_scheduled_steam_refresh` is still a separate Render Cron job and remains
+**unprovisioned** (see [Scheduled Steam Refresh](#scheduled-steam-refresh-sbgc-183)
+above); it can move onto this runner once the Render cron is retired.
+
 ## Environment Variables
 
 | Variable | Required | Default | Notes |
@@ -243,7 +322,7 @@ Configuration:
 | `PUBLIC_SITE_URL` | — | *(empty)* | Public frontend origin for Admin profile links (SBGC-223) |
 | `DJANGO_LOG_LEVEL` | — | `INFO` | DEBUG/INFO/WARNING/ERROR/CRITICAL |
 | `DJANGO_SECURE_HSTS_SECONDS` | — | `0` | Staged: 0 → 3600 → 31536000 |
-| `STEAM_WEB_API_KEY` | — | *(empty)* | Optional |
+| `STEAM_WEB_API_KEY` | Production | *(empty)* | Required in production (SBGC-104); empty in development |
 | `STEAM_REFRESH_FALLBACK_EMAILS` | — | *(empty)* | Comma-separated fallback alert recipients |
 | `DEFAULT_FROM_EMAIL` | — | `webmaster@localhost` | Sender for operational alerts |
 | `WEB_CONCURRENCY` | — | `2` | Gunicorn workers |
