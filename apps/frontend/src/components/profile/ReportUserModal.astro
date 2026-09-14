@@ -149,7 +149,7 @@ const loginHref = `/login?redirect=${encodeURIComponent(`/profile/${offendingUse
           type="submit"
           data-report-submit
           disabled
-          class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Submit report
         </button>
@@ -166,7 +166,7 @@ const loginHref = `/login?redirect=${encodeURIComponent(`/profile/${offendingUse
         <button
           type="button"
           data-report-done
-          class="rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          class="rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-bg hover:bg-(--color-blue-hover)"
         >
           Close
         </button>

@@ -73,8 +73,8 @@
           class="w-full rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 py-2 text-sm text-(--color-text)"
         />
         <p class="mt-1 text-xs text-muted">
-          <span data-suggest-count="url">0</span> / 250 — must start with
-          <span class="font-medium">https://</span>
+          <span data-suggest-count="url">0</span> / 250 — must start with{" "}
+          <strong class="font-semibold">https://</strong>
         </p>
       </div>
 
@@ -115,7 +115,7 @@
         <button
           type="submit"
           data-suggest-submit
-          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-bg transition-colors hover:bg-(--color-blue-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           Submit suggestion
         </button>
@@ -132,7 +132,7 @@
         <button
           type="button"
           data-suggest-done
-          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-bg transition-colors hover:bg-(--color-blue-hover)"
         >
           Close
         </button>
@@ -144,6 +144,9 @@
 <script>
   const COOLDOWN_KEY = "suggestion_cooldown_until";
   const SUBMIT_LABEL = "Submit suggestion";
+  /** Where a visitor lands after logging in, or after a mid-flow session expiry. */
+  const SUGGEST_RETURN_PATH = "/about?action=suggest";
+  const LOGIN_HREF = `/login?redirect=${encodeURIComponent(SUGGEST_RETURN_PATH)}`;
 
   const dialogElement = document.getElementById(
     "suggest-game-modal",
@@ -367,7 +370,7 @@
       }
 
       if (response.status === 401) {
-        window.location.href = "/login?redirect=/about";
+        window.location.href = LOGIN_HREF;
         return;
       }
 
@@ -381,7 +384,12 @@
     }
   });
 
-  trigger?.addEventListener("click", async () => {
+  /**
+   * Auth-gated open, shared by the card button and the `?action=suggest` deep
+   * link so the two paths cannot drift. Idempotent: `showModal()` throws on an
+   * already-open dialog, so a concurrent second call cannot double-open it.
+   */
+  async function openSuggestionModal(): Promise<void> {
     let authenticated = false;
     try {
       const response = await fetch("/api/auth/status", {
@@ -396,13 +404,24 @@
     }
 
     if (!authenticated) {
-      window.location.href = "/login?redirect=/about";
+      window.location.href = LOGIN_HREF;
       return;
     }
 
     resetForm();
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
+  }
+
+  trigger?.addEventListener("click", () => {
+    void openSuggestionModal();
   });
+
+  // /about is prerendered, so the deep link is read here rather than in the
+  // frontmatter: `?action=suggest` opens the dialog for a signed-in visitor and
+  // sends everyone else to login with the intent preserved.
+  if (new URLSearchParams(window.location.search).get("action") === "suggest") {
+    void openSuggestionModal();
+  }
 
   // Restore a cooldown that was already running when the page loaded.
   if (readCooldownUntil() > Date.now()) {

@@ -11,6 +11,8 @@
   --color-muted: #8b949e;
   --color-dim: #484f58;
   --color-blue: #58a6ff;
+  /* Hover luminance partner of --color-blue (SBGC-241). */
+  --color-blue-hover: #79c0ff;
   --color-green: #3fb950;
   --color-purple: #bc8cff;
   --color-orange: #ffa657;

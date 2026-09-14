@@ -1,0 +1,55 @@
+---
+import "../../styles/global.css";
+import CataloguePagination from "../../components/catalogue/CataloguePagination.astro";
+import RankingRow from "../../components/rankings/RankingRow.astro";
+import RankingsPagination from "../../components/rankings/RankingsPagination.astro";
+import { parseCatalogueQuery } from "../../lib/catalogue-presentation";
+import { parseRankingsState } from "../../lib/rankings-state";
+
+// Dev-only test fixture (SBGC-241). Renders the real ranking row and both
+// pagination components so the Playwright suite can measure row geometry and
+// assert the pagination revisit contract without a Django backend. Not linked
+// from any production page.
+export const prerender = true;
+
+const rankingsState = parseRankingsState(new URLSearchParams());
+const catalogueState = parseCatalogueQuery(new URLSearchParams());
+
+// Empty Hero URLs on purpose: the frame keeps its width and aspect ratio
+// whether or not artwork resolves, so geometry assertions stay offline.
+const rows = [
+  { slug: "fixture-one", name: "Fixture One", hero_url: "", score: 100 },
+  { slug: "fixture-two", name: "Fixture Two", hero_url: "", score: 88 },
+  { slug: "fixture-three", name: "Fixture Three", hero_url: "", score: 64 },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rankings row and pagination fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter py-8">
+      <ul data-fixture-ranking-rows class="flex flex-col gap-2">
+        {
+          rows.map((game) => (
+            <li>
+              <RankingRow
+                game={game}
+                selected={false}
+                href={`/rankings?game=${game.slug}`}
+              />
+            </li>
+          ))
+        }
+      </ul>
+
+      <RankingsPagination state={rankingsState} totalPages={5} />
+
+      <CataloguePagination page={2} totalPages={5} state={catalogueState} />
+    </main>
+  </body>
+</html>

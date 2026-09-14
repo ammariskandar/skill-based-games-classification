@@ -14,6 +14,22 @@ interface Props {
 const { page, totalPages, state } = Astro.props;
 const hasPrevious = page > 1;
 const hasNext = page < totalPages;
+
+// SBGC-241: instant page revisits. The catalogue markup stays server-owned, so
+// rather than caching slices in JavaScript the browser is asked to prerender the
+// pagination targets once hover intent is shown; a revisit then activates an
+// already rendered document with no intermediate loading state. Engines without
+// speculation support fall back to the `rel="prefetch"` hints on the links
+// below. Rendered from the frontmatter because a bare JSON literal in a script
+// element is not valid JavaScript for the toolchain parsers.
+const speculationRules = {
+  prerender: [
+    {
+      where: { selector_matches: "a.catalogue-pagination__link" },
+      eagerness: "moderate",
+    },
+  ],
+};
 ---
 
 <nav class="catalogue-pagination" aria-label="Catalogue pagination">
@@ -22,6 +38,7 @@ const hasNext = page < totalPages;
       <a
         class="catalogue-pagination__link"
         href={catalogueHrefFromState(state, page - 1)}
+        rel="prefetch"
       >
         Previous
       </a>
@@ -44,6 +61,7 @@ const hasNext = page < totalPages;
       <a
         class="catalogue-pagination__link"
         href={catalogueHrefFromState(state, page + 1)}
+        rel="prefetch"
       >
         Next
       </a>
@@ -57,6 +75,12 @@ const hasNext = page < totalPages;
     )
   }
 </nav>
+
+<script
+  type="speculationrules"
+  is:inline
+  set:html={JSON.stringify(speculationRules)}
+/>
 
 <style>
   .catalogue-pagination {

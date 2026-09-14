@@ -1,24 +1,31 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getAuthStatus } from "../lib/server/api/security";
+import { safeRedirectTarget } from "../lib/safe-redirect";
 
 // SSR only: an already-authenticated visitor is bounced home.  The session is
 // validated against Django rather than trusting bare cookie presence — a stale,
 // expired, or rotated `sessionid` must not trap the visitor in a redirect loop
 // that makes the login form unreachable.
+//
+// SBGC-241: an optional `?redirect=` return path is honoured so a gated action
+// (for example the /about suggestion deep link) can send the visitor to login
+// and still land where they intended.  Only same-origin absolute paths are
+// accepted — see `safeRedirectTarget`.
 export const prerender = false;
 
 const sessionId = Astro.cookies.get("sessionid")?.value;
-if (sessionId) {
-  const status = await getAuthStatus({ sessionId });
-  if (status?.authenticated) {
-    return Astro.redirect("/");
-  }
-  // Not authenticated (invalid/expired/rotated session, or the backend is
-  // unreachable): fall through and render the form.  The cookie is left intact
-  // so a transient outage does not log an otherwise-valid session out; a
-  // successful login overwrites it.
+const status = sessionId ? await getAuthStatus({ sessionId }) : null;
+
+if (status?.authenticated) {
+  return Astro.redirect(
+    safeRedirectTarget(Astro.url.searchParams.get("redirect")),
+  );
 }
+// Not authenticated (no session, an invalid/expired/rotated one, or the backend
+// is unreachable): render the form.  An existing cookie is left intact so a
+// transient outage does not log an otherwise-valid session out; a successful
+// login overwrites it.
 ---
 
 <BaseLayout title="Login - MyGameDNA">
@@ -74,7 +81,7 @@ if (sessionId) {
         <button
           id="login-submit"
           type="submit"
-          class="mt-2 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-opacity hover:opacity-90 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
+          class="mt-2 flex w-full items-center justify-center rounded-lg bg-blue px-4 py-2.5 text-sm font-semibold text-bg shadow-sm transition-colors hover:bg-(--color-blue-hover) focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
         >
           <span>Log In</span>
         </button>
@@ -100,6 +107,7 @@ if (sessionId) {
 
 <script>
   import { writeCachedAuthStatus } from "../lib/auth-status";
+  import { safeRedirectTarget } from "../lib/safe-redirect";
 
   const form = document.getElementById("login-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById(
@@ -136,7 +144,10 @@ if (sessionId) {
             authenticated: true,
             username: data.username ?? null,
           });
-          window.location.href = "/";
+          // SBGC-241: honour the same-origin `?redirect=` return path.
+          window.location.href = safeRedirectTarget(
+            new URLSearchParams(window.location.search).get("redirect"),
+          );
           return;
         }
 

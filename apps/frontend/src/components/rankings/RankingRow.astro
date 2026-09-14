@@ -79,7 +79,9 @@ const hasHero = heroUrl !== "";
 
   .ranking-row__media {
     flex: none;
-    width: 14rem;
+    /* SBGC-241: 12rem (was 14rem) — a ~14% smaller Hero. Because the frame is
+       aspect-locked, the shorter thumbnail also drops row height by ~11%. */
+    width: 12rem;
     aspect-ratio: 460 / 215;
     overflow: hidden;
     border-radius: var(--radius-sm);

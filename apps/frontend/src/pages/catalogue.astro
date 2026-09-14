@@ -124,6 +124,12 @@ const robots = catalogueNeedsNoindex(state) ? "noindex, follow" : undefined;
     ) : searching && count === 0 ? (
       <EmptyState title={`No games found for “${state.q}”.`}>
         <a
+          href="/about?action=suggest"
+          class="text-sm font-semibold text-blue hover:underline"
+        >
+          Submit a game suggestion
+        </a>
+        <a
           href={catalogueHref()}
           class="text-sm font-medium text-blue hover:underline"
         >

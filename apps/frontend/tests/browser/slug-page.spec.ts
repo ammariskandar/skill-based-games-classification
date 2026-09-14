@@ -91,4 +91,11 @@ test("similar games renders ranked cards with scores", async ({ page }) => {
   await expect(cards).toHaveCount(2);
   await expect(cards.first()).toHaveAttribute("data-similarity-score", "82");
   await expect(page.getByRole("link", { name: "Fixture Ally" })).toBeVisible();
+
+  // SBGC-241: the percentage is never rendered on its own — the metric name is
+  // always shown with it.
+  await expect(cards.first()).toContainText("82%");
+  const label = cards.first().locator("[data-similarity-label]");
+  await expect(label).toHaveText("Confidence");
+  await expect(label).toHaveCSS("text-transform", "uppercase");
 });
