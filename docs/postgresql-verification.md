@@ -165,6 +165,22 @@ The `set_editorial_classification()` service is verified on PostgreSQL:
 - Invalid update preserves prior state
 - Nested savepoint recovers after `IntegrityError`
 
+### Published Read Paths
+
+`games.tests.test_pg_read_paths` executes the rankings read path against
+PostgreSQL.  This module exists because the Unified ranking profile sums the
+Challenge and Reward score expressions in SQL, and the scores live in a
+`JSONField` vector: PostgreSQL has no `jsonb + jsonb` operator, so a bare `->`
+extraction 500s the endpoint while SQLite silently accepts the same expression.
+The default SQLite suite therefore cannot see this class of defect; it is
+covered here instead.
+
+- Unified ranking orders by `challenge + reward`
+- Unified preserves exact `.5` scores
+- Unified dominant filter compares the summed vector
+- Unclassified games are excluded
+- Single-profile scores order numerically and return integers
+
 ### Concurrent Uniqueness
 
 Duplicate Steam identity insertion is verified to raise `IntegrityError`
@@ -224,3 +240,5 @@ The `test:backend:postgresql` job:
 - No database health endpoint
 - No Neon API automation
 - Questionnaire constraints deferred to SBGC-177
+- Read-path coverage is limited to `games.tests.test_pg_read_paths`; the wider
+  catalogue/rankings API suites still run on SQLite only.

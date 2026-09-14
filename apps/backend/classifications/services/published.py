@@ -24,6 +24,8 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast
 
 from classifications.calculations.results import READY
 from classifications.models import ClassificationSnapshot
@@ -49,8 +51,16 @@ def published_score(profile: str, category: str) -> Subquery:
 
     Extracts a single array element from the current READY snapshot's
     ``unified_integer_{profile}`` JSON list (canonical order
-    ``[micro, macro, mystiko]``).  Returns ``NULL`` when no current READY
-    snapshot exists or the vector element is missing.
+    ``[micro, macro, mystiko]``) and casts it to an integer.  Returns ``NULL``
+    when no current READY snapshot exists or the vector element is missing.
+
+    The cast is load-bearing rather than cosmetic.  The vector lives in a
+    ``JSONField``, so ``->`` yields ``jsonb`` (on SQLite, an untyped JSON value),
+    and Unified rankings *add two of these expressions together* — PostgreSQL
+    has no ``jsonb + jsonb`` operator, so a bare ``->`` extraction raises
+    ``ProgrammingError`` and 500s the endpoint.  ``->>`` returns text and the
+    explicit cast turns it into a real integer, which also makes ordering and
+    ``_cat_*`` dominance comparisons numeric on every backend.
     """
     field = PROFILE_FIELD[profile]
     index = SKILL_INDEX[category]
@@ -61,7 +71,8 @@ def published_score(profile: str, category: str) -> Subquery:
             status=READY,
         )
         .order_by()
-        .values(f"{field}__{index}")[:1],
+        .annotate(_value=Cast(KeyTextTransform(str(index), field), IntegerField()))
+        .values("_value")[:1],
         output_field=IntegerField(),
     )
 
