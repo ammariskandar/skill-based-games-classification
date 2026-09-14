@@ -780,3 +780,30 @@ const SAMPLE_RADAR = buildRadarHtml({
     </article>
   </section>
 </BaseLayout>
+
+<style is:global>
+  /* `&nbsp;`-joined phrases (e.g. `profiles:&nbsp;<strong>Challenge</strong>`)
+     form long unbreakable tokens; on narrow screens they overflow the card
+     instead of wrapping.  Allow an emergency break inside such a run. */
+  main p {
+    overflow-wrap: break-word;
+  }
+
+  /* Long display equations must never widen the mobile viewport: KaTeX renders
+     them with `white-space: nowrap`, so an unscaled equation would push the
+     whole page (including the surrounding prose) off-screen.  Scale them down
+     to fit, and keep a horizontal-scroll fallback contained to the equation
+     block rather than the page. */
+  .katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.25rem;
+  }
+
+  @media (max-width: 40rem) {
+    .katex-display {
+      font-size: 0.6em;
+    }
+  }
+</style>

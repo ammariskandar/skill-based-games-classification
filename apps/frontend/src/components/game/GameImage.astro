@@ -304,18 +304,21 @@ const upscalingEnabled = isImageUpscalingEnabled(
      viewport (SBGC-220 follow-up): stacking on narrow screens shrank the
      square radar slot until it was barely legible. */
 
-  /* Mobile hero: give the blurred banner ~20% more vertical height while
-     keeping the Capsule + radar at their current size.  The frame grows from
-     16:9 to 3:2, and the foreground group's height drops from 72% to 60% so
-     the Capsule/radar keep the same absolute pixels (the stretch is invisible
-     on the blurred background). */
+  /* Mobile hero: 10% taller than the previous mobile banner (16:9 → 3:2 →
+     15:11).  Only the blurred/cover banner stretches; the Capsule and the
+     square radar slot keep their absolute pixels by scaling their percentage
+     height with the taller frame. */
   @media (max-width: 640px) {
     .game-image__frame {
-      aspect-ratio: 3 / 2;
+      aspect-ratio: 15 / 11;
     }
 
     .game-image__foreground--group {
-      height: 60%;
+      height: 55%;
+    }
+
+    .game-image__enhance--capsule {
+      height: 55%;
     }
   }
 
@@ -335,7 +338,16 @@ const upscalingEnabled = isImageUpscalingEnabled(
   }
 
   .game-image__enhance--capsule .game-image__original,
-  .game-image__enhance--capsule .game-image__enhanced,
+  .game-image__enhance--capsule .game-image__enhanced {
+    /* Crop to fill the 2:3 Capsule frame rather than letter-boxing a custom
+       Capsule whose ratio is not exactly 2:3 — the same zoom/crop the homepage
+       carousel and catalogue cards apply. */
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  }
+
   .game-image__enhance--card .game-image__original,
   .game-image__enhance--card .game-image__enhanced {
     object-fit: contain;

@@ -423,11 +423,11 @@ export function buildRadarHtml(data: RadarRenderData): string {
         initialProfile === "challenge" ? " is-active" : ""
       }" data-toggle-target="challenge" aria-pressed="${
         initialProfile === "challenge"
-      }">Challenge Profile</button><button type="button" class="radar-profile-btn${
+      }">Challenge</button><button type="button" class="radar-profile-btn${
         initialProfile === "reward" ? " is-active" : ""
       }" data-toggle-target="reward" aria-pressed="${
         initialProfile === "reward"
-      }">Reward Profile</button></div>`
+      }">Reward</button></div>`
     : "";
 
   return `<div class="radar-chart${classSuffix}" data-radar-chart data-size="${size}" data-initial-profile="${initialProfile}"><svg class="radar-chart__svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${escapeHtml(

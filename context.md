@@ -2570,6 +2570,35 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-12 — SBGC-226 mobile polish follow-up
+
+- **Rankings back affordance** — when a Game is selected on the stacked mobile
+  layout, `RankingsDetailPane` shows a "Back to rankings" link above the Game
+  title (below the sort control) that unselects via `rankingsHref({ ...state,
+  game: null })`; hidden at `lg` and above where the list and detail sit side by
+  side.
+- **Methodology mobile fit** — the summary card's `&nbsp;`-joined phrases no
+  longer force horizontal page scroll (`overflow-wrap: break-word`), and display
+  equations scale to `0.6em` under 40rem with a contained `overflow-x` fallback
+  so no equation widens the viewport.
+- **About accordion titles** — reduced to `text-base` on mobile (desktop
+  `sm:text-2xl` unchanged).
+- **Radar toggle** — labels shortened from "Challenge Profile"/"Reward Profile"
+  to "Challenge"/"Reward" in `radar-render.ts` and `QuestionnaireRadar.astro`.
+- **Taller mobile hero** — `GameImage.astro`'s mobile frame grows from `3 / 2` to
+  `15 / 11` (10% taller); the Capsule and radar slot scale their percentage
+  height so their absolute pixels are unchanged (covers the homepage Hades
+  showcase and Game-detail pages).
+- **Capsule crop on the Game page** — the Capsule foreground now uses
+  `object-fit: cover` (was `contain`), matching the homepage carousel and
+  catalogue cover so a custom Capsule that is not exactly 2:3 fills its frame
+  instead of letter-boxing.
+- **Tests** — new `tests/browser/mobile-polish.spec.ts` (7 specs: rankings back
+  link + desktop hidden, methodology overflow/equation fit, About title sizing,
+  mobile hero ratio, radar labels, Capsule `object-fit`); frontend Vitest 910
+  green, full browser suite 62 green; `astro check`, ESLint, Prettier and the
+  production build green.  Updated `docs/frontend-architecture.md`.
+
 ## 2026-09-12 — SBGC-226 sticky mobile navbar & z-index elevation
 
 - **Sticky header** — `Header.astro` becomes `sticky top-0 z-navbar w-full` at
