@@ -1,0 +1,29 @@
+---
+import "../../styles/global.css";
+import RankingsDetailPane from "../../components/rankings/RankingsDetailPane.astro";
+
+// Dev-only test fixture (SBGC-240). Renders the real rankings detail pane in its
+// unselected state so the Playwright suite can assert the mobile collapse without
+// the Django backend. Not linked from any production page.
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rankings empty detail fixture</title>
+  </head>
+  <body>
+    <main class="shell-gutter py-8">
+      <RankingsDetailPane
+        selectedGame={null}
+        challenge={null}
+        reward={null}
+        profile="unified"
+        similarGames={[]}
+      />
+    </main>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SuggestGameModal from "../components/about/SuggestGameModal.astro";
 
 export const prerender = true;
 ---
@@ -235,6 +236,31 @@ export const prerender = true;
       </div>
     </details>
   </div>
+
+  <!-- Missing-game suggestion card (SBGC-240). Sits below the accordions so the
+       catalogue gap is answered where the project's motivation is explained. -->
+  <div
+    class="mt-12 flex flex-col items-center justify-between gap-4 rounded-xl border border-(--color-border) bg-(--color-surface-2) p-6 sm:flex-row sm:p-8"
+  >
+    <div>
+      <h2 class="text-lg font-semibold text-(--color-text)">
+        Is there a game missing that you wish to have added?
+      </h2>
+      <p class="mt-1 text-sm text-muted">
+        Let us know what you’d like to see classified in the MyGameDNA
+        catalogue.
+      </p>
+    </div>
+    <button
+      id="open-suggestion-modal-btn"
+      type="button"
+      class="shrink-0 rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+    >
+      Submit a suggestion &gt;&gt;
+    </button>
+  </div>
+
+  <SuggestGameModal />
 </BaseLayout>
 
 <style>

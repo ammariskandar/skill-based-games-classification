@@ -3,17 +3,32 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:justify-between">
       <div>
         <p class="text-sm font-semibold text-text">MyGameDNA</p>
-        <p class="mt-1 text-xs text-muted max-w-sm">
+        <p class="mt-1 text-xs text-muted max-w-3xl lg:max-w-4xl">
           Classifying games through the lens of skill, using Micro, Mystiko, and
-          Macro dimensions within separate Challenge and Reward profiles.
+          Macro dimensions within separate Challenge and Reward profiles. → A
+          revolutionary way to categorize games better.
         </p>
       </div>
-      <nav aria-label="Footer navigation" class="flex gap-6 text-sm">
+      <nav
+        aria-label="Footer navigation"
+        class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted"
+      >
         <a
           href="/methodology"
-          class="text-muted hover:text-text transition-colors">Methodology</a
+          class="hover:text-(--color-text) transition-colors">Methodology</a
         >
-        <a href="/about" class="text-muted hover:text-text transition-colors"
+        <span class="text-(--color-border)" aria-hidden="true">|</span>
+        <a
+          href="/privacy-policy"
+          class="hover:text-(--color-text) transition-colors">Privacy Policy</a
+        >
+        <span class="text-(--color-border)" aria-hidden="true">|</span>
+        <a
+          href="/terms-of-use"
+          class="hover:text-(--color-text) transition-colors">Terms of Use</a
+        >
+        <span class="text-(--color-border)" aria-hidden="true">|</span>
+        <a href="/about" class="hover:text-(--color-text) transition-colors"
           >About</a
         >
       </nav>

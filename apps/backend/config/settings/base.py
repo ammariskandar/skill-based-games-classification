@@ -268,6 +268,11 @@ STEAM_REFRESH_FALLBACK_EMAILS = env_str(
 # Sender address for operational alert emails.
 DEFAULT_FROM_EMAIL = env_str(env, "DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 
+# SBGC-240 — operator inbox that receives user-submitted game suggestions.
+SUGGESTION_RECIPIENT_EMAIL = env_str(
+    env, "SUGGESTION_RECIPIENT_EMAIL", default="alerts@gamedna.my"
+)
+
 # SBGC-223 — public frontend origin, used for Admin hyperlinks to public
 # profiles (e.g. the moderation desk's offending-user link).
 PUBLIC_SITE_URL = env_str(env, "PUBLIC_SITE_URL", default="http://localhost:4321")
