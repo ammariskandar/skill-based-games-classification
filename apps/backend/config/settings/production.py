@@ -18,6 +18,13 @@ SBGC-104 additions:
 - DJANGO_DEBUG must never be truthy in production (fail-fast).
 - RECAPTCHA_SECRET_KEY and STEAM_WEB_API_KEY are required (fail-fast).
 - Strict boolean parsing for DB_SSL_REQUIRE (and DJANGO_DEBUG guard).
+
+SBGC-239 additions:
+- RESEND_API_KEY auto-wires the Resend SMTP relay (host/port/TLS/user derived).
+- A plain EMAIL_HOST/EMAIL_PORT/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD relay is the
+  fallback when RESEND_API_KEY is absent.
+- A credential (RESEND_API_KEY or EMAIL_HOST_PASSWORD) is required: production
+  refuses to boot where outgoing mail would be silently dropped.
 """
 
 from django.core.exceptions import ImproperlyConfigured
@@ -150,6 +157,52 @@ if not _recaptcha_site_key or not _recaptcha_site_key.strip():
 _steam_api_key = env_optional_str(env, "STEAM_WEB_API_KEY")  # noqa: F405
 if not _steam_api_key or not _steam_api_key.strip():
     raise ImproperlyConfigured("STEAM_WEB_API_KEY must be set in production.")
+
+# ---------------------------------------------------------------------------
+# Email delivery — SBGC-239 (Resend SMTP auto-wiring)
+# ---------------------------------------------------------------------------
+# Verification links, password resets, and moderation notices dispatch through
+# Resend over SMTP.  Setting RESEND_API_KEY alone is sufficient: host, port,
+# TLS, and username are derived here so the relay cannot be half-configured.
+_email_env = env  # noqa: F405 — star-imported environ.Env from base
+RESEND_API_KEY = env_str(_email_env, "RESEND_API_KEY", default="").strip()
+
+if RESEND_API_KEY:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = "smtp.resend.com"
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_USER = "resend"
+    EMAIL_HOST_PASSWORD = RESEND_API_KEY
+    DEFAULT_FROM_EMAIL = env_str(
+        _email_env, "DEFAULT_FROM_EMAIL", default="noreply@gamedna.my"
+    )
+    SERVER_EMAIL = env_str(_email_env, "SERVER_EMAIL", default="alerts@gamedna.my")
+else:
+    # Fallback: an explicit SMTP relay supplied entirely by the environment.
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = env_str(_email_env, "EMAIL_HOST", default="localhost")
+    _email_port = parse_non_negative_integer(
+        env_str(_email_env, "EMAIL_PORT", default="25")
+    )
+    if not 1 <= _email_port <= 65535:
+        raise ImproperlyConfigured(
+            f"EMAIL_PORT must be between 1 and 65535, got {_email_port}."
+        )
+    EMAIL_PORT = _email_port
+    EMAIL_HOST_USER = env_str(_email_env, "EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = env_str(_email_env, "EMAIL_HOST_PASSWORD", default="")
+    EMAIL_USE_TLS = get_env_bool("EMAIL_USE_TLS", default=False)
+    EMAIL_USE_SSL = get_env_bool("EMAIL_USE_SSL", default=False)
+    SERVER_EMAIL = env_str(_email_env, "SERVER_EMAIL", default="webmaster@localhost")
+
+if not (RESEND_API_KEY or EMAIL_HOST_PASSWORD):
+    raise ImproperlyConfigured(
+        "RESEND_API_KEY or EMAIL_HOST_PASSWORD must be set in production: "
+        "without a credential, verification and password-reset mail is silently "
+        "dropped."
+    )
 
 # -- HSTS (production-only) — SBGC-105 --------------------------------------
 # Full-strength HSTS by default (1 year, includeSubDomains, preload).  The

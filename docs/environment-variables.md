@@ -44,6 +44,9 @@ cp apps/backend/.env.example apps/backend/.env
 | `STEAM_CDN_ALLOWED_HOSTS`       | Server | Public    | *(empty)*                      | Render env vars     | No (later)   |
 | `STEAM_REFRESH_FALLBACK_EMAILS` | Server | Public    | *(empty)*                      | Render env vars     | No           |
 | `DEFAULT_FROM_EMAIL`            | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
+| `RESEND_API_KEY`                | Server | Secret    | *(empty)*                      | Render env vars     | Yes (production) |
+| `SERVER_EMAIL`                  | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Server | Secret | *(empty)* | Render env vars | Only as a Resend alternative |
 | `DJANGO_LOG_LEVEL`      | Server   | Public        | `INFO`                         | Render env vars     | No           |
 | `WEB_CONCURRENCY`       | Server   | Public        | `2`                            | Render env vars     | No           |
 | `ADMIN_URL_PATH`       | Server   | Secret        | `mygamedna-admin`              | Render env vars     | Yes          |
@@ -67,6 +70,15 @@ cp apps/backend/.env.example apps/backend/.env
 - `DEFAULT_FROM_EMAIL` is the sender address for operational alert emails
   (scheduled Steam refresh). Uses Django's standard email settings; no SMTP
   credentials are hardcoded.
+- `RESEND_API_KEY` (SBGC-239) auto-wires production email delivery: setting it
+  derives `smtp.resend.com:587` with the `resend` username and STARTTLS, and
+  defaults `DEFAULT_FROM_EMAIL` to `noreply@gamedna.my` and `SERVER_EMAIL` to
+  `alerts@gamedna.my`. Without it, production falls back to an explicit
+  `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay.
+  Production raises `ImproperlyConfigured` when neither `RESEND_API_KEY` nor
+  `EMAIL_HOST_PASSWORD` is set, because verification and password-reset mail
+  would otherwise be dropped silently. Development and test settings are
+  unaffected and keep local SMTP (smtp4dev).
 
 ## Variable Classification
 
