@@ -61,6 +61,14 @@ services:
       # Sender address for operational alert emails.
       - key: DEFAULT_FROM_EMAIL
         sync: false
+      # SBGC-239 — Resend SMTP credential.  Production derives
+      # smtp.resend.com:587 with the "resend" username from this key alone, and
+      # refuses to boot when neither it nor EMAIL_HOST_PASSWORD is present.
+      - key: RESEND_API_KEY
+        sync: false
+      # SBGC-239 — envelope sender for Django error mail.
+      - key: SERVER_EMAIL
+        sync: false
       # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
       - key: DB_SSL_REQUIRE
         value: "true"

@@ -83,7 +83,8 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
 
     Includes: DJANGO_SECRET_KEY, DATABASE_URL, DJANGO_ALLOWED_HOSTS,
     CSRF_TRUSTED_ORIGINS, ADMIN_URL_PATH, and (SBGC-104) the required
-    RECAPTCHA_SECRET_KEY and STEAM_WEB_API_KEY secrets.
+    RECAPTCHA_SECRET_KEY and STEAM_WEB_API_KEY secrets, plus (SBGC-239) a dummy
+    RESEND_API_KEY so the email-credential fail-fast is satisfied.
 
     Use for subprocess tests that import config.settings.production.
     """
@@ -98,6 +99,8 @@ def prod_test_env(**overrides: str) -> dict[str, str]:
         RECAPTCHA_SECRET_KEY="dummy-recaptcha-secret",
         RECAPTCHA_SITE_KEY="dummy-recaptcha-site-key",
         STEAM_WEB_API_KEY="dummy-steam-api-key",
+        # SBGC-239 — dummy Resend credential; no mail is ever sent in tests.
+        RESEND_API_KEY="re_test_dummy_key",
         # SBGC-186 — dual-superuser quota handles (distinct dummy values).
         DJANGO_OWNER_USERNAME="owner_test",
         DJANGO_SUPERUSER_1="superuser1_test",

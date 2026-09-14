@@ -148,11 +148,19 @@ documented.
 | `STEAM_WEB_API_KEY` | non-blank |
 | `DJANGO_OWNER_USERNAME`, `DJANGO_SUPERUSER_1`, `DJANGO_SUPERUSER_2` | all non-blank and mutually distinct |
 | `DJANGO_DEBUG` | must not be truthy |
+| `RESEND_API_KEY` or `EMAIL_HOST_PASSWORD` | at least one non-blank; `RESEND_API_KEY` also derives the Resend SMTP relay (SBGC-239) |
 
 `MIGRATION_DATABASE_URL` is read by `scripts/backend-migrate.sh` during the release
 phase only. It must be the **direct** (non-pooled) Neon host: the script aborts when
 the effective URL contains `-pooler.`. `DATABASE_URL` should use the pooled host
 (`CONN_MAX_AGE=0` in production, so pooled connections never hold state).
+
+Email delivery (SBGC-239) is auto-configured from `RESEND_API_KEY`: production
+derives `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, STARTTLS, and the `resend`
+username, then defaults the senders to `noreply@gamedna.my` / `alerts@gamedna.my`.
+An explicit `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`
+relay is the fallback when `RESEND_API_KEY` is absent. Production refuses to boot
+when neither credential is present.
 
 The two URLs also use different roles. `DATABASE_URL` authenticates as the scoped
 DML-only `app_django` role provisioned by `scripts/db-provision-app-role.sql`;

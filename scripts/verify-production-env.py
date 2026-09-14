@@ -68,6 +68,9 @@ ENV = {
     "RECAPTCHA_SECRET_KEY": "placeholder-recaptcha-secret",
     "RECAPTCHA_SITE_KEY": "6LdU_bktAAAAANW2tjirQlPRvKmHjuryTSkgLpN0",
     "STEAM_WEB_API_KEY": "placeholder-steam-web-api-key",
+    # SBGC-239 — production requires an email credential; the Resend branch
+    # derives host/port/TLS from this key alone.
+    "RESEND_API_KEY": "re_placeholder_resend_key",
     "DJANGO_OWNER_USERNAME": "your_owner_username",
     "DJANGO_SUPERUSER_1": "superuser_one",
     "DJANGO_SUPERUSER_2": "superuser_two",
