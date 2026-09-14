@@ -158,3 +158,38 @@ single-object delete flow.
 
 SBGC-62 adds combined service + Admin workflow tests and human validation
 evidence — see `docs/manual-game-workflow-validation.md`.
+
+## Bulk catalogue seed (SBGC-127)
+
+`python manage.py seed_initial_manual_games` creates the 25 non-Steam entries
+from the SBGC-125 manifest (`games/fixtures/initial_catalogue_200.json`).  It
+calls `create_manual_game` / `update_manual_game` rather than writing the model
+directly, so manual identity (`source_type=manual`, `external_id=NULL`) and every
+validation rule stay owned by the service.  No Steam adapter and no network are
+touched.
+
+The service has no parameter for `aesthetic` or the hero/capsule artwork, so the
+command applies those afterwards — the manifest owns them, exactly as the Steam
+bulk import does for `aesthetic`.
+
+Lookup is `(source_type=manual, slug=...)`, so re-runs update in place and a
+slug already owned by a Steam record is never silently converted; that entry is
+reported as failed and the rest of the batch continues.
+
+| Flag | Behaviour |
+|---|---|
+| `--dry-run` | Reports planned create/update per entry. No writes. |
+| `--manifest PATH` | Overrides the manifest location. |
+
+```bash
+python manage.py seed_initial_manual_games --dry-run
+python manage.py seed_initial_manual_games
+```
+
+### Artwork is intentionally blank
+
+The manifest carries no image URLs, and the catalogue card already renders a
+local placeholder when a game has no artwork (`catalogue-card--no-artwork`), so
+seeding leaves `manual_image_url`, `manual_hero_url`, and `manual_capsule_url`
+empty instead of inventing third-party placeholder URLs.  If a curator adds any
+of those keys to a manifest entry, the command honours the value.
