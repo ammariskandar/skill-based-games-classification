@@ -23,6 +23,10 @@ SBGC-239 additions:
 - RESEND_API_KEY auto-wires the Resend SMTP relay (host/port/TLS/user derived),
   defaulting to port 2587 because Render free web services block outbound
   25/465/587.  RESEND_SMTP_PORT overrides it (2465/465 use implicit TLS).
+- ZEPTOMAIL_SEND_TOKEN adds ZeptoMail as the failover provider over its HTTPS
+  API (port 443) — its SMTP service only offers 465/587, both blocked on Render
+  free web services.  With Resend configured, Resend stays primary and ZeptoMail
+  is tried only when Resend raises.
 - A plain EMAIL_HOST/EMAIL_PORT/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD relay is the
   fallback when RESEND_API_KEY is absent.
 - A credential (RESEND_API_KEY or EMAIL_HOST_PASSWORD) is required: production
@@ -161,13 +165,22 @@ if not _steam_api_key or not _steam_api_key.strip():
     raise ImproperlyConfigured("STEAM_WEB_API_KEY must be set in production.")
 
 # ---------------------------------------------------------------------------
-# Email delivery — SBGC-239 (Resend SMTP auto-wiring)
+# Email delivery — SBGC-239 (Resend primary, ZeptoMail HTTPS failover)
 # ---------------------------------------------------------------------------
 # Verification links, password resets, and moderation notices dispatch through
 # Resend over SMTP.  Setting RESEND_API_KEY alone is sufficient: host, port,
 # TLS, and username are derived here so the relay cannot be half-configured.
+#
+# ZeptoMail is the failover provider, reached over its HTTPS API on port 443.
+# Its SMTP service supports only 465/587 — both blocked for outbound traffic on
+# Render free web services — so an SMTP fallback would be dead on arrival there.
 _email_env = env  # noqa: F405 — star-imported environ.Env from base
 RESEND_API_KEY = env_str(_email_env, "RESEND_API_KEY", default="").strip()
+ZEPTOMAIL_SEND_TOKEN = env_str(_email_env, "ZEPTOMAIL_SEND_TOKEN", default="").strip()
+
+_SMTP_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+_ZEPTOMAIL_BACKEND = "config.email_backends.ZeptoMailApiEmailBackend"
+_FAILOVER_BACKEND = "config.email_backends.FailoverEmailBackend"
 
 # Resend's SMTP ports.  Standard 25/465/587 are blocked for outbound traffic on
 # Render free web services (render.com/changelog, 2025-09-26), so the default is
@@ -176,6 +189,8 @@ RESEND_API_KEY = env_str(_email_env, "RESEND_API_KEY", default="").strip()
 _RESEND_SMTP_PORTS = {25, 465, 587, 2465, 2587}
 _RESEND_IMPLICIT_TLS_PORTS = {465, 2465}
 _RESEND_DEFAULT_SMTP_PORT = "2587"
+
+EMAIL_BACKEND = _SMTP_BACKEND
 
 if RESEND_API_KEY:
     _resend_port = parse_non_negative_integer(
@@ -186,7 +201,6 @@ if RESEND_API_KEY:
             f"RESEND_SMTP_PORT must be one of {sorted(_RESEND_SMTP_PORTS)}, "
             f"got {_resend_port}."
         )
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = "smtp.resend.com"
     EMAIL_PORT = _resend_port
     # 465/2465 connect over implicit TLS; 25/587/2587 upgrade via STARTTLS.
@@ -200,7 +214,6 @@ if RESEND_API_KEY:
     SERVER_EMAIL = env_str(_email_env, "SERVER_EMAIL", default="alerts@gamedna.my")
 else:
     # Fallback: an explicit SMTP relay supplied entirely by the environment.
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = env_str(_email_env, "EMAIL_HOST", default="localhost")
     _email_port = parse_non_negative_integer(
         env_str(_email_env, "EMAIL_PORT", default="25")
@@ -216,11 +229,31 @@ else:
     EMAIL_USE_SSL = get_env_bool("EMAIL_USE_SSL", default=False)
     SERVER_EMAIL = env_str(_email_env, "SERVER_EMAIL", default="webmaster@localhost")
 
-if not (RESEND_API_KEY or EMAIL_HOST_PASSWORD):
+# ZeptoMail failover.  With both providers configured, Resend stays primary and
+# ZeptoMail is used only when Resend raises; with Resend absent, ZeptoMail is the
+# sole provider.
+if ZEPTOMAIL_SEND_TOKEN:
+    ZEPTOMAIL_API_URL = env_str(
+        _email_env, "ZEPTOMAIL_API_URL", default="https://api.zeptomail.com/v1.1/email"
+    )
+    ZEPTOMAIL_FROM_NAME = env_str(
+        _email_env, "ZEPTOMAIL_FROM_NAME", default="MyGameDNA"
+    )
+    ZEPTOMAIL_TIMEOUT_SECONDS = parse_non_negative_integer(
+        env_str(_email_env, "ZEPTOMAIL_TIMEOUT_SECONDS", default="10")
+    )
+    if RESEND_API_KEY or EMAIL_HOST_PASSWORD:
+        EMAIL_FAILOVER_PRIMARY_BACKEND = _SMTP_BACKEND
+        EMAIL_FAILOVER_SECONDARY_BACKEND = _ZEPTOMAIL_BACKEND
+        EMAIL_BACKEND = _FAILOVER_BACKEND
+    else:
+        EMAIL_BACKEND = _ZEPTOMAIL_BACKEND
+
+if not (RESEND_API_KEY or ZEPTOMAIL_SEND_TOKEN or EMAIL_HOST_PASSWORD):
     raise ImproperlyConfigured(
-        "RESEND_API_KEY or EMAIL_HOST_PASSWORD must be set in production: "
-        "without a credential, verification and password-reset mail is silently "
-        "dropped."
+        "RESEND_API_KEY, ZEPTOMAIL_SEND_TOKEN, or EMAIL_HOST_PASSWORD must be set "
+        "in production: without a credential, verification and password-reset "
+        "mail is silently dropped."
     )
 
 # -- HSTS (production-only) — SBGC-105 --------------------------------------

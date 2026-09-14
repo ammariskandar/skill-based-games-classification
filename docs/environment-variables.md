@@ -46,6 +46,8 @@ cp apps/backend/.env.example apps/backend/.env
 | `DEFAULT_FROM_EMAIL`            | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
 | `RESEND_API_KEY`                | Server | Secret    | *(empty)*                      | Render env vars     | Yes (production) |
 | `RESEND_SMTP_PORT`              | Server | Public    | `2587`                         | Render env vars     | No           |
+| `ZEPTOMAIL_SEND_TOKEN`          | Server | Secret    | *(empty)*                      | Render env vars     | No (failover provider) |
+| `ZEPTOMAIL_API_URL`             | Server | Public    | `https://api.zeptomail.com/v1.1/email` | Render env vars | No    |
 | `SERVER_EMAIL`                  | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Server | Secret | *(empty)* | Render env vars | Only as a Resend alternative |
 | `DJANGO_LOG_LEVEL`      | Server   | Public        | `INFO`                         | Render env vars     | No           |
@@ -79,10 +81,18 @@ cp apps/backend/.env.example apps/backend/.env
   overrides it, and 2465/465 switch to implicit TLS. Without `RESEND_API_KEY`,
   production falls back to an explicit `EMAIL_HOST` / `EMAIL_PORT` /
   `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay.
-  Production raises `ImproperlyConfigured` when neither `RESEND_API_KEY` nor
-  `EMAIL_HOST_PASSWORD` is set, because verification and password-reset mail
-  would otherwise be dropped silently. Development and test settings are
-  unaffected and keep local SMTP (smtp4dev).
+  Production raises `ImproperlyConfigured` when none of `RESEND_API_KEY`,
+  `ZEPTOMAIL_SEND_TOKEN`, or `EMAIL_HOST_PASSWORD` is set, because verification
+  and password-reset mail would otherwise be dropped silently. Development and
+  test settings are unaffected and keep local SMTP (smtp4dev).
+- `ZEPTOMAIL_SEND_TOKEN` (SBGC-239) adds ZeptoMail as an email failover provider
+  over its HTTPS API on port 443 — its SMTP service supports only 465/587, both
+  blocked for outbound traffic on Render free web services. With
+  `RESEND_API_KEY` also set, Resend stays primary and ZeptoMail is used only when
+  Resend fails; on its own, ZeptoMail becomes the sole provider. The sender
+  domain must be verified separately inside the ZeptoMail Agent, and
+  `ZEPTOMAIL_API_URL` selects a regional endpoint (`api.zeptomail.eu`,
+  `api.zeptomail.in`).
 
 ## Variable Classification
 

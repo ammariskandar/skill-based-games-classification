@@ -71,6 +71,16 @@ services:
       # SBGC-239 — envelope sender for Django error mail.
       - key: SERVER_EMAIL
         sync: false
+      # SBGC-239 — ZeptoMail failover provider (HTTPS API on port 443; its SMTP
+      # service only offers 465/587, both blocked on Render free web services).
+      # When set alongside RESEND_API_KEY, Resend stays primary and ZeptoMail is
+      # tried only if Resend fails.
+      - key: ZEPTOMAIL_SEND_TOKEN
+        sync: false
+      - key: ZEPTOMAIL_API_URL
+        sync: false
+      - key: ZEPTOMAIL_FROM_NAME
+        sync: false
       # SBGC-104 — TLS toggle for PostgreSQL (defaults to enabled).
       - key: DB_SSL_REQUIRE
         value: "true"

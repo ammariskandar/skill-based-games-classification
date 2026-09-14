@@ -148,7 +148,7 @@ documented.
 | `STEAM_WEB_API_KEY` | non-blank |
 | `DJANGO_OWNER_USERNAME`, `DJANGO_SUPERUSER_1`, `DJANGO_SUPERUSER_2` | all non-blank and mutually distinct |
 | `DJANGO_DEBUG` | must not be truthy |
-| `RESEND_API_KEY` or `EMAIL_HOST_PASSWORD` | at least one non-blank; `RESEND_API_KEY` also derives the Resend SMTP relay (SBGC-239) |
+| `RESEND_API_KEY` or `EMAIL_HOST_PASSWORD` or `ZEPTOMAIL_SEND_TOKEN` | at least one non-blank; `RESEND_API_KEY` also derives the Resend SMTP relay, and `ZEPTOMAIL_SEND_TOKEN` adds the ZeptoMail HTTPS failover (SBGC-239) |
 
 `MIGRATION_DATABASE_URL` is read by `scripts/backend-migrate.sh` during the release
 phase only. It must be the **direct** (non-pooled) Neon host: the script aborts when
@@ -163,7 +163,18 @@ services block outbound traffic to SMTP ports 25, 465, and 587; `RESEND_SMTP_POR
 overrides it, and 2465/465 select implicit TLS automatically. An explicit
 `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay is
 the fallback when `RESEND_API_KEY` is absent. Production refuses to boot when
-neither credential is present.
+none of `RESEND_API_KEY`, `ZEPTOMAIL_SEND_TOKEN`, or `EMAIL_HOST_PASSWORD` is
+present.
+
+ZeptoMail (SBGC-239) is the failover provider, reached over its HTTPS API on port
+443 — its SMTP service supports only 465/587, both blocked on Render free web
+services, so an SMTP fallback could not work there. With `RESEND_API_KEY` also
+set, Resend stays primary and ZeptoMail is tried only when Resend raises; without
+it, ZeptoMail becomes the sole provider. Failover triggers on any exception, so a
+message Resend accepted but whose response was lost can be delivered twice — an
+accepted trade for transactional mail. `ZEPTOMAIL_API_URL` selects a regional
+endpoint (`api.zeptomail.eu`, `api.zeptomail.in`); the sender domain must be
+verified separately inside the ZeptoMail Agent.
 
 The two URLs also use different roles. `DATABASE_URL` authenticates as the scoped
 DML-only `app_django` role provisioned by `scripts/db-provision-app-role.sql`;

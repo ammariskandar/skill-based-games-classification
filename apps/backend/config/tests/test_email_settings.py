@@ -156,7 +156,10 @@ class EmailCredentialFailFastTests(SimpleTestCase):
         proc = run_manage("check", "--settings=config.settings.production", env=env)
 
         self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("RESEND_API_KEY or EMAIL_HOST_PASSWORD", proc.stderr)
+        self.assertIn(
+            "RESEND_API_KEY, ZEPTOMAIL_SEND_TOKEN, or EMAIL_HOST_PASSWORD",
+            proc.stderr,
+        )
 
     def test_explicit_host_password_satisfies_the_guard_without_resend(self):
         env = prod_test_env(
