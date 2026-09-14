@@ -37,6 +37,12 @@ Each dimension dominates roughly a third of the catalogue so the rankings,
 filters, search index, and radar charts exercise the full analytical range
 rather than clustering on one axis.
 
+> `intended_dominant` is curation metadata for this spread. Nothing in the
+> application consumes it, and it is not a target for the editorial
+> classifications: SBGC-128 derives those profiles from the questionnaire
+> instrument and reports where the instrument reads a title differently. See
+> [`initial-catalogue-classifications.md`](initial-catalogue-classifications.md).
+
 ### Primary aesthetic
 
 | Aesthetic | Count |
