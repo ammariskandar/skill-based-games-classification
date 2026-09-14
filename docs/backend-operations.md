@@ -156,11 +156,14 @@ the effective URL contains `-pooler.`. `DATABASE_URL` should use the pooled host
 (`CONN_MAX_AGE=0` in production, so pooled connections never hold state).
 
 Email delivery (SBGC-239) is auto-configured from `RESEND_API_KEY`: production
-derives `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, STARTTLS, and the `resend`
+derives `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=2587` (STARTTLS), and the `resend`
 username, then defaults the senders to `noreply@gamedna.my` / `alerts@gamedna.my`.
-An explicit `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`
-relay is the fallback when `RESEND_API_KEY` is absent. Production refuses to boot
-when neither credential is present.
+Port 2587 is Resend's documented alternative to 587 because Render free web
+services block outbound traffic to SMTP ports 25, 465, and 587; `RESEND_SMTP_PORT`
+overrides it, and 2465/465 select implicit TLS automatically. An explicit
+`EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay is
+the fallback when `RESEND_API_KEY` is absent. Production refuses to boot when
+neither credential is present.
 
 The two URLs also use different roles. `DATABASE_URL` authenticates as the scoped
 DML-only `app_django` role provisioned by `scripts/db-provision-app-role.sql`;

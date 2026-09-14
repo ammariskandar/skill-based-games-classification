@@ -20,7 +20,9 @@ SBGC-104 additions:
 - Strict boolean parsing for DB_SSL_REQUIRE (and DJANGO_DEBUG guard).
 
 SBGC-239 additions:
-- RESEND_API_KEY auto-wires the Resend SMTP relay (host/port/TLS/user derived).
+- RESEND_API_KEY auto-wires the Resend SMTP relay (host/port/TLS/user derived),
+  defaulting to port 2587 because Render free web services block outbound
+  25/465/587.  RESEND_SMTP_PORT overrides it (2465/465 use implicit TLS).
 - A plain EMAIL_HOST/EMAIL_PORT/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD relay is the
   fallback when RESEND_API_KEY is absent.
 - A credential (RESEND_API_KEY or EMAIL_HOST_PASSWORD) is required: production
@@ -167,12 +169,29 @@ if not _steam_api_key or not _steam_api_key.strip():
 _email_env = env  # noqa: F405 — star-imported environ.Env from base
 RESEND_API_KEY = env_str(_email_env, "RESEND_API_KEY", default="").strip()
 
+# Resend's SMTP ports.  Standard 25/465/587 are blocked for outbound traffic on
+# Render free web services (render.com/changelog, 2025-09-26), so the default is
+# Resend's documented alternative 2587 (STARTTLS).  2465 is its implicit-TLS
+# twin.  Override with RESEND_SMTP_PORT on hosts that permit the standard ports.
+_RESEND_SMTP_PORTS = {25, 465, 587, 2465, 2587}
+_RESEND_IMPLICIT_TLS_PORTS = {465, 2465}
+_RESEND_DEFAULT_SMTP_PORT = "2587"
+
 if RESEND_API_KEY:
+    _resend_port = parse_non_negative_integer(
+        env_str(_email_env, "RESEND_SMTP_PORT", default=_RESEND_DEFAULT_SMTP_PORT)
+    )
+    if _resend_port not in _RESEND_SMTP_PORTS:
+        raise ImproperlyConfigured(
+            f"RESEND_SMTP_PORT must be one of {sorted(_RESEND_SMTP_PORTS)}, "
+            f"got {_resend_port}."
+        )
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = "smtp.resend.com"
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False
+    EMAIL_PORT = _resend_port
+    # 465/2465 connect over implicit TLS; 25/587/2587 upgrade via STARTTLS.
+    EMAIL_USE_SSL = _resend_port in _RESEND_IMPLICIT_TLS_PORTS
+    EMAIL_USE_TLS = not EMAIL_USE_SSL
     EMAIL_HOST_USER = "resend"
     EMAIL_HOST_PASSWORD = RESEND_API_KEY
     DEFAULT_FROM_EMAIL = env_str(

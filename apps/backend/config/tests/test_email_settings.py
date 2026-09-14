@@ -63,11 +63,37 @@ class ResendAutoWiringTests(SimpleTestCase):
 
         self.assertEqual(payload["backend"], _SMTP_BACKEND)
         self.assertEqual(payload["host"], "smtp.resend.com")
-        self.assertEqual(payload["port"], 587)
+        # 2587 rather than 587: Render free web services block outbound 25/465/587.
+        self.assertEqual(payload["port"], 2587)
         self.assertEqual(payload["user"], "resend")
         self.assertIs(payload["tls"], True)
         self.assertIs(payload["ssl"], False)
         self.assertEqual(payload["password"], "re_test_123")
+
+    def test_implicit_tls_port_selects_ssl(self):
+        payload = _load_production_email(
+            RESEND_API_KEY="re_test_123", RESEND_SMTP_PORT="2465"
+        )
+
+        self.assertEqual(payload["port"], 2465)
+        self.assertIs(payload["ssl"], True)
+        self.assertIs(payload["tls"], False)
+
+    def test_starttls_port_selects_tls(self):
+        payload = _load_production_email(
+            RESEND_API_KEY="re_test_123", RESEND_SMTP_PORT="587"
+        )
+
+        self.assertEqual(payload["port"], 587)
+        self.assertIs(payload["tls"], True)
+        self.assertIs(payload["ssl"], False)
+
+    def test_unsupported_resend_port_is_rejected(self):
+        env = prod_test_env(RESEND_API_KEY="re_test_123", RESEND_SMTP_PORT="1234")
+        proc = run_manage("check", "--settings=config.settings.production", env=env)
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("RESEND_SMTP_PORT", proc.stderr)
 
     def test_resend_branch_applies_gamedna_sender_defaults(self):
         payload = _load_production_email(RESEND_API_KEY="re_test_123")

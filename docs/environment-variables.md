@@ -45,6 +45,7 @@ cp apps/backend/.env.example apps/backend/.env
 | `STEAM_REFRESH_FALLBACK_EMAILS` | Server | Public    | *(empty)*                      | Render env vars     | No           |
 | `DEFAULT_FROM_EMAIL`            | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
 | `RESEND_API_KEY`                | Server | Secret    | *(empty)*                      | Render env vars     | Yes (production) |
+| `RESEND_SMTP_PORT`              | Server | Public    | `2587`                         | Render env vars     | No           |
 | `SERVER_EMAIL`                  | Server | Public    | `webmaster@localhost`          | Render env vars     | No           |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Server | Secret | *(empty)* | Render env vars | Only as a Resend alternative |
 | `DJANGO_LOG_LEVEL`      | Server   | Public        | `INFO`                         | Render env vars     | No           |
@@ -71,10 +72,13 @@ cp apps/backend/.env.example apps/backend/.env
   (scheduled Steam refresh). Uses Django's standard email settings; no SMTP
   credentials are hardcoded.
 - `RESEND_API_KEY` (SBGC-239) auto-wires production email delivery: setting it
-  derives `smtp.resend.com:587` with the `resend` username and STARTTLS, and
-  defaults `DEFAULT_FROM_EMAIL` to `noreply@gamedna.my` and `SERVER_EMAIL` to
-  `alerts@gamedna.my`. Without it, production falls back to an explicit
-  `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay.
+  derives `smtp.resend.com` on port `2587` (STARTTLS) with the `resend` username,
+  and defaults `DEFAULT_FROM_EMAIL` to `noreply@gamedna.my` and `SERVER_EMAIL` to
+  `alerts@gamedna.my`. The default port is 2587 rather than 587 because Render
+  free web services block outbound SMTP on 25, 465, and 587; `RESEND_SMTP_PORT`
+  overrides it, and 2465/465 switch to implicit TLS. Without `RESEND_API_KEY`,
+  production falls back to an explicit `EMAIL_HOST` / `EMAIL_PORT` /
+  `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` relay.
   Production raises `ImproperlyConfigured` when neither `RESEND_API_KEY` nor
   `EMAIL_HOST_PASSWORD` is set, because verification and password-reset mail
   would otherwise be dropped silently. Development and test settings are
