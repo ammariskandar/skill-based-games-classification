@@ -82,7 +82,7 @@ echo "=== PostgreSQL Classification constraint tests ==="
   -v 2
 
 echo ""
-=== PostgreSQL published read-path tests ===
+echo "=== PostgreSQL published read-path tests ==="
 "$PYTHON" "$MANAGE" test \
   games.tests.test_pg_read_paths \
   --settings=config.settings.postgresql_test \
@@ -90,7 +90,7 @@ echo ""
   -v 2
 
 echo ""
-=== PostgreSQL Steam import concurrency tests ===
+echo "=== PostgreSQL Steam import concurrency tests ==="
 "$PYTHON" "$MANAGE" test \
   games.tests.test_import_concurrency \
   --settings=config.settings.postgresql_test \
