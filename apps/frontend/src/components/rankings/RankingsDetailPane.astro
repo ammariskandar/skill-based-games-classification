@@ -148,6 +148,25 @@ const dominantHtml = dominantRegionHtml(profile, dominant, classified);
     color: var(--color-muted);
   }
 
+  /* Mobile (< 1024px) with nothing selected: collapse the placeholder to a
+     single-line notification bar so the ranking list keeps the vertical space.
+     Selecting a Game navigates (MPA), which renders the full pane instead, so
+     nothing has to expand at runtime. */
+  @media (max-width: 64rem) {
+    .rankings-detail--empty {
+      height: auto;
+      min-height: 0;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface-2);
+    }
+
+    .rankings-detail__empty {
+      max-width: none;
+      font-size: 0.75rem;
+    }
+  }
+
   .rankings-detail__heading {
     margin: 0;
     font-size: 1.25rem;

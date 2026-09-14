@@ -1,0 +1,412 @@
+---
+/**
+ * Game-suggestion modal — SBGC-240.
+ *
+ * Native `<dialog>` mounted on /about. Opened from
+ * `#open-suggestion-modal-btn`; unauthenticated visitors are sent to
+ * `/login?redirect=/about` instead of seeing the dialog.
+ *
+ * Submits to the authenticated BFF route `/api/suggestions`, which relays to
+ * Django. A 429 carries `Retry-After`, and the cooldown it implies is persisted
+ * in `sessionStorage` so the countdown survives navigation within the tab.
+ */
+---
+
+<dialog
+  id="suggest-game-modal"
+  aria-labelledby="suggest-game-title"
+  class="fixed inset-0 m-auto w-[min(92vw,34rem)] max-h-[85dvh] overflow-y-auto rounded-xl border border-(--color-border) bg-(--color-surface) p-0 text-(--color-text) backdrop:bg-black/60"
+>
+  <div class="flex flex-col gap-5 p-6">
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="suggest-game-title" class="text-xl font-semibold">
+          Suggest a game
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          Tell us what is missing from the catalogue.
+        </p>
+      </div>
+      <button
+        type="button"
+        data-suggest-close
+        aria-label="Close modal"
+        class="rounded-lg p-2 text-muted transition-colors hover:bg-(--color-surface-2) hover:text-(--color-text)"
+      >
+        ✕
+      </button>
+    </header>
+
+    <form data-suggest-form class="flex flex-col gap-4" novalidate>
+      <div>
+        <label for="suggest-game-name" class="mb-1 block text-sm text-muted">
+          Game name <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="suggest-game-name"
+          data-suggest-name
+          name="name"
+          type="text"
+          required
+          maxlength="50"
+          autocomplete="off"
+          placeholder="e.g. Hollow Knight: Silksong"
+          class="w-full rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 py-2 text-sm text-(--color-text)"
+        />
+        <p class="mt-1 text-xs text-muted">
+          <span data-suggest-count="name">0</span> / 50
+        </p>
+      </div>
+
+      <div>
+        <label for="suggest-game-url" class="mb-1 block text-sm text-muted">
+          Storefront link <span class="text-dim">(optional)</span>
+        </label>
+        <input
+          id="suggest-game-url"
+          data-suggest-url
+          name="storefront_url"
+          type="url"
+          maxlength="250"
+          autocomplete="off"
+          placeholder="https://store.steampowered.com/app/..."
+          class="w-full rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 py-2 text-sm text-(--color-text)"
+        />
+        <p class="mt-1 text-xs text-muted">
+          <span data-suggest-count="url">0</span> / 250 — must start with
+          <span class="font-medium">https://</span>
+        </p>
+      </div>
+
+      <div>
+        <label for="suggest-game-remarks" class="mb-1 block text-sm text-muted">
+          Remarks <span class="text-dim">(optional)</span>
+        </label>
+        <textarea
+          id="suggest-game-remarks"
+          data-suggest-remarks
+          name="remarks"
+          rows="3"
+          maxlength="250"
+          placeholder="Anything we should know about this game?"
+          class="w-full rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 py-2 text-sm text-(--color-text)"
+        ></textarea>
+        <p class="mt-1 text-xs text-muted">
+          <span data-suggest-count="remarks">0</span> / 250
+        </p>
+      </div>
+
+      <p
+        data-suggest-error
+        hidden
+        role="alert"
+        class="rounded-lg border border-red/30 bg-red/10 p-2 text-sm text-red"
+      >
+      </p>
+
+      <footer class="flex justify-end gap-3">
+        <button
+          type="button"
+          data-suggest-cancel
+          class="rounded-lg border border-(--color-border) bg-(--color-surface-2) px-4 py-2 text-sm font-medium text-(--color-text) hover:bg-(--color-surface-3)"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          data-suggest-submit
+          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Submit suggestion
+        </button>
+      </footer>
+    </form>
+
+    <div data-suggest-success hidden class="flex flex-col gap-4">
+      <p
+        class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 p-3 text-sm text-emerald-200"
+      >
+        Thanks — your suggestion is on its way. We read every one of them.
+      </p>
+      <div class="flex justify-end">
+        <button
+          type="button"
+          data-suggest-done
+          class="rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const COOLDOWN_KEY = "suggestion_cooldown_until";
+  const SUBMIT_LABEL = "Submit suggestion";
+
+  const dialogElement = document.getElementById(
+    "suggest-game-modal",
+  ) as HTMLDialogElement | null;
+  if (!dialogElement) throw new Error("Suggest-game modal is missing.");
+  const dialog: HTMLDialogElement = dialogElement;
+
+  const trigger = document.getElementById(
+    "open-suggestion-modal-btn",
+  ) as HTMLButtonElement | null;
+
+  const form = dialog.querySelector<HTMLFormElement>("[data-suggest-form]");
+  const successBox = dialog.querySelector<HTMLElement>(
+    "[data-suggest-success]",
+  );
+  const nameInput = dialog.querySelector<HTMLInputElement>(
+    "[data-suggest-name]",
+  );
+  const urlInput = dialog.querySelector<HTMLInputElement>("[data-suggest-url]");
+  const remarksInput = dialog.querySelector<HTMLTextAreaElement>(
+    "[data-suggest-remarks]",
+  );
+  const errorEl = dialog.querySelector<HTMLElement>("[data-suggest-error]");
+  const submitButton = dialog.querySelector<HTMLButtonElement>(
+    "[data-suggest-submit]",
+  );
+
+  let cooldownTimer: number | undefined;
+
+  function countEl(kind: string): HTMLElement | null {
+    return dialog.querySelector<HTMLElement>(`[data-suggest-count="${kind}"]`);
+  }
+
+  function updateCounts(): void {
+    const pairs: Array<[string, number]> = [
+      ["name", nameInput?.value.length ?? 0],
+      ["url", urlInput?.value.length ?? 0],
+      ["remarks", remarksInput?.value.length ?? 0],
+    ];
+    for (const [kind, length] of pairs) {
+      const el = countEl(kind);
+      if (el) el.textContent = String(length);
+    }
+  }
+
+  function showError(message: string): void {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+
+  function hideError(): void {
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+  }
+
+  /** An https-only URL check: rejects `http:`, `javascript:`, `data:`, and junk. */
+  function isHttpsUrl(value: string): boolean {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
+  function readCooldownUntil(): number {
+    try {
+      const raw = sessionStorage.getItem(COOLDOWN_KEY);
+      const parsed = raw === null ? 0 : Number.parseInt(raw, 10);
+      return Number.isFinite(parsed) ? parsed : 0;
+    } catch {
+      // Storage unavailable — the countdown simply never starts.
+      return 0;
+    }
+  }
+
+  function writeCooldownUntil(timestamp: number): void {
+    try {
+      sessionStorage.setItem(COOLDOWN_KEY, String(timestamp));
+    } catch {
+      // Nothing to do: the server still enforces the limit.
+    }
+  }
+
+  function clearCooldown(): void {
+    try {
+      sessionStorage.removeItem(COOLDOWN_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+  }
+
+  function stopCooldown(): void {
+    if (cooldownTimer !== undefined) {
+      window.clearInterval(cooldownTimer);
+      cooldownTimer = undefined;
+    }
+  }
+
+  /** Render the remaining cooldown, or restore the idle submit button. */
+  function tickCooldown(): void {
+    if (!submitButton) return;
+    const remaining = Math.ceil((readCooldownUntil() - Date.now()) / 1000);
+    if (remaining <= 0) {
+      stopCooldown();
+      clearCooldown();
+      submitButton.disabled = false;
+      submitButton.textContent = SUBMIT_LABEL;
+      return;
+    }
+    submitButton.disabled = true;
+    submitButton.textContent = `Submit (Wait ${remaining}s)`;
+  }
+
+  function startCooldown(seconds: number): void {
+    if (seconds > 0) {
+      writeCooldownUntil(Date.now() + seconds * 1000);
+    } else {
+      clearCooldown();
+    }
+    stopCooldown();
+    tickCooldown();
+    if (readCooldownUntil() > Date.now()) {
+      cooldownTimer = window.setInterval(tickCooldown, 1000);
+    }
+  }
+
+  function resetForm(): void {
+    form?.reset();
+    updateCounts();
+    hideError();
+    if (form) form.hidden = false;
+    if (successBox) successBox.hidden = true;
+    // A cooldown outlives the dialog, so re-render it rather than re-enabling.
+    stopCooldown();
+    tickCooldown();
+  }
+
+  function closeDialog(): void {
+    dialog.close();
+  }
+
+  dialog
+    .querySelector<HTMLButtonElement>("[data-suggest-close]")
+    ?.addEventListener("click", closeDialog);
+  dialog
+    .querySelector<HTMLButtonElement>("[data-suggest-cancel]")
+    ?.addEventListener("click", closeDialog);
+  dialog
+    .querySelector<HTMLButtonElement>("[data-suggest-done]")
+    ?.addEventListener("click", closeDialog);
+
+  dialog.addEventListener("close", resetForm);
+
+  for (const input of [nameInput, urlInput, remarksInput]) {
+    input?.addEventListener("input", updateCounts);
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const name = nameInput?.value.trim() ?? "";
+    const storefrontUrl = urlInput?.value.trim() ?? "";
+    const remarks = remarksInput?.value.trim() ?? "";
+
+    if (!name) {
+      showError("Please enter the game's name.");
+      return;
+    }
+    if (name.length > 50) {
+      showError("Game name cannot exceed 50 characters.");
+      return;
+    }
+    if (storefrontUrl.length > 250) {
+      showError("The storefront link cannot exceed 250 characters.");
+      return;
+    }
+    if (storefrontUrl && !isHttpsUrl(storefrontUrl)) {
+      showError("The storefront link must be a valid https:// URL.");
+      return;
+    }
+    if (remarks.length > 250) {
+      showError("Remarks cannot exceed 250 characters.");
+      return;
+    }
+
+    if (submitButton) submitButton.disabled = true;
+    try {
+      const response = await fetch("/api/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          storefront_url: storefrontUrl,
+          remarks,
+        }),
+      });
+
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        error?: { message?: string };
+      } | null;
+
+      if (response.ok && data?.success) {
+        if (form) form.hidden = true;
+        if (successBox) successBox.hidden = false;
+        return;
+      }
+
+      if (response.status === 429) {
+        const header = response.headers.get("Retry-After");
+        const seconds = header === null ? 60 : Number.parseInt(header, 10);
+        startCooldown(Number.isFinite(seconds) && seconds > 0 ? seconds : 60);
+        showError(
+          data?.error?.message ??
+            "Please wait a moment before submitting another suggestion.",
+        );
+        return;
+      }
+
+      if (response.status === 401) {
+        window.location.href = "/login?redirect=/about";
+        return;
+      }
+
+      showError(
+        data?.error?.message ?? "We couldn't send your suggestion. Try again.",
+      );
+      tickCooldown();
+    } catch {
+      showError("We couldn't reach the server. Please try again.");
+      tickCooldown();
+    }
+  });
+
+  trigger?.addEventListener("click", async () => {
+    let authenticated = false;
+    try {
+      const response = await fetch("/api/auth/status", {
+        headers: { Accept: "application/json" },
+      });
+      if (response.ok) {
+        const body = (await response.json()) as { authenticated?: boolean };
+        authenticated = body.authenticated === true;
+      }
+    } catch {
+      authenticated = false;
+    }
+
+    if (!authenticated) {
+      window.location.href = "/login?redirect=/about";
+      return;
+    }
+
+    resetForm();
+    dialog.showModal();
+  });
+
+  // Restore a cooldown that was already running when the page loaded.
+  if (readCooldownUntil() > Date.now()) {
+    cooldownTimer = window.setInterval(tickCooldown, 1000);
+    tickCooldown();
+  }
+</script>

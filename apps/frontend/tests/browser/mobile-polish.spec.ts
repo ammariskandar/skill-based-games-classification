@@ -104,3 +104,51 @@ test("the rankings back link is hidden on desktop", async ({ page }) => {
   await page.goto("/dev/rankings-detail");
   await expect(page.locator("[data-rankings-back]")).toBeHidden();
 });
+
+/**
+ * SBGC-240: on mobile the unselected detail pane collapses to a single-line
+ * notification bar so the ranking list keeps the vertical space; selecting a
+ * Game renders the full pane instead (a navigation, not a client-side toggle).
+ */
+test.describe("mobile rankings empty state", () => {
+  test.use({ viewport: MOBILE });
+
+  test("the unselected detail pane is a compact bar", async ({ page }) => {
+    await page.goto("/dev/rankings-empty");
+
+    const pane = page.locator("[data-rankings-detail]");
+    await expect(pane).toBeVisible();
+    await expect(pane).toHaveClass(/rankings-detail--empty/);
+    await expect(pane).toContainText("Select one of the games to see details");
+
+    const styles = await pane.evaluate((el) => {
+      const computed = getComputedStyle(el);
+      return {
+        height: el.getBoundingClientRect().height,
+        minHeight: computed.minHeight,
+        paddingTop: computed.paddingTop,
+        borderBottomWidth: computed.borderBottomWidth,
+      };
+    });
+
+    // One line of text plus py-3 and the separating rule — not the 7rem-tall
+    // desktop placeholder it replaces.
+    expect(styles.height).toBeLessThanOrEqual(60);
+    expect(styles.minHeight).toBe("0px");
+    expect(styles.paddingTop).toBe("12px");
+    expect(parseFloat(styles.borderBottomWidth)).toBeGreaterThan(0);
+  });
+
+  test("a selected Game keeps the full detail pane", async ({ page }) => {
+    await page.goto("/dev/rankings-detail");
+
+    const pane = page.locator("[data-rankings-detail]");
+    await expect(pane).toBeVisible();
+    await expect(pane).not.toHaveClass(/rankings-detail--empty/);
+
+    const height = await pane.evaluate(
+      (el) => el.getBoundingClientRect().height,
+    );
+    expect(height).toBeGreaterThan(200);
+  });
+});
