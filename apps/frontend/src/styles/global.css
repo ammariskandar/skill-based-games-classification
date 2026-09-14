@@ -91,6 +91,44 @@ strong {
   }
 }
 
+/* ── Global stacking hierarchy (SBGC-226) ──
+   Named layers replace ad-hoc z-index values so scrolling surfaces order
+   predictably.  Ascending order:
+
+     z-base (0)          normal document flow, cards, lists, text
+     z-elevated (10)     hover badges, card overlays, sticky table headers
+     z-sticky-inset (20) sticky filter bars, sticky radar rails
+     z-navbar (40)       the primary site navbar
+     z-drawer (45)       expanded mobile menu panel
+     z-hud (50)          persistent system banners / network notices
+
+   Native <dialog> elements render in the browser top layer, above every
+   z-index, so modals never need a numeric layer. */
+@utility z-base {
+  z-index: 0;
+}
+@utility z-elevated {
+  z-index: 10;
+}
+@utility z-sticky-inset {
+  z-index: 20;
+}
+@utility z-navbar {
+  z-index: 40;
+}
+@utility z-drawer {
+  z-index: 45;
+}
+@utility z-hud {
+  z-index: 50;
+}
+
+/* iOS notch / Dynamic Island: keep the sticky navbar clear of the safe area.
+   The inset is 0 unless the page opts into `viewport-fit=cover`. */
+header.site-navbar {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* ── Radar chart (SBGC-85/86/87) ──
    Global (not component-scoped) so the rankings detail pane can re-render
    the chart client-side on dynamic game selection without losing styling. */

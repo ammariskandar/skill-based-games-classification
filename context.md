@@ -2570,6 +2570,31 @@ Findings are advisory until accepted by the owner. Remediation requires separate
 
 # 43. Changelog
 
+## 2026-09-12 — SBGC-226 sticky mobile navbar & z-index elevation
+
+- **Sticky header** — `Header.astro` becomes `sticky top-0 z-navbar w-full` at
+  every breakpoint with a semi-transparent blurred surface
+  (`bg-surface/90 backdrop-blur-md`) and bottom border.  `position: sticky`
+  keeps the element in normal flow, so no body padding or layout shift is
+  introduced.
+- **Stacking hierarchy** — `global.css` defines named utilities
+  (`z-base` 0, `z-elevated` 10, `z-sticky-inset` 20, `z-navbar` 40, `z-drawer`
+  45, `z-hud` 50) replacing ad-hoc values; native `<dialog>` modals stay in the
+  top layer above every layer.  Toasts, the network notice, the profile lockout
+  banner and the report toast move to `z-hud`; the questionnaire radar rail is
+  `lg:z-sticky-inset lg:top-20` so it clears the now-sticky header.
+- **Mobile drawer** — the disclosure panel moves to `z-drawer` and locks
+  background scrolling while open (released on close, link activation, outside
+  click, or crossing into the desktop layout).
+- **Safe area** — `header.site-navbar` carries `env(safe-area-inset-top)`
+  padding for iOS notches / Dynamic Island.
+- **Tests** — new `tests/browser/navbar.spec.ts` at a 375×667 viewport asserts
+  sticky persistence across an 800px scroll, computed `z-index` (navbar 40 above
+  sticky inset 20), drawer scroll-locking/outside-click release, and top-layer
+  modal stacking; full browser suite 55 passing.  `astro check`, ESLint,
+  Prettier, Vitest (910) and the production build are green.  Updated
+  `docs/frontend-styling.md` with the stacking-order table.
+
 ## 2026-09-12 — SBGC-223 user reporting, moderation security portal & remediation
 
 - **Domain** — `security/models.py` gains `ReportReason` / `ReportStatus`

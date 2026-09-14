@@ -67,6 +67,23 @@ The header uses two mutually exclusive navigation presentations controlled by CS
 
 The `lg` (64 rem / 1024 px) breakpoint was chosen by content fit rather than device convention. The disclosure panel respects `prefers-reduced-motion` through existing `motion-reduce:` utility conventions.
 
+The primary `<header>` is `sticky top-0` at every breakpoint, with a semi-transparent blurred surface (`bg-surface/90 backdrop-blur-md`) and a bottom border. Because `position: sticky` retains the element in normal flow, no body padding or layout shift is introduced. The mobile disclosure panel sits at the drawer layer, locks background scrolling while open (released on close, link activation, outside click, or a breakpoint change), and the header carries `env(safe-area-inset-top)` padding for iOS notches.
+
+## Stacking Order
+
+Layered surfaces use named utilities defined in `global.css` rather than ad-hoc `z-[9999]` values:
+
+| Utility            | Z-Index | Used by                                                    |
+| ------------------ | ------- | ---------------------------------------------------------- |
+| `z-base`           | 0       | Normal flow, cards, lists, text                            |
+| `z-elevated`       | 10      | Hover badges, card overlays, sticky table headers          |
+| `z-sticky-inset`   | 20      | Sticky filter bars, the questionnaire radar rail           |
+| `z-navbar`         | 40      | The primary site navbar (`Header.astro`)                  |
+| `z-drawer`         | 45      | Expanded mobile menu panel                                 |
+| `z-hud`            | 50      | Persistent banners and network/reconnection notices        |
+
+Native `<dialog>` elements (`showModal()`) render in the browser top layer, above every z-index, so modals never need a numeric layer. Sticky page insets that would otherwise tuck under the navbar set a `top` offset that clears the header height (e.g. the questionnaire radar rail uses `lg:top-20`).
+
 Foldable progressive enhancement lives in `global.css` under a `@media (horizontal-viewport-segments: 2)` block. It forces the compact shell on hinged displays and is pure CSS. Unsupported browsers ignore the media feature and fall back to the viewport-width breakpoint. Exact hinge-aware placement within a single segment is deferred because the viewport-segment environment variables are experimental and no real segmented-device verification was available.
 
 ## Figma Make Design Reference
