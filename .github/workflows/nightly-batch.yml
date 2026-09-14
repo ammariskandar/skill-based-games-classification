@@ -1,0 +1,122 @@
+name: Nightly Batch
+
+# CONFIG CHANGE - PROD
+#
+# Render's free compute tier does not offer cron services, so the nightly
+# maintenance pipeline runs here instead, against the cloud Neon database.
+#
+# Every command runs under config.settings.production, which validates its
+# configuration at import time and refuses to boot when a value is missing.
+# The job env below therefore carries the full requirement set from
+# docs/backend-operations.md, not just the database and mail credentials; the
+# "Verify production configuration" step fails in seconds when a secret is
+# absent instead of midway through an epoch.
+
+on:
+  # 02:00 UTC daily.
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      scoring_epoch:
+        description: "Daily scoring epoch (run_daily_classification)"
+        type: boolean
+        default: true
+      similarities:
+        description: "Recompute game similarities, delta only (compute_similarities --delta)"
+        type: boolean
+        default: true
+      logins_rotation:
+        description: "Daily logins and superuser rotation (process_daily_logins_and_superuser_rotation)"
+        type: boolean
+        default: true
+      clear_sessions:
+        description: "Prune expired sessions (clearsessions)"
+        type: boolean
+        default: true
+
+# Least privilege: this job reads the repository and talks to Neon, nothing else.
+permissions:
+  contents: read
+
+# Serialise runs. A nightly pass must never be cancelled by the next trigger, and
+# never overlap with itself while an epoch is mid-flight.
+concurrency:
+  group: nightly-batch
+  cancel-in-progress: false
+
+jobs:
+  batch:
+    name: Nightly batch
+    runs-on: ubuntu-latest
+    # Bounds a run wedged on a database connection.
+    timeout-minutes: 30
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      PYTHONUNBUFFERED: "1"
+
+      # Database. Use the Neon *direct* host, not the "-pooler" host: these jobs
+      # hold long transactions, which PgBouncer transaction pooling is not for
+      # (production forces CONN_MAX_AGE = 0 for the pooler for the same reason).
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Required at settings-import time by config.settings.production.
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      ADMIN_URL_PATH: ${{ secrets.ADMIN_URL_PATH }}
+      DJANGO_ALLOWED_HOSTS: ${{ secrets.DJANGO_ALLOWED_HOSTS }}
+      CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
+      RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+      RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+      STEAM_WEB_API_KEY: ${{ secrets.STEAM_WEB_API_KEY }}
+      DJANGO_OWNER_USERNAME: ${{ secrets.DJANGO_OWNER_USERNAME }}
+      DJANGO_SUPERUSER_1: ${{ secrets.DJANGO_SUPERUSER_1 }}
+      DJANGO_SUPERUSER_2: ${{ secrets.DJANGO_SUPERUSER_2 }}
+
+      # Outgoing mail. RESEND_API_KEY is the primary relay and satisfies the
+      # "a mail credential must exist in production" invariant; the ZeptoMail
+      # token is the optional HTTPS failover (GitHub runners do not block the
+      # SMTP ports that Render's free tier blocks, so the primary still works).
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ZEPTOMAIL_SEND_TOKEN: ${{ secrets.ZEPTOMAIL_SEND_TOKEN }}
+      PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install -r apps/backend/requirements.txt
+
+      # Fails fast on an incomplete environment. `check` builds the settings and
+      # the app registry without opening a database connection.
+      - name: Verify production configuration
+        run: python apps/backend/manage.py check
+
+      # Each task is independently gated: a failing step is reported and fails the
+      # run, but does not suppress the tasks after it. `!cancelled()` (not
+      # `always()`) keeps that behaviour while still honouring a manual cancel.
+      # Similarity recomputation is idempotent, and the login/rotation pass is a
+      # security control that must not be skipped because an epoch failed.
+
+      - name: Daily scoring epoch
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.scoring_epoch }}
+        run: python apps/backend/manage.py run_daily_classification
+
+      - name: Recalculate game similarities (delta)
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.similarities) }}
+        run: python apps/backend/manage.py compute_similarities --delta
+
+      - name: Daily logins and superuser rotation
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.logins_rotation) }}
+        run: python apps/backend/manage.py process_daily_logins_and_superuser_rotation
+
+      - name: Prune expired sessions
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.clear_sessions) }}
+        run: python apps/backend/manage.py clearsessions
