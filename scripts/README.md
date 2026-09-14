@@ -64,3 +64,27 @@ psql "$MIGRATION_DATABASE_URL" \
 
 See [docs/sql-injection-defense-in-depth.md](../docs/sql-injection-defense-in-depth.md)
 for the full playbook, audit, and CVE-2026-6471 notes.
+
+## Catalogue data scripts (SBGC-20)
+
+### `verify-initial-catalogue.py`
+
+Validates `apps/backend/games/fixtures/initial_catalogue_200.json`, the curated
+200-game manifest for the initial public catalogue (SBGC-125).  Offline checks
+prove the 175 `STEAM` / 25 `MANUAL` split, slug and AppID uniqueness, the schema
+contract, and that aesthetics and skill biases match the canonical enums.
+
+```bash
+apps/backend/.venv/bin/python scripts/verify-initial-catalogue.py
+apps/backend/.venv/bin/python scripts/verify-initial-catalogue.py --online
+```
+
+`--online` additionally queries `store.steampowered.com` for every AppID and
+asserts it resolves to a standalone base game (`type: "game"`), which is the gate
+to run before starting the SBGC-126 bulk import.  The Steam Store API rate-limits
+bursts, so a lone `success: false` should be re-checked before a title is treated
+as invalid.  The offline checks are mirrored by
+`apps/backend/games/tests/test_initial_catalogue_manifest.py` and run in CI.
+
+See [docs/catalogue-composition.md](../docs/catalogue-composition.md) for the
+distribution breakdown and curation notes.

@@ -1,0 +1,1852 @@
+[
+  {
+    "slug": "hollow-knight",
+    "name": "Hollow Knight",
+    "source": "STEAM",
+    "steam_appid": 367520,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "celeste",
+    "name": "Celeste",
+    "source": "STEAM",
+    "steam_appid": 504230,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "dead-cells",
+    "name": "Dead Cells",
+    "source": "STEAM",
+    "steam_appid": 588650,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "hades",
+    "name": "Hades",
+    "source": "STEAM",
+    "steam_appid": 1145360,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "doom-eternal",
+    "name": "DOOM Eternal",
+    "source": "STEAM",
+    "steam_appid": 782330,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "doom",
+    "name": "DOOM",
+    "source": "STEAM",
+    "steam_appid": 379720,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "ultrakill",
+    "name": "ULTRAKILL",
+    "source": "STEAM",
+    "steam_appid": 1229490,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "sekiro-shadows-die-twice",
+    "name": "Sekiro: Shadows Die Twice",
+    "source": "STEAM",
+    "steam_appid": 814380,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "elden-ring",
+    "name": "ELDEN RING",
+    "source": "STEAM",
+    "steam_appid": 1245620,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "dark-souls-iii",
+    "name": "DARK SOULS III",
+    "source": "STEAM",
+    "steam_appid": 374320,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "nioh-complete-edition",
+    "name": "Nioh: Complete Edition",
+    "source": "STEAM",
+    "steam_appid": 485510,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "nioh-2-the-complete-edition",
+    "name": "Nioh 2 – The Complete Edition",
+    "source": "STEAM",
+    "steam_appid": 1325200,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "armored-core-vi-fires-of-rubicon",
+    "name": "ARMORED CORE VI FIRES OF RUBICON",
+    "source": "STEAM",
+    "steam_appid": 1888160,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "devil-may-cry-5",
+    "name": "Devil May Cry 5",
+    "source": "STEAM",
+    "steam_appid": 601150,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "nine-sols",
+    "name": "Nine Sols",
+    "source": "STEAM",
+    "steam_appid": 1809540,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "bayonetta",
+    "name": "Bayonetta",
+    "source": "STEAM",
+    "steam_appid": 460790,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "nier-automata",
+    "name": "NieR:Automata",
+    "source": "STEAM",
+    "steam_appid": 524220,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "cuphead",
+    "name": "Cuphead",
+    "source": "STEAM",
+    "steam_appid": 268910,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "street-fighter-6",
+    "name": "Street Fighter 6",
+    "source": "STEAM",
+    "steam_appid": 1364780,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "guilty-gear-strive",
+    "name": "GUILTY GEAR -STRIVE-",
+    "source": "STEAM",
+    "steam_appid": 1384160,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "tekken-7",
+    "name": "TEKKEN 7",
+    "source": "STEAM",
+    "steam_appid": 389730,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "mortal-kombat-11",
+    "name": "Mortal Kombat 11",
+    "source": "STEAM",
+    "steam_appid": 976310,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "dragon-ball-fighterz",
+    "name": "DRAGON BALL FighterZ",
+    "source": "STEAM",
+    "steam_appid": 678950,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "skullgirls-2nd-encore",
+    "name": "Skullgirls 2nd Encore",
+    "source": "STEAM",
+    "steam_appid": 245170,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "the-king-of-fighters-xv",
+    "name": "THE KING OF FIGHTERS XV",
+    "source": "STEAM",
+    "steam_appid": 1498570,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "enter-the-gungeon",
+    "name": "Enter the Gungeon",
+    "source": "STEAM",
+    "steam_appid": 311690,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "the-binding-of-isaac-rebirth",
+    "name": "The Binding of Isaac: Rebirth",
+    "source": "STEAM",
+    "steam_appid": 250900,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "nuclear-throne",
+    "name": "Nuclear Throne",
+    "source": "STEAM",
+    "steam_appid": 242680,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "hotline-miami",
+    "name": "Hotline Miami",
+    "source": "STEAM",
+    "steam_appid": 219150,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "katana-zero",
+    "name": "Katana ZERO",
+    "source": "STEAM",
+    "steam_appid": 460950,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "super-hexagon",
+    "name": "Super Hexagon",
+    "source": "STEAM",
+    "steam_appid": 221640,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "geometry-dash",
+    "name": "Geometry Dash",
+    "source": "STEAM",
+    "steam_appid": 322170,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "thumper",
+    "name": "Thumper",
+    "source": "STEAM",
+    "steam_appid": 238930,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "beat-saber",
+    "name": "Beat Saber",
+    "source": "STEAM",
+    "steam_appid": 620980,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "crypt-of-the-necrodancer",
+    "name": "Crypt of the NecroDancer",
+    "source": "STEAM",
+    "steam_appid": 247080,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "downwell",
+    "name": "Downwell",
+    "source": "STEAM",
+    "steam_appid": 360740,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "shovel-knight-treasure-trove",
+    "name": "Shovel Knight: Treasure Trove",
+    "source": "STEAM",
+    "steam_appid": 250760,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "sonic-mania",
+    "name": "Sonic Mania",
+    "source": "STEAM",
+    "steam_appid": 584400,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "crash-bandicoot-n-sane-trilogy",
+    "name": "Crash Bandicoot N. Sane Trilogy",
+    "source": "STEAM",
+    "steam_appid": 731490,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "a-hat-in-time",
+    "name": "A Hat in Time",
+    "source": "STEAM",
+    "steam_appid": 253230,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "ori-and-the-blind-forest-definitive-edition",
+    "name": "Ori and the Blind Forest: Definitive Edition",
+    "source": "STEAM",
+    "steam_appid": 387290,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "ori-and-the-will-of-the-wisps",
+    "name": "Ori and the Will of the Wisps",
+    "source": "STEAM",
+    "steam_appid": 1057090,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "rain-world",
+    "name": "Rain World",
+    "source": "STEAM",
+    "steam_appid": 312520,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "ghostrunner",
+    "name": "Ghostrunner",
+    "source": "STEAM",
+    "steam_appid": 1139900,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "titanfall-2",
+    "name": "Titanfall 2",
+    "source": "STEAM",
+    "steam_appid": 1237970,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "apex-legends",
+    "name": "Apex Legends",
+    "source": "STEAM",
+    "steam_appid": 1172470,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "counter-strike-2",
+    "name": "Counter-Strike 2",
+    "source": "STEAM",
+    "steam_appid": 730,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "overwatch-2",
+    "name": "Overwatch 2",
+    "source": "STEAM",
+    "steam_appid": 2357570,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "rainbow-six-siege",
+    "name": "Tom Clancy's Rainbow Six Siege",
+    "source": "STEAM",
+    "steam_appid": 359550,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "pubg-battlegrounds",
+    "name": "PUBG: BATTLEGROUNDS",
+    "source": "STEAM",
+    "steam_appid": 578080,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "dead-by-daylight",
+    "name": "Dead by Daylight",
+    "source": "STEAM",
+    "steam_appid": 381210,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "left-4-dead-2",
+    "name": "Left 4 Dead 2",
+    "source": "STEAM",
+    "steam_appid": 550,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "neon-white",
+    "name": "Neon White",
+    "source": "STEAM",
+    "steam_appid": 1533420,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "sifu",
+    "name": "Sifu",
+    "source": "STEAM",
+    "steam_appid": 2138710,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "hi-fi-rush",
+    "name": "Hi-Fi RUSH",
+    "source": "STEAM",
+    "steam_appid": 1817230,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "returnal",
+    "name": "Returnal",
+    "source": "STEAM",
+    "steam_appid": 1649240,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "vampire-survivors",
+    "name": "Vampire Survivors",
+    "source": "STEAM",
+    "steam_appid": 1794680,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "risk-of-rain-2",
+    "name": "Risk of Rain 2",
+    "source": "STEAM",
+    "steam_appid": 632360,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "outer-wilds",
+    "name": "Outer Wilds",
+    "source": "STEAM",
+    "steam_appid": 753640,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-witness",
+    "name": "The Witness",
+    "source": "STEAM",
+    "steam_appid": 210970,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "slay-the-spire",
+    "name": "Slay the Spire",
+    "source": "STEAM",
+    "steam_appid": 646570,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "inscryption",
+    "name": "Inscryption",
+    "source": "STEAM",
+    "steam_appid": 1092790,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "balatro",
+    "name": "Balatro",
+    "source": "STEAM",
+    "steam_appid": 2379780,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "portal-2",
+    "name": "Portal 2",
+    "source": "STEAM",
+    "steam_appid": 620,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "portal",
+    "name": "Portal",
+    "source": "STEAM",
+    "steam_appid": 400,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "return-of-the-obra-dinn",
+    "name": "Return of the Obra Dinn",
+    "source": "STEAM",
+    "steam_appid": 653530,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "her-story",
+    "name": "Her Story",
+    "source": "STEAM",
+    "steam_appid": 368370,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-talos-principle",
+    "name": "The Talos Principle",
+    "source": "STEAM",
+    "steam_appid": 257510,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "baba-is-you",
+    "name": "Baba Is You",
+    "source": "STEAM",
+    "steam_appid": 736260,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "into-the-breach",
+    "name": "Into the Breach",
+    "source": "STEAM",
+    "steam_appid": 590380,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "ftl-faster-than-light",
+    "name": "FTL: Faster Than Light",
+    "source": "STEAM",
+    "steam_appid": 212680,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "xcom-2",
+    "name": "XCOM 2",
+    "source": "STEAM",
+    "steam_appid": 268500,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "darkest-dungeon",
+    "name": "Darkest Dungeon",
+    "source": "STEAM",
+    "steam_appid": 262060,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "rimworld",
+    "name": "RimWorld",
+    "source": "STEAM",
+    "steam_appid": 294100,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "dwarf-fortress",
+    "name": "Dwarf Fortress",
+    "source": "STEAM",
+    "steam_appid": 975370,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "oxygen-not-included",
+    "name": "Oxygen Not Included",
+    "source": "STEAM",
+    "steam_appid": 457140,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "kerbal-space-program",
+    "name": "Kerbal Space Program",
+    "source": "STEAM",
+    "steam_appid": 220200,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "monster-train",
+    "name": "Monster Train",
+    "source": "STEAM",
+    "steam_appid": 1102190,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "griftlands",
+    "name": "Griftlands",
+    "source": "STEAM",
+    "steam_appid": 962130,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "papers-please",
+    "name": "Papers, Please",
+    "source": "STEAM",
+    "steam_appid": 239030,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "disco-elysium",
+    "name": "Disco Elysium",
+    "source": "STEAM",
+    "steam_appid": 632470,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "pathologic-2",
+    "name": "Pathologic 2",
+    "source": "STEAM",
+    "steam_appid": 505230,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "cultist-simulator",
+    "name": "Cultist Simulator",
+    "source": "STEAM",
+    "steam_appid": 718670,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "wildermyth",
+    "name": "Wildermyth",
+    "source": "STEAM",
+    "steam_appid": 763890,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "loop-hero",
+    "name": "Loop Hero",
+    "source": "STEAM",
+    "steam_appid": 1282730,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "superliminal",
+    "name": "Superliminal",
+    "source": "STEAM",
+    "steam_appid": 1049410,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "antichamber",
+    "name": "Antichamber",
+    "source": "STEAM",
+    "steam_appid": 219890,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "tunic",
+    "name": "Tunic",
+    "source": "STEAM",
+    "steam_appid": 553420,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "fez",
+    "name": "FEZ",
+    "source": "STEAM",
+    "steam_appid": 224760,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "braid",
+    "name": "Braid",
+    "source": "STEAM",
+    "steam_appid": 26800,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "stephens-sausage-roll",
+    "name": "Stephen's Sausage Roll",
+    "source": "STEAM",
+    "steam_appid": 353540,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "paradise-killer",
+    "name": "Paradise Killer",
+    "source": "STEAM",
+    "steam_appid": 1160220,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "hypnospace-outlaw",
+    "name": "Hypnospace Outlaw",
+    "source": "STEAM",
+    "steam_appid": 844590,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "realmyst-masterpiece-edition",
+    "name": "realMyst: Masterpiece Edition",
+    "source": "STEAM",
+    "steam_appid": 244430,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "riven",
+    "name": "Riven",
+    "source": "STEAM",
+    "steam_appid": 63620,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-room",
+    "name": "The Room",
+    "source": "STEAM",
+    "steam_appid": 288160,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-room-two",
+    "name": "The Room Two",
+    "source": "STEAM",
+    "steam_appid": 384480,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-room-three",
+    "name": "The Room Three",
+    "source": "STEAM",
+    "steam_appid": 463920,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-room-4-old-sins",
+    "name": "The Room 4: Old Sins",
+    "source": "STEAM",
+    "steam_appid": 1184400,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "gorogoa",
+    "name": "Gorogoa",
+    "source": "STEAM",
+    "steam_appid": 557600,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-outer-worlds",
+    "name": "The Outer Worlds",
+    "source": "STEAM",
+    "steam_appid": 578650,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "prey",
+    "name": "Prey",
+    "source": "STEAM",
+    "steam_appid": 480490,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "alien-isolation",
+    "name": "Alien: Isolation",
+    "source": "STEAM",
+    "steam_appid": 214490,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "hitman-world-of-assassination",
+    "name": "HITMAN World of Assassination",
+    "source": "STEAM",
+    "steam_appid": 1659040,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "dishonored-2",
+    "name": "Dishonored 2",
+    "source": "STEAM",
+    "steam_appid": 403640,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "deathloop",
+    "name": "DEATHLOOP",
+    "source": "STEAM",
+    "steam_appid": 1252330,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "desperados-iii",
+    "name": "Desperados III",
+    "source": "STEAM",
+    "steam_appid": 610370,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "tactics-ogre-reborn",
+    "name": "Tactics Ogre: Reborn",
+    "source": "STEAM",
+    "steam_appid": 1451090,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "divinity-original-sin-2",
+    "name": "Divinity: Original Sin 2",
+    "source": "STEAM",
+    "steam_appid": 435150,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "baldurs-gate-3",
+    "name": "Baldur's Gate 3",
+    "source": "STEAM",
+    "steam_appid": 1086940,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "wasteland-3",
+    "name": "Wasteland 3",
+    "source": "STEAM",
+    "steam_appid": 719040,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "battletech",
+    "name": "BATTLETECH",
+    "source": "STEAM",
+    "steam_appid": 637090,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "darkest-dungeon-ii",
+    "name": "Darkest Dungeon II",
+    "source": "STEAM",
+    "steam_appid": 1940340,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "roguebook",
+    "name": "Roguebook",
+    "source": "STEAM",
+    "steam_appid": 1037350,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "sid-meiers-civilization-vi",
+    "name": "Sid Meier's Civilization VI",
+    "source": "STEAM",
+    "steam_appid": 289070,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "sid-meiers-civilization-v",
+    "name": "Sid Meier's Civilization V",
+    "source": "STEAM",
+    "steam_appid": 8930,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "stellaris",
+    "name": "Stellaris",
+    "source": "STEAM",
+    "steam_appid": 281990,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "factorio",
+    "name": "Factorio",
+    "source": "STEAM",
+    "steam_appid": 427520,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "crusader-kings-iii",
+    "name": "Crusader Kings III",
+    "source": "STEAM",
+    "steam_appid": 1158310,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "europa-universalis-iv",
+    "name": "Europa Universalis IV",
+    "source": "STEAM",
+    "steam_appid": 236850,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "hearts-of-iron-iv",
+    "name": "Hearts of Iron IV",
+    "source": "STEAM",
+    "steam_appid": 394360,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "victoria-3",
+    "name": "Victoria 3",
+    "source": "STEAM",
+    "steam_appid": 529340,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "total-war-warhammer-iii",
+    "name": "Total War: WARHAMMER III",
+    "source": "STEAM",
+    "steam_appid": 1142710,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "total-war-three-kingdoms",
+    "name": "Total War: THREE KINGDOMS",
+    "source": "STEAM",
+    "steam_appid": 779340,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "total-war-rome-ii",
+    "name": "Total War: ROME II",
+    "source": "STEAM",
+    "steam_appid": 214950,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "dota-2",
+    "name": "Dota 2",
+    "source": "STEAM",
+    "steam_appid": 570,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "age-of-empires-ii-definitive-edition",
+    "name": "Age of Empires II: Definitive Edition",
+    "source": "STEAM",
+    "steam_appid": 813780,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "age-of-empires-iv",
+    "name": "Age of Empires IV",
+    "source": "STEAM",
+    "steam_appid": 1466860,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "company-of-heroes-2",
+    "name": "Company of Heroes 2",
+    "source": "STEAM",
+    "steam_appid": 231430,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "company-of-heroes-3",
+    "name": "Company of Heroes 3",
+    "source": "STEAM",
+    "steam_appid": 1677280,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "offworld-trading-company",
+    "name": "Offworld Trading Company",
+    "source": "STEAM",
+    "steam_appid": 334940,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "northgard",
+    "name": "Northgard",
+    "source": "STEAM",
+    "steam_appid": 466560,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "cities-skylines",
+    "name": "Cities: Skylines",
+    "source": "STEAM",
+    "steam_appid": 255710,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "cities-skylines-ii",
+    "name": "Cities: Skylines II",
+    "source": "STEAM",
+    "steam_appid": 949230,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "prison-architect",
+    "name": "Prison Architect",
+    "source": "STEAM",
+    "steam_appid": 233450,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "frostpunk",
+    "name": "Frostpunk",
+    "source": "STEAM",
+    "steam_appid": 323190,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "frostpunk-2",
+    "name": "Frostpunk 2",
+    "source": "STEAM",
+    "steam_appid": 1601580,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "surviving-mars",
+    "name": "Surviving Mars",
+    "source": "STEAM",
+    "steam_appid": 464920,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "tropico-6",
+    "name": "Tropico 6",
+    "source": "STEAM",
+    "steam_appid": 492720,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "endless-legend",
+    "name": "Endless Legend",
+    "source": "STEAM",
+    "steam_appid": 289130,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "endless-space-2",
+    "name": "Endless Space 2",
+    "source": "STEAM",
+    "steam_appid": 392110,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "sins-of-a-solar-empire-rebellion",
+    "name": "Sins of a Solar Empire: Rebellion",
+    "source": "STEAM",
+    "steam_appid": 204880,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "homeworld-remastered-collection",
+    "name": "Homeworld Remastered Collection",
+    "source": "STEAM",
+    "steam_appid": 244160,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "battle-brothers",
+    "name": "Battle Brothers",
+    "source": "STEAM",
+    "steam_appid": 365360,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "wargame-red-dragon",
+    "name": "Wargame: Red Dragon",
+    "source": "STEAM",
+    "steam_appid": 251060,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "x4-foundations",
+    "name": "X4: Foundations",
+    "source": "STEAM",
+    "steam_appid": 392160,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "elite-dangerous",
+    "name": "Elite Dangerous",
+    "source": "STEAM",
+    "steam_appid": 359320,
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "eve-online",
+    "name": "EVE Online",
+    "source": "STEAM",
+    "steam_appid": 8500,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "mount-and-blade-ii-bannerlord",
+    "name": "Mount & Blade II: Bannerlord",
+    "source": "STEAM",
+    "steam_appid": 261550,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "kenshi",
+    "name": "Kenshi",
+    "source": "STEAM",
+    "steam_appid": 233860,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "project-zomboid",
+    "name": "Project Zomboid",
+    "source": "STEAM",
+    "steam_appid": 108600,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "satisfactory",
+    "name": "Satisfactory",
+    "source": "STEAM",
+    "steam_appid": 526870,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "dyson-sphere-program",
+    "name": "Dyson Sphere Program",
+    "source": "STEAM",
+    "steam_appid": 1366540,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "timberborn",
+    "name": "Timberborn",
+    "source": "STEAM",
+    "steam_appid": 1062090,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "manor-lords",
+    "name": "Manor Lords",
+    "source": "STEAM",
+    "steam_appid": 1363080,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "they-are-billions",
+    "name": "They Are Billions",
+    "source": "STEAM",
+    "steam_appid": 644930,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "age-of-mythology-retold",
+    "name": "Age of Mythology: Retold",
+    "source": "STEAM",
+    "steam_appid": 1934680,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "old-world",
+    "name": "Old World",
+    "source": "STEAM",
+    "steam_appid": 597180,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "humankind",
+    "name": "HUMANKIND",
+    "source": "STEAM",
+    "steam_appid": 1124300,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "imperator-rome",
+    "name": "Imperator: Rome",
+    "source": "STEAM",
+    "steam_appid": 859580,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "distant-worlds-universe",
+    "name": "Distant Worlds: Universe",
+    "source": "STEAM",
+    "steam_appid": 261470,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "warhammer-40000-gladius-relics-of-war",
+    "name": "Warhammer 40,000: Gladius - Relics of War",
+    "source": "STEAM",
+    "steam_appid": 489630,
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "against-the-storm",
+    "name": "Against the Storm",
+    "source": "STEAM",
+    "steam_appid": 1336490,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "ixion",
+    "name": "IXION",
+    "source": "STEAM",
+    "steam_appid": 1113120,
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "per-aspera",
+    "name": "Per Aspera",
+    "source": "STEAM",
+    "steam_appid": 803050,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "the-wandering-village",
+    "name": "The Wandering Village",
+    "source": "STEAM",
+    "steam_appid": 1121640,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "before-we-leave",
+    "name": "Before We Leave",
+    "source": "STEAM",
+    "steam_appid": 1073910,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "mindustry",
+    "name": "Mindustry",
+    "source": "STEAM",
+    "steam_appid": 1127400,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "shapez",
+    "name": "shapez",
+    "source": "STEAM",
+    "steam_appid": 1318690,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "captain-of-industry",
+    "name": "Captain of Industry",
+    "source": "STEAM",
+    "steam_appid": 1594320,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "workers-and-resources-soviet-republic",
+    "name": "Workers & Resources: Soviet Republic",
+    "source": "STEAM",
+    "steam_appid": 784150,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "transport-fever-2",
+    "name": "Transport Fever 2",
+    "source": "STEAM",
+    "steam_appid": 1066780,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "surviving-the-aftermath",
+    "name": "Surviving the Aftermath",
+    "source": "STEAM",
+    "steam_appid": 684450,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "foundation",
+    "name": "Foundation",
+    "source": "STEAM",
+    "steam_appid": 690830,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "banished",
+    "name": "Banished",
+    "source": "STEAM",
+    "steam_appid": 242920,
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "super-mario-odyssey",
+    "name": "Super Mario Odyssey",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2017-10-27",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "super-mario-galaxy",
+    "name": "Super Mario Galaxy",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EAD Tokyo",
+    "release_date": "2007-11-01",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "mario-kart-8-deluxe",
+    "name": "Mario Kart 8 Deluxe",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2017-04-28",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "super-smash-bros-ultimate",
+    "name": "Super Smash Bros. Ultimate",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Bandai Namco Studios / Sora Ltd.",
+    "release_date": "2018-12-07",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "metroid-dread",
+    "name": "Metroid Dread",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "MercurySteam",
+    "release_date": "2021-10-08",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "gran-turismo-7",
+    "name": "Gran Turismo 7",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Polyphony Digital",
+    "release_date": "2022-03-04",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "astro-bot",
+    "name": "Astro Bot",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Team Asobi",
+    "release_date": "2024-09-06",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro"
+  },
+  {
+    "slug": "the-legend-of-zelda-breath-of-the-wild",
+    "name": "The Legend of Zelda: Breath of the Wild",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2017-03-03",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-legend-of-zelda-tears-of-the-kingdom",
+    "name": "The Legend of Zelda: Tears of the Kingdom",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2023-05-12",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "the-legend-of-zelda-ocarina-of-time",
+    "name": "The Legend of Zelda: Ocarina of Time",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EAD",
+    "release_date": "1998-11-21",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "metroid-prime-remastered",
+    "name": "Metroid Prime Remastered",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Retro Studios",
+    "release_date": "2023-02-08",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "super-metroid",
+    "name": "Super Metroid",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo R&D1",
+    "release_date": "1994-03-19",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "bloodborne",
+    "name": "Bloodborne",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "FromSoftware",
+    "release_date": "2015-03-24",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "demon-souls",
+    "name": "Demon's Souls",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "FromSoftware",
+    "release_date": "2009-02-05",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "shadow-of-the-colossus",
+    "name": "Shadow of the Colossus",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Team Ico",
+    "release_date": "2005-10-18",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "castlevania-symphony-of-the-night",
+    "name": "Castlevania: Symphony of the Night",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Konami",
+    "release_date": "1997-03-20",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko"
+  },
+  {
+    "slug": "animal-crossing-new-horizons",
+    "name": "Animal Crossing: New Horizons",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2020-03-20",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "pikmin-4",
+    "name": "Pikmin 4",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2023-07-21",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "fire-emblem-three-houses",
+    "name": "Fire Emblem: Three Houses",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Intelligent Systems",
+    "release_date": "2019-07-26",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "xenoblade-chronicles-3",
+    "name": "Xenoblade Chronicles 3",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Monolith Soft",
+    "release_date": "2022-07-29",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "pokemon-scarlet-and-violet",
+    "name": "Pokémon Scarlet and Violet",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Game Freak",
+    "release_date": "2022-11-18",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "paper-mario-the-thousand-year-door",
+    "name": "Paper Mario: The Thousand-Year Door",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Intelligent Systems",
+    "release_date": "2024-05-23",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "advance-wars-1-plus-2-re-boot-camp",
+    "name": "Advance Wars 1+2: Re-Boot Camp",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "WayForward",
+    "release_date": "2023-04-21",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "mario-plus-rabbids-sparks-of-hope",
+    "name": "Mario + Rabbids Sparks of Hope",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Ubisoft Milan",
+    "release_date": "2022-10-20",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro"
+  },
+  {
+    "slug": "splatoon-3",
+    "name": "Splatoon 3",
+    "source": "MANUAL",
+    "steam_appid": null,
+    "developer": "Nintendo EPD",
+    "release_date": "2022-09-09",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro"
+  }
+]
