@@ -185,7 +185,20 @@ const listId = `${idPrefix}-search-listbox`;
       return;
     }
 
-    state.list.hidden = suggestions.length === 0;
+    if (suggestions.length === 0) {
+      // A non-empty query with no matches is a dead end unless we offer a way
+      // out; an empty query (e.g. just focused) stays collapsed. The CTA is a
+      // real option row so arrow-key navigation and Enter continue to work.
+      if (query.trim() === "") {
+        state.list.hidden = true;
+        return;
+      }
+      appendSuggestionCallToAction(state);
+      state.list.hidden = false;
+      return;
+    }
+
+    state.list.hidden = false;
 
     suggestions.forEach((game, i) => {
       const li = document.createElement("li");
@@ -233,6 +246,22 @@ const listId = `${idPrefix}-search-listbox`;
       li.appendChild(link);
       state.list.appendChild(li);
     });
+  }
+
+  function appendSuggestionCallToAction(state: HeaderSearchState): void {
+    const li = document.createElement("li");
+    li.className = "header-search__option";
+    li.id = "search-option-suggest";
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", "false");
+
+    const link = document.createElement("a");
+    link.className = "header-search__link header-search__link--suggest";
+    link.href = "/about?action=suggest";
+    link.textContent = "Can't find your game? Submit a suggestion";
+
+    li.appendChild(link);
+    state.list.appendChild(li);
   }
 
   function moveActive(state: HeaderSearchState, delta: number): void {
@@ -493,6 +522,12 @@ const listId = `${idPrefix}-search-listbox`;
   .header-search__link:focus-visible {
     background: var(--color-surface-2);
     outline: none;
+  }
+
+  /* Empty-state CTA: no thumbnail, so it reads as a text action. */
+  .header-search__link--suggest {
+    font-weight: 500;
+    color: var(--color-blue);
   }
 
   .header-search__thumb {

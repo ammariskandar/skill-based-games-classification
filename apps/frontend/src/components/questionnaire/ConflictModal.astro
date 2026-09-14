@@ -23,14 +23,14 @@ const ageLabel = ageDays === null ? "" : String(ageDays);
     <div class="mt-6 flex flex-col gap-3 sm:flex-row">
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition hover:opacity-90"
+        class="inline-flex items-center justify-center rounded-lg bg-(--color-blue) px-4 py-2 text-sm font-medium text-bg transition-colors hover:bg-(--color-blue-hover)"
         data-conflict-resolution="OVERWRITE"
       >
         Replace Previous Score
       </button>
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:opacity-90"
+        class="inline-flex items-center justify-center rounded-lg border border-(--color-border) bg-surface-2 px-4 py-2 text-sm font-medium text-(--color-text) transition hover:bg-(--color-surface-3)"
         data-conflict-resolution="KEEP_MANUAL"
       >
         Keep My Manual Score

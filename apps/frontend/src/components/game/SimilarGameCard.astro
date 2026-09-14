@@ -1,10 +1,11 @@
 ---
-// Similar-Game recommendation card — SBGC-227.
+// Similar-Game recommendation card — SBGC-227 / SBGC-241.
 //
 // Presentational only: the score is precomputed by Django and rendered verbatim.
 // Hovering (or keyboard-focusing) the capsule dims the cover and reveals the
 // similarity percentage, colour-tiered by threshold (>= 60 emerald, 30-59 amber,
-// < 30 rose).
+// < 30 rose), always labelled with the metric name so a bare percentage is
+// never shown on its own.
 import type { SimilarGameItem } from "../../lib/server/api/games";
 
 interface Props {
@@ -63,11 +64,19 @@ const loading = eager ? "eager" : "lazy";
     <div class="absolute inset-0 grid place-items-center" aria-hidden="true">
       <span
         class:list={[
-          "rounded-md border px-3 py-1 font-mono text-2xl font-black tracking-tight shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 motion-reduce:transition-none",
+          "flex flex-col items-center rounded-md border px-3 py-1 shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100 motion-reduce:transition-none",
           tierClass,
         ]}
       >
-        {score}%
+        <span class="font-mono text-2xl font-black tracking-tight">
+          {score}%
+        </span>
+        <span
+          data-similarity-label
+          class="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.18em]"
+        >
+          Confidence
+        </span>
       </span>
     </div>
   </div>

@@ -9,6 +9,22 @@ interface Props {
 
 const { state, totalPages } = Astro.props;
 
+// SBGC-241: instant page revisits. The ranking markup stays server-owned
+// (SBGC-200), so rather than caching slices in JavaScript the browser is asked
+// to prerender the pagination targets once hover intent is shown; a revisit then
+// activates an already rendered document with no intermediate loading state.
+// Engines without speculation support fall back to the `rel="prefetch"` hints
+// on the links below. Rendered from the frontmatter because a bare JSON literal
+// in a script element is not valid JavaScript for the toolchain parsers.
+const speculationRules = {
+  prerender: [
+    {
+      where: { selector_matches: "a.rankings-pagination__link" },
+      eagerness: "moderate",
+    },
+  ],
+};
+
 const hasPrev = state.page > 1;
 const hasNext = state.page < totalPages;
 const prevHref = rankingsHref({ ...state, page: state.page - 1 });
@@ -26,6 +42,7 @@ const nextHref = rankingsHref({ ...state, page: state.page + 1 });
     href={prevHref}
     class="rankings-pagination__link rankings-pagination__prev"
     data-rankings-prev
+    rel="prefetch"
     hidden={!hasPrev}
   >
     Previous
@@ -34,11 +51,18 @@ const nextHref = rankingsHref({ ...state, page: state.page + 1 });
     href={nextHref}
     class="rankings-pagination__link rankings-pagination__next"
     data-rankings-next
+    rel="prefetch"
     hidden={!hasNext}
   >
     Next Page
   </a>
 </nav>
+
+<script
+  type="speculationrules"
+  is:inline
+  set:html={JSON.stringify(speculationRules)}
+/>
 
 <style>
   .rankings-pagination {
