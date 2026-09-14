@@ -1,0 +1,7790 @@
+[
+  {
+    "slug": "hollow-knight",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 79,
+      "mystiko": 17,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 55,
+      "macro": 30
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Nail-bounce combat and pogo-platforming make each dodge, slash and jump a precise timing check, so moment-to-moment execution decides fights. Charm loadouts and shell upgrades soften mistakes but do not replace the input."
+  },
+  {
+    "slug": "celeste",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 100,
+      "mystiko": 0,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 27,
+      "macro": 23
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 3,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Air-dash and wall-climb gauntlets are precision-input puzzles with instant respawns, so success is pure dash timing and positioning. There are no stats, items or unpredictability to lean on."
+  },
+  {
+    "slug": "dead-cells",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 88,
+      "mystiko": 5,
+      "macro": 7
+    },
+    "reward_profile": {
+      "micro": 45,
+      "mystiko": 15,
+      "macro": 40
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Parry-and-roll combat plus cursed-chest risk means one flubbed dodge ends a run, and how you place your character in a crowd decides fights. Weapon and mutation builds matter, but good execution still saves a bad roll."
+  },
+  {
+    "slug": "hades",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 50,
+      "mystiko": 3,
+      "macro": 47
+    },
+    "reward_profile": {
+      "micro": 81,
+      "mystiko": 13,
+      "macro": 6
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 1,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Dodging spin attacks and landing dash-strikes in real time decides whether a run survives; boon synergies add build depth, but death almost always comes from a missed read or dodge."
+  },
+  {
+    "slug": "doom-eternal",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 60,
+      "mystiko": 36,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 85,
+      "mystiko": 4,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Quick-swapping weapons to cover cooldowns and the dash/meathook dodge loop mean split-second aim and movement decide fights; there is no HP or level scaling to absorb a missed dodge."
+  },
+  {
+    "slug": "doom",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 99,
+      "mystiko": 0,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 91,
+      "mystiko": 9,
+      "macro": 0
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 1,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 4,
+      "Q14A": 1
+    },
+    "rationale": "Glory-kill chains, constant strafing, and ammo management reward reaction speed, with runes and secrets adding a discovery layer but no stat curve."
+  },
+  {
+    "slug": "ultrakill",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 68,
+      "mystiko": 31,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 16,
+      "macro": 34
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 0
+    },
+    "rationale": "Parry and coin-punch tech plus the style meter make obscure technique and frame-perfect execution the whole challenge; Cyber Grind ranks are the only progression."
+  },
+  {
+    "slug": "sekiro-shadows-die-twice",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 92,
+      "mystiko": 8,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 46,
+      "macro": 39
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Posture deflection is a rhythm/reflex contest where a mistimed parry costs a life, and enemy movesets are learned by repetition rather than hidden information. Prosthetic and skill upgrades help, but the deflect timing decides everything."
+  },
+  {
+    "slug": "elden-ring",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 60,
+      "mystiko": 21,
+      "macro": 19
+    },
+    "reward_profile": {
+      "micro": 19,
+      "mystiko": 37,
+      "macro": 44
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Boss fights hinge on roll-timing and spacing, while the open world hides ambushes, catacombs and field bosses that reward scouting. Builds and Spirit Ashes give a strong cushion, but a mistimed dodge still gets you killed."
+  },
+  {
+    "slug": "dark-souls-iii",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 75,
+      "mystiko": 14,
+      "macro": 11
+    },
+    "reward_profile": {
+      "micro": 19,
+      "mystiko": 47,
+      "macro": 34
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Estus-sipping boss duels are decided by roll timing and combo knowledge on a tight stamina bar. Estus/soul upgrades and weapon levels help, but a single whiffed roll is usually fatal."
+  },
+  {
+    "slug": "nioh-complete-edition",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 47,
+      "mystiko": 20,
+      "macro": 33
+    },
+    "reward_profile": {
+      "micro": 29,
+      "mystiko": 15,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Ki-pulse, stance switching and timed dodges are execution-heavy, but Nioh's gear-centric economy means a bad weapon/armour roll can put you behind before the fight starts. Skill can claw back a weak setup."
+  },
+  {
+    "slug": "nioh-2-the-complete-edition",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 56,
+      "mystiko": 26,
+      "macro": 18
+    },
+    "reward_profile": {
+      "micro": 28,
+      "mystiko": 28,
+      "macro": 44
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Burst-counter, Yokai Shift and dark-realm attacks demand precise timing, while fog walls and enemy ambushes keep information scarce. Gear and soul cores give a soft cushion but the fight is still won by execution."
+  },
+  {
+    "slug": "armored-core-vi-fires-of-rubicon",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 37,
+      "mystiko": 35,
+      "macro": 28
+    },
+    "reward_profile": {
+      "micro": 41,
+      "mystiko": 13,
+      "macro": 46
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 3
+    },
+    "rationale": "Boost-dodging telegraphed attacks is execution-driven, but the assembled AC (energy, loadout, AP) determines whether a mission is winnable, so build stats and piloting trade off."
+  },
+  {
+    "slug": "devil-may-cry-5",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 63,
+      "mystiko": 37,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 85,
+      "mystiko": 0,
+      "macro": 15
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 2,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 4,
+      "Q14A": 4
+    },
+    "rationale": "Royal Guard parries, jump-cancels, and keeping the style rank up are pure execution; combo route order is free-form and no gear stat rescues a dropped combo."
+  },
+  {
+    "slug": "nine-sols",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 88,
+      "mystiko": 8,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 25,
+      "mystiko": 63,
+      "macro": 12
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Nine Sols is built on Sekiro-style talisman parries and a persistent health/damage economy where one dropped deflect ends a boss attempt. Jades and skill upgrades only widen the margin, they do not remove the reflex demand."
+  },
+  {
+    "slug": "bayonetta",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 69,
+      "mystiko": 31,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 92,
+      "mystiko": 5,
+      "macro": 3
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 2,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 3,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Dodge-offset and Witch Time timing are the core skill, while the player is free to choose combo order with little penalty for picking differently."
+  },
+  {
+    "slug": "nier-automata",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 50,
+      "mystiko": 3,
+      "macro": 47
+    },
+    "reward_profile": {
+      "micro": 29,
+      "mystiko": 49,
+      "macro": 22
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 1
+    },
+    "rationale": "Bullet-hell dodging and melee cancels decide every engagement; plug-in chip builds and weapon upgrades add a systems layer on top of that execution floor."
+  },
+  {
+    "slug": "cuphead",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 75,
+      "mystiko": 16,
+      "macro": 9
+    },
+    "reward_profile": {
+      "micro": 37,
+      "mystiko": 27,
+      "macro": 36
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 1,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Run-and-gun boss fights are pattern-memorisation plus precise aiming, parrying and dashing with only three hit points. Weapon purchases and charms help, but the fight is a reflex gauntlet."
+  },
+  {
+    "slug": "street-fighter-6",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 45,
+      "mystiko": 34,
+      "macro": 21
+    },
+    "reward_profile": {
+      "micro": 51,
+      "mystiko": 12,
+      "macro": 37
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 3
+    },
+    "rationale": "A health bar gives you a couple of mistakes' worth of room, but every exchange is decided by whiff-punish timing, drive-rush execution and reads on the opponent. Character choice sets the matchup, and conditioning/shimmies are a first-class tool."
+  },
+  {
+    "slug": "guilty-gear-strive",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 62,
+      "mystiko": 37,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 25,
+      "mystiko": 25,
+      "macro": 50
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Strike/throw conditioning and reading the opponent's blockstring decide rounds, with precise inputs and the Tower's floor ranks marking mastery."
+  },
+  {
+    "slug": "tekken-7",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 67,
+      "mystiko": 30,
+      "macro": 3
+    },
+    "reward_profile": {
+      "micro": 32,
+      "mystiko": 32,
+      "macro": 36
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 3
+    },
+    "rationale": "Matchups hinge on frame data and matchup knowledge, and the strict electric-wind-god-fist inputs keep execution decisive."
+  },
+  {
+    "slug": "mortal-kombat-11",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 68,
+      "mystiko": 31,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 41,
+      "mystiko": 0,
+      "macro": 59
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 2
+    },
+    "rationale": "Flawless-block and krushing-blow timing decide exchanges, but the dial-a-combo strings and breakaway make inputs more forgiving than Tekken's."
+  },
+  {
+    "slug": "dragon-ball-fighterz",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 53,
+      "mystiko": 46,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 37,
+      "mystiko": 0,
+      "macro": 63
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 3
+    },
+    "rationale": "Assist calls and tag-in synergy make three-character team composition as decisive as combo execution."
+  },
+  {
+    "slug": "skullgirls-2nd-encore",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 44,
+      "mystiko": 23,
+      "macro": 33
+    },
+    "reward_profile": {
+      "micro": 45,
+      "mystiko": 21,
+      "macro": 34
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 1,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 3
+    },
+    "rationale": "Skullgirls lives on long resets and 1-frame link windows, so aerial-combo execution and assist calls decide rounds. Team composition is drafted up front, and baiting reversal supers is a core interaction."
+  },
+  {
+    "slug": "the-king-of-fighters-xv",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 56,
+      "mystiko": 33,
+      "macro": 11
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 17,
+      "macro": 33
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 3
+    },
+    "rationale": "KOF's three-on-three ratio system and punishing combos make dropped links and bad neutral decisions decisive within one life. Team selection is the preparation, but conditioning the opponent with fakes is how neutral is won."
+  },
+  {
+    "slug": "enter-the-gungeon",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 65,
+      "mystiko": 13,
+      "macro": 22
+    },
+    "reward_profile": {
+      "micro": 45,
+      "mystiko": 15,
+      "macro": 40
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Bullet-hell dodge-rolls, table-flips and dodge-timing against boss patterns make each room an execution test, and death is one bad dodge away. Which guns/items you find is decisive, but the twin-stick aiming is what keeps you alive."
+  },
+  {
+    "slug": "the-binding-of-isaac-rebirth",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 47,
+      "mystiko": 20,
+      "macro": 33
+    },
+    "reward_profile": {
+      "micro": 18,
+      "mystiko": 35,
+      "macro": 47
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Tears are aimed manually while dodging tears and bombs, so raw movement and shot placement decide boss rooms. Item synergies can trivialise a run, but the dodge-timing is constant."
+  },
+  {
+    "slug": "nuclear-throne",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 63,
+      "mystiko": 37,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 75,
+      "mystiko": 18,
+      "macro": 7
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 2,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 4,
+      "Q14A": 1
+    },
+    "rationale": "Short runs demand twitch dodging of bullet patterns; mutation and weapon synergies add depth, but gear numbers never carry a sloppy run."
+  },
+  {
+    "slug": "hotline-miami",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 98,
+      "mystiko": 0,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 77,
+      "mystiko": 12,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 2,
+      "Q14": 3
+    },
+    "rationale": "A single hit kills, so clearing each floor means performing a memorized entry order with instant reactions to off-screen enemies."
+  },
+  {
+    "slug": "katana-zero",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 68,
+      "mystiko": 31,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 84,
+      "mystiko": 0,
+      "macro": 16
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 4,
+      "Q14A": 4
+    },
+    "rationale": "Deflecting bullets and routing each room in slow motion demand precise parry timing, with hidden time-manipulation tricks separating clean runs."
+  },
+  {
+    "slug": "super-hexagon",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 95,
+      "mystiko": 0,
+      "macro": 5
+    },
+    "reward_profile": {
+      "micro": 37,
+      "mystiko": 42,
+      "macro": 21
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 3,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "The entire game is rotating a triangle between incoming walls at ramping speed; a single frame of hesitation is a death. There are no stats, items or hidden information, only reflex."
+  },
+  {
+    "slug": "geometry-dash",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 92,
+      "mystiko": 8,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 48,
+      "mystiko": 28,
+      "macro": 24
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 1,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "One-tap rhythm-platforming on memorised layouts, where a single mistimed jump resets the level. There are no stats or randomness, just click timing against a fixed chart."
+  },
+  {
+    "slug": "thumper",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 70,
+      "mystiko": 28,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 78,
+      "mystiko": 8,
+      "macro": 14
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 4,
+      "Q14A": 1
+    },
+    "rationale": "Every turn, parry, and grind must land exactly on the beat; missing the rhythm chain fails the run outright."
+  },
+  {
+    "slug": "beat-saber",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 94,
+      "mystiko": 5,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 69,
+      "mystiko": 0,
+      "macro": 31
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Full-body slicing to note blocks is nearly pure timing with no stats, and reacting to the block stream is usually enough."
+  },
+  {
+    "slug": "crypt-of-the-necrodancer",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 40,
+      "mystiko": 32,
+      "macro": 28
+    },
+    "reward_profile": {
+      "micro": 57,
+      "mystiko": 37,
+      "macro": 6
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 6,
+      "Q14A": 2
+    },
+    "rationale": "Moving, attacking, and digging all resolve on the beat grid, so ordering your beats while dodging enemy patterns is the core skill; equipment still swings damage."
+  },
+  {
+    "slug": "downwell",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 88,
+      "mystiko": 5,
+      "macro": 7
+    },
+    "reward_profile": {
+      "micro": 43,
+      "mystiko": 22,
+      "macro": 35
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Gunboot stomps and the ammo-reload float turn every descent into a spacing and timing puzzle, and falling onto an enemy without ammo kills you. Upgrades exist, but the vertical aim and stomp timing dominate."
+  },
+  {
+    "slug": "shovel-knight-treasure-trove",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 73,
+      "mystiko": 15,
+      "macro": 12
+    },
+    "reward_profile": {
+      "micro": 47,
+      "mystiko": 35,
+      "macro": 18
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Shovel-bounce, relic subweapons and precise platforming define combat, with checkpoints that still demand clean execution. Armour and relics give options, but a mistimed pogo or drop usually costs the screen."
+  },
+  {
+    "slug": "sonic-mania",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 61,
+      "mystiko": 38,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 73,
+      "mystiko": 20,
+      "macro": 7
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Momentum running and spin-dash jumps need precise timing around hazards, while hidden giant rings and special stages add discovery."
+  },
+  {
+    "slug": "crash-bandicoot-n-sane-trilogy",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 59,
+      "mystiko": 39,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 71,
+      "mystiko": 7,
+      "macro": 22
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 3
+    },
+    "rationale": "Death is one touch and gem routes require breaking boxes in sequence, so pattern reading and jump precision drive success."
+  },
+  {
+    "slug": "a-hat-in-time",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 82,
+      "mystiko": 16,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 57,
+      "mystiko": 42,
+      "macro": 1
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Hat-swapping gives forgiving movement and combat, so the draw is hunting Time Pieces and hidden Badges rather than execution-heavy fights."
+  },
+  {
+    "slug": "ori-and-the-blind-forest-definitive-edition",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 39,
+      "mystiko": 32,
+      "macro": 29
+    },
+    "reward_profile": {
+      "micro": 67,
+      "mystiko": 11,
+      "macro": 22
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Escape sequences chain wall-jumps, bashes, and dashes under a timer, and ability upgrades feed directly into that movement execution."
+  },
+  {
+    "slug": "ori-and-the-will-of-the-wisps",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 54,
+      "mystiko": 43,
+      "macro": 3
+    },
+    "reward_profile": {
+      "micro": 77,
+      "mystiko": 0,
+      "macro": 23
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 4,
+      "Q14A": 4
+    },
+    "rationale": "Spirit Shard builds exist, but the spirit-edge/hammer combat and launcher movement are won by player execution, not by out-scaling enemies."
+  },
+  {
+    "slug": "rain-world",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 64,
+      "mystiko": 29,
+      "macro": 7
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 59,
+      "macro": 26
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 2,
+      "Q12B": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Predator AI, spear-aim and lizard-jumps mean a mistimed pounce or a lone wrong turn into a dead end is fatal, with no stats to hide behind. The ecology is deliberately opaque, so reading creature behaviour is central."
+  },
+  {
+    "slug": "ghostrunner",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 68,
+      "mystiko": 30,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 85,
+      "mystiko": 4,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Every enemy kills in one hit, so wall-running and grappling into the exact kill order is the entire skill curve."
+  },
+  {
+    "slug": "titanfall-2",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 99,
+      "mystiko": 0,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 85,
+      "mystiko": 4,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 3,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Pilot wall-running and reactive gunplay sit alongside titan kits and campaign gadgets, so execution and loadout both matter."
+  },
+  {
+    "slug": "apex-legends",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 49,
+      "mystiko": 27,
+      "macro": 24
+    },
+    "reward_profile": {
+      "micro": 60,
+      "mystiko": 7,
+      "macro": 33
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Shield swaps, slide-jumps and tracking recoil decide fights, while third-parties and audio cues make information management essential. Legend kits and loot rarity help, but gunplay and movement win the duel."
+  },
+  {
+    "slug": "counter-strike-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 46,
+      "mystiko": 33,
+      "macro": 21
+    },
+    "reward_profile": {
+      "micro": 58,
+      "mystiko": 6,
+      "macro": 36
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q9C": 1,
+      "Q9D": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 3
+    },
+    "rationale": "Spray control, counter-strafing and utility lineups decide duels, and the economy forces buy/save decisions before a round starts. Footstep audio and off-angles make hidden information central, and fake executes are a standard deception."
+  },
+  {
+    "slug": "overwatch-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 46,
+      "mystiko": 21,
+      "macro": 33
+    },
+    "reward_profile": {
+      "micro": 66,
+      "mystiko": 17,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 2,
+      "Q9F": 2,
+      "Q10": 4,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 3
+    },
+    "rationale": "Ability cooldowns and ultimate economy demand precise timing, but hitscan tracking and movement are what win the duel. Chain-healing and respawns absorb mistakes, and team fights are won by combining cooldowns."
+  },
+  {
+    "slug": "rainbow-six-siege",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 42,
+      "mystiko": 33,
+      "macro": 25
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 13,
+      "macro": 37
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 3
+    },
+    "rationale": "One life per round and destructive walls/floors make opening a sightline or a bad peek immediately lethal. Drone/audio intel and baiting a defender's utility (or faking a push) decide most rounds."
+  },
+  {
+    "slug": "pubg-battlegrounds",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 64,
+      "mystiko": 19,
+      "macro": 17
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 13,
+      "macro": 37
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 3
+    },
+    "rationale": "Recoil control, long-range lead and recoil-management decide the firefight, while loot RNG and circle position set the odds before it starts. Distant gunfire and hidden squads make sound-reading decisive."
+  },
+  {
+    "slug": "dead-by-daylight",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 57,
+      "mystiko": 39,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 66,
+      "macro": 30
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q12A": 3,
+      "Q13": 0,
+      "Q13A": 2,
+      "Q14": 2
+    },
+    "rationale": "Survivor chases turn on reading the killer's path and looping the strongest tiles, with skill-check timing the only non-perk execution gate."
+  },
+  {
+    "slug": "left-4-dead-2",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 56,
+      "mystiko": 43,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 58,
+      "mystiko": 3,
+      "macro": 39
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q12A": 3,
+      "Q13": 0,
+      "Q13A": 2,
+      "Q14": 0
+    },
+    "rationale": "Special-infected threats make aim and friendly-fire discipline constant, and the mode still rides on shared medkit/pill economy and positioning."
+  },
+  {
+    "slug": "neon-white",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 96,
+      "mystiko": 0,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 62,
+      "mystiko": 17,
+      "macro": 21
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 4,
+      "Q14A": 1
+    },
+    "rationale": "Card-fueled double-jumps and gun slams must be sequenced perfectly to shave seconds, making leaderboard runs a routing puzzle as much as an execution test."
+  },
+  {
+    "slug": "sifu",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 61,
+      "mystiko": 23,
+      "macro": 16
+    },
+    "reward_profile": {
+      "micro": 41,
+      "mystiko": 36,
+      "macro": 23
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Parry, avoid and structure-break timings gate every fight, and the ageing mechanic makes each death cost more. Enemy move-sets are learned by repetition, and shuriken/weapon placement matters."
+  },
+  {
+    "slug": "hi-fi-rush",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 40,
+      "mystiko": 33,
+      "macro": 27
+    },
+    "reward_profile": {
+      "micro": 83,
+      "mystiko": 5,
+      "macro": 12
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Landing attacks on the beat multiplier and parrying to the rhythm is the fight itself, and chips only add small modifiers on top."
+  },
+  {
+    "slug": "returnal",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 42,
+      "mystiko": 32,
+      "macro": 26
+    },
+    "reward_profile": {
+      "micro": 50,
+      "mystiko": 33,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 6,
+      "Q14A": 2
+    },
+    "rationale": "Bullet-hell dodging with the dash is execution-first, but the weapon traits, artifacts, and parasites you find define a run's power."
+  },
+  {
+    "slug": "vampire-survivors",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 51,
+      "mystiko": 13,
+      "macro": 36
+    },
+    "reward_profile": {
+      "micro": 27,
+      "mystiko": 29,
+      "macro": 44
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Weapon/level-up choices are decisive, and a fully surrounded player can be deleted in seconds if they stop kiting. Movement is mostly about steering crowds into an auto-fire cone rather than aiming."
+  },
+  {
+    "slug": "risk-of-rain-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 57,
+      "mystiko": 20,
+      "macro": 23
+    },
+    "reward_profile": {
+      "micro": 30,
+      "mystiko": 32,
+      "macro": 38
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 4,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Scaling difficulty means standing still gets you overwhelmed, so aiming, dashing and kiting through the teleporter boss are execution tests. Item stacking can snowball a run, but good movement overcomes a weak build."
+  },
+  {
+    "slug": "outer-wilds",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 28,
+      "mystiko": 56,
+      "macro": 16
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 94,
+      "macro": 6
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Discovery is the only progression: ship-log entries and Nomai ruins gate understanding, and time-loop knowledge rather than stats opens new routes."
+  },
+  {
+    "slug": "the-witness",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 19,
+      "mystiko": 45,
+      "macro": 36
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 86,
+      "macro": 14
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "There is no execution demand at all; each panel's rule must be deduced from the environment, and the island's geometry hides the grammar. Figuring out how a glyph interacts with its surroundings is the whole challenge."
+  },
+  {
+    "slug": "slay-the-spire",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 14,
+      "macro": 74
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 30,
+      "macro": 67
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "A bad deck or relic path can leave you unable to answer the Act boss, so draft, potion and route decisions decide runs. Card-play sequencing into enemy intents is tactical, but a strong scaling setup absorbs most mistakes."
+  },
+  {
+    "slug": "inscryption",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 47,
+      "macro": 48
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 58,
+      "macro": 36
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "The blood-and-bones sacrifice economy and escalating boss decks make preparation decisive; you win by planning card synergies rather than by reflexes, and misreading the encounter ends the run."
+  },
+  {
+    "slug": "balatro",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 22,
+      "mystiko": 5,
+      "macro": 73
+    },
+    "reward_profile": {
+      "micro": 9,
+      "mystiko": 6,
+      "macro": 85
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 2,
+      "Q14": 0
+    },
+    "rationale": "Joker and Tarot synergy is decisive: a bad shop run cannot be outexecuted, since scoring is entirely about multiplier stacking. The only live decision is which cards to hold, discard and buy before the blind's chip target."
+  },
+  {
+    "slug": "portal-2",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 26,
+      "mystiko": 69,
+      "macro": 5
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 41,
+      "macro": 44
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 0
+    },
+    "rationale": "Chambers are solved by deducing how momentum, lasers, gels, and portal surfaces interact; the occasional timed jump exists, but understanding the systems is the actual obstacle."
+  },
+  {
+    "slug": "portal",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 17,
+      "mystiko": 83,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 16,
+      "mystiko": 63,
+      "macro": 21
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 2,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Each test chamber is a geometry puzzle about where a portal can legally sit, and GLaDOS's promises must be read as misdirection rather than instructions."
+  },
+  {
+    "slug": "return-of-the-obra-dinn",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 16,
+      "mystiko": 73,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Progress is entirely deduction: identifying each crew member, their fate, and their killer from frozen dioramas, with the book only confirming correct verdicts, so no execution or build layer exists."
+  },
+  {
+    "slug": "her-story",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 95,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 2,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "The only verb is typing search terms into a video database and interpreting a woman's contradictory testimony; there is no timing, combat, or character build of any kind."
+  },
+  {
+    "slug": "the-talos-principle",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 23,
+      "mystiko": 40,
+      "macro": 37
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 75,
+      "macro": 18
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Each puzzle asks you to infer the rules of lasers, fans, jammers and connectors from the level itself, with no timing input needed. A wrong model is simply reset, so deduction rather than execution is the challenge."
+  },
+  {
+    "slug": "baba-is-you",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 19,
+      "mystiko": 45,
+      "macro": 36
+    },
+    "reward_profile": {
+      "micro": 19,
+      "mystiko": 67,
+      "macro": 14
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "The challenge is discovering which word-blocks can be rewritten into new rules and how they chain, not pressing buttons precisely. Solutions are found by editing the level's grammar, and undo makes execution failures irrelevant."
+  },
+  {
+    "slug": "into-the-breach",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 18,
+      "mystiko": 14,
+      "macro": 68
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 30,
+      "macro": 67
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Perfect-information telegraphs mean success comes from reading enemy attacks and repositioning mechs so they shove into each other, and a bad squad loadout can make a timeline unsolvable. Mistakes are punished by the next turn's board, not by execution."
+  },
+  {
+    "slug": "ftl-faster-than-light",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 20,
+      "macro": 65
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 33,
+      "macro": 63
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "You cannot see the next beacon's event or enemy loadout, so jump routing, weapon loadout and scrap spending are the real decisions. Real-time pausing lets you redirect crew and target systems, but a weak ship build dooms the run first."
+  },
+  {
+    "slug": "xcom-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 6,
+      "mystiko": 19,
+      "macro": 75
+    },
+    "reward_profile": {
+      "micro": 19,
+      "mystiko": 0,
+      "macro": 81
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Fog of war and pod activations keep you acting on partial information, and a bad squad loadout or activation can cascade into a wipe. Turn-based abilities, overwatch and flanking are the tactical layer, with no execution demand."
+  },
+  {
+    "slug": "darkest-dungeon",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 11,
+      "mystiko": 20,
+      "macro": 69
+    },
+    "reward_profile": {
+      "micro": 20,
+      "mystiko": 16,
+      "macro": 64
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 2,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Torchlight, scouting and stress make the dungeon partially opaque, and a bad party composition or supply loadout can end a run. Position-based abilities and turn order are the combat core, with death being recoverable only by retreating."
+  },
+  {
+    "slug": "rimworld",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 21,
+      "macro": 74
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 51,
+      "macro": 49
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Colony survival is a systems problem: stockpiles, defensive kill-boxes, and pawn moods interact so that a bad base layout loses the raid long before combat starts."
+  },
+  {
+    "slug": "dwarf-fortress",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 13,
+      "macro": 72
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 63,
+      "macro": 37
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Almost every fortress collapse traces back to an unmanaged stockpile, aquifer breach, or forgotten beast; the interlocking simulation, not reflex, is the challenge."
+  },
+  {
+    "slug": "oxygen-not-included",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 27,
+      "macro": 73
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Colony survival is decided by heat/gas plumbing, resource loops and rebuilding the base; the instrument reads that challenge axis as macro even though curation labels the game mystiko."
+  },
+  {
+    "slug": "kerbal-space-program",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 17,
+      "mystiko": 37,
+      "macro": 46
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 29,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Rocket design (staging, delta-v, thrust balance) and orbital mechanics dominate the difficulty curve, so the challenge axis reads macro despite the exploration fantasy."
+  },
+  {
+    "slug": "monster-train",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 14,
+      "macro": 71
+    },
+    "reward_profile": {
+      "micro": 12,
+      "mystiko": 0,
+      "macro": 88
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Floor-by-floor clan/unit drafting and upgrade paths decide whether your scaling keeps up, and a weak opening deck cannot be outplayed later. Combat is turn-based placement across three floors, won by stacking buffs and chaining abilities."
+  },
+  {
+    "slug": "griftlands",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 13,
+      "mystiko": 54,
+      "macro": 33
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 56,
+      "macro": 44
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Negotiation battles turn on reading an opponent's resolve and argument weaknesses, and both the negotiation and combat decks reward planning combos over timing."
+  },
+  {
+    "slug": "papers-please",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 8,
+      "mystiko": 57,
+      "macro": 35
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 73,
+      "macro": 27
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Each day is a queue processed against a clock and a family budget, where success means spotting forged papers and contradicting dates, not dexterity."
+  },
+  {
+    "slug": "disco-elysium",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 89,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Everything is resolved through dialogue and passive skill checks; reading Revachol's people and your own fractured psyche replaces combat, and failures reroute the story instead of ending it."
+  },
+  {
+    "slug": "pathologic-2",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 60,
+      "macro": 26
+    },
+    "reward_profile": {
+      "micro": 17,
+      "mystiko": 81,
+      "macro": 2
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 2,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Twelve days of scarce food, water, and immunity force triage and trades with townsfolk; crude melee exists but rarely beats simply running out of medicine."
+  },
+  {
+    "slug": "cultist-simulator",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 61,
+      "macro": 29
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 73,
+      "macro": 27
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Advancing is a puzzle of sliding lore fragments into the right ritual slot before dread, hunger, and funds deplete; the challenge is interpreting hidden connections under timer pressure."
+  },
+  {
+    "slug": "wildermyth",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 65,
+      "macro": 25
+    },
+    "reward_profile": {
+      "micro": 16,
+      "mystiko": 75,
+      "macro": 9
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 3,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 2,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Campaigns hinge on choices, relationships, and transformations that permanently change and retire your heroes, with the grid tactics serving as the stage for those decisions."
+  },
+  {
+    "slug": "loop-hero",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 43,
+      "macro": 57
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 28,
+      "macro": 72
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Deck composition and tile adjacency resolve the auto-battles, so the challenge is macro planning even though discovering combos supplies the mystery."
+  },
+  {
+    "slug": "superliminal",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 50,
+      "mystiko": 50,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 17,
+      "mystiko": 69,
+      "macro": 14
+    },
+    "challenge_answers": {
+      "Q3": 4,
+      "Q4": 0,
+      "Q4A": 3,
+      "Q4C": 1,
+      "Q5": 0,
+      "Q6": 3,
+      "Q7": 4,
+      "Q8": 1,
+      "Q8B": 1,
+      "Q8D": 0,
+      "Q8E": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 2,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 7,
+      "Q14A": 2
+    },
+    "rationale": "Forced-perspective puzzles are solved with the mind, not the hands; there is no timing or combat, and progress is gated by the next optical realization."
+  },
+  {
+    "slug": "antichamber",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 11,
+      "mystiko": 54,
+      "macro": 35
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 86,
+      "macro": 14
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 2,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "The game breaks Euclidean expectations, so each room's rules must be inferred by experimenting with impossible geometry rather than by reflexes. Progress is pure deduction, and the non-Euclidean layout is itself the puzzle."
+  },
+  {
+    "slug": "tunic",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 38,
+      "mystiko": 54,
+      "macro": 8
+    },
+    "reward_profile": {
+      "micro": 17,
+      "mystiko": 66,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Boss patterns are learned, but the manual-decoding metapuzzle and hidden instructions carry progress rather than stat builds."
+  },
+  {
+    "slug": "fez",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 28,
+      "mystiko": 56,
+      "macro": 16
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 95,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Perspective rotation plus the cryptically encoded alphabet and monoliths are the whole game; there is no build system, so deduction dominates."
+  },
+  {
+    "slug": "braid",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 23,
+      "mystiko": 40,
+      "macro": 37
+    },
+    "reward_profile": {
+      "micro": 18,
+      "mystiko": 64,
+      "macro": 18
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Time rewind removes death, so the puzzles are about deducing how each world's time mechanic (reverse, slow, shadow) can be exploited. The platforming is forgiving once you understand the rule, making insight the challenge."
+  },
+  {
+    "slug": "stephens-sausage-roll",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 11,
+      "mystiko": 48,
+      "macro": 41
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 78,
+      "macro": 15
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 2,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "The only verb is rolling and flipping sausages on a grill, so every level is a spatial-logic deduction about orientation and terrain. Undo makes execution free, leaving the puzzle of where each sausage can end up."
+  },
+  {
+    "slug": "paradise-killer",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 49,
+      "mystiko": 43,
+      "macro": 8
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "The trial is won purely by interrogating the island's suspects, connecting evidence, and deciding which facts to present; there is no execution or build layer at all."
+  },
+  {
+    "slug": "hypnospace-outlaw",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 24,
+      "mystiko": 67,
+      "macro": 9
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Progress comes from reading forum threads, downloads, and hidden pages to untangle the Mindcrash conspiracy; the game asks for browsing diligence, not skill or systems mastery."
+  },
+  {
+    "slug": "realmyst-masterpiece-edition",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 13,
+      "mystiko": 53,
+      "macro": 34
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 95,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Linking clue mechanisms (dates, sounds, constellation patterns) across Ages carries progress; there is no combat or build system."
+  },
+  {
+    "slug": "riven",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 16,
+      "mystiko": 67,
+      "macro": 17
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 95,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Interlocking world puzzles (sound, symbols, machinery) and careful observation gate progress, with no reflexes or character building."
+  },
+  {
+    "slug": "the-room",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 19,
+      "mystiko": 45,
+      "macro": 36
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 93,
+      "macro": 7
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Every puzzle is a hidden mechanism inside a box: you rotate, slide and combine parts until the object's logic reveals itself. There is no time pressure or failure state, only manipulation and deduction."
+  },
+  {
+    "slug": "the-room-two",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 23,
+      "mystiko": 40,
+      "macro": 37
+    },
+    "reward_profile": {
+      "micro": 9,
+      "mystiko": 84,
+      "macro": 7
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Multi-room boxes add a lens-based eyepiece that uncovers hidden layers, so progress comes from noticing what each artifact conceals. There is no combat or timing, just peeling back the mechanisms."
+  },
+  {
+    "slug": "the-room-three",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 32,
+      "mystiko": 43,
+      "macro": 25
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 86,
+      "macro": 10
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "The eyepiece mechanic expands a single room into hidden sub-areas, and the Mystery-style escape framing asks you to deduce mechanisms from the objects. Manipulation is forgiving, so the puzzle is the reveal, not the input."
+  },
+  {
+    "slug": "the-room-4-old-sins",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 11,
+      "mystiko": 54,
+      "macro": 35
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 94,
+      "macro": 6
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 2,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "A dollhouse whose rooms each hide a mechanism you must rotate, pry and combine, with the eyepiece revealing nested puzzles. There is no way to fail, only the deduction of how the object works."
+  },
+  {
+    "slug": "gorogoa",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 100,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 78,
+      "macro": 15
+    },
+    "challenge_answers": {
+      "Q3": 4,
+      "Q4": 0,
+      "Q4A": 3,
+      "Q4C": 1,
+      "Q5": 0,
+      "Q6": 3,
+      "Q7": 4,
+      "Q8": 1,
+      "Q8B": 1,
+      "Q8D": 1,
+      "Q8F": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 5,
+      "Q14": 7,
+      "Q14A": 2
+    },
+    "rationale": "Assembling and zooming illustrated panels is pure deduction: each connection unlocks the next panel with no dexterity or stat layer at all."
+  },
+  {
+    "slug": "the-outer-worlds",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 16,
+      "mystiko": 84,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 77,
+      "macro": 23
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Quest outcomes, reputation, and even whole factions turn on dialogue choices and corporate satire; shooting is a light wrapper around persuasion and information."
+  },
+  {
+    "slug": "prey",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 50,
+      "mystiko": 3,
+      "macro": 47
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 62,
+      "macro": 38
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Typhon encounters are decided by real-time aiming, sidestepping, and spotting a mimic before it lunges; neuromod builds and scarce ammo shape the fight but a missed dodge ends it."
+  },
+  {
+    "slug": "alien-isolation",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 57,
+      "mystiko": 3,
+      "macro": 40
+    },
+    "reward_profile": {
+      "micro": 47,
+      "mystiko": 34,
+      "macro": 19
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 2,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Hiding from a hunting Xenomorph and dodging androids makes movement, sound discipline, and tool choice the core challenge, with crafting upgrades as the only progression."
+  },
+  {
+    "slug": "hitman-world-of-assassination",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 32,
+      "mystiko": 40,
+      "macro": 28
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 29,
+      "macro": 68
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Sightlines, disguises and guard schedules are hidden systems you must read, and a blown cover can be recovered by re-routing. Luring a target or baiting a guard into a trap is the core deception mechanic, with loadout planning shaping each hit."
+  },
+  {
+    "slug": "dishonored-2",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 50,
+      "mystiko": 21,
+      "macro": 29
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 64,
+      "macro": 36
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Blink-and-parry duels and emergent stealth routing reward split-second execution, while high/low chaos choices reshape the following missions."
+  },
+  {
+    "slug": "deathloop",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 38,
+      "mystiko": 57,
+      "macro": 5
+    },
+    "reward_profile": {
+      "micro": 77,
+      "mystiko": 22,
+      "macro": 1
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 0,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 5,
+      "Q12": 2,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Breaking the loop requires assembling each Visionary's routines and schedules into one plan, so the core challenge is investigating and ordering information rather than shooting."
+  },
+  {
+    "slug": "desperados-iii",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 39,
+      "mystiko": 11,
+      "macro": 50
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 21,
+      "macro": 73
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 1,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "Each mission is won before it starts: character ability and gadget loadouts must be assigned to cover sightlines, sound cues, and a synchronized takedown plan."
+  },
+  {
+    "slug": "tactics-ogre-reborn",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 54,
+      "macro": 46
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 35,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Grid tactics demand reading class matchups, reach, and height, while the branching route decisions and class buildouts carry equal mechanical weight."
+  },
+  {
+    "slug": "divinity-original-sin-2",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 14,
+      "macro": 72
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 53,
+      "macro": 47
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Battles are effectively won in the build screen: armor-type matchups, elemental surface combos, and skill cooldowns matter more than any reflex, and a bad party setup can make a fight unwinnable."
+  },
+  {
+    "slug": "baldurs-gate-3",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 57,
+      "macro": 38
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 53,
+      "macro": 47
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 1,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Turn-based D&D combat reads enemy stat blocks and positions, but the defining complexity is the branching dialogue, origin, and companion choices that reshape the whole campaign."
+  },
+  {
+    "slug": "wasteland-3",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 57,
+      "macro": 38
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 35,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Squad turn combat rewards reading enemy weaknesses, cover, and initiative, while permanent faction and companion choices rewrite the campaign's state."
+  },
+  {
+    "slug": "battletech",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 21,
+      "mystiko": 14,
+      "macro": 65
+    },
+    "reward_profile": {
+      "micro": 12,
+      "mystiko": 0,
+      "macro": 88
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Lance weight, heat management and pilot skills are decisive before a shot is fired, and a bad drop can get a mech cored out. In combat, facing, called shots and initiative order decide the exchange, with no reaction input."
+  },
+  {
+    "slug": "darkest-dungeon-ii",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 14,
+      "macro": 74
+    },
+    "reward_profile": {
+      "micro": 13,
+      "mystiko": 16,
+      "macro": 71
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 2,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Runway threat and hero-path choices decide whether the stage is survivable, and a bad team composition can end the run before the inn. Turn-order tokens and positional abilities are the combat engine, with no execution layer."
+  },
+  {
+    "slug": "roguebook",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 14,
+      "macro": 71
+    },
+    "reward_profile": {
+      "micro": 17,
+      "mystiko": 0,
+      "macro": 83
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Card gems, page upgrades and hero pairing are drafted between fights, so a weak deck scaling cannot be outplayed later. Combat is turn-based card sequencing with positioning in the two lanes, decided by who has the bigger engine."
+  },
+  {
+    "slug": "sid-meiers-civilization-vi",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 12,
+      "macro": 88
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 29,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "District adjacency, tech/civic timing and turn-based unit spending decide games; terrain and city planning beat execution."
+  },
+  {
+    "slug": "sid-meiers-civilization-v",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 8,
+      "mystiko": 15,
+      "macro": 77
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 28,
+      "macro": 72
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "One-unit-per-tile combat, city-state diplomacy and social-policy timing make turn planning and terrain the deciding factors."
+  },
+  {
+    "slug": "stellaris",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 22,
+      "macro": 78
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 40,
+      "macro": 60
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Galactic victory is a macro puzzle of economy, fleet composition, and diplomacy resolved through menus; a mismanaged build loses the war before any battle is fought."
+  },
+  {
+    "slug": "factorio",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 17,
+      "mystiko": 0,
+      "macro": 83
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 2,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Throughput design, belt/rail logistics and tearing up and rebuilding the factory decide difficulty; biters are simple and terrain barely matters."
+  },
+  {
+    "slug": "crusader-kings-iii",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 47,
+      "macro": 53
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 59,
+      "macro": 41
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 3,
+      "Q11": 1,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "The challenge is running the dynasty as a system: succession laws, levy and men-at-arms composition, and the economy must all be built in advance, then a rival's weakness exploited at the right moment."
+  },
+  {
+    "slug": "europa-universalis-iv",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 16,
+      "macro": 84
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 61,
+      "macro": 39
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Coalition and alliance webs, army composition and terrain modifiers decide wars; nothing is won by reaction speed."
+  },
+  {
+    "slug": "hearts-of-iron-iv",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 2,
+      "mystiko": 20,
+      "macro": 78
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 32,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Industry, division templates and doctrine set the outcome before a front moves, and production/attrition numbers decide the war. Recon, intel and supply make information-gathering a central task, while frontline unit control is abstracted."
+  },
+  {
+    "slug": "victoria-3",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 0,
+      "macro": 93
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 2,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Laws, production methods and interest-group politics decide outcomes; warfare is marginal and the ground rarely decides."
+  },
+  {
+    "slug": "total-war-warhammer-iii",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 6,
+      "mystiko": 14,
+      "macro": 80
+    },
+    "reward_profile": {
+      "micro": 10,
+      "mystiko": 45,
+      "macro": 45
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Army composition and unit matchups are decisive, and a wrong doom-stack composition loses the battle before deployment. In battle, skirmishers, artillery and magic combinations are coordinated in real time, with terrain and monster abilities shaping space."
+  },
+  {
+    "slug": "total-war-three-kingdoms",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 14,
+      "macro": 74
+    },
+    "reward_profile": {
+      "micro": 10,
+      "mystiko": 49,
+      "macro": 41
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Retinue composition, hero assignment and the diplomacy/economy layer decide campaigns, and a misjudged battle plan is recoverable but costly. Battles are won by coordinating cavalry charges, generals and formation abilities."
+  },
+  {
+    "slug": "total-war-rome-ii",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 26,
+      "macro": 69
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 41,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Province economy, legion recruitment and technology choices set the strategic odds, and battles reward terrain use with siege equipment and formations. Combined-arms coordination of cohorts, cavalry and artillery wins field fights."
+  },
+  {
+    "slug": "dota-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 23,
+      "macro": 67
+    },
+    "reward_profile": {
+      "micro": 19,
+      "mystiko": 12,
+      "macro": 69
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 1,
+      "Q9F": 0,
+      "Q10": 4,
+      "Q11": 2,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Draft, item timings and economy are decisive, and a lost lane can compound into an unrecoverable game. Fights are won by coordinating ultimates and controlling vision, with baiting buybacks and smokes a standard deception."
+  },
+  {
+    "slug": "age-of-empires-ii-definitive-edition",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 15,
+      "macro": 71
+    },
+    "reward_profile": {
+      "micro": 83,
+      "mystiko": 0,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Build orders and unit counters plan the game, but the competitive scene rewards raw mechanical execution and army micro as well."
+  },
+  {
+    "slug": "age-of-empires-iv",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 14,
+      "macro": 79
+    },
+    "reward_profile": {
+      "micro": 24,
+      "mystiko": 12,
+      "macro": 64
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 0
+    },
+    "rationale": "Asymmetric civs and hard unit counters make composition and response planning central, with terrain used for chokepoints and walls."
+  },
+  {
+    "slug": "company-of-heroes-2",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 11,
+      "mystiko": 20,
+      "macro": 69
+    },
+    "reward_profile": {
+      "micro": 47,
+      "mystiko": 0,
+      "macro": 53
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 0,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Command-point income, veterancy and doctrine choices set the matchup, and losing a squad is a recoverable but real setback. Firefights are won by combining cover, suppression, AT guns and ability timings, with fog of war and ambushes demanding recon."
+  },
+  {
+    "slug": "company-of-heroes-3",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 21,
+      "mystiko": 20,
+      "macro": 59
+    },
+    "reward_profile": {
+      "micro": 42,
+      "mystiko": 7,
+      "macro": 51
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q9E": 1,
+      "Q9F": 3,
+      "Q10": 0,
+      "Q11": 4,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 0
+    },
+    "rationale": "The Italian dynamic campaign adds company/upgrade choices to the build order, but good micro can still pull back a slow start. Battlegroup abilities, cover and artillery coordination decide the fight, with recon intel mattering."
+  },
+  {
+    "slug": "offworld-trading-company",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 2,
+      "mystiko": 14,
+      "macro": 84
+    },
+    "reward_profile": {
+      "micro": 12,
+      "mystiko": 12,
+      "macro": 76
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Stock prices, patent auctions and claim placement are the whole game, so a bad HQ build or debt spiral decides the match. There is real-time pressure to adapt, but the winner is whoever scales their economy, not whoever clicks fastest."
+  },
+  {
+    "slug": "northgard",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 16,
+      "mystiko": 15,
+      "macro": 69
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 44,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Territory control, food/wood upkeep and seasonal timing decide games more than unit micro."
+  },
+  {
+    "slug": "cities-skylines",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 0,
+      "macro": 100
+    },
+    "reward_profile": {
+      "micro": 11,
+      "mystiko": 44,
+      "macro": 45
+    },
+    "challenge_answers": {
+      "Q3": 4,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 3,
+      "Q7": 4,
+      "Q8": 1,
+      "Q8B": 1,
+      "Q8D": 1,
+      "Q8F": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 2
+    },
+    "rationale": "Nothing is timing-gated; success comes from zoning, road hierarchy, and budget decisions made entirely at the player's own pace."
+  },
+  {
+    "slug": "cities-skylines-ii",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 95,
+      "macro": 5
+    },
+    "reward_profile": {
+      "micro": 31,
+      "mystiko": 45,
+      "macro": 24
+    },
+    "challenge_answers": {
+      "Q3": 4,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 3,
+      "Q7": 4,
+      "Q8": 1,
+      "Q8B": 1,
+      "Q8D": 1,
+      "Q8F": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 1,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Its layered economy, traffic, and demand systems must be reverse-engineered over time, still with no reflex component."
+  },
+  {
+    "slug": "prison-architect",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 1,
+      "macro": 89
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 0,
+      "macro": 100
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Prison layout, regime scheduling and the needs/reform systems are solved by redesign, not reflexes; the ground itself is irrelevant."
+  },
+  {
+    "slug": "frostpunk",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 24,
+      "macro": 62
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 37,
+      "macro": 63
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Heat, food, and hope are interlocking systems: every generator, automatron, and law choice trades one meter against another against a fixed storm deadline."
+  },
+  {
+    "slug": "frostpunk-2",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 27,
+      "macro": 73
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 3,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Faction politics, law choices and heat/resource forecasting decide survival, with faction consequences gating the ending."
+  },
+  {
+    "slug": "surviving-mars",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 5,
+      "macro": 95
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 28,
+      "macro": 72
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Dome placement, resource chains and drone/colonist scheduling decide success; terrain and logistics are the levers."
+  },
+  {
+    "slug": "tropico-6",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 27,
+      "macro": 66
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 44,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Faction approval, economy balancing and island layout decide outcomes, and the mission campaign is driven by choice consequences."
+  },
+  {
+    "slug": "endless-legend",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 32,
+      "macro": 61
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 0,
+      "macro": 94
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Winter cycles, faction traits, district placement and turn-based army composition make planning and terrain decisive."
+  },
+  {
+    "slug": "endless-space-2",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 14,
+      "macro": 76
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 40,
+      "macro": 60
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Turn-based empire management means fleet design, economy, and tech timing decide wars; hero and faction quests are readable flavor layered on top."
+  },
+  {
+    "slug": "sins-of-a-solar-empire-rebellion",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 11,
+      "macro": 75
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 61,
+      "macro": 39
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Fleet composition, orbital defenses and tech timing dominate long games, with setup and fleet abilities mattering more than twitch execution."
+  },
+  {
+    "slug": "homeworld-remastered-collection",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 30,
+      "mystiko": 13,
+      "macro": 57
+    },
+    "reward_profile": {
+      "micro": 13,
+      "mystiko": 23,
+      "macro": 64
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 1,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "3D fleet formations, resource harvesting and unit composition decide battles; spatial positioning matters, terrain does not."
+  },
+  {
+    "slug": "battle-brothers",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 28,
+      "mystiko": 22,
+      "macro": 50
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 49,
+      "macro": 47
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 1,
+      "Q12A": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Company roster, perks and gear are drafted over a campaign, and a bad battle can permanently kill brothers, so preparation is decisive. Battles are turn-based, won by initiative order, zone of control and terrain positioning."
+  },
+  {
+    "slug": "wargame-red-dragon",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 24,
+      "mystiko": 20,
+      "macro": 56
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 30,
+      "macro": 67
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Deck-building constraints and recon mean a bad force composition can leave you blind and outranged, and losses are recoverable with reserves. Firefights are won by coordinating recon, AA and armour, with direct positioning in cover mattering."
+  },
+  {
+    "slug": "x4-foundations",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 19,
+      "mystiko": 35,
+      "macro": 46
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 44,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Station building, trade logistics and fleet composition drive the sandbox, with steering and dogfighting secondary."
+  },
+  {
+    "slug": "elite-dangerous",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 17,
+      "mystiko": 15,
+      "macro": 68
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 49,
+      "macro": 48
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 2,
+      "Q7": 1,
+      "Q8": 0,
+      "Q8A": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 0,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 5,
+      "Q14A": 2
+    },
+    "rationale": "Flight and docking reward steady hands, but engineered modules and ship stats decide whether an engagement is winnable at all."
+  },
+  {
+    "slug": "eve-online",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 14,
+      "macro": 71
+    },
+    "reward_profile": {
+      "micro": 83,
+      "mystiko": 0,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Fleet doctrines, market/manufacturing logistics and alliance diplomacy dominate, but high-level combat still rewards mechanical execution and piloting."
+  },
+  {
+    "slug": "mount-and-blade-ii-bannerlord",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 38,
+      "mystiko": 22,
+      "macro": 40
+    },
+    "reward_profile": {
+      "micro": 10,
+      "mystiko": 34,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Troop tiers, gear and clan relations are built over a campaign, and losing a battle can cost you a campaign army but not the game. Field battles are won by cavalry charges and formation positioning, though the economy and fief management usually decide a war."
+  },
+  {
+    "slug": "kenshi",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 24,
+      "mystiko": 14,
+      "macro": 62
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 51,
+      "macro": 49
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "A stat-driven sandbox where survival is bought with gear, squad composition, and base logistics; fights are won by who is better equipped and positioned, not by twitch aim."
+  },
+  {
+    "slug": "project-zomboid",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 14,
+      "mystiko": 26,
+      "macro": 60
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 17,
+      "macro": 83
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Survival planning (safehouse, supplies, moodles) and caution decide runs; zeds are predictable and looting rewards exploration."
+  },
+  {
+    "slug": "satisfactory",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 26,
+      "macro": 67
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Factory layout, resource routing and vertical building decide progress, with node locations and exploration shaping the plan."
+  },
+  {
+    "slug": "dyson-sphere-program",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 22,
+      "mystiko": 24,
+      "macro": 54
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 12,
+      "macro": 81
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Production chains and interplanetary logistics decide the endgame, with spatial routing on planets replacing cover combat."
+  },
+  {
+    "slug": "timberborn",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 9,
+      "mystiko": 1,
+      "macro": 90
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 44,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Water flow, dam and dynamite construction, and drought planning drive survival; height and terrain determine outcomes."
+  },
+  {
+    "slug": "manor-lords",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 18,
+      "mystiko": 26,
+      "macro": 56
+    },
+    "reward_profile": {
+      "micro": 24,
+      "mystiko": 12,
+      "macro": 64
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 0
+    },
+    "rationale": "Seasonal economy, burgage plots and militia composition decide progress, while real-time battles reward reading charge and flank patterns."
+  },
+  {
+    "slug": "they-are-billions",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 8,
+      "mystiko": 20,
+      "macro": 72
+    },
+    "reward_profile": {
+      "micro": 3,
+      "mystiko": 32,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Base layout, wall layers and turret coverage decide whether a wave breaches, and one gap can cascade into a lost colony. Fog hides the map and wave composition, while the threat is ultimately a numbers/scaling check against the horde."
+  },
+  {
+    "slug": "age-of-mythology-retold",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 13,
+      "mystiko": 20,
+      "macro": 67
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 29,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Myth-unit counters, hero abilities and favor/base management decide games, with scouting enemy weaknesses and terrain mattering."
+  },
+  {
+    "slug": "old-world",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 22,
+      "macro": 78
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 19,
+      "macro": 81
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "The challenge is strategic: scarce orders, city output, and tech choices mean a poor setup loses the game before armies resolve, with rival factions punishing each misallocation."
+  },
+  {
+    "slug": "humankind",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 9,
+      "mystiko": 31,
+      "macro": 60
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 35,
+      "macro": 58
+    },
+    "challenge_answers": {
+      "Q3": 3,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Era stars, culture swapping and district placement make turn planning and terrain decisive, and culture picks have visible consequences."
+  },
+  {
+    "slug": "imperator-rome",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 32,
+      "macro": 68
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 12,
+      "macro": 81
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Character loyalty, army composition and terrain/politics planning decide outcomes, and reading character consequences is central."
+  },
+  {
+    "slug": "distant-worlds-universe",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 19,
+      "macro": 81
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 35,
+      "macro": 58
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Automation policy, fleet composition and galaxy-wide logistics decide outcomes; there is essentially no terrain in deep space."
+  },
+  {
+    "slug": "warhammer-40000-gladius-relics-of-war",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 20,
+      "macro": 68
+    },
+    "reward_profile": {
+      "micro": 8,
+      "mystiko": 19,
+      "macro": 73
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 1,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "City builds, tech trees and unit production form the core decision space, and a bad expansion order loses the attrition war. Fog of war forces scouting, while combat is won by stacking unit stats and abilities rather than micro."
+  },
+  {
+    "slug": "against-the-storm",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 27,
+      "macro": 73
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 28,
+      "macro": 66
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Glade-clearing risk/reward, blueprint drafting and rain-timer planning drive each run, and scouting the wilds drives discovery."
+  },
+  {
+    "slug": "ixion",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 47,
+      "macro": 48
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 37,
+      "macro": 63
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 2,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Station survival is a spreadsheet: hull integrity, power, alloy, and population interact and are spent against fixed chapter deadlines while the Tiqqun drifts."
+  },
+  {
+    "slug": "per-aspera",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 25,
+      "macro": 75
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 3,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Terraforming tech chains and resource-network planning decide progress, with the AI-narrative choices supplying the payoff."
+  },
+  {
+    "slug": "the-wandering-village",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 8,
+      "mystiko": 27,
+      "macro": 65
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 44,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Onbu biome adaptation, food/water budgeting and building placement decide survival, with scouting new biomes driving discovery."
+  },
+  {
+    "slug": "before-we-leave",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 5,
+      "mystiko": 39,
+      "macro": 56
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 28,
+      "macro": 72
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Multi-planet resource chains, survivor needs and island/tech discovery decide progress rather than unit execution."
+  },
+  {
+    "slug": "mindustry",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 22,
+      "mystiko": 15,
+      "macro": 63
+    },
+    "reward_profile": {
+      "micro": 13,
+      "mystiko": 23,
+      "macro": 64
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Conveyor/smelter logistics and turret placement decide defense, and unit loadouts must be adapted to each incoming wave."
+  },
+  {
+    "slug": "shapez",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 7,
+      "mystiko": 0,
+      "macro": 93
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 0,
+      "macro": 100
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 2,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Pure production-line geometry: cutting, rotating and painting shapes for throughput, with no combat or terrain."
+  },
+  {
+    "slug": "captain-of-industry",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 1,
+      "macro": 99
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 17,
+      "macro": 83
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Production chains, vehicle logistics and island layout decide progress; planning and retooling beat reflexes."
+  },
+  {
+    "slug": "workers-and-resources-soviet-republic",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 19,
+      "mystiko": 0,
+      "macro": 81
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 28,
+      "macro": 66
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 1,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Detailed supply chains, production ratios and city layout decide outcomes, with essentially no combat and spatial routing mattering."
+  },
+  {
+    "slug": "transport-fever-2",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 16,
+      "mystiko": 1,
+      "macro": 83
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 0,
+      "macro": 94
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Route and line planning, vehicle throughput and cargo logistics decide success; terrain shapes but rarely decides."
+  },
+  {
+    "slug": "surviving-the-aftermath",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 9,
+      "mystiko": 9,
+      "macro": 82
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 28,
+      "macro": 72
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Colony needs, resource chains and specialist gating decide survival, using the environment and structures to solve crises."
+  },
+  {
+    "slug": "foundation",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 8,
+      "mystiko": 5,
+      "macro": 87
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 35,
+      "macro": 58
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Monument building, trade and resource-chain planning decide progress; real-time demand is mild and menu-driven."
+  },
+  {
+    "slug": "banished",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 18,
+      "mystiko": 1,
+      "macro": 81
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 30,
+      "macro": 56
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Labor allocation, resource balance and seasonal survival decide outcomes; terrain determines which gathering nodes and build sites a settlement can use."
+  },
+  {
+    "slug": "super-mario-odyssey",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 86,
+      "mystiko": 13,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 58,
+      "mystiko": 37,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 1,
+      "Q10": 1,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Cappy throws and capture-jumps give forgiving movement, so the real challenge is hunting the hundreds of hidden Power Moons."
+  },
+  {
+    "slug": "super-mario-galaxy",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 93,
+      "mystiko": 7,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 37,
+      "mystiko": 46,
+      "macro": 17
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 2,
+      "Q5": 1,
+      "Q6": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 0,
+      "Q14": 1,
+      "Q14A": 4
+    },
+    "rationale": "Gravity-flipping planetoids make spatial movement the challenge, while Power Stars and power-ups come from exploration rather than tight execution."
+  },
+  {
+    "slug": "mario-kart-8-deluxe",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 61,
+      "mystiko": 38,
+      "macro": 1
+    },
+    "reward_profile": {
+      "micro": 74,
+      "mystiko": 0,
+      "macro": 26
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 0
+    },
+    "rationale": "Drift-boost timing and item reads decide races, and kart choice changes handling rather than acting as a stat grind."
+  },
+  {
+    "slug": "super-smash-bros-ultimate",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 66,
+      "mystiko": 31,
+      "macro": 3
+    },
+    "reward_profile": {
+      "micro": 13,
+      "mystiko": 24,
+      "macro": 63
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q12": 0,
+      "Q12A": 2,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 3
+    },
+    "rationale": "Neutral is won by spacing, conditioning, and punishing endlag; percent is damage accumulated, not a stat you can out-level."
+  },
+  {
+    "slug": "metroid-dread",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 92,
+      "mystiko": 8,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 58,
+      "macro": 27
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 2
+    },
+    "rationale": "EMMI stealth and MercurySteam's melee-counter boss fights are reflex checks where a missed counter costs a large chunk of health. Flash-shift and slide timing decide escapes, with missile upgrades only widening the margin."
+  },
+  {
+    "slug": "gran-turismo-7",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 56,
+      "mystiko": 38,
+      "macro": 6
+    },
+    "reward_profile": {
+      "micro": 29,
+      "mystiko": 14,
+      "macro": 57
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 0,
+      "Q8A": 0
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q12A": 3,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 2
+    },
+    "rationale": "Trail-braking and throttle control decide laps, but car tuning and performance points set the ceiling, so skill and setup both matter."
+  },
+  {
+    "slug": "astro-bot",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "micro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 79,
+      "mystiko": 19,
+      "macro": 2
+    },
+    "reward_profile": {
+      "micro": 95,
+      "mystiko": 5,
+      "macro": 0
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q7": 3,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 1,
+      "Q13": 0,
+      "Q13A": 3,
+      "Q14": 1,
+      "Q14A": 1
+    },
+    "rationale": "Gadget-platforming is forgiving, so the reward is tactile feedback and hunting the many hidden bots rather than punishing execution."
+  },
+  {
+    "slug": "the-legend-of-zelda-breath-of-the-wild",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 15,
+      "mystiko": 57,
+      "macro": 28
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 96,
+      "macro": 4
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Physics and elemental systems (fire, wind, metal, climbing) solve problems, and shrine/secret discovery supplies the payoff."
+  },
+  {
+    "slug": "the-legend-of-zelda-tears-of-the-kingdom",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 16,
+      "mystiko": 46,
+      "macro": 38
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 81,
+      "macro": 19
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 2,
+      "Q4C": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 2,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 1
+    },
+    "rationale": "Ultrahand/Fuse construction and device engineering solve puzzles and fights, and assembling the right contraption is the payoff."
+  },
+  {
+    "slug": "the-legend-of-zelda-ocarina-of-time",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 36,
+      "mystiko": 46,
+      "macro": 18
+    },
+    "reward_profile": {
+      "micro": 15,
+      "mystiko": 76,
+      "macro": 9
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 1,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Dungeons ask you to read layouts, songs, and boss telegraphs and then deploy the right item; navigation and deduction gate progress more than execution does."
+  },
+  {
+    "slug": "metroid-prime-remastered",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 38,
+      "mystiko": 54,
+      "macro": 8
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 91,
+      "macro": 5
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 0,
+      "Q14": 2
+    },
+    "rationale": "Scanning reveals lore and boss weaknesses, and traversal abilities plus backtracking carry progression through pattern-read fights."
+  },
+  {
+    "slug": "super-metroid",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 47,
+      "mystiko": 53,
+      "macro": 0
+    },
+    "reward_profile": {
+      "micro": 84,
+      "mystiko": 16,
+      "macro": 0
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 0,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 3,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Bosses are pattern-read and the map is opened by movement abilities; exploration outweighs equipment stats."
+  },
+  {
+    "slug": "bloodborne",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 75,
+      "mystiko": 16,
+      "macro": 9
+    },
+    "reward_profile": {
+      "micro": 10,
+      "mystiko": 74,
+      "macro": 16
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Rally/regain and the sidestep make aggressive dodge timing and quickstep spacing the difference between life and death. There is no shield, so every fight is a reflex duel rather than a build check."
+  },
+  {
+    "slug": "demon-souls",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 84,
+      "mystiko": 5,
+      "macro": 11
+    },
+    "reward_profile": {
+      "micro": 9,
+      "mystiko": 31,
+      "macro": 60
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 1,
+      "Q13": 1,
+      "Q14": 2
+    },
+    "rationale": "Wind-up telegraphs, roll i-frames and stamina management decide the boss duels, and a mistimed roll is usually fatal. Grass and upgrade materials help, but the original's execution demands still dominate."
+  },
+  {
+    "slug": "shadow-of-the-colossus",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 38,
+      "mystiko": 57,
+      "macro": 5
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 85,
+      "macro": 15
+    },
+    "challenge_answers": {
+      "Q3": 0,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 2,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 2,
+      "Q8": 0
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 0,
+      "Q10": 0,
+      "Q11": 1,
+      "Q12": 2,
+      "Q13": 1,
+      "Q14": 1
+    },
+    "rationale": "Each colossus is a movement-and-endurance puzzle: you must find the fur, ledges, and weak point with the sword's light while it tries to shake you off."
+  },
+  {
+    "slug": "castlevania-symphony-of-the-night",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "mystiko",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 31,
+      "mystiko": 44,
+      "macro": 25
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 45,
+      "macro": 49
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 2,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Exploring and inverting the castle plus pattern-read bosses drive progress; gear and levels are equipped rather than planned as a build."
+  },
+  {
+    "slug": "animal-crossing-new-horizons",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "SENSORY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 1,
+      "macro": 99
+    },
+    "reward_profile": {
+      "micro": 25,
+      "mystiko": 64,
+      "macro": 11
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 2,
+      "Q6": 0,
+      "Q6A": 1,
+      "Q7": 0,
+      "Q8": 2
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 0,
+      "Q9C": 1,
+      "Q9D": 0,
+      "Q9E": 2,
+      "Q9F": 3,
+      "Q10": 1,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Island design, terraforming, DIY crafting and collection drive the loop; unlocks are cosmetic, there is no leaderboard, and the pace is relaxed."
+  },
+  {
+    "slug": "pikmin-4",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 37,
+      "macro": 51
+    },
+    "reward_profile": {
+      "micro": 6,
+      "mystiko": 29,
+      "macro": 65
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 1,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Dandori time management, squad composition and route planning decide days, with obstacle routing and exploration across each area."
+  },
+  {
+    "slug": "fire-emblem-three-houses",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 47,
+      "macro": 53
+    },
+    "reward_profile": {
+      "micro": 0,
+      "mystiko": 31,
+      "macro": 69
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 1,
+      "Q5": 0,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 2,
+      "Q9B": 0,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "Class-change paths, per-unit stat growth, and battalion gambits make long-term party building the deciding factor, while the calendar gates how much training you get."
+  },
+  {
+    "slug": "xenoblade-chronicles-3",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 12,
+      "mystiko": 34,
+      "macro": 54
+    },
+    "reward_profile": {
+      "micro": 14,
+      "mystiko": 52,
+      "macro": 34
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 1,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 1,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 0,
+      "Q11": 2,
+      "Q11A": 1,
+      "Q12": 0,
+      "Q13": 2,
+      "Q14": 1
+    },
+    "rationale": "The class/role system and Ouroboros interlink combos make team building the deciding factor, on top of positional arts and aggro management in real-time combat."
+  },
+  {
+    "slug": "pokemon-scarlet-and-violet",
+    "primary_aesthetic": "FANTASY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 0,
+      "mystiko": 35,
+      "macro": 65
+    },
+    "reward_profile": {
+      "micro": 7,
+      "mystiko": 35,
+      "macro": 58
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 3,
+      "Q6": 0,
+      "Q6A": 0,
+      "Q7": 0,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11A": 1,
+      "Q12": 3,
+      "Q13": 1,
+      "Q13A": 1,
+      "Q14": 1
+    },
+    "rationale": "Team building, type matchups and turn planning decide battles, while open-world exploration and discovery supply the fantasy."
+  },
+  {
+    "slug": "paper-mario-the-thousand-year-door",
+    "primary_aesthetic": "NARRATIVE",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 21,
+      "mystiko": 32,
+      "macro": 47
+    },
+    "reward_profile": {
+      "micro": 80,
+      "mystiko": 4,
+      "macro": 16
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 0,
+      "Q4A": 2,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q10": 1,
+      "Q11": 0,
+      "Q12": 0,
+      "Q13": 0,
+      "Q14": 0
+    },
+    "rationale": "Badge loadouts and partner choice set the math of every fight, while timed action commands sharpen damage and guard; a strong build carries a sloppy input."
+  },
+  {
+    "slug": "advance-wars-1-plus-2-re-boot-camp",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "NARRATIVE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 10,
+      "mystiko": 21,
+      "macro": 69
+    },
+    "reward_profile": {
+      "micro": 18,
+      "mystiko": 45,
+      "macro": 37
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 0,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 0,
+      "Q9A": 2,
+      "Q10": 2,
+      "Q11": 1,
+      "Q11B": 2,
+      "Q12": 1,
+      "Q12A": 0,
+      "Q13": 2,
+      "Q14": 0
+    },
+    "rationale": "Unit production, CO powers and terrain defence determine battles, and a bad exchange or build order compounds over turns. Fog-of-war maps demand scouting, while each turn is a discrete decision about what to build and where to send it."
+  },
+  {
+    "slug": "mario-plus-rabbids-sparks-of-hope",
+    "primary_aesthetic": "CHALLENGE",
+    "secondary_aesthetic": "FANTASY",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 22,
+      "mystiko": 22,
+      "macro": 56
+    },
+    "reward_profile": {
+      "micro": 4,
+      "mystiko": 28,
+      "macro": 68
+    },
+    "challenge_answers": {
+      "Q3": 2,
+      "Q4": 0,
+      "Q4A": 0,
+      "Q5": 1,
+      "Q6": 1,
+      "Q6B": 2,
+      "Q7": 1,
+      "Q8": 1,
+      "Q8B": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9B": 1,
+      "Q10": 3,
+      "Q11": 0,
+      "Q12": 2,
+      "Q12B": 0,
+      "Q13": 1,
+      "Q14": 0
+    },
+    "rationale": "Hero/Spark team composition and weapon loadouts set the odds, and a weak draft makes later fights a grind. Each turn is a discrete positioning puzzle using dash-jumps, cover and ability combos, with no execution input."
+  },
+  {
+    "slug": "splatoon-3",
+    "primary_aesthetic": "SENSORY",
+    "secondary_aesthetic": "CHALLENGE",
+    "intended_dominant": "macro",
+    "registry_version": "v1.0.0",
+    "challenge_profile": {
+      "micro": 59,
+      "mystiko": 37,
+      "macro": 4
+    },
+    "reward_profile": {
+      "micro": 17,
+      "mystiko": 6,
+      "macro": 77
+    },
+    "challenge_answers": {
+      "Q3": 1,
+      "Q4": 1,
+      "Q4B": 0,
+      "Q5": 0,
+      "Q6": 0,
+      "Q7": 0,
+      "Q8": 1,
+      "Q8B": 0,
+      "Q8C": 1
+    },
+    "reward_answers": {
+      "Q9": 1,
+      "Q9A": 1,
+      "Q10": 0,
+      "Q11": 1,
+      "Q11A": 0,
+      "Q12": 0,
+      "Q12A": 4,
+      "Q13": 0,
+      "Q13A": 4,
+      "Q14": 3
+    },
+    "rationale": "Ink-covering and swim-form movement keep input constant, but winning anarchy modes turns on map control and objective timing."
+  }
+]
