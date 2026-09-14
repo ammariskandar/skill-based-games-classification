@@ -284,8 +284,31 @@ if (Astro.cookies.has("sessionid")) {
     ready: (cb: () => void) => void;
     execute: (siteKey: string, opts: { action: string }) => Promise<string>;
   };
-  const grecaptcha = (window as unknown as { grecaptcha?: Recaptcha })
-    .grecaptcha;
+
+  // api.js is injected asynchronously, so the global must be read at call time —
+  // a module-level snapshot captures `undefined` and never recovers.
+  function getRecaptcha(): Recaptcha | undefined {
+    return (window as unknown as { grecaptcha?: Recaptcha }).grecaptcha;
+  }
+
+  function waitForRecaptcha(timeoutMs = 10_000): Promise<Recaptcha> {
+    return new Promise<Recaptcha>((resolve, reject) => {
+      const started = Date.now();
+      const poll = (): void => {
+        const recaptcha = getRecaptcha();
+        if (recaptcha) {
+          resolve(recaptcha);
+          return;
+        }
+        if (Date.now() - started > timeoutMs) {
+          reject(new Error("reCAPTCHA did not load"));
+          return;
+        }
+        setTimeout(poll, 100);
+      };
+      poll();
+    });
+  }
 
   const EMAIL_VALID_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const USERNAME_REGEX = /^[a-zA-Z0-9_-]{4,20}$/;
@@ -333,17 +356,25 @@ if (Astro.cookies.has("sessionid")) {
     errorBanner?.classList.add("hidden");
   }
 
-  function executeRecaptcha(action: string): Promise<string> {
-    if (!SITE_KEY) return Promise.resolve("test-recaptcha-token");
-    return new Promise((resolve, reject) => {
-      if (!grecaptcha) {
-        reject(new Error("reCAPTCHA not loaded"));
-        return;
-      }
-      grecaptcha.ready(() => {
-        grecaptcha.execute(SITE_KEY, { action }).then(resolve).catch(reject);
-      });
-    });
+  /** Distinguishes a reCAPTCHA failure from a backend/network failure. */
+  class RecaptchaError extends Error {
+    constructor(original: unknown) {
+      super(
+        original instanceof Error ? original.message : "reCAPTCHA unavailable",
+      );
+      this.name = "RecaptchaError";
+    }
+  }
+
+  async function executeRecaptcha(action: string): Promise<string> {
+    if (!SITE_KEY) return "test-recaptcha-token";
+    try {
+      const recaptcha = await waitForRecaptcha();
+      await new Promise<void>((resolve) => recaptcha.ready(resolve));
+      return await recaptcha.execute(SITE_KEY, { action });
+    } catch (error: unknown) {
+      throw new RecaptchaError(error);
+    }
   }
 
   // ── tab switching ────────────────────────────────────────────────────────
@@ -506,8 +537,13 @@ if (Astro.cookies.has("sessionid")) {
       form.classList.add("hidden");
       const panel = document.getElementById(successPanelId);
       panel?.classList.remove("hidden");
-    } catch {
-      showError("Service temporarily unavailable. Please try again later.");
+    } catch (error) {
+      console.error("[reset] request failed:", error);
+      showError(
+        error instanceof RecaptchaError
+          ? "We could not run the security check. Please refresh the page and try again."
+          : "Service temporarily unavailable. Please try again later.",
+      );
     }
   }
 
